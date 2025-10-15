@@ -1,1 +1,42 @@
 @import "tailwindcss";
+
+/* Tema değişkenleri */
+@theme {
+  --font-display: "Inter", sans-serif;
+  --color-primary: #06b1ea;
+  --color-text-main: #252525;
+  --color-text-secondary: #8a8a8a;
+  --color-background: #f1f1f1;
+  --color-background-light: #f5f8f8;
+  --color-background-dark: #0f1e23;
+  --border-radius-default: 0.25rem;
+  --border-radius-lg: 0.5rem;
+  --border-radius-xl: 0.75rem;
+  --border-radius-full: 9999px;
+}
+
+/* Component stilleri */
+@layer components {
+  .form-input {
+    border-color: #dbe3e6;
+  }
+
+  .form-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: none;
+  }
+
+  .form-checkbox:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+/* Özel utility */
+@utility noScrollbars {
+  scrollbar-width: none;
+}
+
+/* Tailwind plugin */
+@plugin "@tailwindcss/forms";
