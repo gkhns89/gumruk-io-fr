@@ -1,40 +1,38 @@
 import React from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Sidebar() {
+  const { user, logout } = useAuth();
+
   const menuItems = [
-    { icon: "home", label: "Ana Sayfa", active: true },
-    { icon: "search", label: "İşlem Takip", active: false },
-    { icon: "warehouse", label: "Antrepo Takip", active: false },
-    { icon: "local_shipping", label: "Yük Takip", active: false },
-    { icon: "feed", label: "Haberler", active: false },
-    { icon: "campaign", label: "Duyurular", active: false },
-    { icon: "person", label: "Hesabım", active: false },
-    { icon: "settings", label: "Ayarlar", active: false },
+    { icon: "home", label: "Ana Sayfa", active: true, path: "/dashboard" },
+    { icon: "search", label: "İşlem Takip", active: false, path: "/transactions" },
+    { icon: "warehouse", label: "Antrepo Takip", active: false, path: "/warehouse" },
+    { icon: "local_shipping", label: "Yük Takip", active: false, path: "/shipping" },
+    { icon: "feed", label: "Haberler", active: false, path: "/news" },
+    { icon: "campaign", label: "Duyurular", active: false, path: "/announcements" },
+    { icon: "person", label: "Hesabım", active: false, path: "/profile" },
+    { icon: "settings", label: "Ayarlar", active: false, path: "/settings" },
   ];
 
   const bottomMenuItems = [
-    { icon: "contact_support", label: "İletişim" },
-    { icon: "help", label: "Yardım" },
-    { icon: "logout", label: "Çıkış" },
+    { icon: "contact_support", label: "İletişim", path: "/contact" },
+    { icon: "help", label: "Yardım", path: "/help" },
   ];
 
   return (
     <aside className="flex-col bg-white p-4 hidden lg:flex w-64 shadow-md">
       {/* User Profile */}
       <div className="flex items-center gap-3 mb-8">
-        <div
-          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12"
-          style={{
-            backgroundImage:
-              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB8gAkvnJYhrXj5IYcwx3o3FRoAK4rvctdFFhoGxP5vTNIAzhYMzkQb7wWy7kdHlRd7meFHxRXlPouBzNdgkvvQq1eKcwgfo1c_lUi7h3dbjuMF3cr2PaO-s4C3OMcQEVj3U0IZzT3lzQE6E3JjeALf9104_2O87m98G_7O8AMyT5kaxx_5awRBbbbPmBm61fH9tDf1FJM4LEJyoqo0FL4O-PtLZJBkias6J77afQONCrDTneMY4IFKmoQf4FvEfqvDJnOk6ZmJAdc")',
-          }}
-        ></div>
+        <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg">
+          {user?.username?.charAt(0).toUpperCase() || 'U'}
+        </div>
         <div className="flex flex-col">
           <h1 className="text-text-main text-base font-medium leading-normal">
-            Hoş Geldiniz
+            {user?.username || 'Kullanıcı'}
           </h1>
           <p className="text-text-secondary text-sm font-normal leading-normal">
-            Kullanıcı Adı
+            {user?.globalRole || 'Role'}
           </p>
         </div>
       </div>
@@ -45,11 +43,9 @@ export default function Sidebar() {
           <a
             key={index}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
-              item.active
-                ? "bg-primary/20"
-                : "hover:bg-gray-100"
+              item.active ? "bg-primary/20" : "hover:bg-gray-100"
             }`}
-            href="#"
+            href={item.path}
           >
             <span className={`material-symbols-outlined ${item.active ? "text-primary" : "text-text-main"}`}>
               {item.icon}
@@ -67,7 +63,7 @@ export default function Sidebar() {
           <a
             key={index}
             className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
-            href="#"
+            href={item.path}
           >
             <span className="material-symbols-outlined text-text-main">
               {item.icon}
@@ -77,6 +73,14 @@ export default function Sidebar() {
             </p>
           </a>
         ))}
+        
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 w-full text-left"
+        >
+          <span className="material-symbols-outlined text-text-main">logout</span>
+          <p className="text-text-main text-sm font-medium leading-normal">Çıkış</p>
+        </button>
       </div>
     </aside>
   );

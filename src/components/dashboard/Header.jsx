@@ -1,6 +1,9 @@
 import React from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Header() {
+  const { user, logout } = useAuth();
+
   return (
     <header className="flex items-center justify-between whitespace-nowrap bg-white px-6 py-3 border-b border-gray-200 shadow-sm">
       {/* Logo and Title */}
@@ -19,7 +22,7 @@ export default function Header() {
           ></path>
         </svg>
         <h2 className="text-text-main text-lg font-bold leading-tight tracking-[-0.015em]">
-          Gümrük Şirketi
+          {user?.company?.name || 'AACC Tracker'}
         </h2>
       </div>
 
@@ -40,16 +43,15 @@ export default function Header() {
 
       {/* User Actions */}
       <div className="flex items-center gap-4">
-        <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+        <button 
+          onClick={logout}
+          className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+        >
           <span className="truncate">Oturumu Kapat</span>
         </button>
-        <div
-          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-          style={{
-            backgroundImage:
-              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8agWxzSChR2G71_Ol--hzfCs4FkHCVjb9LcYdUTdP4SukillHE38TAKm73pFtF6sW_G8OiFNM6K4hNGEqi0YK_EWMk4xOHkbxjpKyV3RyUc5TwUhtST0s3VReE9YF0DQ3SOMZAEvKy6tQOcqnX2L1Unl2bi0m4XZkmMpU1CMNM0h3joPXUhr4ExomSAbbzplI1OLpNIFXxorNTVhNXVHosD0OkDbSGZ3OFCAcMUWcEYMNZ-rUVxBmvJQTT94mWHJYhB7wrUnAr3E")',
-          }}
-        ></div>
+        <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-lg">
+          {user?.username?.charAt(0).toUpperCase() || 'U'}
+        </div>
       </div>
     </header>
   );

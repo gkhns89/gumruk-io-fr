@@ -5,5 +5,5 @@
    export default function App() {
      // Login sayfasını görmek için <Login /> kullanın
      // Dashboard sayfasını görmek için <Dashboard /> kullanın
-     return <Dashboard />;
+     return <Login/>;
    }
