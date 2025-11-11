@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function TransactionsTable({ transactions, loading, error }) {
+export default function TransactionsTable({ transactions, loading, error, onRetry }) {
   const getStatusBadgeClass = (status) => {
     const statusMap = {
       'COMPLETED': { color: 'green', label: 'Tamamlandı' },
@@ -31,50 +31,81 @@ export default function TransactionsTable({ transactions, loading, error }) {
     return date.toLocaleDateString('tr-TR');
   };
 
+  // Loading state
   if (loading) {
     return (
       <>
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex items-center justify-center">
-          <p className="text-text-secondary">Yükleniyor...</p>
+        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-text-secondary">İşlemler yükleniyor...</p>
         </div>
       </>
     );
   }
 
+  // Error state
   if (error) {
     return (
       <>
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-          <p className="text-red-600">{error}</p>
+        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+          <span className="material-symbols-outlined text-6xl text-red-500">error</span>
+          <div className="text-center">
+            <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
+            <p className="text-text-secondary text-sm mb-4">{error}</p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg">refresh</span>
+                  Tekrar Dene
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </>
     );
   }
 
+  // Empty state
   if (!transactions || transactions.length === 0) {
     return (
       <>
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 text-center">
-          <p className="text-text-secondary">Henüz işlem bulunmamaktadır.</p>
+        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+          <span className="material-symbols-outlined text-6xl text-text-secondary">inbox</span>
+          <div className="text-center">
+            <p className="text-text-main font-semibold mb-2">Henüz İşlem Yok</p>
+            <p className="text-text-secondary text-sm">
+              Gümrük işlemleriniz burada görüntülenecektir.
+            </p>
+          </div>
         </div>
       </>
     );
   }
 
+  // Success state with data
   return (
     <>
-      <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
-        Son İşlemler
-      </h2>
+      <div className="flex items-center justify-between pb-3 pt-2">
+        <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em]">
+          Son İşlemler
+        </h2>
+        <span className="text-text-secondary text-sm">
+          {transactions.length} işlem gösteriliyor
+        </span>
+      </div>
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
