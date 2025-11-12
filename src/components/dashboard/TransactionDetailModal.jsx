@@ -1,0 +1,198 @@
+import React from "react";
+
+export default function TransactionDetailModal({ transaction, onClose, onViewFull }) {
+  if (!transaction) return null;
+
+  const getStatusBadgeClass = (status) => {
+    const statusMap = {
+      'COMPLETED': { color: 'green', label: 'Tamamlandı' },
+      'IN_PROGRESS': { color: 'yellow', label: 'İşlemde' },
+      'PENDING': { color: 'blue', label: 'Bekliyor' },
+      'CANCELLED': { color: 'red', label: 'İptal' },
+    };
+
+    const statusInfo = statusMap[status] || { color: 'gray', label: status };
+    
+    const colors = {
+      green: "bg-green-100 text-green-800",
+      yellow: "bg-yellow-100 text-yellow-800",
+      blue: "bg-blue-100 text-blue-800",
+      red: "bg-red-100 text-red-800",
+      gray: "bg-gray-100 text-gray-800",
+    };
+
+    return {
+      className: colors[statusInfo.color],
+      label: statusInfo.label,
+    };
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR');
+  };
+
+  const statusInfo = getStatusBadgeClass(transaction.status);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-fade-in"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div 
+          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scale-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white">
+                <span className="material-symbols-outlined text-2xl">description</span>
+              </div>
+              <div>
+                <h2 className="text-text-main text-xl font-bold">
+                  İşlem Detayları
+                </h2>
+                <p className="text-text-secondary text-sm">
+                  Dosya No: {transaction.fileNo}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-text-secondary">close</span>
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            {/* Status Badge */}
+            <div className="mb-6 flex justify-center">
+              <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${statusInfo.className}`}>
+                {statusInfo.label}
+              </span>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Alıcı Firma</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Beyanname No</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.declarationNumber || '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Antrepo & Varış Tarihi</p>
+                <p className="text-text-main font-semibold">
+                  {formatDate(transaction.warehouseArrivalDate)}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Gümrük Antrepo</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.customsWarehouse || '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Kapı</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.gate || '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm mb-1">Ağırlık</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.weight ? `${transaction.weight} kg` : '-'}
+                </p>
+              </div>
+
+              {transaction.description && (
+                <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
+                  <p className="text-text-secondary text-sm mb-1">Açıklama</p>
+                  <p className="text-text-main">
+                    {transaction.description}
+                  </p>
+                </div>
+              )}
+
+              {transaction.delayReason && (
+                <div className="bg-red-50 rounded-lg p-4 md:col-span-2 border border-red-200">
+                  <p className="text-red-600 text-sm mb-1 font-semibold">⚠️ Gecikme Nedeni</p>
+                  <p className="text-red-800">
+                    {transaction.delayReason}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"
+            >
+              Kapat
+            </button>
+            <button
+              onClick={() => onViewFull(transaction.id)}
+              className="flex items-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+              İşleme Git
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
+        }
+      `}</style>
+    </>
+  );
+}

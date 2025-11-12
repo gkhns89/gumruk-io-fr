@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
+import TransactionDetailModal from "./TransactionDetailModal";
 
 export default function TransactionsTable({ transactions, loading, error, onRetry }) {
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+
   const getStatusBadgeClass = (status) => {
     const statusMap = {
       'COMPLETED': { color: 'green', label: 'Tamamlandı' },
@@ -29,6 +32,19 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR');
+  };
+
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTransaction(null);
+  };
+
+  const handleViewFull = (transactionId) => {
+    // İşlem detay sayfasına yönlendir
+    window.location.href = `/transactions/${transactionId}`;
   };
 
   // Loading state
@@ -112,13 +128,13 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
-                  Tarih
+                  Antrepo & Varış
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
-                  Dosya No
+                  Beyanname No
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
-                  Müşteri
+                  Alıcı Firma
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Durum
@@ -134,10 +150,10 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                 return (
                   <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {formatDate(transaction.createdAt)}
+                      {formatDate(transaction.warehouseArrivalDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main font-medium">
-                      {transaction.fileNo || '-'}
+                      {transaction.declarationNumber || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       {transaction.clientCompany?.name || transaction.recipientName || '-'}
@@ -150,9 +166,13 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <a className="text-primary hover:underline" href={`/transactions/${transaction.id}`}>
+                      <button
+                        onClick={() => handleViewTransaction(transaction)}
+                        className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">visibility</span>
                         Görüntüle
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -161,6 +181,15 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={handleCloseModal}
+          onViewFull={handleViewFull}
+        />
+      )}
     </>
   );
 }
