@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+// Environment variable'dan API URL'ini al
+// Vite projelerde VITE_ prefix'i zorunludur
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
+// Development ortamında console log göster
+if (import.meta.env.DEV) {
+  console.log('🌐 API Base URL:', API_BASE_URL);
+  console.log('🔧 Environment:', import.meta.env.MODE);
+}
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -18,8 +26,6 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    
-    
     return config;
   },
   (error) => {
@@ -31,7 +37,9 @@ axiosInstance.interceptors.request.use(
 // Response interceptor - Hata yönetimi
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log(`✅ Response: ${response.config.url}`, response.data);
+    if (import.meta.env.DEV) {
+      console.log(`✅ Response: ${response.config.url}`, response.data);
+    }
     return response;
   },
   (error) => {
