@@ -9,6 +9,15 @@
       "destination": "/index.html"
     }
   ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
