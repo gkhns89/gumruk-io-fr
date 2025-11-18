@@ -36,11 +36,11 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     applyFilters();
-  }, [filters, transactions]);
+  }, [filters, transactions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Veri yükleme
   const loadData = async () => {
@@ -277,7 +277,6 @@ export default function TransactionsPage() {
           onClose={() => setShowAddModal(false)}
           onSuccess={handleAddSuccess}
           brokerCompanies={brokerCompanies}
-          clientCompanies={clientCompanies}
           currentUser={user}
         />
       )}
