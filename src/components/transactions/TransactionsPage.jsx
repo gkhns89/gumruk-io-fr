@@ -17,7 +17,7 @@ export default function TransactionsPage() {
   const [error, setError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   
-  // Firma listeleri
+  // Firma listeleri (pagination için de kullanılıyor)
   const [clientCompanies, setClientCompanies] = useState([]);
   
   // Pagination
