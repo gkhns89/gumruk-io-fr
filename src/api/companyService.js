@@ -18,10 +18,12 @@ export const companyService = {
   // Broker firmasının client'larını getir
   getClientCompanies: async (brokerId) => {
     try {
+      console.log(`📡 Client companies API çağrısı: /companies/${brokerId}/clients`);
       const response = await axiosInstance.get(`/companies/${brokerId}/clients`);
+      console.log('✅ Client companies yanıtı:', response.data);
       return { success: true, data: response.data.clients || [] };
     } catch (error) {
-      console.error('Get client companies error:', error);
+      console.error('❌ Get client companies error:', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Müşteri firmaları alınamadı',
@@ -39,6 +41,34 @@ export const companyService = {
       return {
         success: false,
         error: error.response?.data?.error || 'Firmalar alınamadı',
+      };
+    }
+  },
+
+  // ✅ YENİ: Client company oluştur
+  createClientCompany: async (companyData) => {
+    try {
+      console.log('📤 Client company oluşturuluyor:', companyData);
+      const response = await axiosInstance.post('/companies/client', companyData);
+      console.log('✅ Client company oluşturuldu:', response.data);
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'Firma başarıyla oluşturuldu'
+      };
+    } catch (error) {
+      console.error('❌ Create client company error:', error);
+      
+      if (error.response?.status === 429) {
+        return {
+          success: false,
+          error: 'Müşteri firması limiti aşıldı. Lütfen aboneliğinizi yükseltin.',
+        };
+      }
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'Firma oluşturulamadı',
       };
     }
   },

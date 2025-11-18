@@ -8,7 +8,6 @@ export default function TransactionsFullTable({
   error, 
   onRetry, 
   onRefresh,
-  canEdit,
   canDelete,
   isReadOnly
 }) {
@@ -120,109 +119,154 @@ export default function TransactionsFullTable({
   // Success state with data
   return (
     <>
-      <div className="bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-              <tr>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Dosya No
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Beyanname No
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Alıcı Firma
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Gümrük
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Antrepo Varış
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider">
-                  Durum
-                </th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right">
-                  İşlemler
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {transactions.map((transaction) => {
-                const statusInfo = getStatusBadgeClass(transaction.status);
-                return (
-                  <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-text-main">
-                        {transaction.fileNo}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {transaction.declarationNumber || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {transaction.clientCompany?.name || transaction.recipientName || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {transaction.customsWarehouse || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {formatDate(transaction.warehouseArrivalDate)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
+      <div className="bg-white overflow-x-auto">
+        <table className="w-full text-left min-w-max">
+          <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+            <tr>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Dosya No
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Beyanname No
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Broker Firma
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Müşteri Firma
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Alıcı
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Gönderici
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Gümrük
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Hat
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Kilo (Kg)
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Vergi (TL)
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Antrepo Varış
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Tescil Tarihi
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Kapanma Tarihi
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Çekilme Tarihi
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                İşlem Süresi (Gün)
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Durum
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">
+                İşlemler
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {transactions.map((transaction) => {
+              const statusInfo = getStatusBadgeClass(transaction.status);
+              return (
+                <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm font-medium text-text-main">
+                      {transaction.fileNo}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.declarationNumber || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.brokerCompany?.name || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.clientCompany?.name || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.recipientName || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.senderName || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.customsWarehouse || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.gate || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
+                    {transaction.weight ? transaction.weight.toLocaleString('tr-TR') : '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
+                    {transaction.tax ? transaction.tax.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.warehouseArrivalDate)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.registrationDate)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.lineClosureDate)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.withdrawalDate)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">
+                    {transaction.importProcessingTime || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end gap-2">
+                      {/* Görüntüle/Düzenle */}
+                      <button
+                        onClick={() => handleEdit(transaction)}
+                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title={isReadOnly ? "Görüntüle" : "Düzenle"}
                       >
-                        {statusInfo.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Görüntüle - Herkes görebilir */}
+                        <span className="material-symbols-outlined text-lg">
+                          {isReadOnly ? 'visibility' : 'edit'}
+                        </span>
+                      </button>
+
+                      {/* Sil - Sadece yetkili kullanıcılar */}
+                      {canDelete && !isReadOnly && (
                         <button
-                          onClick={() => handleEdit(transaction)}
-                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                          title={isReadOnly ? "Görüntüle" : "Düzenle"}
+                          onClick={() => handleDelete(transaction)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Sil"
                         >
                           <span className="material-symbols-outlined text-lg">
-                            {isReadOnly ? 'visibility' : 'edit'}
+                            delete
                           </span>
                         </button>
-
-                        {/* Durum Değiştir - Sadece yetkili kullanıcılar */}
-                        {canEdit && !isReadOnly && (
-                          <button
-                            onClick={() => {/* Status change handler */}}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Durum Değiştir"
-                          >
-                            <span className="material-symbols-outlined text-lg">
-                              swap_horiz
-                            </span>
-                          </button>
-                        )}
-
-                        {/* Sil - Sadece ADMIN yetkisi olanlar */}
-                        {canDelete && !isReadOnly && (
-                          <button
-                            onClick={() => handleDelete(transaction)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Sil"
-                          >
-                            <span className="material-symbols-outlined text-lg">
-                              delete
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Edit/View Modal */}
