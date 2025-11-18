@@ -128,13 +128,16 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
-                  Antrepo & Varış
+                  Antrepo Varış
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Beyanname No
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Alıcı Firma
+                </th>
+                <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
+                  Gönderici Firma
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Durum
@@ -157,6 +160,9 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
+                      {transaction.senderCompany?.name || transaction.senderName || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

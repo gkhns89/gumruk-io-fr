@@ -98,7 +98,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-text-secondary text-sm mb-1">Antrepo & Varış Tarihi</p>
+                <p className="text-text-secondary text-sm mb-1">Antrepo Varış Tarihi</p>
                 <p className="text-text-main font-semibold">
                   {formatDate(transaction.warehouseArrivalDate)}
                 </p>
@@ -112,7 +112,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-text-secondary text-sm mb-1">Kapı</p>
+                <p className="text-text-secondary text-sm mb-1">Hat</p>
                 <p className="text-text-main font-semibold">
                   {transaction.gate || '-'}
                 </p>
