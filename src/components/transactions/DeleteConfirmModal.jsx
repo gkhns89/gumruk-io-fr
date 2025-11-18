@@ -1,0 +1,129 @@
+import React, { useState } from "react";
+import { transactionService } from "../../api/transactionService";
+
+export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [reason, setReason] = useState("");
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      // İşlemi iptal et (silme yerine)
+      const result = await transactionService.cancelTransaction(transaction.id, reason);
+
+      if (result.success) {
+        onSuccess();
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      console.error("İşlem iptal hatası:", err);
+      setError("İşlem iptal edilirken beklenmeyen bir hata oluştu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div 
+          className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center gap-4 p-6 border-b border-gray-200">
+            <div className="flex items-center justify-center h-12 w-12 bg-red-100 rounded-full">
+              <span className="material-symbols-outlined text-red-600 text-2xl">warning</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-text-main">
+                İşlemi İptal Et
+              </h2>
+              <p className="text-text-secondary text-sm mt-1">
+                Bu işlem geri alınamaz
+              </p>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6">
+            {/* Transaction Info */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-text-secondary text-sm">Dosya No:</span>
+                <span className="text-text-main font-semibold">{transaction.fileNo}</span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-text-secondary text-sm">Müşteri:</span>
+                <span className="text-text-main font-semibold">
+                  {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary text-sm">Beyanname No:</span>
+                <span className="text-text-main font-semibold">
+                  {transaction.declarationNumber || '-'}
+                </span>
+              </div>
+            </div>
+
+            {/* Warning Text */}
+            <p className="text-text-secondary text-sm mb-4">
+              Bu işlemi iptal etmek istediğinizden emin misiniz? İşlem durumu "İptal" olarak değiştirilecek.
+            </p>
+
+            {/* Reason Input */}
+            <label className="flex flex-col w-full mb-4">
+              <p className="text-text-main text-sm font-medium pb-2">İptal Nedeni</p>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows="3"
+                className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-red-500 border border-gray-300 bg-white focus:border-red-500 placeholder:text-neutral p-3 text-base font-normal"
+                placeholder="İptal nedenini belirtin..."
+              />
+            </label>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 bg-gray-50">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors disabled:opacity-50"
+            >
+              Vazgeç
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined">delete</span>
+              {loading ? 'İptal Ediliyor...' : 'İptal Et'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

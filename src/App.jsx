@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
+import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
 import { useAuth } from "./hooks/useAuth";
 
 // Protected Route Component
@@ -19,7 +20,7 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-// Public Route Component (sadece giriş yapmamışlar için)
+// Public Route Component
 function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   
@@ -53,6 +54,17 @@ export default function App() {
           </ProtectedRoute>
         } 
       />
+      
+      {/* ✅ YENİ: İşlem Takip Route */}
+      <Route 
+        path="/transactions" 
+        element={
+          <ProtectedRoute>
+            <TransactionsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

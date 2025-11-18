@@ -3,7 +3,7 @@ import axiosInstance from './axios';
 /**
  * API response'unu güvenli bir şekilde array'e dönüştürür
  * @param {*} data - API'den gelen data
- * @param {string} context - Log için context (örn: "recent transactions")
+ * @param {string} context - Log için context
  * @returns {Array} - Güvenli array
  */
 const safeArrayConversion = (data, context = 'data') => {
@@ -26,7 +26,6 @@ const safeArrayConversion = (data, context = 'data') => {
   if (typeof data === 'object') {
     console.log(`📦 [${context}] Veri bir obje, array field'lar aranıyor...`);
     
-    // Olası array field isimleri
     const possibleFields = [
       'transactions',
       'data',
@@ -38,7 +37,6 @@ const safeArrayConversion = (data, context = 'data') => {
       'rows'
     ];
     
-    // Her field'ı kontrol et
     for (const field of possibleFields) {
       if (Array.isArray(data[field])) {
         console.log(`✅ [${context}] Array bulundu: data.${field} (${data[field].length} item)`);
@@ -46,7 +44,6 @@ const safeArrayConversion = (data, context = 'data') => {
       }
     }
     
-    // Objenin tüm key'lerini kontrol et (fallback)
     const keys = Object.keys(data);
     for (const key of keys) {
       if (Array.isArray(data[key])) {
@@ -55,18 +52,21 @@ const safeArrayConversion = (data, context = 'data') => {
       }
     }
     
-    // Hiçbir array field yoksa, tek objeyi array'e çevir
     console.log(`⚠️ [${context}] Hiçbir array field bulunamadı, obje array'e sarılıyor`);
     return [data];
   }
   
-  // 4. Primitive değer (string, number, boolean)
+  // 4. Primitive değer
   console.log(`⚠️ [${context}] Beklenmeyen veri tipi (${typeof data}), boş array dönüyor`);
   return [];
 };
 
 export const transactionService = {
-  // Son işlemleri getir (10 adet)
+  // ==========================================
+  // READ OPERATIONS
+  // ==========================================
+  
+  // Son işlemleri getir (kullanıcı tipine göre filtrelenir)
   getRecentTransactions: async () => {
     try {
       console.log("📋 Son işlemler getiriliyor...");
@@ -75,7 +75,6 @@ export const transactionService = {
       
       console.log("📦 API Response:", response.data);
       
-      // Güvenli array dönüşümü
       const dataArray = safeArrayConversion(response.data, 'Recent Transactions');
       
       console.log(`✅ ${dataArray.length} işlem hazır`);
@@ -83,35 +82,29 @@ export const transactionService = {
       return { success: true, data: dataArray };
     } catch (error) {
       console.error('❌ Son işlemler getirme hatası:', error);
-      console.error('❌ Hata Detayı:', {
-        message: error.message,
-        code: error.code,
-        status: error.response?.status,
-        data: error.response?.data
-      });
       
-      // Özel hata mesajları
-      if (error.code === 'ECONNABORTED') {
-        return {
-          success: false,
-          error: 'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.',
-        };
-      }
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+      };
+    }
+  },
 
-      if (!error.response) {
-        return {
-          success: false,
-          error: 'Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.',
-        };
-      }
-
-      if (error.response?.status === 404) {
-        return {
-          success: false,
-          error: 'İşlem bulunamadı.',
-        };
-      }
-
+  // Tüm işlemleri getir (yetki bazlı)
+  getAllTransactions: async () => {
+    try {
+      console.log("📋 Tüm işlemler getiriliyor...");
+      
+      const response = await axiosInstance.get('/transactions/recent');
+      
+      const dataArray = safeArrayConversion(response.data, 'All Transactions');
+      
+      console.log(`✅ ${dataArray.length} işlem hazır`);
+      
+      return { success: true, data: dataArray };
+    } catch (error) {
+      console.error('❌ İşlemler getirme hatası:', error);
+      
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
@@ -126,7 +119,6 @@ export const transactionService = {
       
       const response = await axiosInstance.get(`/transactions/broker/${brokerId}`);
       
-      // Güvenli array dönüşümü
       const dataArray = safeArrayConversion(response.data, 'Broker Transactions');
       
       console.log(`✅ ${dataArray.length} broker işlemi hazır`);
@@ -134,6 +126,28 @@ export const transactionService = {
       return { success: true, data: dataArray };
     } catch (error) {
       console.error('❌ Broker işlemleri getirme hatası:', error);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+      };
+    }
+  },
+
+  // Client'in işlemleri
+  getClientTransactions: async (clientId) => {
+    try {
+      console.log(`📋 Client ${clientId} işlemleri getiriliyor...`);
+      
+      const response = await axiosInstance.get(`/transactions/client/${clientId}`);
+      
+      const dataArray = safeArrayConversion(response.data, 'Client Transactions');
+      
+      console.log(`✅ ${dataArray.length} client işlemi hazır`);
+      
+      return { success: true, data: dataArray };
+    } catch (error) {
+      console.error('❌ Client işlemleri getirme hatası:', error);
       
       return {
         success: false,
@@ -165,6 +179,163 @@ export const transactionService = {
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlem bilgisi alınamadı',
+      };
+    }
+  },
+
+  // ==========================================
+  // CREATE OPERATION
+  // ==========================================
+  
+  // Yeni işlem oluştur
+  createTransaction: async (transactionData) => {
+    try {
+      console.log("📝 Yeni işlem oluşturuluyor...", transactionData);
+      
+      const response = await axiosInstance.post('/transactions', transactionData);
+      
+      console.log("✅ İşlem oluşturuldu:", response.data);
+      
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'İşlem başarıyla oluşturuldu'
+      };
+    } catch (error) {
+      console.error('❌ İşlem oluşturma hatası:', error);
+      
+      if (error.response?.status === 403) {
+        return {
+          success: false,
+          error: 'Bu broker için işlem oluşturma yetkiniz yok.',
+        };
+      }
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem oluşturulamadı',
+      };
+    }
+  },
+
+  // ==========================================
+  // UPDATE OPERATION
+  // ==========================================
+  
+  // İşlem güncelle
+  updateTransaction: async (id, transactionData) => {
+    try {
+      console.log(`📝 İşlem ${id} güncelleniyor...`, transactionData);
+      
+      const response = await axiosInstance.put(`/transactions/${id}`, transactionData);
+      
+      console.log("✅ İşlem güncellendi:", response.data);
+      
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'İşlem başarıyla güncellendi'
+      };
+    } catch (error) {
+      console.error('❌ İşlem güncelleme hatası:', error);
+      
+      if (error.response?.status === 403) {
+        return {
+          success: false,
+          error: 'Bu işlemi güncelleme yetkiniz yok.',
+        };
+      }
+      
+      if (error.response?.status === 404) {
+        return {
+          success: false,
+          error: 'İşlem bulunamadı.',
+        };
+      }
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem güncellenemedi',
+      };
+    }
+  },
+
+  // ==========================================
+  // STATUS OPERATIONS
+  // ==========================================
+  
+  // İşlem durumunu değiştir
+  updateTransactionStatus: async (id, status) => {
+    try {
+      console.log(`📝 İşlem ${id} durumu değiştiriliyor: ${status}`);
+      
+      const response = await axiosInstance.patch(`/transactions/${id}/status`, null, {
+        params: { status }
+      });
+      
+      console.log("✅ İşlem durumu değiştirildi:", response.data);
+      
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'İşlem durumu başarıyla değiştirildi'
+      };
+    } catch (error) {
+      console.error('❌ İşlem durumu değiştirme hatası:', error);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem durumu değiştirilemedi',
+      };
+    }
+  },
+
+  // İşlemi tamamla
+  completeTransaction: async (id) => {
+    try {
+      console.log(`✅ İşlem ${id} tamamlanıyor...`);
+      
+      const response = await axiosInstance.post(`/transactions/${id}/complete`);
+      
+      console.log("✅ İşlem tamamlandı:", response.data);
+      
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'İşlem başarıyla tamamlandı'
+      };
+    } catch (error) {
+      console.error('❌ İşlem tamamlama hatası:', error);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem tamamlanamadı',
+      };
+    }
+  },
+
+  // İşlemi iptal et
+  cancelTransaction: async (id, reason) => {
+    try {
+      console.log(`❌ İşlem ${id} iptal ediliyor...`);
+      
+      const response = await axiosInstance.post(`/transactions/${id}/cancel`, null, {
+        params: { reason }
+      });
+      
+      console.log("✅ İşlem iptal edildi:", response.data);
+      
+      return { 
+        success: true, 
+        data: response.data,
+        message: response.data.message || 'İşlem başarıyla iptal edildi'
+      };
+    } catch (error) {
+      console.error('❌ İşlem iptal hatası:', error);
+      
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem iptal edilemedi',
       };
     }
   },
