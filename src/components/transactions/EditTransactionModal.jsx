@@ -41,7 +41,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     try {
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
-        Object.entries(formData).filter(([_, v]) => v !== "")
+        Object.entries(formData).filter(([, v]) => v !== "")
       );
 
       // Sayısal değerleri dönüştür

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 
-export default function AddTransactionModal({ onClose, onSuccess, brokerCompanies, clientCompanies, currentUser }) {
+export default function AddTransactionModal({ onClose, onSuccess, brokerCompanies, currentUser }) {
   const [formData, setFormData] = useState({
     brokerCompanyId: currentUser?.company?.id || "",
     clientCompanyId: "",
@@ -61,7 +61,7 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
     try {
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
-        Object.entries(formData).filter(([_, v]) => v !== "")
+        Object.entries(formData).filter(([, v]) => v !== "")
       );
 
       // Sayısal değerleri dönüştür
