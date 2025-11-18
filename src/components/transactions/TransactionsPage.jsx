@@ -18,7 +18,6 @@ export default function TransactionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   
   // Firma listeleri
-  const [brokerCompanies, setBrokerCompanies] = useState([]);
   const [clientCompanies, setClientCompanies] = useState([]);
   
   // Pagination
@@ -67,10 +66,7 @@ export default function TransactionsPage() {
       if (user?.globalRole !== 'CLIENT_USER') {
         const companiesResult = await companyService.getMyCompanies();
         if (companiesResult.success) {
-          const brokers = companiesResult.data.filter(c => c.companyType === 'CUSTOMS_BROKER');
           const clients = companiesResult.data.filter(c => c.companyType === 'CLIENT');
-          
-          setBrokerCompanies(brokers);
           setClientCompanies(clients);
         }
       }
@@ -414,7 +410,6 @@ export default function TransactionsPage() {
         <AddTransactionModal
           onClose={() => setShowAddModal(false)}
           onSuccess={handleAddSuccess}
-          brokerCompanies={brokerCompanies}
           currentUser={user}
         />
       )}

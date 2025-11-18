@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 
-export default function AddTransactionModal({ onClose, onSuccess, brokerCompanies, currentUser }) {
+export default function AddTransactionModal({ onClose, onSuccess, currentUser }) {
   const [formData, setFormData] = useState({
     brokerCompanyId: currentUser?.company?.id || "",
     clientCompanyId: "",
@@ -24,6 +24,9 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
   });
 
   const [availableClients, setAvailableClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [selectedClientInfo, setSelectedClientInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -37,20 +40,48 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
   });
   const [savingNewClient, setSavingNewClient] = useState(false);
 
-  // Broker değiştiğinde client listesini güncelle
+  // Modal açılır açılmaz broker'ın client'larını yükle
   useEffect(() => {
-    console.log("🔄 Broker değişti:", formData.brokerCompanyId);
-    if (formData.brokerCompanyId) {
-      loadClientCompanies(formData.brokerCompanyId);
-    } else {
-      setAvailableClients([]);
-      setSelectedClientInfo(null);
+    if (currentUser?.company?.id) {
+      loadClientCompanies(currentUser.company.id);
     }
-    // Client seçimini sıfırla
-    setFormData(prev => ({ ...prev, clientCompanyId: "", description: "" }));
-  }, [formData.brokerCompanyId]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Client değiştiğinde açıklama alanını doldur
+  // Client arama filtresi
+  useEffect(() => {
+    if (clientSearchTerm.trim() === "") {
+      // Arama boşsa ilk 100 kaydı göster (performance)
+      setFilteredClients(availableClients.slice(0, 100));
+    } else {
+      // Arama varsa tüm kayıtlarda filtrele
+      const searchLower = clientSearchTerm.toLowerCase();
+      const filtered = availableClients.filter(client =>
+        client.name.toLowerCase().includes(searchLower) ||
+        (client.description && client.description.toLowerCase().includes(searchLower))
+      );
+      setFilteredClients(filtered.slice(0, 100)); // Max 100 sonuç göster
+    }
+  }, [clientSearchTerm, availableClients]);
+
+  // Dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById('client-dropdown-container');
+      if (dropdown && !dropdown.contains(event.target)) {
+        setShowClientDropdown(false);
+      }
+    };
+
+    if (showClientDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showClientDropdown]);
+
+  // Client değiştiğinde Alıcı alanını doldur
   useEffect(() => {
     console.log("🔄 Client değişti:", formData.clientCompanyId);
     if (formData.clientCompanyId) {
@@ -62,15 +93,17 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
       
       if (selectedClient) {
         setSelectedClientInfo(selectedClient);
-        // Açıklama alanını otomatik doldur
+        setClientSearchTerm(selectedClient.name);
+        // Firma açıklamasını Alıcı alanına otomatik doldur
         setFormData(prev => ({
           ...prev,
-          description: selectedClient.description || ""
+          recipientName: selectedClient.description || selectedClient.name || ""
         }));
       }
     } else {
       setSelectedClientInfo(null);
-      setFormData(prev => ({ ...prev, description: "" }));
+      setClientSearchTerm("");
+      setFormData(prev => ({ ...prev, recipientName: "" }));
     }
   }, [formData.clientCompanyId, availableClients]);
 
@@ -85,14 +118,17 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
       
       if (result.success) {
         setAvailableClients(result.data);
+        setFilteredClients(result.data.slice(0, 100)); // İlk 100 kaydı göster
         console.log(`✅ ${result.data.length} client yüklendi`);
       } else {
         console.error("❌ Client yükleme hatası:", result.error);
         setAvailableClients([]);
+        setFilteredClients([]);
       }
     } catch (err) {
       console.error("💥 Client listesi yükleme hatası:", err);
       setAvailableClients([]);
+      setFilteredClients([]);
     } finally {
       setLoadingClients(false);
     }
@@ -176,6 +212,8 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
     });
     setError("");
     setSelectedClientInfo(null);
+    setClientSearchTerm("");
+    setShowClientDropdown(false);
   };
 
   // Yeni client ekleme
@@ -186,26 +224,29 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
     try {
       console.log("📤 Yeni client oluşturuluyor:", {
         ...newClientForm,
-        parentBrokerId: formData.brokerCompanyId
+        parentBrokerId: formData.brokerCompanyId || currentUser?.company?.id
       });
 
       const result = await companyService.createClientCompany({
         name: newClientForm.name,
         description: newClientForm.description,
-        parentBrokerId: parseInt(formData.brokerCompanyId)
+        parentBrokerId: parseInt(formData.brokerCompanyId || currentUser?.company?.id)
       });
 
       if (result.success) {
         console.log("✅ Yeni client oluşturuldu:", result.data);
         
         // Client listesini yenile
-        await loadClientCompanies(formData.brokerCompanyId);
+        await loadClientCompanies(formData.brokerCompanyId || currentUser?.company?.id);
         
         // Yeni client'ı otomatik seç
         setFormData(prev => ({
           ...prev,
           clientCompanyId: result.data.companyId
         }));
+        
+        // Arama inputunu güncelle
+        setClientSearchTerm(newClientForm.name);
         
         // Modal'ı kapat ve formu temizle
         setShowNewClientModal(false);
@@ -264,64 +305,161 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Broker Firması */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Broker Firması *</p>
-                <select
-                  name="brokerCompanyId"
-                  value={formData.brokerCompanyId}
-                  onChange={handleChange}
-                  required
-                  disabled={currentUser?.globalRole === 'BROKER_ADMIN' || currentUser?.globalRole === 'BROKER_USER'}
-                  className="form-select w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                >
-                  <option value="">Broker Seçin</option>
-                  {brokerCompanies.map(broker => (
-                    <option key={broker.id} value={broker.id}>
-                      {broker.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* Broker Firması - Hidden (zaten giriş yapan kullanıcının firması) */}
+              <input type="hidden" name="brokerCompanyId" value={formData.brokerCompanyId} />
 
-              {/* Müşteri Firması */}
-              <label className="flex flex-col w-full lg:col-span-2">
+              {/* Müşteri Firması - Aranabilir Dropdown */}
+              <div className="flex flex-col w-full lg:col-span-3">
                 <div className="flex items-center justify-between pb-2">
-                  <p className="text-text-main text-sm font-medium">Müşteri Firması *</p>
-                  {formData.brokerCompanyId && (
+                  <p className="text-text-main text-sm font-medium">
+                    Müşteri Firması * 
+                    {loadingClients && (
+                      <span className="text-xs text-blue-600 ml-2 animate-pulse">Yükleniyor...</span>
+                    )}
+                    {!loadingClients && availableClients.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({availableClients.length} firma kayıtlı)
+                      </span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewClientModal(true)}
+                    className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    Yeni Firma Ekle
+                  </button>
+                </div>
+
+                {/* Aranabilir Input */}
+                <div className="relative" id="client-dropdown-container">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={clientSearchTerm}
+                      onChange={(e) => {
+                        setClientSearchTerm(e.target.value);
+                        setShowClientDropdown(true);
+                      }}
+                      onFocus={() => setShowClientDropdown(true)}
+                      placeholder="Firma adı yazarak arayın..."
+                      disabled={loadingClients}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal disabled:bg-gray-100"
+                    />
+                    
+                    {/* Clear Button */}
+                    {clientSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClientSearchTerm("");
+                          setFormData(prev => ({ ...prev, clientCompanyId: "" }));
+                          setShowClientDropdown(true);
+                        }}
+                        className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+
+                    {/* Dropdown Icon */}
                     <button
                       type="button"
-                      onClick={() => setShowNewClientModal(true)}
-                      className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                      onClick={() => setShowClientDropdown(!showClientDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     >
-                      <span className="material-symbols-outlined text-sm">add</span>
-                      Yeni Firma Ekle
+                      <span className="material-symbols-outlined text-lg">
+                        {showClientDropdown ? 'expand_less' : 'expand_more'}
+                      </span>
                     </button>
+                  </div>
+
+                  {/* Dropdown List */}
+                  {showClientDropdown && !loadingClients && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredClients.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          {availableClients.length === 0 ? (
+                            <>
+                              <span className="material-symbols-outlined text-4xl mb-2 text-orange-500">warning</span>
+                              <p className="text-sm">Kayıtlı firma bulunamadı.</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowClientDropdown(false);
+                                  setShowNewClientModal(true);
+                                }}
+                                className="mt-2 text-xs text-primary hover:underline"
+                              >
+                                Hemen yeni firma ekle →
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-4xl mb-2">search_off</span>
+                              <p className="text-sm">"{clientSearchTerm}" için sonuç bulunamadı</p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          {filteredClients.map((client) => (
+                            <button
+                              key={client.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, clientCompanyId: client.id }));
+                                setClientSearchTerm(client.name);
+                                setShowClientDropdown(false);
+                              }}
+                              className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                formData.clientCompanyId === client.id ? 'bg-blue-50 text-primary font-medium' : ''
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">{client.name}</p>
+                                  {client.description && (
+                                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                                      {client.description}
+                                    </p>
+                                  )}
+                                </div>
+                                {formData.clientCompanyId === client.id && (
+                                  <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                    check_circle
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                          
+                          {/* Daha fazla kayıt varsa bilgi */}
+                          {filteredClients.length === 100 && availableClients.length > 100 && (
+                            <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                              <p className="text-xs text-yellow-800">
+                                İlk 100 sonuç gösteriliyor. Daha spesifik arama yapın.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
-                <select
-                  name="clientCompanyId"
-                  value={formData.clientCompanyId}
-                  onChange={handleChange}
-                  required
-                  disabled={!formData.brokerCompanyId || loadingClients}
-                  className="form-select w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                >
-                  <option value="">
-                    {loadingClients ? "Yükleniyor..." : "Müşteri Seçin"}
-                  </option>
-                  {availableClients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-                {formData.brokerCompanyId && !loadingClients && availableClients.length === 0 && (
-                  <p className="text-xs text-orange-600 mt-1">
-                    ⚠️ Bu broker'a ait müşteri firması bulunamadı. "Yeni Firma Ekle" butonunu kullanın.
-                  </p>
+
+                {/* Validation Error */}
+                {!formData.clientCompanyId && (
+                  <input
+                    type="text"
+                    required
+                    value={formData.clientCompanyId}
+                    onChange={() => {}}
+                    className="hidden"
+                  />
                 )}
-              </label>
+              </div>
 
               {/* Seçilen Client Bilgisi */}
               {selectedClientInfo && (
@@ -334,7 +472,12 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
                       </p>
                       {selectedClientInfo.description && (
                         <p className="text-xs text-blue-700 mt-1">
-                          {selectedClientInfo.description}
+                          📋 Firma açıklaması "Alıcı" alanına otomatik dolduruldu: {selectedClientInfo.description}
+                        </p>
+                      )}
+                      {!selectedClientInfo.description && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          ⚠️ Bu firmaya ait açıklama bulunamadı
                         </p>
                       )}
                     </div>
@@ -358,13 +501,19 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
 
               {/* Alıcı */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Alıcı</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  Alıcı
+                  {selectedClientInfo && (
+                    <span className="text-xs text-blue-600 ml-2">(Firma açıklamasından otomatik dolduruldu)</span>
+                  )}
+                </p>
                 <input
                   type="text"
                   name="recipientName"
                   value={formData.recipientName}
                   onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
+                  disabled={!!formData.clientCompanyId}
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Alıcı adını girin"
                 />
               </label>
@@ -514,9 +663,6 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
                   Açıklama
-                  {selectedClientInfo && selectedClientInfo.description && (
-                    <span className="text-xs text-blue-600 ml-2">(Firma açıklamasından otomatik dolduruldu)</span>
-                  )}
                 </p>
                 <textarea
                   name="description"
@@ -588,7 +734,7 @@ export default function AddTransactionModal({ onClose, onSuccess, brokerCompanie
                 <div>
                   <h3 className="text-xl font-bold text-text-main">Yeni Müşteri Firması Ekle</h3>
                   <p className="text-text-secondary text-sm mt-1">
-                    {brokerCompanies.find(b => b.id === parseInt(formData.brokerCompanyId))?.name}
+                    {currentUser?.company?.name || 'Broker Firması'}
                   </p>
                 </div>
                 <button
