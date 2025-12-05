@@ -17,7 +17,7 @@ export default function TransactionsPage() {
   const [error, setError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   
-  // Firma listeleri (pagination için de kullanılıyor)
+  // Firma listeleri
   const [clientCompanies, setClientCompanies] = useState([]);
   
   // Pagination
@@ -44,16 +44,14 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     applyFilters();
-    setCurrentPage(1); // Filtre değiştiğinde ilk sayfaya dön
+    setCurrentPage(1);
   }, [filters, transactions]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Veri yükleme
   const loadData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // İşlemleri getir
       const result = await transactionService.getAllTransactions();
       
       if (result.success) {
@@ -62,7 +60,6 @@ export default function TransactionsPage() {
         setError(result.error);
       }
 
-      // Firma listelerini getir (sadece broker ve admin için)
       if (user?.globalRole !== 'CLIENT_USER') {
         const companiesResult = await companyService.getMyCompanies();
         if (companiesResult.success) {
@@ -78,21 +75,17 @@ export default function TransactionsPage() {
     }
   };
 
-  // Filtreleme
   const applyFilters = () => {
     let result = [...transactions];
 
-    // Durum filtresi
     if (filters.status) {
       result = result.filter(t => t.status === filters.status);
     }
 
-    // Müşteri filtresi
     if (filters.clientId) {
       result = result.filter(t => t.clientCompany?.id === parseInt(filters.clientId));
     }
 
-    // Arama filtresi
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       result = result.filter(t => 
@@ -103,7 +96,6 @@ export default function TransactionsPage() {
       );
     }
 
-    // Tarih filtresi
     if (filters.dateFrom) {
       result = result.filter(t => {
         if (!t.warehouseArrivalDate) return false;
@@ -121,25 +113,20 @@ export default function TransactionsPage() {
     setFilteredTransactions(result);
   };
 
-  // Pagination hesaplamaları
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
-  // Sayfa değiştirme
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Sayfayı başa scroll et
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Filtre değiştirme
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  // Filtreleri temizle
   const clearFilters = () => {
     setFilters({
       status: "",
@@ -150,13 +137,11 @@ export default function TransactionsPage() {
     });
   };
 
-  // Modal işlemleri
   const handleAddSuccess = () => {
     setShowAddModal(false);
     loadData();
   };
 
-  // Pagination butonları oluştur
   const renderPaginationButtons = () => {
     const buttons = [];
     const maxButtons = 5;
@@ -167,7 +152,6 @@ export default function TransactionsPage() {
       startPage = Math.max(1, endPage - maxButtons + 1);
     }
 
-    // İlk sayfa butonu
     if (startPage > 1) {
       buttons.push(
         <button
@@ -185,7 +169,6 @@ export default function TransactionsPage() {
       }
     }
 
-    // Sayfa numaraları
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <button
@@ -202,7 +185,6 @@ export default function TransactionsPage() {
       );
     }
 
-    // Son sayfa butonu
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         buttons.push(
@@ -224,19 +206,19 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full">
-      {/* Sidebar */}
+    <div className="flex min-h-screen w-full overflow-hidden">
+      {/* Sidebar - Sabit genişlik */}
       <Sidebar user={user} />
       
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      {/* Main Content - Overflow kontrolü */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <Header user={user} />
         
         {/* Page Content */}
-        <div className="flex-1 flex flex-col bg-background">
-          {/* Page Header with Filters */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-white">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-background">
+          {/* Page Header with Filters - Sabit */}
+          <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-text-main">İşlem Takip</h1>
@@ -247,11 +229,10 @@ export default function TransactionsPage() {
                 </p>
               </div>
 
-              {/* Yeni İşlem Butonu - Sadece yetkili kullanıcılar için */}
               {canCreate && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold flex-shrink-0"
                 >
                   <span className="material-symbols-outlined">add</span>
                   Yeni İşlem Ekle
@@ -261,7 +242,6 @@ export default function TransactionsPage() {
 
             {/* Filtreler */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Arama */}
               <div className="lg:col-span-2">
                 <input
                   type="text"
@@ -272,7 +252,6 @@ export default function TransactionsPage() {
                 />
               </div>
 
-              {/* Durum */}
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -285,7 +264,6 @@ export default function TransactionsPage() {
                 <option value="CANCELLED">İptal</option>
               </select>
 
-              {/* Müşteri Filtresi - Sadece broker kullanıcıları için */}
               {!isClientUser && (
                 <select
                   value={filters.clientId}
@@ -301,7 +279,6 @@ export default function TransactionsPage() {
                 </select>
               )}
 
-              {/* Temizle Butonu */}
               <button
                 onClick={clearFilters}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-text-secondary font-medium"
@@ -350,31 +327,33 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="flex-1 overflow-auto p-6">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-              <TransactionsFullTable
-                transactions={currentItems}
-                loading={loading}
-                error={error}
-                onRetry={loadData}
-                onRefresh={loadData}
-                canDelete={canDelete}
-                isReadOnly={isClientUser}
-              />
+          {/* Table Container - Sadece bu alan scroll olacak */}
+          <div className="flex-1 overflow-hidden p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
+              {/* Tablo - Yatay scroll sadece burada */}
+              <div className="flex-1 overflow-auto">
+                <TransactionsFullTable
+                  transactions={currentItems}
+                  loading={loading}
+                  error={error}
+                  onRetry={loadData}
+                  onRefresh={loadData}
+                  canDelete={canDelete}
+                  isReadOnly={isClientUser}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Pagination */}
+          {/* Pagination - Sabit */}
           {!loading && filteredTransactions.length > 0 && totalPages > 1 && (
-            <div className="px-6 py-4 bg-white border-t border-gray-200">
+            <div className="px-6 py-4 bg-white border-t border-gray-200 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-text-secondary">
                   Gösterilen: {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredTransactions.length)} / {filteredTransactions.length}
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {/* Önceki Sayfa */}
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
@@ -384,12 +363,10 @@ export default function TransactionsPage() {
                     Önceki
                   </button>
 
-                  {/* Sayfa Numaraları */}
                   <div className="flex items-center gap-2">
                     {renderPaginationButtons()}
                   </div>
 
-                  {/* Sonraki Sayfa */}
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}

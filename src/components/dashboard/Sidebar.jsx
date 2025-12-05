@@ -1,39 +1,20 @@
 import React from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const location = useLocation(); // Mevcut URL'i al
 
   const menuItems = [
-    { icon: "home", label: "Ana Sayfa", active: true, path: "/dashboard" },
-    {
-      icon: "search",
-      label: "İşlem Takip",
-      active: false,
-      path: "/transactions",
-    },
-    {
-      icon: "warehouse",
-      label: "Antrepo Takip",
-      active: false,
-      path: "/warehouse",
-    },
-    {
-      icon: "local_shipping",
-      label: "Yük Takip",
-      active: false,
-      path: "/shipping",
-    },
-    { icon: "feed", label: "Haberler", active: false, path: "/news" },
-    {
-      icon: "campaign",
-      label: "Duyurular",
-      active: false,
-      path: "/announcements",
-    },
-    { icon: "person", label: "Hesabım", active: false, path: "/profile" },
-    { icon: "settings", label: "Ayarlar", active: false, path: "/settings" },
+    { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
+    { icon: "search", label: "İşlem Takip", path: "/transactions" },
+    { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
+    { icon: "local_shipping", label: "Yük Takip", path: "/shipping" },
+    { icon: "feed", label: "Haberler", path: "/news" },
+    { icon: "campaign", label: "Duyurular", path: "/announcements" },
+    { icon: "person", label: "Hesabım", path: "/profile" },
+    { icon: "settings", label: "Ayarlar", path: "/settings" },
   ];
 
   const bottomMenuItems = [
@@ -41,8 +22,13 @@ export default function Sidebar() {
     { icon: "help", label: "Yardım", path: "/help" },
   ];
 
+  // Aktif menü kontrolü
+  const isActive = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
   return (
-    <aside className="flex-col bg-white p-4 hidden lg:flex w-64 shadow-md">
+    <aside className="flex-col bg-white p-4 hidden lg:flex w-64 shadow-md flex-shrink-0">
       {/* User Profile */}
       <div className="flex items-center gap-3 mb-8">
         <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg">
@@ -60,48 +46,64 @@ export default function Sidebar() {
 
       {/* Main Navigation */}
       <nav className="flex flex-col gap-2 flex-grow">
-        {menuItems.map((item, index) => (
-          <Link // ✅ <a> yerine <Link> kullan
-            key={index}
-            to={item.path} // ✅ href yerine to kullan
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
-              item.active ? "bg-primary/20" : "hover:bg-gray-100"
-            }`}
-          >
-            <span
-              className={`material-symbols-outlined ${
-                item.active ? "text-primary" : "text-text-main"
+        {menuItems.map((item, index) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={index}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                active ? "bg-primary/20" : "hover:bg-gray-100"
               }`}
             >
-              {item.icon}
-            </span>
-            <p
-              className={`text-sm font-medium leading-normal ${
-                item.active ? "text-primary" : "text-text-main"
-              }`}
-            >
-              {item.label}
-            </p>
-          </Link>
-        ))}
+              <span
+                className={`material-symbols-outlined ${
+                  active ? "text-primary" : "text-text-main"
+                }`}
+              >
+                {item.icon}
+              </span>
+              <p
+                className={`text-sm font-medium leading-normal ${
+                  active ? "text-primary" : "text-text-main"
+                }`}
+              >
+                {item.label}
+              </p>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Bottom Navigation */}
       <div className="mt-auto flex flex-col gap-2">
-        {bottomMenuItems.map((item, index) => (
-          <a
-            key={index}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
-            href={item.path}
-          >
-            <span className="material-symbols-outlined text-text-main">
-              {item.icon}
-            </span>
-            <p className="text-text-main text-sm font-medium leading-normal">
-              {item.label}
-            </p>
-          </a>
-        ))}
+        {bottomMenuItems.map((item, index) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={index}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                active ? "bg-primary/20" : "hover:bg-gray-100"
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined ${
+                  active ? "text-primary" : "text-text-main"
+                }`}
+              >
+                {item.icon}
+              </span>
+              <p
+                className={`text-sm font-medium leading-normal ${
+                  active ? "text-primary" : "text-text-main"
+                }`}
+              >
+                {item.label}
+              </p>
+            </Link>
+          );
+        })}
 
         <button
           onClick={logout}
