@@ -28,7 +28,6 @@ export const authService = {
     } catch (error) {
       console.error('❌ Login hatası:', error);
       
-      // Özel hata mesajları
       if (error.response?.status === 403) {
         return {
           success: false,
@@ -71,11 +70,26 @@ export const authService = {
     window.location.href = '/login';
   },
 
-  // Token kontrolü
+  // ✅ GÜNCELLENDİ: Token kontrolü - artık süre de kontrol ediliyor
   isAuthenticated: () => {
     const hasToken = !!tokenManager.getToken();
-    console.log("🔍 Token kontrolü:", hasToken);
-    return hasToken;
+    
+    if (!hasToken) {
+      console.log("🔍 Token kontrolü: Token yok");
+      return false;
+    }
+
+    // Token süresini kontrol et
+    const isValid = tokenManager.isTokenValid();
+    
+    if (!isValid) {
+      console.log("⏰ Token süresi dolmuş, temizleniyor...");
+      tokenManager.clear();
+      return false;
+    }
+
+    console.log("✅ Token geçerli");
+    return true;
   },
 
   // Mevcut kullanıcı bilgisi
@@ -83,5 +97,18 @@ export const authService = {
     const user = tokenManager.getUser();
     console.log("👤 Mevcut kullanıcı:", user);
     return user;
+  },
+
+  // ✅ YENİ: Token bilgilerini getir
+  getTokenInfo: () => {
+    const decoded = tokenManager.decodeToken();
+    const remainingTime = tokenManager.getTokenRemainingTime();
+    
+    return {
+      decoded,
+      remainingTime,
+      remainingMinutes: Math.floor(remainingTime / 60000),
+      isValid: tokenManager.isTokenValid(),
+    };
   },
 };

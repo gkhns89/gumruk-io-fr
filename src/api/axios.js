@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Environment variable'dan API URL'ini al
-// Vite projelerde VITE_ prefix'i zorunludur
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
-// Development ortamında console log göster
 if (import.meta.env.DEV) {
   console.log('🌐 API Base URL:', API_BASE_URL);
   console.log('🔧 Environment:', import.meta.env.MODE);
@@ -12,7 +9,7 @@ if (import.meta.env.DEV) {
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 saniye timeout
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,21 +48,23 @@ axiosInstance.interceptors.response.use(
       data: error.response?.data
     });
 
-    // 401 - Unauthorized
-    if (error.response?.status === 401) {
-      console.warn('⚠️ Token geçersiz, kullanıcı çıkarılıyor');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    // ✅ GÜNCELLENDİ: 401 VE 403 - Token geçersiz/süresi dolmuş
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Login sayfasındaki 403 hatasını atla (hesap onayı bekliyor olabilir)
+      const isLoginRequest = originalRequest?.url?.includes('/auth/login');
       
-      // Login sayfasında değilsek yönlendir
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (!isLoginRequest) {
+        console.warn('⚠️ Token geçersiz veya süresi dolmuş, kullanıcı çıkarılıyor');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Login sayfasında değilsek yönlendir
+        if (!window.location.pathname.includes('/login')) {
+          // Kullanıcıya bilgi ver
+          alert('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          window.location.href = '/login';
+        }
       }
-    }
-
-    // 403 - Forbidden
-    if (error.response?.status === 403) {
-      console.warn('⚠️ Yetkisiz erişim');
     }
 
     // 404 - Not Found
