@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const location = useLocation(); // Mevcut URL'i al
+  const location = useLocation();
 
   const menuItems = [
     { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
@@ -22,52 +22,45 @@ export default function Sidebar() {
     { icon: "help", label: "Yardım", path: "/help" },
   ];
 
-  // Aktif menü kontrolü
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   return (
-    <aside className="flex-col bg-white p-4 hidden lg:flex w-64 shadow-md flex-shrink-0">
+    <aside className="hidden lg:flex flex-col bg-white p-4 w-64 shadow-md flex-shrink-0 border-r border-gray-100">
       {/* User Profile */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg">
+        <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-md">
           {user?.username?.charAt(0).toUpperCase() || "U"}
         </div>
-        <div className="flex flex-col">
-          <h1 className="text-text-main text-base font-medium leading-normal">
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-text-main text-base font-medium leading-normal truncate">
             {user?.username || "Kullanıcı"}
           </h1>
-          <p className="text-text-secondary text-sm font-normal leading-normal">
+          <p className="text-text-secondary text-sm font-normal leading-normal truncate">
             {user?.globalRole || "Role"}
           </p>
         </div>
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex flex-col gap-2 flex-grow">
+      <nav className="flex flex-col gap-1 flex-grow">
         {menuItems.map((item, index) => {
           const active = isActive(item.path);
           return (
             <Link
               key={index}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                active ? "bg-primary/20" : "hover:bg-gray-100"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                active 
+                  ? "bg-primary text-white shadow-md" 
+                  : "hover:bg-gray-100 text-text-main"
               }`}
             >
-              <span
-                className={`material-symbols-outlined ${
-                  active ? "text-primary" : "text-text-main"
-                }`}
-              >
+              <span className="material-symbols-outlined">
                 {item.icon}
               </span>
-              <p
-                className={`text-sm font-medium leading-normal ${
-                  active ? "text-primary" : "text-text-main"
-                }`}
-              >
+              <p className="text-sm font-medium leading-normal">
                 {item.label}
               </p>
             </Link>
@@ -75,30 +68,27 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Divider */}
+      <div className="my-4 border-t border-gray-200" />
+
       {/* Bottom Navigation */}
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         {bottomMenuItems.map((item, index) => {
           const active = isActive(item.path);
           return (
             <Link
               key={index}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                active ? "bg-primary/20" : "hover:bg-gray-100"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                active 
+                  ? "bg-primary text-white shadow-md" 
+                  : "hover:bg-gray-100 text-text-main"
               }`}
             >
-              <span
-                className={`material-symbols-outlined ${
-                  active ? "text-primary" : "text-text-main"
-                }`}
-              >
+              <span className="material-symbols-outlined">
                 {item.icon}
               </span>
-              <p
-                className={`text-sm font-medium leading-normal ${
-                  active ? "text-primary" : "text-text-main"
-                }`}
-              >
+              <p className="text-sm font-medium leading-normal">
                 {item.label}
               </p>
             </Link>
@@ -107,14 +97,10 @@ export default function Sidebar() {
 
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 w-full text-left"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-text-main hover:text-red-600 w-full text-left transition-colors mt-2"
         >
-          <span className="material-symbols-outlined text-text-main">
-            logout
-          </span>
-          <p className="text-text-main text-sm font-medium leading-normal">
-            Çıkış
-          </p>
+          <span className="material-symbols-outlined">logout</span>
+          <p className="text-sm font-medium leading-normal">Çıkış</p>
         </button>
       </div>
     </aside>
