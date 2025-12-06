@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
-
-// Hat renk seçenekleri
-const GATE_OPTIONS = [
-  { value: "Sarı", label: "🟡 Sarı Hat", color: "yellow" },
-  { value: "Kırmızı", label: "🔴 Kırmızı Hat", color: "red" },
-  { value: "Yeşil", label: "🟢 Yeşil Hat", color: "green" },
-  { value: "Mavi", label: "🔵 Mavi Hat", color: "blue" },
-];
+import { GATE_OPTIONS } from "../../utils/constants";
+import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
+import { t, getCurrentLocale } from "../../locales";
 
 export default function AddTransactionModal({
   onClose,
@@ -17,6 +12,7 @@ export default function AddTransactionModal({
 }) {
   // Yetki kontrolü
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
+  const locale = getCurrentLocale();
 
   const [formData, setFormData] = useState({
     brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
@@ -50,6 +46,13 @@ export default function AddTransactionModal({
   const [brokerSearchTerm, setBrokerSearchTerm] = useState("");
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
 
+  // Gönderici listesi state'leri
+  const [availableSenders, setAvailableSenders] = useState([]);
+  const [filteredSenders, setFilteredSenders] = useState([]);
+  const [senderSearchTerm, setSenderSearchTerm] = useState("");
+  const [showSenderDropdown, setShowSenderDropdown] = useState(false);
+  const [loadingSenders, setLoadingSenders] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [loadingClients, setLoadingClients] = useState(false);
   const [loadingBrokers, setLoadingBrokers] = useState(false);
@@ -69,16 +72,15 @@ export default function AddTransactionModal({
     if (isSuperAdmin) {
       loadBrokerCompanies();
     } else if (currentUser?.company?.id) {
-      // Broker kullanıcısı ise direkt client'ları yükle
       loadClientCompanies(currentUser.company.id);
     }
+    loadSenders();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Broker değiştiğinde client'ları yükle (SUPER_ADMIN için)
   useEffect(() => {
     if (isSuperAdmin && formData.brokerCompanyId) {
       loadClientCompanies(formData.brokerCompanyId);
-      // Client seçimini sıfırla
       setFormData((prev) => ({
         ...prev,
         clientCompanyId: "",
@@ -108,10 +110,8 @@ export default function AddTransactionModal({
   // Client arama filtresi
   useEffect(() => {
     if (clientSearchTerm.trim() === "") {
-      // Arama boşsa ilk 100 kaydı göster (performance)
       setFilteredClients(availableClients.slice(0, 100));
     } else {
-      // Arama varsa tüm kayıtlarda filtrele
       const searchLower = clientSearchTerm.toLowerCase();
       const filtered = availableClients.filter(
         (client) =>
@@ -119,9 +119,22 @@ export default function AddTransactionModal({
           (client.shortName &&
             client.shortName.toLowerCase().includes(searchLower))
       );
-      setFilteredClients(filtered.slice(0, 100)); // Max 100 sonuç göster
+      setFilteredClients(filtered.slice(0, 100));
     }
   }, [clientSearchTerm, availableClients]);
+
+  // Gönderici arama filtresi
+  useEffect(() => {
+    if (senderSearchTerm.trim() === "") {
+      setFilteredSenders(availableSenders.slice(0, 50));
+    } else {
+      const searchLower = senderSearchTerm.toLowerCase();
+      const filtered = availableSenders.filter((sender) =>
+        sender.toLowerCase().includes(searchLower)
+      );
+      setFilteredSenders(filtered.slice(0, 50));
+    }
+  }, [senderSearchTerm, availableSenders]);
 
   // Broker dropdown dışına tıklandığında kapat
   useEffect(() => {
@@ -159,6 +172,24 @@ export default function AddTransactionModal({
     };
   }, [showClientDropdown]);
 
+  // Gönderici dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById("sender-dropdown-container");
+      if (dropdown && !dropdown.contains(event.target)) {
+        setShowSenderDropdown(false);
+      }
+    };
+
+    if (showSenderDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSenderDropdown]);
+
   // Broker değiştiğinde search term güncelle (SUPER_ADMIN için)
   useEffect(() => {
     if (isSuperAdmin && formData.brokerCompanyId) {
@@ -176,21 +207,19 @@ export default function AddTransactionModal({
 
   // Client değiştiğinde Alıcı alanını doldur
   useEffect(() => {
-    console.log("🔄 Client değişti:", formData.clientCompanyId);
     if (formData.clientCompanyId) {
       const selectedClient = availableClients.find(
         (c) => c.id === parseInt(formData.clientCompanyId)
       );
 
-      console.log("📋 Seçilen client:", selectedClient);
-
       if (selectedClient) {
         setSelectedClientInfo(selectedClient);
         setClientSearchTerm(selectedClient.name);
-        // Firma açıklamasını Alıcı alanına otomatik doldur
+        // Alıcı adını büyük harfe çevir
+        const recipientName = selectedClient.shortName || selectedClient.name || "";
         setFormData((prev) => ({
           ...prev,
-          recipientName: selectedClient.shortName || selectedClient.name || "",
+          recipientName: toUpperCase(recipientName, locale),
         }));
       }
     } else {
@@ -198,16 +227,12 @@ export default function AddTransactionModal({
       setClientSearchTerm("");
       setFormData((prev) => ({ ...prev, recipientName: "" }));
     }
-  }, [formData.clientCompanyId, availableClients]);
+  }, [formData.clientCompanyId, availableClients, locale]);
 
   const loadBrokerCompanies = async () => {
     try {
       setLoadingBrokers(true);
-      console.log("📡 Broker'lar yükleniyor (SUPER_ADMIN)...");
-
       const result = await companyService.getAllCompanies();
-
-      console.log("✅ Broker API yanıtı:", result);
 
       if (result.success) {
         const brokers = result.data.filter(
@@ -215,14 +240,12 @@ export default function AddTransactionModal({
         );
         setAvailableBrokers(brokers);
         setFilteredBrokers(brokers.slice(0, 100));
-        console.log(`✅ ${brokers.length} broker yüklendi`);
       } else {
-        console.error("❌ Broker yükleme hatası:", result.error);
         setAvailableBrokers([]);
         setFilteredBrokers([]);
       }
     } catch (err) {
-      console.error("💥 Broker listesi yükleme hatası:", err);
+      console.error("Broker listesi yükleme hatası:", err);
       setAvailableBrokers([]);
       setFilteredBrokers([]);
     } finally {
@@ -233,23 +256,17 @@ export default function AddTransactionModal({
   const loadClientCompanies = async (brokerId) => {
     try {
       setLoadingClients(true);
-      console.log("📡 Client'lar yükleniyor, Broker ID:", brokerId);
-
       const result = await companyService.getClientCompanies(brokerId);
-
-      console.log("✅ Client API yanıtı:", result);
 
       if (result.success) {
         setAvailableClients(result.data);
-        setFilteredClients(result.data.slice(0, 100)); // İlk 100 kaydı göster
-        console.log(`✅ ${result.data.length} client yüklendi`);
+        setFilteredClients(result.data.slice(0, 100));
       } else {
-        console.error("❌ Client yükleme hatası:", result.error);
         setAvailableClients([]);
         setFilteredClients([]);
       }
     } catch (err) {
-      console.error("💥 Client listesi yükleme hatası:", err);
+      console.error("Client listesi yükleme hatası:", err);
       setAvailableClients([]);
       setFilteredClients([]);
     } finally {
@@ -257,9 +274,36 @@ export default function AddTransactionModal({
     }
   };
 
+  // Mevcut işlemlerden unique gönderici isimlerini yükle
+  const loadSenders = async () => {
+    try {
+      setLoadingSenders(true);
+      const result = await transactionService.getAllTransactions();
+
+      if (result.success) {
+        const uniqueSenders = [...new Set(
+          result.data
+            .map((t) => t.senderName)
+            .filter((name) => name && name.trim() !== "")
+        )].sort((a, b) => a.localeCompare(b, 'tr'));
+
+        setAvailableSenders(uniqueSenders);
+        setFilteredSenders(uniqueSenders.slice(0, 50));
+      } else {
+        setAvailableSenders([]);
+        setFilteredSenders([]);
+      }
+    } catch (err) {
+      console.error("Gönderici listesi yükleme hatası:", err);
+      setAvailableSenders([]);
+      setFilteredSenders([]);
+    } finally {
+      setLoadingSenders(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`📝 Form değişikliği: ${name} = ${value}`);
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -272,9 +316,12 @@ export default function AddTransactionModal({
     setError("");
 
     try {
+      // ✅ Belirli alanları büyük harfe çevir
+      const transformedData = transformFormData(formData, TRANSACTION_UPPERCASE_FIELDS, locale);
+
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
-        Object.entries(formData).filter(([, v]) => v !== "")
+        Object.entries(transformedData).filter(([, v]) => v !== "")
       );
 
       // Sayısal değerleri dönüştür
@@ -339,6 +386,8 @@ export default function AddTransactionModal({
     setSelectedClientInfo(null);
     setClientSearchTerm("");
     setShowClientDropdown(false);
+    setSenderSearchTerm("");
+    setShowSenderDropdown(false);
 
     if (isSuperAdmin) {
       setBrokerSearchTerm("");
@@ -352,14 +401,9 @@ export default function AddTransactionModal({
     setSavingNewClient(true);
 
     try {
-      console.log("📤 Yeni client oluşturuluyor:", {
-        ...newClientForm,
-        parentBrokerId: formData.brokerCompanyId || currentUser?.company?.id,
-      });
-
       const result = await companyService.createClientCompany({
-        name: newClientForm.name,
-        shortName: newClientForm.shortName,
+        name: toUpperCase(newClientForm.name, locale),
+        shortName: toUpperCase(newClientForm.shortName, locale),
         description: newClientForm.description,
         parentBrokerId: parseInt(
           formData.brokerCompanyId || currentUser?.company?.id
@@ -367,35 +411,55 @@ export default function AddTransactionModal({
       });
 
       if (result.success) {
-        console.log("✅ Yeni client oluşturuldu:", result.data);
-
-        // Client listesini yenile
         await loadClientCompanies(
           formData.brokerCompanyId || currentUser?.company?.id
         );
 
-        // Yeni client'ı otomatik seç
         setFormData((prev) => ({
           ...prev,
           clientCompanyId: result.data.companyId,
         }));
 
-        // Arama inputunu güncelle
         setClientSearchTerm(newClientForm.name);
-
-        // Modal'ı kapat ve formu temizle
         setShowNewClientModal(false);
         setNewClientForm({ name: "", shortName: "", description: "" });
       } else {
-        console.error("❌ Client oluşturma hatası:", result.error);
         alert(result.error || "Client oluşturulamadı");
       }
     } catch (err) {
-      console.error("💥 Client oluşturma hatası:", err);
+      console.error("Client oluşturma hatası:", err);
       alert("Client oluşturulurken beklenmeyen bir hata oluştu.");
     } finally {
       setSavingNewClient(false);
     }
+  };
+
+  // Gönderici seçildiğinde
+  const handleSenderSelect = (senderName) => {
+    setFormData((prev) => ({
+      ...prev,
+      senderName: senderName,
+    }));
+    setSenderSearchTerm(senderName);
+    setShowSenderDropdown(false);
+  };
+
+  // ✅ Yeni gönderici ekle - BÜYÜK HARFE ÇEVİR
+  const handleAddNewSender = () => {
+    if (senderSearchTerm.trim()) {
+      const upperCaseSender = toUpperCase(senderSearchTerm.trim(), locale);
+      setFormData((prev) => ({
+        ...prev,
+        senderName: upperCaseSender,
+      }));
+      setSenderSearchTerm(upperCaseSender);
+      setShowSenderDropdown(false);
+    }
+  };
+
+  // ✅ Hat seçeneği için görüntüleme metni (büyük harf)
+  const getGateDisplayLabel = (option) => {
+    return `${option.emoji} ${t(option.labelKey)}`;
   };
 
   return (
@@ -416,7 +480,7 @@ export default function AddTransactionModal({
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
             <div>
               <h2 className="text-2xl font-bold text-text-main">
-                Yeni İşlem Ekle
+                {t('transaction.addNew')}
               </h2>
               <p className="text-text-secondary text-sm mt-1">
                 Lütfen işlem detaylarını girin ve kaydedin.
@@ -445,7 +509,7 @@ export default function AddTransactionModal({
               {/* ALICI - EN BAŞTA VE HER ZAMAN DISABLED */}
               <label className="flex flex-col w-full lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Alıcı Firma *
+                  {t('transaction.recipient')} *
                   {selectedClientInfo && selectedClientInfo.shortName && (
                     <span className="text-xs text-blue-600 ml-2">
                       (Firma kısa adı otomatik dolduruldu)
@@ -460,7 +524,7 @@ export default function AddTransactionModal({
                   disabled={true}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal cursor-not-allowed"
-                  placeholder="Önce müşteri firması seçin"
+                  placeholder={toUpperCase(t('placeholders.firstSelectClient'))}
                 />
               </label>
 
@@ -469,10 +533,10 @@ export default function AddTransactionModal({
                 <div className="flex flex-col w-full lg:col-span-3">
                   <div className="flex items-center justify-between pb-2">
                     <p className="text-text-main text-sm font-medium">
-                      Broker Firması *
+                      {t('transaction.brokerCompany')} *
                       {loadingBrokers && (
                         <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                          Yükleniyor...
+                          {t('common.loading')}
                         </span>
                       )}
                       {!loadingBrokers && availableBrokers.length > 0 && (
@@ -494,7 +558,7 @@ export default function AddTransactionModal({
                           setShowBrokerDropdown(true);
                         }}
                         onFocus={() => setShowBrokerDropdown(true)}
-                        placeholder="Broker adı yazarak arayın..."
+                        placeholder={toUpperCase(t('placeholders.typeToSearch'))}
                         disabled={loadingBrokers}
                         className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal disabled:bg-gray-100"
                       />
@@ -639,10 +703,10 @@ export default function AddTransactionModal({
               <div className="flex flex-col w-full lg:col-span-3">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    Müşteri Firması *
+                    {t('transaction.clientCompany')} *
                     {loadingClients && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                        Yükleniyor...
+                        {t('common.loading')}
                       </span>
                     )}
                     {!loadingClients && availableClients.length > 0 && (
@@ -661,7 +725,7 @@ export default function AddTransactionModal({
                       <span className="material-symbols-outlined text-sm">
                         add
                       </span>
-                      Yeni Firma Ekle
+                      {t('company.addNew')}
                     </button>
                   )}
                 </div>
@@ -689,7 +753,7 @@ export default function AddTransactionModal({
                         setShowClientDropdown(true);
                       }}
                       onFocus={() => setShowClientDropdown(true)}
-                      placeholder="Firma adı yazarak arayın..."
+                      placeholder={toUpperCase(t('placeholders.typeToSearch'))}
                       disabled={
                         loadingClients ||
                         (isSuperAdmin && !formData.brokerCompanyId)
@@ -804,7 +868,6 @@ export default function AddTransactionModal({
                             </button>
                           ))}
 
-                          {/* Daha fazla kayıt varsa bilgi */}
                           {filteredClients.length === 100 &&
                             availableClients.length > 100 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
@@ -851,7 +914,7 @@ export default function AddTransactionModal({
               {/* Dosya No */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Dosya No *
+                  {t('transaction.fileNo')} *
                 </p>
                 <input
                   type="text"
@@ -860,14 +923,15 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Dosya No girin"
+                  placeholder={toUpperCase(t('placeholders.enterFileNo'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
               {/* Gümrük */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Gümrük
+                  {t('transaction.customsWarehouse')}
                 </p>
                 <input
                   type="text"
@@ -875,23 +939,26 @@ export default function AddTransactionModal({
                   value={formData.customsWarehouse}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Gümrük seçin"
+                  placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
-              {/* Hat - Combobox */}
+              {/* Hat - Combobox (constants'dan alınıyor) */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Hat</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.gate')}
+                </p>
                 <select
                   name="gate"
                   value={formData.gate}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal"
                 >
-                  <option value="">Hat Seçin</option>
+                  <option value="">{toUpperCase(t('gates.select'))}</option>
                   {GATE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {getGateDisplayLabel(option)}
                     </option>
                   ))}
                 </select>
@@ -900,7 +967,7 @@ export default function AddTransactionModal({
               {/* Kilo */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Kilo (Kg)
+                  {t('transaction.weight')}
                 </p>
                 <input
                   type="number"
@@ -909,14 +976,14 @@ export default function AddTransactionModal({
                   value={formData.weight}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Kilo girin"
+                  placeholder={toUpperCase(t('placeholders.enterWeight'))}
                 />
               </label>
 
               {/* Vergi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Vergi (TL)
+                  {t('transaction.tax')}
                 </p>
                 <input
                   type="number"
@@ -925,29 +992,181 @@ export default function AddTransactionModal({
                   value={formData.tax}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Vergi tutarını girin"
+                  placeholder={toUpperCase(t('placeholders.enterTax'))}
                 />
               </label>
 
-              {/* Gönderici */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  Gönderici
-                </p>
-                <input
-                  type="text"
-                  name="senderName"
-                  value={formData.senderName}
-                  onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Gönderici adını girin"
-                />
-              </label>
+              {/* Gönderici - Aranabilir Dropdown */}
+              <div className="flex flex-col w-full">
+                <div className="flex items-center justify-between pb-2">
+                  <p className="text-text-main text-sm font-medium">
+                    {t('transaction.sender')}
+                    {loadingSenders && (
+                      <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                        {t('common.loading')}
+                      </span>
+                    )}
+                    {!loadingSenders && availableSenders.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({availableSenders.length} kayıtlı)
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="relative" id="sender-dropdown-container">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={senderSearchTerm}
+                      onChange={(e) => {
+                        // ✅ Yazarken de büyük harfe çevir (görsel)
+                        const upperValue = toUpperCase(e.target.value, locale);
+                        setSenderSearchTerm(upperValue);
+                        setFormData((prev) => ({
+                          ...prev,
+                          senderName: upperValue,
+                        }));
+                        setShowSenderDropdown(true);
+                      }}
+                      onFocus={() => setShowSenderDropdown(true)}
+                      placeholder={toUpperCase(t('placeholders.selectOrType'))}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                      style={{ textTransform: 'uppercase' }}
+                    />
+
+                    {/* Clear Button */}
+                    {senderSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSenderSearchTerm("");
+                          setFormData((prev) => ({
+                            ...prev,
+                            senderName: "",
+                          }));
+                          setShowSenderDropdown(true);
+                        }}
+                        className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          close
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Dropdown Icon */}
+                    <button
+                      type="button"
+                      onClick={() => setShowSenderDropdown(!showSenderDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        {showSenderDropdown ? "expand_less" : "expand_more"}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Sender Dropdown List */}
+                  {showSenderDropdown && !loadingSenders && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {/* Yeni gönderici ekleme seçeneği */}
+                      {senderSearchTerm.trim() && !availableSenders.some(s => s.toUpperCase() === senderSearchTerm.toUpperCase()) && (
+                        <button
+                          type="button"
+                          onClick={handleAddNewSender}
+                          className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-green-600 text-lg">
+                              add_circle
+                            </span>
+                            <div>
+                              <p className="font-medium text-sm text-green-700">
+                                "{toUpperCase(senderSearchTerm.trim(), locale)}" olarak ekle
+                              </p>
+                              <p className="text-xs text-green-600">
+                                Yeni gönderici olarak kullan
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      )}
+
+                      {filteredSenders.length === 0 && !senderSearchTerm.trim() ? (
+                        <div className="p-4 text-center text-gray-500">
+                          <span className="material-symbols-outlined text-4xl mb-2">
+                            local_shipping
+                          </span>
+                          <p className="text-sm">
+                            Henüz kayıtlı gönderici yok.
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Yeni gönderici adı yazarak ekleyebilirsiniz.
+                          </p>
+                        </div>
+                      ) : filteredSenders.length === 0 && senderSearchTerm.trim() ? (
+                        <div className="p-4 text-center text-gray-500">
+                          <span className="material-symbols-outlined text-4xl mb-2">
+                            search_off
+                          </span>
+                          <p className="text-sm">
+                            "{senderSearchTerm}" ile eşleşen gönderici bulunamadı.
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {filteredSenders.map((sender, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSenderSelect(sender)}
+                              className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                formData.senderName === sender
+                                  ? "bg-blue-50 text-primary font-medium"
+                                  : ""
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-gray-400 text-lg">
+                                    local_shipping
+                                  </span>
+                                  <p className="font-medium text-sm truncate uppercase">
+                                    {sender}
+                                  </p>
+                                </div>
+                                {formData.senderName === sender && (
+                                  <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                    check_circle
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+
+                          {filteredSenders.length === 50 &&
+                            availableSenders.length > 50 && (
+                              <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                <p className="text-xs text-yellow-800">
+                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                </p>
+                              </div>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Antrepo Varış Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Antrepo Varış Tarihi
+                  {t('transaction.warehouseArrivalDate')}
                 </p>
                 <input
                   type="date"
@@ -961,7 +1180,7 @@ export default function AddTransactionModal({
               {/* Tescil Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Tescil Tarihi
+                  {t('transaction.registrationDate')}
                 </p>
                 <input
                   type="date"
@@ -975,22 +1194,23 @@ export default function AddTransactionModal({
               {/* Beyanname No */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Beyanname No
+                  {t('transaction.declarationNumber')}
                 </p>
                 <input
                   type="text"
                   name="declarationNumber"
                   value={formData.declarationNumber}
                   onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
                   placeholder="Beyanname No girin"
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
               {/* Kapanma Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Kapanma Tarihi
+                  {t('transaction.lineClosureDate')}
                 </p>
                 <input
                   type="date"
@@ -1004,7 +1224,7 @@ export default function AddTransactionModal({
               {/* İthalat İşlem Süresi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  İthalat İşlem Süresi (Gün)
+                  {t('transaction.importProcessingTime')}
                 </p>
                 <input
                   type="number"
@@ -1012,14 +1232,14 @@ export default function AddTransactionModal({
                   value={formData.importProcessingTime}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Süre (gün)"
+                  placeholder={toUpperCase(t('placeholders.enterImportProcessingTime'))}
                 />
               </label>
 
               {/* Çekilme Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Çekilme Tarihi
+                  {t('transaction.withdrawalDate')}
                 </p>
                 <input
                   type="date"
@@ -1033,7 +1253,7 @@ export default function AddTransactionModal({
               {/* Açıklama */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Açıklama
+                  {t('transaction.description')}
                 </p>
                 <textarea
                   name="description"
@@ -1041,14 +1261,14 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Ek açıklamalarınızı buraya yazın..."
+                  placeholder={t('placeholders.enterDescription')}
                 />
               </label>
 
               {/* Gecikme Nedeni */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  Gecikme Nedeni
+                  {t('transaction.delayReason')}
                 </p>
                 <textarea
                   name="delayReason"
@@ -1069,14 +1289,14 @@ export default function AddTransactionModal({
               onClick={handleClear}
               className="px-6 py-3 bg-neutral/20 text-text-main rounded-lg hover:bg-neutral/30 transition-colors font-semibold"
             >
-              Formu Temizle
+              {t('common.clear')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -1084,7 +1304,7 @@ export default function AddTransactionModal({
               className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">save</span>
-              {loading ? "Kaydediliyor..." : "Kaydet"}
+              {loading ? t('common.loading') : t('common.save')}
             </button>
           </div>
         </div>
@@ -1106,7 +1326,7 @@ export default function AddTransactionModal({
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
                   <h3 className="text-xl font-bold text-text-main">
-                    Yeni Müşteri Firması Ekle
+                    {t('company.addNew')}
                   </h3>
                   <p className="text-text-secondary text-sm mt-1">
                     {currentUser?.company?.name || "Broker Firması"}
@@ -1127,7 +1347,7 @@ export default function AddTransactionModal({
                 <div className="space-y-4">
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      Firma Adı *
+                      {t('company.name')} *
                     </p>
                     <input
                       type="text"
@@ -1135,18 +1355,19 @@ export default function AddTransactionModal({
                       onChange={(e) =>
                         setNewClientForm((prev) => ({
                           ...prev,
-                          name: e.target.value,
+                          name: toUpperCase(e.target.value, locale),
                         }))
                       }
                       required
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                      placeholder="Firma adını girin"
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
+                      placeholder={t('placeholders.enterName')}
+                      style={{ textTransform: 'uppercase' }}
                     />
                   </label>
 
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      Firma Kısa Adı *
+                      {t('company.shortName')} *
                     </p>
                     <input
                       type="text"
@@ -1154,18 +1375,19 @@ export default function AddTransactionModal({
                       onChange={(e) =>
                         setNewClientForm((prev) => ({
                           ...prev,
-                          shortName: e.target.value,
+                          shortName: toUpperCase(e.target.value, locale),
                         }))
                       }
                       required
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
                       placeholder="Firma kısa adını girin"
+                      style={{ textTransform: 'uppercase' }}
                     />
                   </label>
 
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      Açıklama
+                      {t('company.description')}
                     </p>
                     <textarea
                       value={newClientForm.description}
@@ -1177,7 +1399,7 @@ export default function AddTransactionModal({
                       }
                       rows="3"
                       className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                      placeholder="Firma hakkında açıklama girin (opsiyonel)"
+                      placeholder={t('placeholders.enterDescription')}
                     />
                   </label>
                 </div>
@@ -1189,7 +1411,7 @@ export default function AddTransactionModal({
                     onClick={() => setShowNewClientModal(false)}
                     className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
                   >
-                    İptal
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -1197,7 +1419,7 @@ export default function AddTransactionModal({
                     className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined">add</span>
-                    {savingNewClient ? "Ekleniyor..." : "Firma Ekle"}
+                    {savingNewClient ? t('common.loading') : t('common.add')}
                   </button>
                 </div>
               </form>

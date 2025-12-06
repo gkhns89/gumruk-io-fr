@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
 
 // Hat renk seçenekleri
@@ -28,8 +28,85 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     delayReason: transaction.delayReason || "",
   });
 
+  // ✅ YENİ: Gönderici listesi state'leri
+  const [availableSenders, setAvailableSenders] = useState([]);
+  const [filteredSenders, setFilteredSenders] = useState([]);
+  const [senderSearchTerm, setSenderSearchTerm] = useState(transaction.senderName || "");
+  const [showSenderDropdown, setShowSenderDropdown] = useState(false);
+  const [loadingSenders, setLoadingSenders] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ✅ YENİ: Gönderici listesini yükle
+  useEffect(() => {
+    if (!isReadOnly) {
+      loadSenders();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ YENİ: Gönderici arama filtresi
+  useEffect(() => {
+    if (senderSearchTerm.trim() === "") {
+      setFilteredSenders(availableSenders.slice(0, 50));
+    } else {
+      const searchLower = senderSearchTerm.toLowerCase();
+      const filtered = availableSenders.filter((sender) =>
+        sender.toLowerCase().includes(searchLower)
+      );
+      setFilteredSenders(filtered.slice(0, 50));
+    }
+  }, [senderSearchTerm, availableSenders]);
+
+  // ✅ YENİ: Gönderici dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById("edit-sender-dropdown-container");
+      if (dropdown && !dropdown.contains(event.target)) {
+        setShowSenderDropdown(false);
+      }
+    };
+
+    if (showSenderDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSenderDropdown]);
+
+  // ✅ YENİ: Mevcut işlemlerden unique gönderici isimlerini yükle
+  const loadSenders = async () => {
+    try {
+      setLoadingSenders(true);
+      console.log("📡 Gönderici listesi yükleniyor...");
+
+      const result = await transactionService.getAllTransactions();
+
+      if (result.success) {
+        const uniqueSenders = [...new Set(
+          result.data
+            .map((t) => t.senderName)
+            .filter((name) => name && name.trim() !== "")
+        )].sort((a, b) => a.localeCompare(b, 'tr'));
+
+        setAvailableSenders(uniqueSenders);
+        setFilteredSenders(uniqueSenders.slice(0, 50));
+        console.log(`✅ ${uniqueSenders.length} unique gönderici yüklendi`);
+      } else {
+        console.error("❌ Gönderici yükleme hatası:", result.error);
+        setAvailableSenders([]);
+        setFilteredSenders([]);
+      }
+    } catch (err) {
+      console.error("💥 Gönderici listesi yükleme hatası:", err);
+      setAvailableSenders([]);
+      setFilteredSenders([]);
+    } finally {
+      setLoadingSenders(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +114,27 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       ...prev,
       [name]: value
     }));
+  };
+
+  // ✅ YENİ: Gönderici seçildiğinde
+  const handleSenderSelect = (senderName) => {
+    setFormData((prev) => ({
+      ...prev,
+      senderName: senderName,
+    }));
+    setSenderSearchTerm(senderName);
+    setShowSenderDropdown(false);
+  };
+
+  // ✅ YENİ: Yeni gönderici ekle
+  const handleAddNewSender = () => {
+    if (senderSearchTerm.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        senderName: senderSearchTerm.trim(),
+      }));
+      setShowSenderDropdown(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -227,19 +325,176 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 />
               </label>
 
-              {/* Gönderici */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Gönderici</p>
-                <input
-                  type="text"
-                  name="senderName"
-                  value={formData.senderName}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Gönderici adını girin"
-                />
-              </label>
+              {/* ✅ GÜNCELLENDİ: Gönderici - Aranabilir Dropdown */}
+              <div className="flex flex-col w-full">
+                <div className="flex items-center justify-between pb-2">
+                  <p className="text-text-main text-sm font-medium">
+                    Gönderici
+                    {!isReadOnly && loadingSenders && (
+                      <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                        Yükleniyor...
+                      </span>
+                    )}
+                    {!isReadOnly && !loadingSenders && availableSenders.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({availableSenders.length} kayıtlı)
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {isReadOnly ? (
+                  <input
+                    type="text"
+                    value={formData.senderName}
+                    disabled
+                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder="Gönderici adı"
+                  />
+                ) : (
+                  <div className="relative" id="edit-sender-dropdown-container">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={senderSearchTerm}
+                        onChange={(e) => {
+                          setSenderSearchTerm(e.target.value);
+                          setFormData((prev) => ({
+                            ...prev,
+                            senderName: e.target.value,
+                          }));
+                          setShowSenderDropdown(true);
+                        }}
+                        onFocus={() => setShowSenderDropdown(true)}
+                        placeholder="Gönderici adı yazın veya seçin..."
+                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                      />
+
+                      {/* Clear Button */}
+                      {senderSearchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSenderSearchTerm("");
+                            setFormData((prev) => ({
+                              ...prev,
+                              senderName: "",
+                            }));
+                            setShowSenderDropdown(true);
+                          }}
+                          className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            close
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Dropdown Icon */}
+                      <button
+                        type="button"
+                        onClick={() => setShowSenderDropdown(!showSenderDropdown)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          {showSenderDropdown ? "expand_less" : "expand_more"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Sender Dropdown List */}
+                    {showSenderDropdown && !loadingSenders && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {/* Yeni gönderici ekleme seçeneği */}
+                        {senderSearchTerm.trim() && !availableSenders.includes(senderSearchTerm.trim()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewSender}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-green-600 text-lg">
+                                add_circle
+                              </span>
+                              <div>
+                                <p className="font-medium text-sm text-green-700">
+                                  "{senderSearchTerm.trim()}" olarak ekle
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  Yeni gönderici olarak kullan
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )}
+
+                        {filteredSenders.length === 0 && !senderSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              local_shipping
+                            </span>
+                            <p className="text-sm">
+                              Henüz kayıtlı gönderici yok.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yeni gönderici adı yazarak ekleyebilirsiniz.
+                            </p>
+                          </div>
+                        ) : filteredSenders.length === 0 && senderSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              search_off
+                            </span>
+                            <p className="text-sm">
+                              "{senderSearchTerm}" ile eşleşen gönderici bulunamadı.
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {filteredSenders.map((sender, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleSenderSelect(sender)}
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                  formData.senderName === sender
+                                    ? "bg-blue-50 text-primary font-medium"
+                                    : ""
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                      local_shipping
+                                    </span>
+                                    <p className="font-medium text-sm truncate">
+                                      {sender}
+                                    </p>
+                                  </div>
+                                  {formData.senderName === sender && (
+                                    <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                      check_circle
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+
+                            {filteredSenders.length === 50 &&
+                              availableSenders.length > 50 && (
+                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                  <p className="text-xs text-yellow-800">
+                                    İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  </p>
+                                </div>
+                              )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Antrepo Varış Tarihi */}
               <label className="flex flex-col w-full">
