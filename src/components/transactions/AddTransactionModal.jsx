@@ -438,9 +438,9 @@ export default function AddTransactionModal({
               <label className="flex flex-col w-full lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
                   Alıcı Firma *
-                  {selectedClientInfo && selectedClientInfo.description && (
+                  {selectedClientInfo && selectedClientInfo.shortName && (
                     <span className="text-xs text-blue-600 ml-2">
-                      (Müşteri firması açıklamasından otomatik)
+                      (Firma kısa adı otomatik dolduruldu)
                     </span>
                   )}
                 </p>
