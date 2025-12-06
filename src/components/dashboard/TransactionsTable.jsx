@@ -4,22 +4,22 @@ import TransactionDetailModal from "./TransactionDetailModal";
 // Hat renk mapping
 const getGateRowStyle = (gate) => {
   const gateStyles = {
-    'Sarı': {
+    'SARI': {
       bg: 'bg-yellow-50',
       hoverBg: 'hover:bg-yellow-100',
       border: 'border-l-4 border-l-yellow-400',
     },
-    'Kırmızı': {
+    'KIRMIZI': {
       bg: 'bg-red-50',
       hoverBg: 'hover:bg-red-100',
       border: 'border-l-4 border-l-red-500',
     },
-    'Yeşil': {
+    'YEŞİL': {
       bg: 'bg-green-50',
       hoverBg: 'hover:bg-green-100',
       border: 'border-l-4 border-l-green-500',
     },
-    'Mavi': {
+    'MAVİ': {
       bg: 'bg-blue-50',
       hoverBg: 'hover:bg-blue-100',
       border: 'border-l-4 border-l-blue-500',
