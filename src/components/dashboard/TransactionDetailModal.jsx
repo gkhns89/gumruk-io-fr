@@ -1,5 +1,17 @@
 import React from "react";
 
+// Hat badge renkleri
+const getGateBadge = (gate) => {
+  const badgeStyles = {
+    'Sarı': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    'Kırmızı': 'bg-red-100 text-red-800 border border-red-300',
+    'Yeşil': 'bg-green-100 text-green-800 border border-green-300',
+    'Mavi': 'bg-blue-100 text-blue-800 border border-blue-300',
+  };
+
+  return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
+};
+
 export default function TransactionDetailModal({ transaction, onClose, onViewFull }) {
   if (!transaction) return null;
 
@@ -34,6 +46,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
   };
 
   const statusInfo = getStatusBadgeClass(transaction.status);
+  const gateBadgeClass = getGateBadge(transaction.gate);
 
   return (
     <>
@@ -75,10 +88,15 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
           {/* Body */}
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
             {/* Status Badge */}
-            <div className="mb-6 flex justify-center">
+            <div className="mb-6 flex justify-center gap-3">
               <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${statusInfo.className}`}>
                 {statusInfo.label}
               </span>
+              {transaction.gate && (
+                <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${gateBadgeClass}`}>
+                  {transaction.gate} Hat
+                </span>
+              )}
             </div>
 
             {/* Info Grid */}
@@ -113,9 +131,13 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-text-secondary text-sm mb-1">Hat</p>
-                <p className="text-text-main font-semibold">
-                  {transaction.gate || '-'}
-                </p>
+                {transaction.gate ? (
+                  <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${gateBadgeClass}`}>
+                    {transaction.gate}
+                  </span>
+                ) : (
+                  <p className="text-text-main font-semibold">-</p>
+                )}
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">

@@ -2,6 +2,46 @@ import React, { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
+// Hat renk mapping
+const getGateRowStyle = (gate) => {
+  const gateStyles = {
+    'Sarı': {
+      bg: 'bg-yellow-50',
+      hoverBg: 'hover:bg-yellow-100',
+      border: 'border-l-4 border-l-yellow-400',
+    },
+    'Kırmızı': {
+      bg: 'bg-red-50',
+      hoverBg: 'hover:bg-red-100',
+      border: 'border-l-4 border-l-red-500',
+    },
+    'Yeşil': {
+      bg: 'bg-green-50',
+      hoverBg: 'hover:bg-green-100',
+      border: 'border-l-4 border-l-green-500',
+    },
+    'Mavi': {
+      bg: 'bg-blue-50',
+      hoverBg: 'hover:bg-blue-100',
+      border: 'border-l-4 border-l-blue-500',
+    },
+  };
+
+  return gateStyles[gate] || { bg: '', hoverBg: 'hover:bg-gray-50', border: '' };
+};
+
+// Hat badge renkleri
+const getGateBadge = (gate) => {
+  const badgeStyles = {
+    'Sarı': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    'Kırmızı': 'bg-red-100 text-red-800 border border-red-300',
+    'Yeşil': 'bg-green-100 text-green-800 border border-green-300',
+    'Mavi': 'bg-blue-100 text-blue-800 border border-blue-300',
+  };
+
+  return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
+};
+
 export default function TransactionsFullTable({ 
   transactions, 
   loading, 
@@ -119,6 +159,29 @@ export default function TransactionsFullTable({
   // Success state with data
   return (
     <>
+      {/* Hat Renk Açıklaması */}
+      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex flex-wrap items-center gap-4">
+        <span className="text-sm text-text-secondary font-medium">Hat Renkleri:</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs font-medium border border-yellow-300">
+            <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+            Sarı Hat
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-medium border border-red-300">
+            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+            Kırmızı Hat
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium border border-green-300">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            Yeşil Hat
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium border border-blue-300">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            Mavi Hat
+          </span>
+        </div>
+      </div>
+
       <div className="bg-white overflow-x-auto">
         <table className="w-full text-left min-w-max">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
@@ -179,8 +242,14 @@ export default function TransactionsFullTable({
           <tbody className="divide-y divide-gray-200">
             {transactions.map((transaction) => {
               const statusInfo = getStatusBadgeClass(transaction.status);
+              const gateStyle = getGateRowStyle(transaction.gate);
+              const gateBadgeClass = getGateBadge(transaction.gate);
+              
               return (
-                <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
+                <tr 
+                  key={transaction.id} 
+                  className={`${gateStyle.bg} ${gateStyle.hoverBg} ${gateStyle.border} transition-colors`}
+                >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm font-medium text-text-main">
                       {transaction.fileNo}
@@ -204,8 +273,14 @@ export default function TransactionsFullTable({
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.customsWarehouse || '-'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.gate || '-'}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {transaction.gate ? (
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${gateBadgeClass}`}>
+                        {transaction.gate}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-text-secondary">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
                     {transaction.weight ? transaction.weight.toLocaleString('tr-TR') : '-'}

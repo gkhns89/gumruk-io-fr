@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { transactionService } from "../../api/transactionService";
 
+// Hat renk seçenekleri
+const GATE_OPTIONS = [
+  { value: "Sarı", label: "🟡 Sarı Hat", color: "yellow" },
+  { value: "Kırmızı", label: "🔴 Kırmızı Hat", color: "red" },
+  { value: "Yeşil", label: "🟢 Yeşil Hat", color: "green" },
+  { value: "Mavi", label: "🔵 Mavi Hat", color: "blue" },
+];
+
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly }) {
   const [formData, setFormData] = useState({
     fileNo: transaction.fileNo || "",
@@ -170,18 +178,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 />
               </label>
 
-              {/* Hat */}
+              {/* Hat - Combobox */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">Hat</p>
-                <input
-                  type="text"
+                <select
                   name="gate"
                   value={formData.gate}
                   onChange={handleChange}
                   disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Hat bilgisini girin"
-                />
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                >
+                  <option value="">Hat Seçin</option>
+                  {GATE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               {/* Kilo */}
