@@ -12,7 +12,7 @@
  */
 export const GATE_OPTIONS = [
   { 
-    value: "Sarı", 
+    value: "SARI", 
     labelKey: "gates.yellow", 
     color: "yellow", 
     emoji: "🟡",
@@ -23,7 +23,7 @@ export const GATE_OPTIONS = [
     badgeText: "text-yellow-800",
   },
   { 
-    value: "Kırmızı", 
+    value: "KIRMIZI", 
     labelKey: "gates.red", 
     color: "red", 
     emoji: "🔴",
@@ -34,7 +34,7 @@ export const GATE_OPTIONS = [
     badgeText: "text-red-800",
   },
   { 
-    value: "Yeşil", 
+    value: "YEŞİL", 
     labelKey: "gates.green", 
     color: "green", 
     emoji: "🟢",
@@ -45,7 +45,7 @@ export const GATE_OPTIONS = [
     badgeText: "text-green-800",
   },
   { 
-    value: "Mavi", 
+    value: "MAVİ", 
     labelKey: "gates.blue", 
     color: "blue", 
     emoji: "🔵",
