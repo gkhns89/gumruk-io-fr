@@ -33,28 +33,6 @@ export const GATE_OPTIONS = [
     badgeBg: "bg-red-100",
     badgeText: "text-red-800",
   },
-  { 
-    value: "YEŞİL", 
-    labelKey: "gates.green", 
-    color: "green", 
-    emoji: "🟢",
-    bgClass: "bg-green-50",
-    hoverClass: "hover:bg-green-100",
-    borderClass: "border-l-green-500",
-    badgeBg: "bg-green-100",
-    badgeText: "text-green-800",
-  },
-  { 
-    value: "MAVİ", 
-    labelKey: "gates.blue", 
-    color: "blue", 
-    emoji: "🔵",
-    bgClass: "bg-blue-50",
-    hoverClass: "hover:bg-blue-100",
-    borderClass: "border-l-blue-500",
-    badgeBg: "bg-blue-100",
-    badgeText: "text-blue-800",
-  },
 ];
 
 /**
