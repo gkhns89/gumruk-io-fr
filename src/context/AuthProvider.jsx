@@ -42,11 +42,11 @@ export default function AuthProvider({ children }) {
         const remainingMinutes = Math.floor(tokenManager.getTokenRemainingTime() / 60000);
         console.log(`⏱️ Token kalan süre: ${remainingMinutes} dakika`);
         
-        if (remainingMinutes <= 5 && remainingMinutes > 0) {
+        if (remainingMinutes <= 60 && remainingMinutes > 0) {
           console.warn(`⚠️ Oturum süreniz ${remainingMinutes} dakika içinde dolacak!`);
         }
       }
-    }, 60000);
+    }, 1800000);
   }, [handleTokenExpired]);
 
   // Uygulama açıldığında token kontrolü

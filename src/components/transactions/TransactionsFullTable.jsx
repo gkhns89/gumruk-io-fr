@@ -283,10 +283,10 @@ export default function TransactionsFullTable({
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                    {transaction.weight ? transaction.weight.toLocaleString('tr-TR') : '-'}
+                    {transaction.weight ? transaction.weight.toLocaleString('tr-TR', { minimumFractionDigits: 2 }, { maximumFractionDigits: 2 }) : '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                    {transaction.tax ? transaction.tax.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-'}
+                    {transaction.tax ? transaction.tax.toLocaleString('tr-TR', { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 }) : '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(transaction.warehouseArrivalDate)}

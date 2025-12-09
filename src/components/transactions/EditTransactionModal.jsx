@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
-
-// Hat renk seçenekleri
-const GATE_OPTIONS = [
-  { value: "Sarı", label: "🟡 Sarı Hat", color: "yellow" },
-  { value: "Kırmızı", label: "🔴 Kırmızı Hat", color: "red" },
-  { value: "Yeşil", label: "🟢 Yeşil Hat", color: "green" },
-  { value: "Mavi", label: "🔵 Mavi Hat", color: "blue" },
-];
+import { GATE_OPTIONS } from "../../utils/constants";
+import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
+import { t, getCurrentLocale } from "../../locales";
 
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly }) {
+  const locale = getCurrentLocale();
+
   const [formData, setFormData] = useState({
     fileNo: transaction.fileNo || "",
     recipientName: transaction.recipientName || "",
@@ -28,7 +25,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     delayReason: transaction.delayReason || "",
   });
 
-  // ✅ YENİ: Gönderici listesi state'leri
+  // Gönderici listesi state'leri
   const [availableSenders, setAvailableSenders] = useState([]);
   const [filteredSenders, setFilteredSenders] = useState([]);
   const [senderSearchTerm, setSenderSearchTerm] = useState(transaction.senderName || "");
@@ -38,14 +35,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ YENİ: Gönderici listesini yükle
+  // Gönderici listesini yükle
   useEffect(() => {
     if (!isReadOnly) {
       loadSenders();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ YENİ: Gönderici arama filtresi
+  // Gönderici arama filtresi
   useEffect(() => {
     if (senderSearchTerm.trim() === "") {
       setFilteredSenders(availableSenders.slice(0, 50));
@@ -58,7 +55,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   }, [senderSearchTerm, availableSenders]);
 
-  // ✅ YENİ: Gönderici dropdown dışına tıklandığında kapat
+  // Gönderici dropdown dışına tıklandığında kapat
   useEffect(() => {
     const handleClickOutside = (event) => {
       const dropdown = document.getElementById("edit-sender-dropdown-container");
@@ -76,12 +73,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     };
   }, [showSenderDropdown]);
 
-  // ✅ YENİ: Mevcut işlemlerden unique gönderici isimlerini yükle
+  // Mevcut işlemlerden unique gönderici isimlerini yükle
   const loadSenders = async () => {
     try {
       setLoadingSenders(true);
-      console.log("📡 Gönderici listesi yükleniyor...");
-
       const result = await transactionService.getAllTransactions();
 
       if (result.success) {
@@ -93,14 +88,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
         setAvailableSenders(uniqueSenders);
         setFilteredSenders(uniqueSenders.slice(0, 50));
-        console.log(`✅ ${uniqueSenders.length} unique gönderici yüklendi`);
       } else {
-        console.error("❌ Gönderici yükleme hatası:", result.error);
         setAvailableSenders([]);
         setFilteredSenders([]);
       }
     } catch (err) {
-      console.error("💥 Gönderici listesi yükleme hatası:", err);
+      console.error("Gönderici listesi yükleme hatası:", err);
       setAvailableSenders([]);
       setFilteredSenders([]);
     } finally {
@@ -116,7 +109,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }));
   };
 
-  // ✅ YENİ: Gönderici seçildiğinde
+  // Gönderici seçildiğinde
   const handleSenderSelect = (senderName) => {
     setFormData((prev) => ({
       ...prev,
@@ -126,15 +119,22 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     setShowSenderDropdown(false);
   };
 
-  // ✅ YENİ: Yeni gönderici ekle
+  // Yeni gönderici ekle - BÜYÜK HARFE ÇEVİR
   const handleAddNewSender = () => {
     if (senderSearchTerm.trim()) {
+      const upperCaseSender = toUpperCase(senderSearchTerm.trim(), locale);
       setFormData((prev) => ({
         ...prev,
-        senderName: senderSearchTerm.trim(),
+        senderName: upperCaseSender,
       }));
+      setSenderSearchTerm(upperCaseSender);
       setShowSenderDropdown(false);
     }
+  };
+
+  // Hat seçeneği için görüntüleme metni (büyük harf)
+  const getGateDisplayLabel = (option) => {
+    return `${option.emoji} ${t(option.labelKey)}`;
   };
 
   const handleSubmit = async (e) => {
@@ -145,9 +145,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     setError("");
 
     try {
+      // ✅ Belirli alanları büyük harfe çevir
+      const transformedData = transformFormData(formData, TRANSACTION_UPPERCASE_FIELDS, locale);
+
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
-        Object.entries(formData).filter(([, v]) => v !== "")
+        Object.entries(transformedData).filter(([, v]) => v !== "")
       );
 
       // Sayısal değerleri dönüştür
@@ -194,10 +197,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
             <div>
               <h2 className="text-2xl font-bold text-text-main">
-                {isReadOnly ? 'İşlem Detayları' : 'İşlem Düzenle'}
+                {isReadOnly ? t('transaction.details') : t('transaction.edit')}
               </h2>
               <p className="text-text-secondary text-sm mt-1">
-                Dosya No: {transaction.fileNo}
+                {t('transaction.fileNo')}: {transaction.fileNo}
               </p>
             </div>
             <button
@@ -220,14 +223,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Firma Bilgileri - Read Only */}
               <div className="flex flex-col w-full bg-gray-50 p-4 rounded-lg">
-                <p className="text-text-secondary text-sm font-medium pb-2">Broker Firması</p>
+                <p className="text-text-secondary text-sm font-medium pb-2">
+                  {t('transaction.brokerCompany')}
+                </p>
                 <p className="text-text-main font-semibold">
                   {transaction.brokerCompany?.name || '-'}
                 </p>
               </div>
 
               <div className="flex flex-col w-full bg-gray-50 p-4 rounded-lg">
-                <p className="text-text-secondary text-sm font-medium pb-2">Müşteri Firması</p>
+                <p className="text-text-secondary text-sm font-medium pb-2">
+                  {t('transaction.clientCompany')}
+                </p>
                 <p className="text-text-main font-semibold">
                   {transaction.clientCompany?.name || '-'}
                 </p>
@@ -235,7 +242,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Dosya No */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Dosya No *</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.fileNo')} *
+                </p>
                 <input
                   type="text"
                   name="fileNo"
@@ -244,41 +253,56 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   disabled={isReadOnly}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Dosya No girin"
+                  placeholder={toUpperCase(t('placeholders.enterFileNo'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
               {/* Alıcı */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Alıcı</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.recipient')}
+                </p>
                 <input
                   type="text"
                   name="recipientName"
                   value={formData.recipientName}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const upperValue = toUpperCase(e.target.value, locale);
+                    setFormData(prev => ({ ...prev, recipientName: upperValue }));
+                  }}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Alıcı adını girin"
+                  placeholder={toUpperCase(t('placeholders.enterRecipient'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
               {/* Gümrük */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Gümrük</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.customsWarehouse')}
+                </p>
                 <input
                   type="text"
                   name="customsWarehouse"
                   value={formData.customsWarehouse}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const upperValue = toUpperCase(e.target.value, locale);
+                    setFormData(prev => ({ ...prev, customsWarehouse: upperValue }));
+                  }}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Gümrük seçin"
+                  placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
-              {/* Hat - Combobox */}
+              {/* Hat - Combobox (constants'dan alınıyor) */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Hat</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.gate')}
+                </p>
                 <select
                   name="gate"
                   value={formData.gate}
@@ -286,10 +310,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
                 >
-                  <option value="">Hat Seçin</option>
+                  <option value="">{toUpperCase(t('gates.select'))}</option>
                   {GATE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {getGateDisplayLabel(option)}
                     </option>
                   ))}
                 </select>
@@ -297,7 +321,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Kilo */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Kilo (Kg)</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.weight')}
+                </p>
                 <input
                   type="number"
                   step="0.01"
@@ -306,13 +332,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Kilo girin"
+                  placeholder={toUpperCase(t('placeholders.enterWeight'))}
                 />
               </label>
 
               {/* Vergi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Vergi (TL)</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.tax')}
+                </p>
                 <input
                   type="number"
                   step="0.01"
@@ -321,18 +349,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Vergi tutarını girin"
+                  placeholder={toUpperCase(t('placeholders.enterTax'))}
                 />
               </label>
 
-              {/* ✅ GÜNCELLENDİ: Gönderici - Aranabilir Dropdown */}
+              {/* Gönderici - Aranabilir Dropdown */}
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    Gönderici
+                    {t('transaction.sender')}
                     {!isReadOnly && loadingSenders && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                        Yükleniyor...
+                        {t('common.loading')}
                       </span>
                     )}
                     {!isReadOnly && !loadingSenders && availableSenders.length > 0 && (
@@ -349,7 +377,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     value={formData.senderName}
                     disabled
                     className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
-                    placeholder="Gönderici adı"
+                    placeholder={toUpperCase(t('placeholders.enterSender'))}
+                    style={{ textTransform: 'uppercase' }}
                   />
                 ) : (
                   <div className="relative" id="edit-sender-dropdown-container">
@@ -358,16 +387,19 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         type="text"
                         value={senderSearchTerm}
                         onChange={(e) => {
-                          setSenderSearchTerm(e.target.value);
+                          // Yazarken büyük harfe çevir
+                          const upperValue = toUpperCase(e.target.value, locale);
+                          setSenderSearchTerm(upperValue);
                           setFormData((prev) => ({
                             ...prev,
-                            senderName: e.target.value,
+                            senderName: upperValue,
                           }));
                           setShowSenderDropdown(true);
                         }}
                         onFocus={() => setShowSenderDropdown(true)}
-                        placeholder="Gönderici adı yazın veya seçin..."
+                        placeholder={toUpperCase(t('placeholders.selectOrType'))}
                         className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        style={{ textTransform: 'uppercase' }}
                       />
 
                       {/* Clear Button */}
@@ -406,7 +438,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     {showSenderDropdown && !loadingSenders && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         {/* Yeni gönderici ekleme seçeneği */}
-                        {senderSearchTerm.trim() && !availableSenders.includes(senderSearchTerm.trim()) && (
+                        {senderSearchTerm.trim() && !availableSenders.some(s => s.toUpperCase() === senderSearchTerm.toUpperCase()) && (
                           <button
                             type="button"
                             onClick={handleAddNewSender}
@@ -418,7 +450,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                               </span>
                               <div>
                                 <p className="font-medium text-sm text-green-700">
-                                  "{senderSearchTerm.trim()}" olarak ekle
+                                  "{toUpperCase(senderSearchTerm.trim(), locale)}" olarak ekle
                                 </p>
                                 <p className="text-xs text-green-600">
                                   Yeni gönderici olarak kullan
@@ -448,6 +480,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             <p className="text-sm">
                               "{senderSearchTerm}" ile eşleşen gönderici bulunamadı.
                             </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            </p>
                           </div>
                         ) : (
                           <>
@@ -467,7 +502,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                     <span className="material-symbols-outlined text-gray-400 text-lg">
                                       local_shipping
                                     </span>
-                                    <p className="font-medium text-sm truncate">
+                                    <p className="font-medium text-sm truncate uppercase">
                                       {sender}
                                     </p>
                                   </div>
@@ -498,7 +533,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Antrepo Varış Tarihi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Antrepo Varış Tarihi</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.warehouseArrivalDate')}
+                </p>
                 <input
                   type="date"
                   name="warehouseArrivalDate"
@@ -511,7 +548,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Tescil Tarihi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Tescil Tarihi</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.registrationDate')}
+                </p>
                 <input
                   type="date"
                   name="registrationDate"
@@ -524,21 +563,29 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Beyanname No */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Beyanname No</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.declarationNumber')}
+                </p>
                 <input
                   type="text"
                   name="declarationNumber"
                   value={formData.declarationNumber}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const upperValue = toUpperCase(e.target.value, locale);
+                    setFormData(prev => ({ ...prev, declarationNumber: upperValue }));
+                  }}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Beyanname No girin"
+                  placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
               {/* Kapanma Tarihi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Kapanma Tarihi</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.lineClosureDate')}
+                </p>
                 <input
                   type="date"
                   name="lineClosureDate"
@@ -551,7 +598,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* İthalat İşlem Süresi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">İthalat İşlem Süresi (Gün)</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.importProcessingTime')}
+                </p>
                 <input
                   type="number"
                   name="importProcessingTime"
@@ -559,13 +608,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Süre (gün)"
+                  placeholder={toUpperCase(t('placeholders.enterImportProcessingTime'))}
                 />
               </label>
 
               {/* Çekilme Tarihi */}
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Çekilme Tarihi</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.withdrawalDate')}
+                </p>
                 <input
                   type="date"
                   name="withdrawalDate"
@@ -578,7 +629,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Açıklama */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
-                <p className="text-text-main text-sm font-medium pb-2">Açıklama</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.description')}
+                </p>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -586,13 +639,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   disabled={isReadOnly}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Ek açıklamalarınızı buraya yazın..."
+                  placeholder={t('placeholders.enterDescription')}
                 />
               </label>
 
               {/* Gecikme Nedeni */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
-                <p className="text-text-main text-sm font-medium pb-2">Gecikme Nedeni</p>
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.delayReason')}
+                </p>
                 <textarea
                   name="delayReason"
                   value={formData.delayReason}
@@ -600,7 +655,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   disabled={isReadOnly}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder="Olası gecikme nedenlerini belirtin..."
+                  placeholder={t('placeholders.enterDelayReason')}
                 />
               </label>
             </div>
@@ -613,7 +668,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               onClick={onClose}
               className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
-              {isReadOnly ? 'Kapat' : 'İptal'}
+              {isReadOnly ? t('common.close') : t('common.cancel')}
             </button>
             {!isReadOnly && (
               <button
@@ -622,7 +677,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined">save</span>
-                {loading ? 'Güncelleniyor...' : 'Güncelle'}
+                {loading ? t('common.loading') : t('common.update')}
               </button>
             )}
           </div>

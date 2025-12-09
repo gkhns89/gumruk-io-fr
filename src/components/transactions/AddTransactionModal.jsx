@@ -1276,7 +1276,7 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder="Olası gecikme nedenlerini belirtin..."
+                  placeholder={t('placeholders.enterDelayReason')}  
                 />
               </label>
             </div>

@@ -48,22 +48,15 @@ axiosInstance.interceptors.response.use(
       data: error.response?.data
     });
 
-    // ✅ GÜNCELLENDİ: 401 VE 403 - Token geçersiz/süresi dolmuş
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Login sayfasındaki 403 hatasını atla (hesap onayı bekliyor olabilir)
-      const isLoginRequest = originalRequest?.url?.includes('/auth/login');
+    // 401 - Unauthorized
+    if (error.response?.status === 401) {
+      console.warn('⚠️ Token geçersiz, kullanıcı çıkarılıyor');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       
-      if (!isLoginRequest) {
-        console.warn('⚠️ Token geçersiz veya süresi dolmuş, kullanıcı çıkarılıyor');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        // Login sayfasında değilsek yönlendir
-        if (!window.location.pathname.includes('/login')) {
-          // Kullanıcıya bilgi ver
-          alert('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-          window.location.href = '/login';
-        }
+      // Login sayfasında değilsek yönlendir
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
       }
     }
 

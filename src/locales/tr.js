@@ -141,6 +141,7 @@ export const tr = {
     enterDescription: "Açıklama girin...",
     typeToSearch: "Aramak için yazın...",
     selectOrType: "Seçin veya yazın...",
+    enterDelayReason: "Olası gecikme nedenlerini belirtin...",
     firstSelectClient: "Önce müşteri firması seçin",
   },
 
