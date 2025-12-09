@@ -37,8 +37,6 @@ export const tr = {
   gates: {
     yellow: "SARI",
     red: "KIRMIZI",
-    green: "YEŞİL",
-    blue: "MAVİ",
     select: "Hat Seçin",
     legend: "Hat Renkleri",
   },

@@ -37,8 +37,6 @@ export const en = {
   gates: {
     yellow: "YELLOW",
     red: "RED",
-    green: "GREEN",
-    blue: "BLUE",
     select: "Select Line",
     legend: "Line Colors",
   },

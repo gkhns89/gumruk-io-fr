@@ -14,16 +14,6 @@ const getGateRowStyle = (gate) => {
       hoverBg: 'hover:bg-red-100',
       border: 'border-l-4 border-l-red-500',
     },
-    'YEŞİL': {
-      bg: 'bg-green-50',
-      hoverBg: 'hover:bg-green-100',
-      border: 'border-l-4 border-l-green-500',
-    },
-    'MAVİ': {
-      bg: 'bg-blue-50',
-      hoverBg: 'hover:bg-blue-100',
-      border: 'border-l-4 border-l-blue-500',
-    },
   };
 
   return gateStyles[gate] || { bg: '', hoverBg: 'hover:bg-gray-50', border: '' };
@@ -34,8 +24,6 @@ const getGateBadge = (gate) => {
   const badgeStyles = {
     'SARI': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
     'KIRMIZI': 'bg-red-100 text-red-800 border border-red-300',
-    'YEŞİL': 'bg-green-100 text-green-800 border border-green-300',
-    'MAVİ': 'bg-blue-100 text-blue-800 border border-blue-300',
   };
 
   return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
