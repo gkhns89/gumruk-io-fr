@@ -42,24 +42,24 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      'PENDING': { color: 'pending', label: 'Bekliyor' },
-      'REGISTERED': { color: 'registered', label: 'Tescil Edildi' },
-      'INSPECTED': { color: 'inspected', label: 'Muayene Tamamlandı' },
-      'CP_COMPLETED': { color: 'completed', label: 'Gümrük İşlemleri Tamamlandı' },
-      'WITHDRAWN': { color: 'withdrawn', label: 'Çekildi' },
-      'CANCELLED': { color: 'cancelled', label: 'İptal' },
+      'PENDING': { color: 'pending', label: 'BEKLİYOR' },
+      'REGISTERED': { color: 'registered', label: 'TESCİL EDİLDİ' },
+      'INSPECTED': { color: 'inspected', label: 'MUAYENE TAMAMLANDI' },
+      'CP_COMPLETED': { color: 'completed', label: 'GÜMRÜK İŞLEMLERİ TAMAMLANDI' },
+      'WITHDRAWN': { color: 'withdrawn', label: 'ÇEKİLDİ' },
+      'CANCELLED': { color: 'cancelled', label: 'İPTAL' },
     };
 
     const statusInfo = statusMap[status] || { color: 'default', label: status };
-    
+
     const colors = {
-      pending: "bg-sky-50 text-sky-700",
-      registered: "bg-amber-50 text-amber-700",
-      inspected: "bg-purple-50 text-purple-700",
-      completed: "bg-emerald-50 text-emerald-700",
-      withdrawn: "bg-green-50 text-green-700",
-      cancelled: "bg-rose-50 text-rose-700",
-      default: "bg-gray-50 text-gray-600",
+      pending: "bg-sky-50 text-sky-700 border border-sky-300",
+      registered: "bg-amber-50 text-amber-700 border border-amber-300",
+      inspected: "bg-purple-50 text-purple-700 border border-purple-300",
+      completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
+      withdrawn: "bg-green-50 text-green-700 border border-green-300",
+      cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
+      default: "bg-gray-50 text-gray-600 border border-gray-300",
     };
 
     return {

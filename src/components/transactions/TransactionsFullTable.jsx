@@ -64,13 +64,13 @@ export default function TransactionsFullTable({
     const statusInfo = statusMap[status] || { color: 'default', label: status };
 
     const colors = {
-      pending: "bg-sky-50 text-sky-700",
-      registered: "bg-amber-50 text-amber-700",
-      inspected: "bg-purple-50 text-purple-700",
-      completed: "bg-emerald-50 text-emerald-700",
-      withdrawn: "bg-green-50 text-green-700",
-      cancelled: "bg-rose-50 text-rose-700",
-      default: "bg-gray-50 text-gray-600",
+      pending: "bg-sky-50 text-sky-700 border border-sky-300",
+      registered: "bg-amber-50 text-amber-700 border border-amber-300",
+      inspected: "bg-purple-50 text-purple-700 border border-purple-300",
+      completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
+      withdrawn: "bg-green-50 text-green-700 border border-green-300",
+      cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
+      default: "bg-gray-50 text-gray-600 border border-gray-300",
     };
 
     return {
