@@ -859,6 +859,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 <input
                   type="number"
                   step="1"
+                  min="0"
                   name="containerAmount"
                   value={formData.containerAmount}
                   onChange={handleChange}
@@ -876,6 +877,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   name="weight"
                   value={formData.weight}
                   onChange={handleChange}
@@ -893,6 +895,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 <input
                   type="number"
                   step="1"
+                  min="0"
                   name="tax"
                   value={formData.tax}
                   onChange={handleTaxChange}
