@@ -45,7 +45,9 @@ export const tr = {
   status: {
     pending: "Beklemede",
     inProgress: "İşlemde",
+    inspected: "Muayene Tamamlandı",
     completed: "Tamamlandı",
+    withdrawn: "Çekildi",
     cancelled: "İptal Edildi",
   },
 

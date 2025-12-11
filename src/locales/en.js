@@ -45,7 +45,9 @@ export const en = {
   status: {
     pending: "Pending",
     inProgress: "In Progress",
+    inspected: "Inspected",
     completed: "Completed",
+    withdrawn: "Withdrawn",
     cancelled: "Cancelled",
   },
 

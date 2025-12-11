@@ -1,4 +1,5 @@
 import React from "react";
+import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
 
 export default function Stats({ transactions, loading }) {
   const stats = {
@@ -70,50 +71,33 @@ export default function Stats({ transactions, loading }) {
   ];
 
   const getColorClasses = (color) => {
-    const colorMap = {
-      pending: {
-        bg: "bg-sky-50",
-        text: "text-sky-700",
-        icon: "text-sky-600",
-      },
-      registered: {
-        bg: "bg-amber-50",
-        text: "text-amber-700",
-        icon: "text-amber-600",
-      },
-      inspected: {
-        bg: "bg-purple-50",
-        text: "text-purple-700",
-        icon: "text-purple-600",
-      },
-      completed: {
-        bg: "bg-emerald-50",
-        text: "text-emerald-700",
-        icon: "text-emerald-600",
-      },
-      withdrawn: {
-        bg: "bg-green-50",
-        text: "text-green-700",
-        icon: "text-green-600",
-      },
-      delayed: {
-        bg: "bg-orange-50",
-        text: "text-orange-700",
-        icon: "text-orange-600",
-      },
-      cancelled: {
-        bg: "bg-rose-50",
-        text: "text-rose-700",
-        icon: "text-rose-600",
-      },
-      gray: {
-        bg: "bg-gray-50",
-        text: "text-gray-700",
-        icon: "text-gray-600",
-      },
-    };
+    // Constants'dan status rengini bul
+    const statusConfig = TRANSACTION_STATUS.find(s => s.color === color);
 
-    return colorMap[color] || colorMap.gray;
+    if (statusConfig) {
+      return {
+        bg: statusConfig.bgClass,
+        text: statusConfig.textClass,
+        icon: statusConfig.iconClass,
+      };
+    }
+
+    // Özel durumlar için (delayed, gray)
+    const specialConfig = SPECIAL_STATUS_COLORS[color];
+    if (specialConfig) {
+      return {
+        bg: specialConfig.bgClass,
+        text: specialConfig.textClass,
+        icon: specialConfig.iconClass,
+      };
+    }
+
+    // Fallback
+    return {
+      bg: SPECIAL_STATUS_COLORS.gray.bgClass,
+      text: SPECIAL_STATUS_COLORS.gray.textClass,
+      icon: SPECIAL_STATUS_COLORS.gray.iconClass,
+    };
   };
 
   return (
