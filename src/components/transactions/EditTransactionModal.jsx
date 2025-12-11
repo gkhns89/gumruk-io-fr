@@ -34,6 +34,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [showSenderDropdown, setShowSenderDropdown] = useState(false);
   const [loadingSenders, setLoadingSenders] = useState(false);
 
+  // Gümrük listesi state'leri
+  const [availableCustoms, setAvailableCustoms] = useState([]);
+  const [filteredCustoms, setFilteredCustoms] = useState([]);
+  const [customsSearchTerm, setCustomsSearchTerm] = useState(transaction.customsName || "");
+  const [showCustomsDropdown, setShowCustomsDropdown] = useState(false);
+  const [loadingCustoms, setLoadingCustoms] = useState(false);
+
+  // Antrepo listesi state'leri
+  const [availableWarehouses, setAvailableWarehouses] = useState([]);
+  const [filteredWarehouses, setFilteredWarehouses] = useState([]);
+  const [warehouseSearchTerm, setWarehouseSearchTerm] = useState(transaction.customsWarehouse || "");
+  const [showWarehouseDropdown, setShowWarehouseDropdown] = useState(false);
+  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,6 +55,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   useEffect(() => {
     if (!isReadOnly) {
       loadSenders();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Gümrük listesini yükle
+  useEffect(() => {
+    if (!isReadOnly) {
+      loadCustoms();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Antrepo listesini yükle
+  useEffect(() => {
+    if (!isReadOnly) {
+      loadWarehouses();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -56,6 +84,32 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       setFilteredSenders(filtered.slice(0, 50));
     }
   }, [senderSearchTerm, availableSenders]);
+
+  // Gümrük arama filtresi
+  useEffect(() => {
+    if (customsSearchTerm.trim() === "") {
+      setFilteredCustoms(availableCustoms.slice(0, 50));
+    } else {
+      const searchLower = customsSearchTerm.toLowerCase();
+      const filtered = availableCustoms.filter((customs) =>
+        customs.toLowerCase().includes(searchLower)
+      );
+      setFilteredCustoms(filtered.slice(0, 50));
+    }
+  }, [customsSearchTerm, availableCustoms]);
+
+  // Antrepo arama filtresi
+  useEffect(() => {
+    if (warehouseSearchTerm.trim() === "") {
+      setFilteredWarehouses(availableWarehouses.slice(0, 50));
+    } else {
+      const searchLower = warehouseSearchTerm.toLowerCase();
+      const filtered = availableWarehouses.filter((warehouse) =>
+        warehouse.toLowerCase().includes(searchLower)
+      );
+      setFilteredWarehouses(filtered.slice(0, 50));
+    }
+  }, [warehouseSearchTerm, availableWarehouses]);
 
   // Gönderici dropdown dışına tıklandığında kapat
   useEffect(() => {
@@ -74,6 +128,42 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showSenderDropdown]);
+
+  // Gümrük dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById("edit-customs-dropdown-container");
+      if (dropdown && !dropdown.contains(event.target)) {
+        setShowCustomsDropdown(false);
+      }
+    };
+
+    if (showCustomsDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showCustomsDropdown]);
+
+  // Antrepo dropdown dışına tıklandığında kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById("edit-warehouse-dropdown-container");
+      if (dropdown && !dropdown.contains(event.target)) {
+        setShowWarehouseDropdown(false);
+      }
+    };
+
+    if (showWarehouseDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showWarehouseDropdown]);
 
   // Mevcut işlemlerden unique gönderici isimlerini yükle
   const loadSenders = async () => {
@@ -103,12 +193,89 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
+  // Mevcut işlemlerden unique gümrük isimlerini yükle
+  const loadCustoms = async () => {
+    try {
+      setLoadingCustoms(true);
+      const result = await transactionService.getAllTransactions();
+
+      if (result.success) {
+        const uniqueCustoms = [...new Set(
+          result.data
+            .map((t) => t.customsName)
+            .filter((name) => name && name.trim() !== "")
+        )].sort((a, b) => a.localeCompare(b, 'tr'));
+
+        setAvailableCustoms(uniqueCustoms);
+        setFilteredCustoms(uniqueCustoms.slice(0, 50));
+      } else {
+        setAvailableCustoms([]);
+        setFilteredCustoms([]);
+      }
+    } catch (err) {
+      console.error("Gümrük listesi yükleme hatası:", err);
+      setAvailableCustoms([]);
+      setFilteredCustoms([]);
+    } finally {
+      setLoadingCustoms(false);
+    }
+  };
+
+  // Mevcut işlemlerden unique antrepo isimlerini yükle
+  const loadWarehouses = async () => {
+    try {
+      setLoadingWarehouses(true);
+      const result = await transactionService.getAllTransactions();
+
+      if (result.success) {
+        const uniqueWarehouses = [...new Set(
+          result.data
+            .map((t) => t.customsWarehouse)
+            .filter((name) => name && name.trim() !== "")
+        )].sort((a, b) => a.localeCompare(b, 'tr'));
+
+        setAvailableWarehouses(uniqueWarehouses);
+        setFilteredWarehouses(uniqueWarehouses.slice(0, 50));
+      } else {
+        setAvailableWarehouses([]);
+        setFilteredWarehouses([]);
+      }
+    } catch (err) {
+      console.error("Antrepo listesi yükleme hatası:", err);
+      setAvailableWarehouses([]);
+      setFilteredWarehouses([]);
+    } finally {
+      setLoadingWarehouses(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // Vergi değeri için özel validasyon (maksimum 4 ondalık basamak)
+  const handleTaxChange = (e) => {
+    const value = e.target.value;
+
+    // Boş değere izin ver
+    if (value === '') {
+      setFormData(prev => ({ ...prev, tax: '' }));
+      return;
+    }
+
+    // Değeri kontrol et - maksimum 4 ondalık basamak
+    const parts = value.split('.');
+    if (parts.length === 2 && parts[1].length > 4) {
+      // 4 haneden fazla ondalık varsa, 4 haneye kısalt
+      const truncatedValue = `${parts[0]}.${parts[1].substring(0, 4)}`;
+      setFormData(prev => ({ ...prev, tax: truncatedValue }));
+    } else {
+      setFormData(prev => ({ ...prev, tax: value }));
+    }
   };
 
   // Gönderici seçildiğinde
@@ -131,6 +298,52 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       }));
       setSenderSearchTerm(upperCaseSender);
       setShowSenderDropdown(false);
+    }
+  };
+
+  // Gümrük seçildiğinde
+  const handleCustomsSelect = (customsName) => {
+    setFormData((prev) => ({
+      ...prev,
+      customsName: customsName,
+    }));
+    setCustomsSearchTerm(customsName);
+    setShowCustomsDropdown(false);
+  };
+
+  // Yeni gümrük ekle - BÜYÜK HARFE ÇEVİR
+  const handleAddNewCustoms = () => {
+    if (customsSearchTerm.trim()) {
+      const upperCaseCustoms = toUpperCase(customsSearchTerm.trim(), locale);
+      setFormData((prev) => ({
+        ...prev,
+        customsName: upperCaseCustoms,
+      }));
+      setCustomsSearchTerm(upperCaseCustoms);
+      setShowCustomsDropdown(false);
+    }
+  };
+
+  // Antrepo seçildiğinde
+  const handleWarehouseSelect = (warehouseName) => {
+    setFormData((prev) => ({
+      ...prev,
+      customsWarehouse: warehouseName,
+    }));
+    setWarehouseSearchTerm(warehouseName);
+    setShowWarehouseDropdown(false);
+  };
+
+  // Yeni antrepo ekle - BÜYÜK HARFE ÇEVİR
+  const handleAddNewWarehouse = () => {
+    if (warehouseSearchTerm.trim()) {
+      const upperCaseWarehouse = toUpperCase(warehouseSearchTerm.trim(), locale);
+      setFormData((prev) => ({
+        ...prev,
+        customsWarehouse: upperCaseWarehouse,
+      }));
+      setWarehouseSearchTerm(upperCaseWarehouse);
+      setShowWarehouseDropdown(false);
     }
   };
 
@@ -284,42 +497,359 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 />
               </label>
 
-              {/* Gümrük */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.customsName')}
-                </p>
-                <input
-                  type="text"
-                  name="customsName"
-                  value={formData.customsName}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.enterCustomsName'))}
-                  style={{ textTransform: 'uppercase' }}
-                />
-              </label>
+              {/* Gümrük - Aranabilir Dropdown */}
+              <div className="flex flex-col w-full">
+                <div className="flex items-center justify-between pb-2">
+                  <p className="text-text-main text-sm font-medium">
+                    {t('transaction.customsName')}
+                    {!isReadOnly && loadingCustoms && (
+                      <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                        {t('common.loading')}
+                      </span>
+                    )}
+                    {!isReadOnly && !loadingCustoms && availableCustoms.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({availableCustoms.length} kayıtlı)
+                      </span>
+                    )}
+                  </p>
+                </div>
 
-              {/* Antrepo */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.customsWarehouse')}
-                </p>
-                <input
-                  type="text"
-                  name="customsWarehouse"
-                  value={formData.customsWarehouse}
-                  onChange={(e) => {
-                    const upperValue = toUpperCase(e.target.value, locale);
-                    setFormData(prev => ({ ...prev, customsWarehouse: upperValue }));
-                  }}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
-                  style={{ textTransform: 'uppercase' }}
-                />
-              </label>
+                {isReadOnly ? (
+                  <input
+                    type="text"
+                    value={formData.customsName}
+                    disabled
+                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder={toUpperCase(t('placeholders.enterCustomsName'))}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                ) : (
+                  <div className="relative" id="edit-customs-dropdown-container">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={customsSearchTerm}
+                        onChange={(e) => {
+                          const upperValue = toUpperCase(e.target.value, locale);
+                          setCustomsSearchTerm(upperValue);
+                          setFormData((prev) => ({
+                            ...prev,
+                            customsName: upperValue,
+                          }));
+                          setShowCustomsDropdown(true);
+                        }}
+                        onFocus={() => setShowCustomsDropdown(true)}
+                        placeholder={toUpperCase(t('placeholders.selectOrType'))}
+                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        style={{ textTransform: 'uppercase' }}
+                      />
+
+                      {/* Clear Button */}
+                      {customsSearchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomsSearchTerm("");
+                            setFormData((prev) => ({
+                              ...prev,
+                              customsName: "",
+                            }));
+                            setShowCustomsDropdown(true);
+                          }}
+                          className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            close
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Dropdown Icon */}
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomsDropdown(!showCustomsDropdown)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          {showCustomsDropdown ? "expand_less" : "expand_more"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Customs Dropdown List */}
+                    {showCustomsDropdown && !loadingCustoms && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {/* Yeni gümrük ekleme seçeneği */}
+                        {customsSearchTerm.trim() && !availableCustoms.some(c => c.toUpperCase() === customsSearchTerm.toUpperCase()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewCustoms}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-green-600 text-lg">
+                                add_circle
+                              </span>
+                              <div>
+                                <p className="font-medium text-sm text-green-700">
+                                  "{toUpperCase(customsSearchTerm.trim(), locale)}" olarak ekle
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  Yeni gümrük olarak kullan
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )}
+
+                        {filteredCustoms.length === 0 && !customsSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              account_balance
+                            </span>
+                            <p className="text-sm">
+                              Henüz kayıtlı gümrük yok.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yeni gümrük adı yazarak ekleyebilirsiniz.
+                            </p>
+                          </div>
+                        ) : filteredCustoms.length === 0 && customsSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              search_off
+                            </span>
+                            <p className="text-sm">
+                              "{customsSearchTerm}" ile eşleşen gümrük bulunamadı.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {filteredCustoms.map((customs, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleCustomsSelect(customs)}
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                  formData.customsName === customs
+                                    ? "bg-blue-50 text-primary font-medium"
+                                    : ""
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                      account_balance
+                                    </span>
+                                    <p className="font-medium text-sm truncate uppercase">
+                                      {customs}
+                                    </p>
+                                  </div>
+                                  {formData.customsName === customs && (
+                                    <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                      check_circle
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+
+                            {filteredCustoms.length === 50 &&
+                              availableCustoms.length > 50 && (
+                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                  <p className="text-xs text-yellow-800">
+                                    İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  </p>
+                                </div>
+                              )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Antrepo - Aranabilir Dropdown */}
+              <div className="flex flex-col w-full">
+                <div className="flex items-center justify-between pb-2">
+                  <p className="text-text-main text-sm font-medium">
+                    {t('transaction.customsWarehouse')}
+                    {!isReadOnly && loadingWarehouses && (
+                      <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                        {t('common.loading')}
+                      </span>
+                    )}
+                    {!isReadOnly && !loadingWarehouses && availableWarehouses.length > 0 && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({availableWarehouses.length} kayıtlı)
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {isReadOnly ? (
+                  <input
+                    type="text"
+                    value={formData.customsWarehouse}
+                    disabled
+                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                ) : (
+                  <div className="relative" id="edit-warehouse-dropdown-container">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={warehouseSearchTerm}
+                        onChange={(e) => {
+                          const upperValue = toUpperCase(e.target.value, locale);
+                          setWarehouseSearchTerm(upperValue);
+                          setFormData((prev) => ({
+                            ...prev,
+                            customsWarehouse: upperValue,
+                          }));
+                          setShowWarehouseDropdown(true);
+                        }}
+                        onFocus={() => setShowWarehouseDropdown(true)}
+                        placeholder={toUpperCase(t('placeholders.selectOrType'))}
+                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        style={{ textTransform: 'uppercase' }}
+                      />
+
+                      {/* Clear Button */}
+                      {warehouseSearchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWarehouseSearchTerm("");
+                            setFormData((prev) => ({
+                              ...prev,
+                              customsWarehouse: "",
+                            }));
+                            setShowWarehouseDropdown(true);
+                          }}
+                          className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            close
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Dropdown Icon */}
+                      <button
+                        type="button"
+                        onClick={() => setShowWarehouseDropdown(!showWarehouseDropdown)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          {showWarehouseDropdown ? "expand_less" : "expand_more"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Warehouse Dropdown List */}
+                    {showWarehouseDropdown && !loadingWarehouses && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {/* Yeni antrepo ekleme seçeneği */}
+                        {warehouseSearchTerm.trim() && !availableWarehouses.some(w => w.toUpperCase() === warehouseSearchTerm.toUpperCase()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewWarehouse}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-green-600 text-lg">
+                                add_circle
+                              </span>
+                              <div>
+                                <p className="font-medium text-sm text-green-700">
+                                  "{toUpperCase(warehouseSearchTerm.trim(), locale)}" olarak ekle
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  Yeni antrepo olarak kullan
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )}
+
+                        {filteredWarehouses.length === 0 && !warehouseSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              warehouse
+                            </span>
+                            <p className="text-sm">
+                              Henüz kayıtlı antrepo yok.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yeni antrepo adı yazarak ekleyebilirsiniz.
+                            </p>
+                          </div>
+                        ) : filteredWarehouses.length === 0 && warehouseSearchTerm.trim() ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <span className="material-symbols-outlined text-4xl mb-2">
+                              search_off
+                            </span>
+                            <p className="text-sm">
+                              "{warehouseSearchTerm}" ile eşleşen antrepo bulunamadı.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {filteredWarehouses.map((warehouse, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleWarehouseSelect(warehouse)}
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                  formData.customsWarehouse === warehouse
+                                    ? "bg-blue-50 text-primary font-medium"
+                                    : ""
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                      warehouse
+                                    </span>
+                                    <p className="font-medium text-sm truncate uppercase">
+                                      {warehouse}
+                                    </p>
+                                  </div>
+                                  {formData.customsWarehouse === warehouse && (
+                                    <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                      check_circle
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+
+                            {filteredWarehouses.length === 50 &&
+                              availableWarehouses.length > 50 && (
+                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                  <p className="text-xs text-yellow-800">
+                                    İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  </p>
+                                </div>
+                              )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Kap */}
               <label className="flex flex-col w-full">
@@ -362,10 +892,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 </p>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   name="tax"
                   value={formData.tax}
-                  onChange={handleChange}
+                  onChange={handleTaxChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterTax'))}
