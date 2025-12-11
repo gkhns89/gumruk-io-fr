@@ -3,10 +3,8 @@ import React from "react";
 // Hat badge renkleri
 const getGateBadge = (gate) => {
   const badgeStyles = {
-    'Sarı': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    'Kırmızı': 'bg-red-100 text-red-800 border border-red-300',
-    'Yeşil': 'bg-green-100 text-green-800 border border-green-300',
-    'Mavi': 'bg-blue-100 text-blue-800 border border-blue-300',
+    'SARI': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    'KIRMIZI': 'bg-red-100 text-red-800 border border-red-300',
   };
 
   return badgeStyles[gate] || 'bg-gray-100 text-gray-800';

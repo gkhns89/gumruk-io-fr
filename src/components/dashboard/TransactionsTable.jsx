@@ -167,14 +167,6 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
               Kırmızı
             </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium border border-green-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-              Yeşil
-            </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-xs font-medium border border-blue-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Mavi
-            </span>
           </div>
         </div>
         
