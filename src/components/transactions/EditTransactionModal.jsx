@@ -334,7 +334,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.containerAmount'))}
+                  placeholder={toUpperCase(t('placeholders.enterContainerAmount'))}
                 />
               </label>
 
