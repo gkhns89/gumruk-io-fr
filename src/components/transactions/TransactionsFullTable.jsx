@@ -5,47 +5,47 @@ import DeleteConfirmModal from "./DeleteConfirmModal";
 // Durum renk mapping - Sadece sol border
 const getStatusRowStyle = (status) => {
   const statusStyles = {
-    'PENDING': {
-      border: 'border-l-4 border-l-sky-400',
+    PENDING: {
+      border: "border-l-4 border-l-sky-400",
     },
-    'REGISTERED': {
-      border: 'border-l-4 border-l-amber-400',
+    REGISTERED: {
+      border: "border-l-4 border-l-amber-400",
     },
-    'INSPECTED': {
-      border: 'border-l-4 border-l-purple-400',
+    INSPECTED: {
+      border: "border-l-4 border-l-purple-400",
     },
-    'CP_COMPLETED': {
-      border: 'border-l-4 border-l-emerald-400',
+    CP_COMPLETED: {
+      border: "border-l-4 border-l-emerald-400",
     },
-    'WITHDRAWN': {
-      border: 'border-l-4 border-l-green-500',
+    WITHDRAWN: {
+      border: "border-l-4 border-l-green-500",
     },
-    'CANCELLED': {
-      border: 'border-l-4 border-l-rose-500',
+    CANCELLED: {
+      border: "border-l-4 border-l-rose-500",
     },
   };
 
-  return statusStyles[status] || { border: 'border-l-4 border-l-gray-300' };
+  return statusStyles[status] || { border: "border-l-4 border-l-gray-300" };
 };
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
   const badgeStyles = {
-    'SARI': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    'KIRMIZI': 'bg-red-100 text-red-800 border border-red-300',
+    SARI: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+    KIRMIZI: "bg-red-100 text-red-800 border border-red-300",
   };
 
-  return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
+  return badgeStyles[gate] || "bg-gray-100 text-gray-800";
 };
 
-export default function TransactionsFullTable({ 
-  transactions, 
-  loading, 
-  error, 
-  onRetry, 
+export default function TransactionsFullTable({
+  transactions,
+  loading,
+  error,
+  onRetry,
   onRefresh,
   canDelete,
-  isReadOnly
+  isReadOnly,
 }) {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -53,15 +53,18 @@ export default function TransactionsFullTable({
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      'PENDING': { color: 'pending', label: 'Bekliyor' },
-      'REGISTERED': { color: 'registered', label: 'Tescil Edildi' },
-      'INSPECTED': { color: 'inspected', label: 'Muayene Tamamlandı' },
-      'CP_COMPLETED': { color: 'completed', label: 'Gümrük İşlemleri Tamamlandı' },
-      'WITHDRAWN': { color: 'withdrawn', label: 'Çekildi' },
-      'CANCELLED': { color: 'cancelled', label: 'İptal' },
+      PENDING: { color: "pending", label: "Bekliyor" },
+      REGISTERED: { color: "registered", label: "Tescil Edildi" },
+      INSPECTED: { color: "inspected", label: "Muayene Tamamlandı" },
+      CP_COMPLETED: {
+        color: "completed",
+        label: "Gümrük İşlemleri Tamamlandı",
+      },
+      WITHDRAWN: { color: "withdrawn", label: "Çekildi" },
+      CANCELLED: { color: "cancelled", label: "İptal" },
     };
 
-    const statusInfo = statusMap[status] || { color: 'default', label: status };
+    const statusInfo = statusMap[status] || { color: "default", label: status };
 
     const colors = {
       pending: "bg-sky-50 text-sky-700 border border-sky-300",
@@ -80,9 +83,9 @@ export default function TransactionsFullTable({
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
+    if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR');
+    return date.toLocaleDateString("tr-TR");
   };
 
   const handleEdit = (transaction) => {
@@ -121,7 +124,9 @@ export default function TransactionsFullTable({
   if (error) {
     return (
       <div className="bg-white p-8 flex flex-col items-center justify-center gap-4">
-        <span className="material-symbols-outlined text-6xl text-red-500">error</span>
+        <span className="material-symbols-outlined text-6xl text-red-500">
+          error
+        </span>
         <div className="text-center">
           <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
           <p className="text-text-secondary text-sm mb-4">{error}</p>
@@ -131,7 +136,9 @@ export default function TransactionsFullTable({
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm"
             >
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">refresh</span>
+                <span className="material-symbols-outlined text-lg">
+                  refresh
+                </span>
                 Tekrar Dene
               </span>
             </button>
@@ -145,7 +152,9 @@ export default function TransactionsFullTable({
   if (!transactions || transactions.length === 0) {
     return (
       <div className="bg-white p-8 flex flex-col items-center justify-center gap-4">
-        <span className="material-symbols-outlined text-6xl text-text-secondary">inbox</span>
+        <span className="material-symbols-outlined text-6xl text-text-secondary">
+          inbox
+        </span>
         <div className="text-center">
           <p className="text-text-main font-semibold mb-2">İşlem Bulunamadı</p>
           <p className="text-text-secondary text-sm">
@@ -179,10 +188,16 @@ export default function TransactionsFullTable({
                 Gönderici
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Antrepo
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Gümrük
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Hat
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Kap
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Kilo (Kg)
@@ -230,34 +245,54 @@ export default function TransactionsFullTable({
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.declarationNumber || '-'}
+                    {transaction.declarationNumber || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.brokerCompany?.name || '-'}
+                    {transaction.brokerCompany?.name || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.recipientName || '-'}
+                    {transaction.recipientName || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.senderName || '-'}
+                    {transaction.senderName || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.customsWarehouse || '-'}
+                    {transaction.customsWarehouse || "-"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.customsName || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {transaction.gate ? (
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${gateBadgeClass}`}>
+                      <span
+                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${gateBadgeClass}`}
+                      >
                         {transaction.gate}
                       </span>
                     ) : (
                       <span className="text-sm text-text-secondary">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                    {transaction.weight ? transaction.weight.toLocaleString('tr-TR', { minimumFractionDigits: 2 }, { maximumFractionDigits: 2 }) : '-'}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.containerAmount || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                    {transaction.tax ? transaction.tax.toLocaleString('tr-TR', { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 }) : '-'}
+                    {transaction.weight
+                      ? transaction.weight.toLocaleString(
+                          "tr-TR",
+                          { minimumFractionDigits: 2 },
+                          { maximumFractionDigits: 2 }
+                        )
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
+                    {transaction.tax
+                      ? transaction.tax.toLocaleString(
+                          "tr-TR",
+                          { minimumFractionDigits: 2 },
+                          { maximumFractionDigits: 4 }
+                        )
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(transaction.warehouseArrivalDate)}
@@ -272,7 +307,7 @@ export default function TransactionsFullTable({
                     {formatDate(transaction.withdrawalDate)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">
-                    {transaction.importProcessingTime || '-'}
+                    {transaction.importProcessingTime || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
@@ -290,7 +325,7 @@ export default function TransactionsFullTable({
                         title={isReadOnly ? "Görüntüle" : "Düzenle"}
                       >
                         <span className="material-symbols-outlined text-lg">
-                          {isReadOnly ? 'visibility' : 'edit'}
+                          {isReadOnly ? "visibility" : "edit"}
                         </span>
                       </button>
 

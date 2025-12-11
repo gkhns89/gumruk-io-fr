@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { GATE_OPTIONS } from "../../utils/constants";
-import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
+import {
+  toUpperCase,
+  transformFormData,
+  TRANSACTION_UPPERCASE_FIELDS,
+} from "../../utils/textUtils";
 import { t, getCurrentLocale } from "../../locales";
 
 export default function AddTransactionModal({
@@ -19,7 +23,9 @@ export default function AddTransactionModal({
     clientCompanyId: "",
     fileNo: "",
     recipientName: "",
+    customsName: "",
     customsWarehouse: "",
+    containerAmount: "",
     gate: "",
     weight: "",
     tax: "",
@@ -216,7 +222,8 @@ export default function AddTransactionModal({
         setSelectedClientInfo(selectedClient);
         setClientSearchTerm(selectedClient.name);
         // Alıcı adını büyük harfe çevir
-        const recipientName = selectedClient.shortName || selectedClient.name || "";
+        const recipientName =
+          selectedClient.shortName || selectedClient.name || "";
         setFormData((prev) => ({
           ...prev,
           recipientName: toUpperCase(recipientName, locale),
@@ -281,11 +288,13 @@ export default function AddTransactionModal({
       const result = await transactionService.getAllTransactions();
 
       if (result.success) {
-        const uniqueSenders = [...new Set(
-          result.data
-            .map((t) => t.senderName)
-            .filter((name) => name && name.trim() !== "")
-        )].sort((a, b) => a.localeCompare(b, 'tr'));
+        const uniqueSenders = [
+          ...new Set(
+            result.data
+              .map((t) => t.senderName)
+              .filter((name) => name && name.trim() !== "")
+          ),
+        ].sort((a, b) => a.localeCompare(b, "tr"));
 
         setAvailableSenders(uniqueSenders);
         setFilteredSenders(uniqueSenders.slice(0, 50));
@@ -317,7 +326,11 @@ export default function AddTransactionModal({
 
     try {
       // ✅ Belirli alanları büyük harfe çevir
-      const transformedData = transformFormData(formData, TRANSACTION_UPPERCASE_FIELDS, locale);
+      const transformedData = transformFormData(
+        formData,
+        TRANSACTION_UPPERCASE_FIELDS,
+        locale
+      );
 
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
@@ -368,7 +381,9 @@ export default function AddTransactionModal({
       clientCompanyId: "",
       fileNo: "",
       recipientName: "",
+      customsName: "",
       customsWarehouse: "",
+      containerAmount: "",
       gate: "",
       weight: "",
       tax: "",
@@ -480,7 +495,7 @@ export default function AddTransactionModal({
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
             <div>
               <h2 className="text-2xl font-bold text-text-main">
-                {t('transaction.addNew')}
+                {t("transaction.addNew")}
               </h2>
               <p className="text-text-secondary text-sm mt-1">
                 Lütfen işlem detaylarını girin ve kaydedin.
@@ -509,7 +524,7 @@ export default function AddTransactionModal({
               {/* ALICI - EN BAŞTA VE HER ZAMAN DISABLED */}
               <label className="flex flex-col w-full lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.recipient')} *
+                  {t("transaction.recipient")} *
                   {selectedClientInfo && selectedClientInfo.shortName && (
                     <span className="text-xs text-blue-600 ml-2">
                       (Firma kısa adı otomatik dolduruldu)
@@ -524,7 +539,7 @@ export default function AddTransactionModal({
                   disabled={true}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal cursor-not-allowed"
-                  placeholder={toUpperCase(t('placeholders.firstSelectClient'))}
+                  placeholder={toUpperCase(t("placeholders.firstSelectClient"))}
                 />
               </label>
 
@@ -533,10 +548,10 @@ export default function AddTransactionModal({
                 <div className="flex flex-col w-full lg:col-span-3">
                   <div className="flex items-center justify-between pb-2">
                     <p className="text-text-main text-sm font-medium">
-                      {t('transaction.brokerCompany')} *
+                      {t("transaction.brokerCompany")} *
                       {loadingBrokers && (
                         <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                          {t('common.loading')}
+                          {t("common.loading")}
                         </span>
                       )}
                       {!loadingBrokers && availableBrokers.length > 0 && (
@@ -558,7 +573,9 @@ export default function AddTransactionModal({
                           setShowBrokerDropdown(true);
                         }}
                         onFocus={() => setShowBrokerDropdown(true)}
-                        placeholder={toUpperCase(t('placeholders.typeToSearch'))}
+                        placeholder={toUpperCase(
+                          t("placeholders.typeToSearch")
+                        )}
                         disabled={loadingBrokers}
                         className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal disabled:bg-gray-100"
                       />
@@ -703,10 +720,10 @@ export default function AddTransactionModal({
               <div className="flex flex-col w-full lg:col-span-3">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    {t('transaction.clientCompany')} *
+                    {t("transaction.clientCompany")} *
                     {loadingClients && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                        {t('common.loading')}
+                        {t("common.loading")}
                       </span>
                     )}
                     {!loadingClients && availableClients.length > 0 && (
@@ -725,7 +742,7 @@ export default function AddTransactionModal({
                       <span className="material-symbols-outlined text-sm">
                         add
                       </span>
-                      {t('company.addNew')}
+                      {t("company.addNew")}
                     </button>
                   )}
                 </div>
@@ -753,7 +770,7 @@ export default function AddTransactionModal({
                         setShowClientDropdown(true);
                       }}
                       onFocus={() => setShowClientDropdown(true)}
-                      placeholder={toUpperCase(t('placeholders.typeToSearch'))}
+                      placeholder={toUpperCase(t("placeholders.typeToSearch"))}
                       disabled={
                         loadingClients ||
                         (isSuperAdmin && !formData.brokerCompanyId)
@@ -914,7 +931,7 @@ export default function AddTransactionModal({
               {/* Dosya No */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.fileNo')} *
+                  {t("transaction.fileNo")} *
                 </p>
                 <input
                   type="text"
@@ -923,15 +940,31 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t('placeholders.enterFileNo'))}
-                  style={{ textTransform: 'uppercase' }}
+                  placeholder={toUpperCase(t("placeholders.enterFileNo"))}
+                  style={{ textTransform: "uppercase" }}
                 />
               </label>
-
+           
               {/* Gümrük */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.customsWarehouse')}
+                  {t("transaction.customsName")}
+                </p>
+                <input
+                  type="text"
+                  name="customsName"
+                  value={formData.customsName}
+                  onChange={handleChange}
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
+                  placeholder={toUpperCase(t("placeholders.enterCustomsName"))}
+                  style={{ textTransform: "uppercase" }}
+                />
+              </label>
+           
+              {/* Antrepo */}
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t("transaction.customsWarehouse")}
                 </p>
                 <input
                   type="text"
@@ -939,35 +972,33 @@ export default function AddTransactionModal({
                   value={formData.customsWarehouse}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
-                  style={{ textTransform: 'uppercase' }}
+                  placeholder={toUpperCase(
+                    t("placeholders.enterCustomsWarehouse")
+                  )}
+                  style={{ textTransform: "uppercase" }}
                 />
               </label>
 
-              {/* Hat - Combobox (constants'dan alınıyor) */}
+              {/* Kap */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.gate')}
+                  {t("transaction.containerAmount")}
                 </p>
-                <select
-                  name="gate"
-                  value={formData.gate}
+                <input
+                  type="number"
+                  step="1"
+                  name="weight"
+                  value={formData.containerAmount}
                   onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal"
-                >
-                  <option value="">{toUpperCase(t('gates.select'))}</option>
-                  {GATE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {getGateDisplayLabel(option)}
-                    </option>
-                  ))}
-                </select>
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
+                  placeholder={toUpperCase(t("placeholders.containerAmount"))}
+                />
               </label>
 
               {/* Kilo */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.weight')}
+                  {t("transaction.weight")}
                 </p>
                 <input
                   type="number"
@@ -976,14 +1007,14 @@ export default function AddTransactionModal({
                   value={formData.weight}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t('placeholders.enterWeight'))}
+                  placeholder={toUpperCase(t("placeholders.enterWeight"))}
                 />
               </label>
 
               {/* Vergi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.tax')}
+                  {t("transaction.tax")}
                 </p>
                 <input
                   type="number"
@@ -992,7 +1023,7 @@ export default function AddTransactionModal({
                   value={formData.tax}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t('placeholders.enterTax'))}
+                  placeholder={toUpperCase(t("placeholders.enterTax"))}
                 />
               </label>
 
@@ -1000,10 +1031,10 @@ export default function AddTransactionModal({
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    {t('transaction.sender')}
+                    {t("transaction.sender")}
                     {loadingSenders && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                        {t('common.loading')}
+                        {t("common.loading")}
                       </span>
                     )}
                     {!loadingSenders && availableSenders.length > 0 && (
@@ -1030,9 +1061,9 @@ export default function AddTransactionModal({
                         setShowSenderDropdown(true);
                       }}
                       onFocus={() => setShowSenderDropdown(true)}
-                      placeholder={toUpperCase(t('placeholders.selectOrType'))}
+                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
                       className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
-                      style={{ textTransform: 'uppercase' }}
+                      style={{ textTransform: "uppercase" }}
                     />
 
                     {/* Clear Button */}
@@ -1071,29 +1102,36 @@ export default function AddTransactionModal({
                   {showSenderDropdown && !loadingSenders && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {/* Yeni gönderici ekleme seçeneği */}
-                      {senderSearchTerm.trim() && !availableSenders.some(s => s.toUpperCase() === senderSearchTerm.toUpperCase()) && (
-                        <button
-                          type="button"
-                          onClick={handleAddNewSender}
-                          className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-green-600 text-lg">
-                              add_circle
-                            </span>
-                            <div>
-                              <p className="font-medium text-sm text-green-700">
-                                "{toUpperCase(senderSearchTerm.trim(), locale)}" olarak ekle
-                              </p>
-                              <p className="text-xs text-green-600">
-                                Yeni gönderici olarak kullan
-                              </p>
+                      {senderSearchTerm.trim() &&
+                        !availableSenders.some(
+                          (s) =>
+                            s.toUpperCase() === senderSearchTerm.toUpperCase()
+                        ) && (
+                          <button
+                            type="button"
+                            onClick={handleAddNewSender}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-green-600 text-lg">
+                                add_circle
+                              </span>
+                              <div>
+                                <p className="font-medium text-sm text-green-700">
+                                  "
+                                  {toUpperCase(senderSearchTerm.trim(), locale)}
+                                  " olarak ekle
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  Yeni gönderici olarak kullan
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      )}
+                          </button>
+                        )}
 
-                      {filteredSenders.length === 0 && !senderSearchTerm.trim() ? (
+                      {filteredSenders.length === 0 &&
+                      !senderSearchTerm.trim() ? (
                         <div className="p-4 text-center text-gray-500">
                           <span className="material-symbols-outlined text-4xl mb-2">
                             local_shipping
@@ -1105,16 +1143,19 @@ export default function AddTransactionModal({
                             Yeni gönderici adı yazarak ekleyebilirsiniz.
                           </p>
                         </div>
-                      ) : filteredSenders.length === 0 && senderSearchTerm.trim() ? (
+                      ) : filteredSenders.length === 0 &&
+                        senderSearchTerm.trim() ? (
                         <div className="p-4 text-center text-gray-500">
                           <span className="material-symbols-outlined text-4xl mb-2">
                             search_off
                           </span>
                           <p className="text-sm">
-                            "{senderSearchTerm}" ile eşleşen gönderici bulunamadı.
+                            "{senderSearchTerm}" ile eşleşen gönderici
+                            bulunamadı.
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            Yukarıdaki butona tıklayarak yeni olarak
+                            ekleyebilirsiniz.
                           </p>
                         </div>
                       ) : (
@@ -1152,7 +1193,8 @@ export default function AddTransactionModal({
                             availableSenders.length > 50 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                 <p className="text-xs text-yellow-800">
-                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama
+                                  yapın.
                                 </p>
                               </div>
                             )}
@@ -1166,7 +1208,7 @@ export default function AddTransactionModal({
               {/* Antrepo Varış Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.warehouseArrivalDate')}
+                  {t("transaction.warehouseArrivalDate")}
                 </p>
                 <input
                   type="date"
@@ -1180,7 +1222,7 @@ export default function AddTransactionModal({
               {/* Tescil Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.registrationDate')}
+                  {t("transaction.registrationDate")}
                 </p>
                 <input
                   type="date"
@@ -1194,7 +1236,7 @@ export default function AddTransactionModal({
               {/* Beyanname No */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.declarationNumber')}
+                  {t("transaction.declarationNumber")}
                 </p>
                 <input
                   type="text"
@@ -1203,14 +1245,34 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
                   placeholder="Beyanname No girin"
-                  style={{ textTransform: 'uppercase' }}
+                  style={{ textTransform: "uppercase" }}
                 />
               </label>
 
+              {/* Hat - Combobox (constants'dan alınıyor) */}
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t("transaction.gate")}
+                </p>
+                <select
+                  name="gate"
+                  value={formData.gate}
+                  onChange={handleChange}
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal"
+                >
+                  <option value="">{toUpperCase(t("gates.select"))}</option>
+                  {GATE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {getGateDisplayLabel(option)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              
               {/* Kapanma Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.lineClosureDate')}
+                  {t("transaction.lineClosureDate")}
                 </p>
                 <input
                   type="date"
@@ -1224,7 +1286,7 @@ export default function AddTransactionModal({
               {/* İthalat İşlem Süresi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.importProcessingTime')}
+                  {t("transaction.importProcessingTime")}
                 </p>
                 <input
                   type="number"
@@ -1232,14 +1294,16 @@ export default function AddTransactionModal({
                   value={formData.importProcessingTime}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t('placeholders.enterImportProcessingTime'))}
+                  placeholder={toUpperCase(
+                    t("placeholders.enterImportProcessingTime")
+                  )}
                 />
               </label>
 
               {/* Çekilme Tarihi */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.withdrawalDate')}
+                  {t("transaction.withdrawalDate")}
                 </p>
                 <input
                   type="date"
@@ -1253,7 +1317,7 @@ export default function AddTransactionModal({
               {/* Açıklama */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.description')}
+                  {t("transaction.description")}
                 </p>
                 <textarea
                   name="description"
@@ -1261,14 +1325,14 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={t('placeholders.enterDescription')}
+                  placeholder={t("placeholders.enterDescription")}
                 />
               </label>
 
               {/* Gecikme Nedeni */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.delayReason')}
+                  {t("transaction.delayReason")}
                 </p>
                 <textarea
                   name="delayReason"
@@ -1276,7 +1340,7 @@ export default function AddTransactionModal({
                   onChange={handleChange}
                   rows="3"
                   className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={t('placeholders.enterDelayReason')}  
+                  placeholder={t("placeholders.enterDelayReason")}
                 />
               </label>
             </div>
@@ -1289,14 +1353,14 @@ export default function AddTransactionModal({
               onClick={handleClear}
               className="px-6 py-3 bg-neutral/20 text-text-main rounded-lg hover:bg-neutral/30 transition-colors font-semibold"
             >
-              {t('common.clear')}
+              {t("common.clear")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
-              {t('common.cancel')}
+              {t("common.cancel")}
             </button>
             <button
               onClick={handleSubmit}
@@ -1304,7 +1368,7 @@ export default function AddTransactionModal({
               className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">save</span>
-              {loading ? t('common.loading') : t('common.save')}
+              {loading ? t("common.loading") : t("common.save")}
             </button>
           </div>
         </div>
@@ -1326,7 +1390,7 @@ export default function AddTransactionModal({
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
                   <h3 className="text-xl font-bold text-text-main">
-                    {t('company.addNew')}
+                    {t("company.addNew")}
                   </h3>
                   <p className="text-text-secondary text-sm mt-1">
                     {currentUser?.company?.name || "Broker Firması"}
@@ -1347,7 +1411,7 @@ export default function AddTransactionModal({
                 <div className="space-y-4">
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      {t('company.name')} *
+                      {t("company.name")} *
                     </p>
                     <input
                       type="text"
@@ -1360,14 +1424,14 @@ export default function AddTransactionModal({
                       }
                       required
                       className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
-                      placeholder={t('placeholders.enterName')}
-                      style={{ textTransform: 'uppercase' }}
+                      placeholder={t("placeholders.enterName")}
+                      style={{ textTransform: "uppercase" }}
                     />
                   </label>
 
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      {t('company.shortName')} *
+                      {t("company.shortName")} *
                     </p>
                     <input
                       type="text"
@@ -1381,13 +1445,13 @@ export default function AddTransactionModal({
                       required
                       className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
                       placeholder="Firma kısa adını girin"
-                      style={{ textTransform: 'uppercase' }}
+                      style={{ textTransform: "uppercase" }}
                     />
                   </label>
 
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      {t('company.description')}
+                      {t("company.description")}
                     </p>
                     <textarea
                       value={newClientForm.description}
@@ -1399,7 +1463,7 @@ export default function AddTransactionModal({
                       }
                       rows="3"
                       className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                      placeholder={t('placeholders.enterDescription')}
+                      placeholder={t("placeholders.enterDescription")}
                     />
                   </label>
                 </div>
@@ -1411,7 +1475,7 @@ export default function AddTransactionModal({
                     onClick={() => setShowNewClientModal(false)}
                     className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
                   >
-                    {t('common.cancel')}
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -1419,7 +1483,7 @@ export default function AddTransactionModal({
                     className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined">add</span>
-                    {savingNewClient ? t('common.loading') : t('common.add')}
+                    {savingNewClient ? t("common.loading") : t("common.add")}
                   </button>
                 </div>
               </form>

@@ -132,14 +132,10 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-text-secondary text-sm mb-1">Hat</p>
-                {transaction.gate ? (
-                  <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${gateBadgeClass}`}>
-                    {transaction.gate}
-                  </span>
-                ) : (
-                  <p className="text-text-main font-semibold">-</p>
-                )}
+                <p className="text-text-secondary text-sm mb-1">Kap</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.containerAmount || '-'}
+                </p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">

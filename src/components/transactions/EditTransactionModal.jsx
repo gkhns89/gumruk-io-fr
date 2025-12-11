@@ -10,7 +10,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [formData, setFormData] = useState({
     fileNo: transaction.fileNo || "",
     recipientName: transaction.recipientName || "",
+    customsName: transaction.customsName || "",
     customsWarehouse: transaction.customsWarehouse || "",
+    containerAmount: transaction.containerAmount || "",
     gate: transaction.gate || "",
     weight: transaction.weight || "",
     tax: transaction.tax || "",
@@ -221,23 +223,47 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Firma Bilgileri - Read Only */}
-              <div className="flex flex-col w-full bg-gray-50 p-4 rounded-lg">
-                <p className="text-text-secondary text-sm font-medium pb-2">
-                  {t('transaction.brokerCompany')}
+              {/* ALICI - EN BAŞTA */}
+              <label className="flex flex-col w-full lg:col-span-3">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.recipient')} *
                 </p>
-                <p className="text-text-main font-semibold">
-                  {transaction.brokerCompany?.name || '-'}
-                </p>
-              </div>
+                <input
+                  type="text"
+                  name="recipientName"
+                  value={formData.recipientName}
+                  onChange={(e) => {
+                    const upperValue = toUpperCase(e.target.value, locale);
+                    setFormData(prev => ({ ...prev, recipientName: upperValue }));
+                  }}
+                  disabled={isReadOnly}
+                  required
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  placeholder={toUpperCase(t('placeholders.enterRecipient'))}
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </label>
 
-              <div className="flex flex-col w-full bg-gray-50 p-4 rounded-lg">
-                <p className="text-text-secondary text-sm font-medium pb-2">
-                  {t('transaction.clientCompany')}
-                </p>
-                <p className="text-text-main font-semibold">
-                  {transaction.clientCompany?.name || '-'}
-                </p>
+              {/* Firma Bilgileri - Read Only */}
+              <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-text-secondary text-sm font-medium pb-2">
+                      {t('transaction.brokerCompany')}
+                    </p>
+                    <p className="text-text-main font-semibold">
+                      {transaction.brokerCompany?.name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-text-secondary text-sm font-medium pb-2">
+                      {t('transaction.clientCompany')}
+                    </p>
+                    <p className="text-text-main font-semibold">
+                      {transaction.clientCompany?.name || '-'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Dosya No */}
@@ -258,27 +284,24 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 />
               </label>
 
-              {/* Alıcı */}
+              {/* Gümrük */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.recipient')}
+                  {t('transaction.customsName')}
                 </p>
                 <input
                   type="text"
-                  name="recipientName"
-                  value={formData.recipientName}
-                  onChange={(e) => {
-                    const upperValue = toUpperCase(e.target.value, locale);
-                    setFormData(prev => ({ ...prev, recipientName: upperValue }));
-                  }}
+                  name="customsName"
+                  value={formData.customsName}
+                  onChange={handleChange}
                   disabled={isReadOnly}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.enterRecipient'))}
+                  placeholder={toUpperCase(t('placeholders.enterCustomsName'))}
                   style={{ textTransform: 'uppercase' }}
                 />
               </label>
 
-              {/* Gümrük */}
+              {/* Antrepo */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
                   {t('transaction.customsWarehouse')}
@@ -298,25 +321,21 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 />
               </label>
 
-              {/* Hat - Combobox (constants'dan alınıyor) */}
+              {/* Kap */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.gate')}
+                  {t('transaction.containerAmount')}
                 </p>
-                <select
-                  name="gate"
-                  value={formData.gate}
+                <input
+                  type="number"
+                  step="1"
+                  name="containerAmount"
+                  value={formData.containerAmount}
                   onChange={handleChange}
                   disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                >
-                  <option value="">{toUpperCase(t('gates.select'))}</option>
-                  {GATE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {getGateDisplayLabel(option)}
-                    </option>
-                  ))}
-                </select>
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  placeholder={toUpperCase(t('placeholders.containerAmount'))}
+                />
               </label>
 
               {/* Kilo */}
@@ -579,6 +598,27 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
                   style={{ textTransform: 'uppercase' }}
                 />
+              </label>
+
+              {/* Hat - Combobox (constants'dan alınıyor) */}
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.gate')}
+                </p>
+                <select
+                  name="gate"
+                  value={formData.gate}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                >
+                  <option value="">{toUpperCase(t('gates.select'))}</option>
+                  {GATE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {getGateDisplayLabel(option)}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               {/* Kapanma Tarihi */}
