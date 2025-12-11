@@ -2,22 +2,30 @@ import React, { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
-// Hat renk mapping
-const getGateRowStyle = (gate) => {
-  const gateStyles = {
-    'SARI': {
-      bg: 'bg-yellow-50',
-      hoverBg: 'hover:bg-yellow-100',
-      border: 'border-l-4 border-l-yellow-400',
+// Durum renk mapping - Sadece sol border
+const getStatusRowStyle = (status) => {
+  const statusStyles = {
+    'PENDING': {
+      border: 'border-l-4 border-l-sky-400',
     },
-    'KIRMIZI': {
-      bg: 'bg-red-50',
-      hoverBg: 'hover:bg-red-100',
-      border: 'border-l-4 border-l-red-500',
+    'REGISTERED': {
+      border: 'border-l-4 border-l-amber-400',
+    },
+    'INSPECTED': {
+      border: 'border-l-4 border-l-purple-400',
+    },
+    'CP_COMPLETED': {
+      border: 'border-l-4 border-l-emerald-400',
+    },
+    'WITHDRAWN': {
+      border: 'border-l-4 border-l-green-500',
+    },
+    'CANCELLED': {
+      border: 'border-l-4 border-l-rose-500',
     },
   };
 
-  return gateStyles[gate] || { bg: '', hoverBg: 'hover:bg-gray-50', border: '' };
+  return statusStyles[status] || { border: 'border-l-4 border-l-gray-300' };
 };
 
 // Hat badge renkleri
@@ -45,20 +53,24 @@ export default function TransactionsFullTable({
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      'COMPLETED': { color: 'green', label: 'Tamamlandı' },
-      'IN_PROGRESS': { color: 'yellow', label: 'İşlemde' },
-      'PENDING': { color: 'blue', label: 'Bekliyor' },
-      'CANCELLED': { color: 'red', label: 'İptal' },
+      'PENDING': { color: 'pending', label: 'Bekliyor' },
+      'REGISTERED': { color: 'registered', label: 'Tescil Edildi' },
+      'INSPECTED': { color: 'inspected', label: 'Muayene Tamamlandı' },
+      'CP_COMPLETED': { color: 'completed', label: 'Gümrük İşlemleri Tamamlandı' },
+      'WITHDRAWN': { color: 'withdrawn', label: 'Çekildi' },
+      'CANCELLED': { color: 'cancelled', label: 'İptal' },
     };
 
-    const statusInfo = statusMap[status] || { color: 'gray', label: status };
-    
+    const statusInfo = statusMap[status] || { color: 'default', label: status };
+
     const colors = {
-      green: "bg-green-100 text-green-800",
-      yellow: "bg-yellow-100 text-yellow-800",
-      blue: "bg-blue-100 text-blue-800",
-      red: "bg-red-100 text-red-800",
-      gray: "bg-gray-100 text-gray-800",
+      pending: "bg-sky-50 text-sky-700",
+      registered: "bg-amber-50 text-amber-700",
+      inspected: "bg-purple-50 text-purple-700",
+      completed: "bg-emerald-50 text-emerald-700",
+      withdrawn: "bg-green-50 text-green-700",
+      cancelled: "bg-rose-50 text-rose-700",
+      default: "bg-gray-50 text-gray-600",
     };
 
     return {
@@ -147,21 +159,6 @@ export default function TransactionsFullTable({
   // Success state with data
   return (
     <>
-      {/* Hat Renk Açıklaması */}
-      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex flex-wrap items-center gap-4">
-        <span className="text-sm text-text-secondary font-medium">Hat Renkleri:</span>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs font-medium border border-yellow-300">
-            <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-            Sarı Hat
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-medium border border-red-300">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span>
-            Kırmızı Hat
-          </span>
-        </div>
-      </div>
-
       <div className="bg-white overflow-x-auto">
         <table className="w-full text-left min-w-max">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
@@ -222,13 +219,13 @@ export default function TransactionsFullTable({
           <tbody className="divide-y divide-gray-200">
             {transactions.map((transaction) => {
               const statusInfo = getStatusBadgeClass(transaction.status);
-              const gateStyle = getGateRowStyle(transaction.gate);
+              const statusStyle = getStatusRowStyle(transaction.status);
               const gateBadgeClass = getGateBadge(transaction.gate);
-              
+
               return (
-                <tr 
-                  key={transaction.id} 
-                  className={`${gateStyle.bg} ${gateStyle.hoverBg} ${gateStyle.border} transition-colors`}
+                <tr
+                  key={transaction.id}
+                  className={`hover:bg-gray-50 ${statusStyle.border} transition-colors`}
                 >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm font-medium text-text-main">
