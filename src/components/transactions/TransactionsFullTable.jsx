@@ -173,9 +173,6 @@ export default function TransactionsFullTable({
                 Broker Firma
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
-                Müşteri Firma
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Alıcı
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
@@ -237,9 +234,6 @@ export default function TransactionsFullTable({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.brokerCompany?.name || '-'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.clientCompany?.name || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.recipientName || '-'}
