@@ -17,20 +17,24 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      'COMPLETED': { color: 'green', label: 'Tamamlandı' },
-      'IN_PROGRESS': { color: 'yellow', label: 'İşlemde' },
-      'PENDING': { color: 'blue', label: 'Bekliyor' },
-      'CANCELLED': { color: 'red', label: 'İptal' },
+      'PENDING': { color: 'pending', label: 'Bekliyor' },
+      'REGISTERED': { color: 'registered', label: 'Tescil Edildi' },
+      'INSPECTED': { color: 'inspected', label: 'Muayene Tamamlandı' },
+      'CP_COMPLETED': { color: 'completed', label: 'Gümrük İşlemleri Tamamlandı' },
+      'WITHDRAWN': { color: 'withdrawn', label: 'Çekildi' },
+      'CANCELLED': { color: 'cancelled', label: 'İptal' },
     };
 
-    const statusInfo = statusMap[status] || { color: 'gray', label: status };
-    
+    const statusInfo = statusMap[status] || { color: 'default', label: status };
+
     const colors = {
-      green: "bg-green-100 text-green-800",
-      yellow: "bg-yellow-100 text-yellow-800",
-      blue: "bg-blue-100 text-blue-800",
-      red: "bg-red-100 text-red-800",
-      gray: "bg-gray-100 text-gray-800",
+      pending: "bg-sky-50 text-sky-700",
+      registered: "bg-amber-50 text-amber-700",
+      inspected: "bg-purple-50 text-purple-700",
+      completed: "bg-emerald-50 text-emerald-700",
+      withdrawn: "bg-green-50 text-green-700",
+      cancelled: "bg-rose-50 text-rose-700",
+      default: "bg-gray-50 text-gray-600",
     };
 
     return {

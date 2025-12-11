@@ -291,25 +291,25 @@ export const transactionService = {
   },
 
   // İşlemi tamamla
-  completeTransaction: async (id) => {
+  withdrawTransaction: async (id) => {
     try {
       console.log(`✅ İşlem ${id} tamamlanıyor...`);
       
-      const response = await axiosInstance.post(`/transactions/${id}/complete`);
+      const response = await axiosInstance.post(`/transactions/${id}/withdraw`);
       
       console.log("✅ İşlem tamamlandı:", response.data);
       
       return { 
         success: true, 
         data: response.data,
-        message: response.data.message || 'İşlem başarıyla tamamlandı'
+        message: response.data.message || 'İşlem başarıyla çekildi olarak güncellendi'
       };
     } catch (error) {
-      console.error('❌ İşlem tamamlama hatası:', error);
+      console.error('❌ İşlem çekildi olarak güncellenemedi', error);
       
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem tamamlanamadı',
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem çekildi olarak güncellenemedi',
       };
     }
   },
@@ -318,24 +318,50 @@ export const transactionService = {
   cancelTransaction: async (id, reason) => {
     try {
       console.log(`❌ İşlem ${id} iptal ediliyor...`);
-      
+
       const response = await axiosInstance.post(`/transactions/${id}/cancel`, null, {
         params: { reason }
       });
-      
+
       console.log("✅ İşlem iptal edildi:", response.data);
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         data: response.data,
         message: response.data.message || 'İşlem başarıyla iptal edildi'
       };
     } catch (error) {
       console.error('❌ İşlem iptal hatası:', error);
-      
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlem iptal edilemedi',
+      };
+    }
+  },
+
+  // ==========================================
+  // DELAYED TRANSACTIONS
+  // ==========================================
+
+  // Gecikme olan işlemleri getir
+  getDelayedTransactions: async () => {
+    try {
+      console.log("⏰ Gecikmiş işlemler getiriliyor...");
+
+      const response = await axiosInstance.get('/transactions/delayed');
+
+      const dataArray = safeArrayConversion(response.data, 'Delayed Transactions');
+
+      console.log(`✅ ${dataArray.length} gecikmiş işlem hazır`);
+
+      return { success: true, data: dataArray };
+    } catch (error) {
+      console.error('❌ Gecikmiş işlemler getirme hatası:', error);
+
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'Gecikmiş işlemler alınamadı',
       };
     }
   },
