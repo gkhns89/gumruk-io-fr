@@ -991,7 +991,7 @@ export default function AddTransactionModal({
                   value={formData.containerAmount}
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={toUpperCase(t("placeholders.containerAmount"))}
+                  placeholder={toUpperCase(t("placeholders.enterContainerAmount"))}
                 />
               </label>
 
