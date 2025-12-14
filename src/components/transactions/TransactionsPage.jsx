@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import MainLayout from "../layout/MainLayout";
 import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
+import EditTransactionModal from "./EditTransactionModal";
 
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // ... mevcut state'ler aynı kalacak ...
   const [transactions, setTransactions] = useState([]);
@@ -15,6 +18,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [clientCompanies, setClientCompanies] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
@@ -40,6 +45,20 @@ export default function TransactionsPage() {
     applyFilters();
     setCurrentPage(1);
   }, [filters, transactions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // URL'den edit parametresini kontrol et ve işlemi aç
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && transactions.length > 0) {
+      const transaction = transactions.find(t => t.id === parseInt(editId));
+      if (transaction) {
+        setSelectedTransaction(transaction);
+        setShowEditModal(true);
+        // URL'den parametreyi temizle
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, transactions, setSearchParams]);
 
   const loadData = async () => {
     setLoading(true);
@@ -127,6 +146,12 @@ export default function TransactionsPage() {
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
+    loadData();
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false);
+    setSelectedTransaction(null);
     loadData();
   };
 
@@ -337,6 +362,18 @@ export default function TransactionsPage() {
           onClose={() => setShowAddModal(false)}
           onSuccess={handleAddSuccess}
           currentUser={user}
+        />
+      )}
+
+      {showEditModal && selectedTransaction && (
+        <EditTransactionModal
+          transaction={selectedTransaction}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedTransaction(null);
+          }}
+          onSuccess={handleEditSuccess}
+          isReadOnly={isClientUser}
         />
       )}
     </MainLayout>

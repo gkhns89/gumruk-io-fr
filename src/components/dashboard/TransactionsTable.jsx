@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TransactionDetailModal from "./TransactionDetailModal";
 
 // Durum renk mapping - Sadece sol border
@@ -38,6 +39,7 @@ const getGateBadge = (gate) => {
 };
 
 export default function TransactionsTable({ transactions, loading, error, onRetry }) {
+  const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   const getStatusBadgeClass = (status) => {
@@ -83,8 +85,9 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
   };
 
   const handleViewFull = (transactionId) => {
-    // İşlem detay sayfasına yönlendir
-    window.location.href = `/transactions/${transactionId}`;
+    // İşlem takip sayfasına yönlendir ve düzenleme modunda aç
+    setSelectedTransaction(null);
+    navigate(`/transactions?edit=${transactionId}`);
   };
 
   // Loading state

@@ -134,6 +134,7 @@ export const tr = {
     selectCompany: "Firma seçin...",
     selectGate: "Hat seçin...",
     enterFileNo: "Dosya No girin",
+    enterDeclarationNumber: "Beyanname No girin",
     enterCustomsWarehouse: "Antrepo adı girin",
     enterCustomsName: "Gümrük adı girin",
     enterContainerAmount: "Kap miktarı girin",

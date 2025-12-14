@@ -221,6 +221,9 @@ export default function TransactionsFullTable({
                 İşlem Süresi (Gün)
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Toplam Süre (Gün)
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Durum
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">
@@ -307,7 +310,14 @@ export default function TransactionsFullTable({
                     {formatDate(transaction.withdrawalDate)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">
-                    {transaction.importProcessingTime || "-"}
+                    {transaction.importProcessingTime === 0
+                      ? "<1"
+                      : transaction.importProcessingTime ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">
+                    {transaction.totalProcessingTime === 0
+                      ? "<1"
+                      : transaction.totalProcessingTime ?? "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span

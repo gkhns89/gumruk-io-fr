@@ -134,6 +134,7 @@ export const en = {
     selectCompany: "Select company...",
     selectGate: "Select line...",
     enterFileNo: "Enter file no",
+    enterDeclarationNumber: "Enter declaration number",
     enterCustomsWarehouse: "Enter customs warehouse",
     enterCustomsName: "Enter customs name",
     enterContainerAmount: "Enter container amount",

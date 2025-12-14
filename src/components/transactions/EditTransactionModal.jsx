@@ -21,7 +21,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     registrationDate: transaction.registrationDate || "",
     declarationNumber: transaction.declarationNumber || "",
     lineClosureDate: transaction.lineClosureDate || "",
-    importProcessingTime: transaction.importProcessingTime || "",
     withdrawalDate: transaction.withdrawalDate || "",
     description: transaction.description || "",
     delayReason: transaction.delayReason || "",
@@ -374,9 +373,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       }
       if (cleanedData.tax) {
         cleanedData.tax = parseFloat(cleanedData.tax);
-      }
-      if (cleanedData.importProcessingTime) {
-        cleanedData.importProcessingTime = parseInt(cleanedData.importProcessingTime);
       }
 
       const result = await transactionService.updateTransaction(transaction.id, cleanedData);
@@ -1083,36 +1079,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 )}
               </div>
 
-              {/* Antrepo Varış Tarihi */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.warehouseArrivalDate')}
-                </p>
-                <input
-                  type="date"
-                  name="warehouseArrivalDate"
-                  value={formData.warehouseArrivalDate}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                />
-              </label>
-
-              {/* Tescil Tarihi */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.registrationDate')}
-                </p>
-                <input
-                  type="date"
-                  name="registrationDate"
-                  value={formData.registrationDate}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                />
-              </label>
-
               {/* Beyanname No */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
@@ -1154,51 +1120,79 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 </select>
               </label>
 
-              {/* Kapanma Tarihi */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.lineClosureDate')}
-                </p>
-                <input
-                  type="date"
-                  name="lineClosureDate"
-                  value={formData.lineClosureDate}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                />
-              </label>
+              {/* TARİH BİLGİLERİ BÖLÜMÜ */}
+              <div className="lg:col-span-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 mt-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-blue-600 text-xl">
+                    calendar_month
+                  </span>
+                  <h3 className="text-text-main text-base font-bold">
+                    Tarih Bilgileri
+                  </h3>
+                </div>
 
-              {/* İthalat İşlem Süresi */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.importProcessingTime')}
-                </p>
-                <input
-                  type="number"
-                  name="importProcessingTime"
-                  value={formData.importProcessingTime}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.enterImportProcessingTime'))}
-                />
-              </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Antrepo Varış Tarihi */}
+                  <label className="flex flex-col w-full">
+                    <p className="text-text-main text-sm font-medium pb-2">
+                      {t('transaction.warehouseArrivalDate')}
+                    </p>
+                    <input
+                      type="date"
+                      name="warehouseArrivalDate"
+                      value={formData.warehouseArrivalDate}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                    />
+                  </label>
 
-              {/* Çekilme Tarihi */}
-              <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.withdrawalDate')}
-                </p>
-                <input
-                  type="date"
-                  name="withdrawalDate"
-                  value={formData.withdrawalDate}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
-                />
-              </label>
+                  {/* Tescil Tarihi */}
+                  <label className="flex flex-col w-full">
+                    <p className="text-text-main text-sm font-medium pb-2">
+                      {t('transaction.registrationDate')}
+                    </p>
+                    <input
+                      type="date"
+                      name="registrationDate"
+                      value={formData.registrationDate}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                    />
+                  </label>
+
+                  {/* Kapanma Tarihi */}
+                  <label className="flex flex-col w-full">
+                    <p className="text-text-main text-sm font-medium pb-2">
+                      {t('transaction.lineClosureDate')}
+                    </p>
+                    <input
+                      type="date"
+                      name="lineClosureDate"
+                      value={formData.lineClosureDate}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                    />
+                  </label>
+
+                  {/* Çekilme Tarihi */}
+                  <label className="flex flex-col w-full">
+                    <p className="text-text-main text-sm font-medium pb-2">
+                      {t('transaction.withdrawalDate')}
+                    </p>
+                    <input
+                      type="date"
+                      name="withdrawalDate"
+                      value={formData.withdrawalDate}
+                      onChange={handleChange}
+                      disabled={isReadOnly}
+                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                    />
+                  </label>
+                </div>
+              </div>
 
               {/* Açıklama */}
               <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
