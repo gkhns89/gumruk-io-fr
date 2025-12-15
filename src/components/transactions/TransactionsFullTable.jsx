@@ -18,7 +18,7 @@ const getStatusRowStyle = (status) => {
       border: "border-l-4 border-l-emerald-400",
     },
     WITHDRAWN: {
-      border: "border-l-4 border-l-green-500",
+      border: "border-l-4 border-l-green-500 bg-red-50",
     },
     CANCELLED: {
       border: "border-l-4 border-l-rose-500",
