@@ -37,7 +37,11 @@ export default function AddTransactionModal({
     importProcessingTime: "",
     withdrawalDate: "",
     description: "",
-    delayReason: "",
+    delayReasons: {
+      arrivalToRegistration: "",
+      registrationToClosure: "",
+      closureToWithdrawal: ""
+    },
   });
 
   const [availableClients, setAvailableClients] = useState([]);
@@ -77,6 +81,13 @@ export default function AddTransactionModal({
   const [loadingClients, setLoadingClients] = useState(false);
   const [loadingBrokers, setLoadingBrokers] = useState(false);
   const [error, setError] = useState("");
+
+  // Gecikme tespit state'i
+  const [delays, setDelays] = useState({
+    arrivalToRegistration: false,
+    registrationToClosure: false,
+    closureToWithdrawal: false,
+  });
 
   // Yeni firma ekleme modal state
   const [showNewClientModal, setShowNewClientModal] = useState(false);
@@ -314,6 +325,50 @@ export default function AddTransactionModal({
     }
   }, [formData.clientCompanyId, availableClients, locale]);
 
+  // Tarihlerdeki değişikliklerde gecikmeleri hesapla
+  useEffect(() => {
+    const calculateDelays = () => {
+      const newDelays = {
+        arrivalToRegistration: false,
+        registrationToClosure: false,
+        closureToWithdrawal: false,
+      };
+
+      // Delay #1: warehouseArrivalDate → registrationDate
+      if (formData.warehouseArrivalDate && formData.registrationDate) {
+        const arrival = new Date(formData.warehouseArrivalDate);
+        const registration = new Date(formData.registrationDate);
+        const daysDiff = Math.floor((registration - arrival) / (1000 * 60 * 60 * 24));
+        newDelays.arrivalToRegistration = daysDiff > 4;
+      }
+
+      // Delay #2: registrationDate → lineClosureDate
+      if (formData.registrationDate && formData.lineClosureDate) {
+        const registration = new Date(formData.registrationDate);
+        const closure = new Date(formData.lineClosureDate);
+        const daysDiff = Math.floor((closure - registration) / (1000 * 60 * 60 * 24));
+        newDelays.registrationToClosure = daysDiff > 4;
+      }
+
+      // Delay #3: lineClosureDate → withdrawalDate
+      if (formData.lineClosureDate && formData.withdrawalDate) {
+        const closure = new Date(formData.lineClosureDate);
+        const withdrawal = new Date(formData.withdrawalDate);
+        const daysDiff = Math.floor((withdrawal - closure) / (1000 * 60 * 60 * 24));
+        newDelays.closureToWithdrawal = daysDiff > 4;
+      }
+
+      setDelays(newDelays);
+    };
+
+    calculateDelays();
+  }, [
+    formData.warehouseArrivalDate,
+    formData.registrationDate,
+    formData.lineClosureDate,
+    formData.withdrawalDate,
+  ]);
+
   const loadBrokerCompanies = async () => {
     try {
       setLoadingBrokers(true);
@@ -484,6 +539,33 @@ export default function AddTransactionModal({
     setError("");
 
     try {
+      // Tarih sıralaması validasyonu
+      const { warehouseArrivalDate, registrationDate, lineClosureDate, withdrawalDate } = formData;
+
+      if (warehouseArrivalDate && registrationDate) {
+        if (new Date(warehouseArrivalDate) > new Date(registrationDate)) {
+          setError("Antrepo varış tarihi, tescil tarihinden sonra olamaz");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (registrationDate && lineClosureDate) {
+        if (new Date(registrationDate) > new Date(lineClosureDate)) {
+          setError("Tescil tarihi, kapanma tarihinden sonra olamaz");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (lineClosureDate && withdrawalDate) {
+        if (new Date(lineClosureDate) > new Date(withdrawalDate)) {
+          setError("Kapanma tarihi, çekilme tarihinden sonra olamaz");
+          setLoading(false);
+          return;
+        }
+      }
+
       // ✅ Belirli alanları büyük harfe çevir
       const transformedData = transformFormData(
         formData,
@@ -491,9 +573,19 @@ export default function AddTransactionModal({
         locale
       );
 
+      // Boş gecikme nedenlerini temizle
+      const cleanedDelayReasons = Object.fromEntries(
+        Object.entries(transformedData.delayReasons || {}).filter(([, v]) => v && v.trim() !== "")
+      );
+
+      // delayReasons'ı güncelle
+      transformedData.delayReasons = Object.keys(cleanedDelayReasons).length > 0
+        ? cleanedDelayReasons
+        : undefined;
+
       // Boş değerleri temizle
       const cleanedData = Object.fromEntries(
-        Object.entries(transformedData).filter(([, v]) => v !== "")
+        Object.entries(transformedData).filter(([, v]) => v !== "" && v !== undefined)
       );
 
       // Sayısal değerleri dönüştür
@@ -554,7 +646,11 @@ export default function AddTransactionModal({
       importProcessingTime: "",
       withdrawalDate: "",
       description: "",
-      delayReason: "",
+      delayReasons: {
+        arrivalToRegistration: "",
+        registrationToClosure: "",
+        closureToWithdrawal: ""
+      },
     });
     setError("");
     setSelectedClientInfo(null);
@@ -1832,20 +1928,83 @@ export default function AddTransactionModal({
                 />
               </label>
 
-              {/* Gecikme Nedeni */}
-              <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t("transaction.delayReason")}
-                </p>
-                <textarea
-                  name="delayReason"
-                  value={formData.delayReason}
-                  onChange={handleChange}
-                  rows="3"
-                  className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                  placeholder={t("placeholders.enterDelayReason")}
-                />
-              </label>
+              {/* Conditional Delay #1: Antrepo Varış → Tescil */}
+              {delays.arrivalToRegistration && (
+                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-yellow-600">warning</span>
+                    <p className="text-text-main text-sm font-bold">
+                      Antrepo Varış → Tescil Gecikme Nedeni * (4 günden fazla)
+                    </p>
+                  </div>
+                  <textarea
+                    value={formData.delayReasons.arrivalToRegistration}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      delayReasons: {
+                        ...formData.delayReasons,
+                        arrivalToRegistration: e.target.value
+                      }
+                    })}
+                    required
+                    rows="2"
+                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-yellow-500 border border-yellow-300 bg-white focus:border-yellow-500 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder="Lütfen antrepo varış ve tescil tarihi arasındaki gecikme nedenini açıklayın"
+                  />
+                </label>
+              )}
+
+              {/* Conditional Delay #2: Tescil → Kapanma */}
+              {delays.registrationToClosure && (
+                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-orange-600">warning</span>
+                    <p className="text-text-main text-sm font-bold">
+                      Tescil → Kapanma Gecikme Nedeni * (4 günden fazla)
+                    </p>
+                  </div>
+                  <textarea
+                    value={formData.delayReasons.registrationToClosure}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      delayReasons: {
+                        ...formData.delayReasons,
+                        registrationToClosure: e.target.value
+                      }
+                    })}
+                    required
+                    rows="2"
+                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-orange-500 border border-orange-300 bg-white focus:border-orange-500 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder="Lütfen tescil ve kapanma tarihi arasındaki gecikme nedenini açıklayın"
+                  />
+                </label>
+              )}
+
+              {/* Conditional Delay #3: Kapanma → Çekilme */}
+              {delays.closureToWithdrawal && (
+                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-red-600">warning</span>
+                    <p className="text-text-main text-sm font-bold">
+                      Kapanma → Çekilme Gecikme Nedeni * (4 günden fazla)
+                    </p>
+                  </div>
+                  <textarea
+                    value={formData.delayReasons.closureToWithdrawal}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      delayReasons: {
+                        ...formData.delayReasons,
+                        closureToWithdrawal: e.target.value
+                      }
+                    })}
+                    required
+                    rows="2"
+                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-red-500 border border-red-300 bg-white focus:border-red-500 placeholder:text-neutral p-3 text-base font-normal"
+                    placeholder="Lütfen kapanma ve çekilme tarihi arasındaki gecikme nedenini açıklayın"
+                  />
+                </label>
+              )}
             </div>
           </form>
 
