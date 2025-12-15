@@ -178,9 +178,7 @@ export default function TransactionsFullTable({
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Beyanname No
               </th>
-              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
-                Broker Firma
-              </th>
+
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Alıcı
               </th>
@@ -229,6 +227,9 @@ export default function TransactionsFullTable({
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">
                 İşlemler
               </th>
+                            <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Broker Firma
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -250,9 +251,7 @@ export default function TransactionsFullTable({
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.declarationNumber || "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.brokerCompany?.name || "-"}
-                  </td>
+
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.recipientName || "-"}
                   </td>
@@ -352,6 +351,9 @@ export default function TransactionsFullTable({
                         </button>
                       )}
                     </div>
+                  </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {transaction.brokerCompany?.name || "-"}
                   </td>
                 </tr>
               );
