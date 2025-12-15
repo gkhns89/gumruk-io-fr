@@ -64,6 +64,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // INSPECTION durumu kontrolü - kritik alanlar kilitlenir
+  const isInspectionStatus = transaction.status === "INSPECTION";
+  const isFieldLocked = isReadOnly || isInspectionStatus;
+
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
     arrivalToRegistration: false,
@@ -556,7 +560,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     const upperValue = toUpperCase(e.target.value, locale);
                     setFormData(prev => ({ ...prev, recipientName: upperValue }));
                   }}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterRecipient'))}
@@ -596,7 +600,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="fileNo"
                   value={formData.fileNo}
                   onChange={handleChange}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   required
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterFileNo'))}
@@ -622,7 +626,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </p>
                 </div>
 
-                {isReadOnly ? (
+                {isFieldLocked ? (
                   <input
                     type="text"
                     value={formData.customsName}
@@ -786,12 +790,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
                     {t('transaction.customsWarehouse')}
-                    {!isReadOnly && loadingWarehouses && (
+                    {!isFieldLocked && loadingWarehouses && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
                         {t('common.loading')}
                       </span>
                     )}
-                    {!isReadOnly && !loadingWarehouses && availableWarehouses.length > 0 && (
+                    {!isFieldLocked && !loadingWarehouses && availableWarehouses.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
                         ({availableWarehouses.length} kayıtlı)
                       </span>
@@ -799,7 +803,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </p>
                 </div>
 
-                {isReadOnly ? (
+                {isFieldLocked ? (
                   <input
                     type="text"
                     value={formData.customsWarehouse}
@@ -970,7 +974,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="containerAmount"
                   value={formData.containerAmount}
                   onChange={handleChange}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterContainerAmount'))}
                 />
@@ -988,7 +992,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="weight"
                   value={formData.weight}
                   onChange={handleChange}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterWeight'))}
                 />
@@ -1006,7 +1010,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="tax"
                   value={formData.tax}
                   onChange={handleTaxChange}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterTax'))}
                 />
@@ -1017,12 +1021,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
                     {t('transaction.sender')}
-                    {!isReadOnly && loadingSenders && (
+                    {!isFieldLocked && loadingSenders && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
                         {t('common.loading')}
                       </span>
                     )}
-                    {!isReadOnly && !loadingSenders && availableSenders.length > 0 && (
+                    {!isFieldLocked && !loadingSenders && availableSenders.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
                         ({availableSenders.length} kayıtlı)
                       </span>
@@ -1030,7 +1034,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </p>
                 </div>
 
-                {isReadOnly ? (
+                {isFieldLocked ? (
                   <input
                     type="text"
                     value={formData.senderName}
@@ -1203,7 +1207,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     const upperValue = toUpperCase(e.target.value, locale);
                     setFormData(prev => ({ ...prev, declarationNumber: upperValue }));
                   }}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
                   placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
                   style={{ textTransform: 'uppercase' }}
@@ -1219,7 +1223,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="gate"
                   value={formData.gate}
                   onChange={handleChange}
-                  disabled={isReadOnly}
+                  disabled={isFieldLocked}
                   className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
                 >
                   <option value="">{toUpperCase(t('gates.select'))}</option>
@@ -1253,7 +1257,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       name="warehouseArrivalDate"
                       value={formData.warehouseArrivalDate}
                       onChange={handleChange}
-                      disabled={isReadOnly}
+                      disabled={isFieldLocked}
                       className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
                     />
                   </label>
@@ -1268,7 +1272,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       name="registrationDate"
                       value={formData.registrationDate}
                       onChange={handleChange}
-                      disabled={isReadOnly}
+                      disabled={isFieldLocked}
                       className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
                     />
                   </label>

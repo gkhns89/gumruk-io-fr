@@ -82,6 +82,9 @@ export default function AddTransactionModal({
   const [loadingBrokers, setLoadingBrokers] = useState(false);
   const [error, setError] = useState("");
 
+  // Field-level validation errors
+  const [fieldErrors, setFieldErrors] = useState({});
+
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
     arrivalToRegistration: false,
@@ -533,10 +536,42 @@ export default function AddTransactionModal({
     }
   };
 
+  // Validate required fields
+  const validateRequiredFields = () => {
+    const errors = {};
+    const requiredFields = {
+      customsName: customsSearchTerm.trim() || "Gümrük adı zorunludur",
+      customsWarehouse: warehouseSearchTerm.trim() || "Antrepo zorunludur",
+      containerAmount: formData.containerAmount || "Konteyner miktarı zorunludur",
+      gate: formData.gate || "Hat seçimi zorunludur",
+      weight: formData.weight || "Kilo zorunludur",
+      tax: formData.tax || "Vergi zorunludur",
+      senderName: senderSearchTerm.trim() || "Gönderici adı zorunludur",
+      warehouseArrivalDate: formData.warehouseArrivalDate || "Antrepo varış tarihi zorunludur",
+    };
+
+    Object.entries(requiredFields).forEach(([field, errorMessage]) => {
+      if (typeof errorMessage === 'string') {
+        errors[field] = errorMessage;
+      }
+    });
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFieldErrors({});
+
+    // Validate required fields first
+    if (!validateRequiredFields()) {
+      setLoading(false);
+      setError("Lütfen tüm zorunlu alanları doldurun");
+      return;
+    }
 
     try {
       // Tarih sıralaması validasyonu
@@ -1277,10 +1312,18 @@ export default function AddTransactionModal({
                           customsName: upperValue,
                         }));
                         setShowCustomsDropdown(true);
+                        // Clear error when user types
+                        if (fieldErrors.customsName) {
+                          setFieldErrors(prev => ({ ...prev, customsName: null }));
+                        }
                       }}
                       onFocus={() => setShowCustomsDropdown(true)}
                       placeholder={toUpperCase(t("placeholders.selectOrType"))}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.customsName
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                      } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                       style={{ textTransform: "uppercase" }}
                     />
 
@@ -1409,9 +1452,21 @@ export default function AddTransactionModal({
                       )}
                     </div>
                   )}
+
+                  {/* Error Message */}
+                  {fieldErrors.customsName && (
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                        error
+                      </span>
+                      <p className="text-sm text-red-700 font-medium">
+                        {fieldErrors.customsName}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-           
+
               {/* Antrepo - Aranabilir Dropdown */}
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between pb-2">
@@ -1443,10 +1498,18 @@ export default function AddTransactionModal({
                           customsWarehouse: upperValue,
                         }));
                         setShowWarehouseDropdown(true);
+                        // Clear error when user types
+                        if (fieldErrors.customsWarehouse) {
+                          setFieldErrors(prev => ({ ...prev, customsWarehouse: null }));
+                        }
                       }}
                       onFocus={() => setShowWarehouseDropdown(true)}
                       placeholder={toUpperCase(t("placeholders.selectOrType"))}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.customsWarehouse
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                      } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                       style={{ textTransform: "uppercase" }}
                     />
 
