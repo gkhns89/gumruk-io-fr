@@ -15,7 +15,7 @@ const getStatusRowStyle = (status) => {
       border: 'border-l-4 border-l-purple-400',
     },
     'CP_COMPLETED': {
-      border: 'border-l-4 border-l-emerald-400',
+      border: 'border-l-4 border-l-orange-700',
     },
     'WITHDRAWN': {
       border: 'border-l-4 border-l-green-500 bg-red-50',

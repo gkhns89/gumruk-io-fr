@@ -6,22 +6,22 @@ import DeleteConfirmModal from "./DeleteConfirmModal";
 const getStatusRowStyle = (status) => {
   const statusStyles = {
     PENDING: {
-      border: "border-l-4 border-l-sky-400",
+      border: 'border-l-4 border-l-sky-400',
     },
     REGISTERED: {
-      border: "border-l-4 border-l-amber-400",
+      border: 'border-l-4 border-l-amber-400',
     },
     INSPECTION: {
-      border: "border-l-4 border-l-purple-400",
+      border: 'border-l-4 border-l-purple-400',
     },
     CP_COMPLETED: {
-      border: "border-l-4 border-l-emerald-400",
+      border: 'border-l-4 border-l-orange-700',
     },
     WITHDRAWN: {
-      border: "border-l-4 border-l-green-500 bg-red-50",
+      border: 'border-l-4 border-l-green-500 bg-red-50',
     },
     CANCELLED: {
-      border: "border-l-4 border-l-rose-500",
+      border: 'border-l-4 border-l-rose-500',
     },
   };
 
@@ -71,7 +71,7 @@ export default function TransactionsFullTable({
       registered: "bg-amber-50 text-amber-700 border border-amber-300",
       inspection: "bg-purple-50 text-purple-700 border border-purple-300",
       completed: "bg-orange-50 text-orange-700 border border-orange-300",
-      withdrawn: "bg-green-50 text-green-700 border border-green-300",
+      withdrawn: "bg-emerald-50 text-emerald-700 border border-emerald-300",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
       default: "bg-gray-50 text-gray-600 border border-gray-300",
     };
