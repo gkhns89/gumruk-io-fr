@@ -59,7 +59,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
       registered: "bg-amber-50 text-amber-700 border border-amber-300",
       inspection: "bg-purple-50 text-purple-700 border border-purple-300",
       completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
-      withdrawn: "bg-green-50 text-green-700 border border-green-300",
+      withdrawn: "bg-orange-50 text-orange-700 border border-orange-300",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
       default: "bg-gray-50 text-gray-600 border border-gray-300",
     };

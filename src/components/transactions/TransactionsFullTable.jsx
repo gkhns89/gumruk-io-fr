@@ -70,7 +70,7 @@ export default function TransactionsFullTable({
       pending: "bg-sky-50 text-sky-700 border border-sky-300",
       registered: "bg-amber-50 text-amber-700 border border-amber-300",
       inspection: "bg-purple-50 text-purple-700 border border-purple-300",
-      completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
+      completed: "bg-orange-50 text-orange-700 border border-orange-300",
       withdrawn: "bg-green-50 text-green-700 border border-green-300",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
       default: "bg-gray-50 text-gray-600 border border-gray-300",
