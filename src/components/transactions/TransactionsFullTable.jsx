@@ -11,7 +11,7 @@ const getStatusRowStyle = (status) => {
     REGISTERED: {
       border: "border-l-4 border-l-amber-400",
     },
-    INSPECTED: {
+    INSPECTION: {
       border: "border-l-4 border-l-purple-400",
     },
     CP_COMPLETED: {
@@ -55,7 +55,7 @@ export default function TransactionsFullTable({
     const statusMap = {
       PENDING: { color: "pending", label: "Bekliyor" },
       REGISTERED: { color: "registered", label: "Tescil Edildi" },
-      INSPECTED: { color: "inspected", label: "Muayene Tamamlandı" },
+      INSPECTION: { color: "inspection", label: "Muayene Sürecinde" },
       CP_COMPLETED: {
         color: "completed",
         label: "Gümrük İşlemleri Tamamlandı",
@@ -69,7 +69,7 @@ export default function TransactionsFullTable({
     const colors = {
       pending: "bg-sky-50 text-sky-700 border border-sky-300",
       registered: "bg-amber-50 text-amber-700 border border-amber-300",
-      inspected: "bg-purple-50 text-purple-700 border border-purple-300",
+      inspection: "bg-purple-50 text-purple-700 border border-purple-300",
       completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
       withdrawn: "bg-green-50 text-green-700 border border-green-300",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-300",

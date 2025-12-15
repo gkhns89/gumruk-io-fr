@@ -9,8 +9,8 @@ export default function Stats({ transactions, loading }) {
     pending: transactions?.filter((t) => t.status === "PENDING")?.length || 0,
     registered:
       transactions?.filter((t) => t.status === "REGISTERED")?.length || 0,
-    inspected:
-      transactions?.filter((t) => t.status === "INSPECTED")?.length || 0,
+    inspection:
+      transactions?.filter((t) => t.status === "INSPECTION")?.length || 0,
     completed:
       transactions?.filter((t) => t.status === "CP_COMPLETED")?.length || 0,
     cancelled:
@@ -39,9 +39,9 @@ export default function Stats({ transactions, loading }) {
       icon: "assignment_turned_in",
     },
     {
-      label: "Muayene Tamamlandı",
-      value: stats.inspected,
-      color: "inspected",
+      label: "Muayene Sürecinde",
+      value: stats.inspection,
+      color: "inspection",
       icon: "fact_check",
     },
     {

@@ -17,7 +17,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
     const statusMap = {
       'PENDING': { color: 'pending', label: 'BEKLİYOR' },
       'REGISTERED': { color: 'registered', label: 'TESCİL EDİLDİ' },
-      'INSPECTED': { color: 'inspected', label: 'MUAYENE TAMAMLANDI' },
+      'INSPECTION': { color: 'inspection', label: 'MUAYENE SÜRECİNDE' },
       'CP_COMPLETED': { color: 'completed', label: 'GÜMRÜK İŞLEMLERİ TAMAMLANDI' },
       'WITHDRAWN': { color: 'withdrawn', label: 'ÇEKİLDİ' },
       'CANCELLED': { color: 'cancelled', label: 'İPTAL' },
@@ -28,7 +28,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
     const colors = {
       pending: "bg-sky-50 text-sky-700 border border-sky-300",
       registered: "bg-amber-50 text-amber-700 border border-amber-300",
-      inspected: "bg-purple-50 text-purple-700 border border-purple-300",
+      inspection: "bg-purple-50 text-purple-700 border border-purple-300",
       completed: "bg-emerald-50 text-emerald-700 border border-emerald-300",
       withdrawn: "bg-green-50 text-green-700 border border-green-300",
       cancelled: "bg-rose-50 text-rose-700 border border-rose-300",

@@ -61,9 +61,9 @@ export const TRANSACTION_STATUS = [
     badgeClass: "bg-amber-50 text-amber-700 border border-amber-300"
   },
   {
-    value: "INSPECTED",
-    labelKey: "status.inspected",
-    color: "inspected",
+    value: "INSPECTION",
+    labelKey: "status.inspection",
+    color: "inspection",
     bgClass: "bg-purple-50",
     textClass: "text-purple-700",
     iconClass: "text-purple-600",
