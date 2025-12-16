@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
-import { companyService } from "../../api/companyService";
 import MainLayout from "../layout/MainLayout";
 import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
@@ -11,6 +10,8 @@ import EditTransactionModal from "./EditTransactionModal";
 export default function TransactionsPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const filterDrawerRef = useRef(null);
+  const filterButtonRef = useRef(null);
   
   // ... mevcut state'ler aynı kalacak ...
   const [transactions, setTransactions] = useState([]);
@@ -20,16 +21,23 @@ export default function TransactionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [clientCompanies, setClientCompanies] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [filters, setFilters] = useState({
     status: "",
-    clientId: "",
+    clientSearch: "",
     search: "",
     dateFrom: "",
     dateTo: "",
+    registrationDateFrom: "",
+    registrationDateTo: "",
+    closureDateFrom: "",
+    closureDateTo: "",
+    withdrawalDateFrom: "",
+    withdrawalDateTo: "",
   });
+  const [showFilters, setShowFilters] = useState(false);
+  const [showDateFilters, setShowDateFilters] = useState(false);
 
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
@@ -45,6 +53,26 @@ export default function TransactionsPage() {
     applyFilters();
     setCurrentPage(1);
   }, [filters, transactions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Click outside to close filter drawer
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isClickInsideDrawer = filterDrawerRef.current && filterDrawerRef.current.contains(event.target);
+      const isClickOnButton = filterButtonRef.current && filterButtonRef.current.contains(event.target);
+
+      if (!isClickInsideDrawer && !isClickOnButton) {
+        setShowFilters(false);
+      }
+    };
+
+    if (showFilters) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters]);
 
   // URL'den edit parametresini kontrol et ve işlemi aç
   useEffect(() => {
@@ -66,19 +94,11 @@ export default function TransactionsPage() {
 
     try {
       const result = await transactionService.getAllTransactions();
-      
+
       if (result.success) {
         setTransactions(result.data);
       } else {
         setError(result.error);
-      }
-
-      if (user?.globalRole !== 'CLIENT_USER') {
-        const companiesResult = await companyService.getMyCompanies();
-        if (companiesResult.success) {
-          const clients = companiesResult.data.filter(c => c.companyType === 'CLIENT');
-          setClientCompanies(clients);
-        }
       }
     } catch (err) {
       console.error("Veri yükleme hatası:", err);
@@ -95,13 +115,16 @@ export default function TransactionsPage() {
       result = result.filter(t => t.status === filters.status);
     }
 
-    if (filters.clientId) {
-      result = result.filter(t => t.clientCompany?.id === parseInt(filters.clientId));
+    if (filters.clientSearch) {
+      const searchLower = filters.clientSearch.toLowerCase();
+      result = result.filter(t =>
+        t.clientCompany?.name?.toLowerCase().includes(searchLower)
+      );
     }
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      result = result.filter(t => 
+      result = result.filter(t =>
         t.fileNo?.toLowerCase().includes(searchLower) ||
         t.declarationNumber?.toLowerCase().includes(searchLower) ||
         t.recipientName?.toLowerCase().includes(searchLower) ||
@@ -109,6 +132,7 @@ export default function TransactionsPage() {
       );
     }
 
+    // Antrepo varış tarihi filtreleri
     if (filters.dateFrom) {
       result = result.filter(t => {
         if (!t.warehouseArrivalDate) return false;
@@ -120,6 +144,51 @@ export default function TransactionsPage() {
       result = result.filter(t => {
         if (!t.warehouseArrivalDate) return false;
         return new Date(t.warehouseArrivalDate) <= new Date(filters.dateTo);
+      });
+    }
+
+    // Tescil tarihi filtreleri
+    if (filters.registrationDateFrom) {
+      result = result.filter(t => {
+        if (!t.registrationDate) return false;
+        return new Date(t.registrationDate) >= new Date(filters.registrationDateFrom);
+      });
+    }
+
+    if (filters.registrationDateTo) {
+      result = result.filter(t => {
+        if (!t.registrationDate) return false;
+        return new Date(t.registrationDate) <= new Date(filters.registrationDateTo);
+      });
+    }
+
+    // Kapanma tarihi filtreleri
+    if (filters.closureDateFrom) {
+      result = result.filter(t => {
+        if (!t.lineClosureDate) return false;
+        return new Date(t.lineClosureDate) >= new Date(filters.closureDateFrom);
+      });
+    }
+
+    if (filters.closureDateTo) {
+      result = result.filter(t => {
+        if (!t.lineClosureDate) return false;
+        return new Date(t.lineClosureDate) <= new Date(filters.closureDateTo);
+      });
+    }
+
+    // Çekilme tarihi filtreleri
+    if (filters.withdrawalDateFrom) {
+      result = result.filter(t => {
+        if (!t.withdrawalDate) return false;
+        return new Date(t.withdrawalDate) >= new Date(filters.withdrawalDateFrom);
+      });
+    }
+
+    if (filters.withdrawalDateTo) {
+      result = result.filter(t => {
+        if (!t.withdrawalDate) return false;
+        return new Date(t.withdrawalDate) <= new Date(filters.withdrawalDateTo);
       });
     }
 
@@ -141,8 +210,35 @@ export default function TransactionsPage() {
   };
 
   const clearFilters = () => {
-    setFilters({ status: "", clientId: "", search: "", dateFrom: "", dateTo: "" });
+    setFilters({
+      status: "",
+      clientSearch: "",
+      search: "",
+      dateFrom: "",
+      dateTo: "",
+      registrationDateFrom: "",
+      registrationDateTo: "",
+      closureDateFrom: "",
+      closureDateTo: "",
+      withdrawalDateFrom: "",
+      withdrawalDateTo: "",
+    });
   };
+
+  // Aktif filtre sayısını hesapla
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.status) count++;
+    if (filters.clientSearch) count++;
+    if (filters.search) count++;
+    if (filters.dateFrom || filters.dateTo) count++;
+    if (filters.registrationDateFrom || filters.registrationDateTo) count++;
+    if (filters.closureDateFrom || filters.closureDateTo) count++;
+    if (filters.withdrawalDateFrom || filters.withdrawalDateTo) count++;
+    return count;
+  };
+
+  const hasActiveFilters = getActiveFiltersCount() > 0;
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
@@ -197,9 +293,10 @@ export default function TransactionsPage() {
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Page Header with Filters */}
+        {/* Page Header */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-text-main">İşlem Takip</h1>
               <p className="text-text-secondary text-sm mt-1">
@@ -207,100 +304,326 @@ export default function TransactionsPage() {
               </p>
             </div>
 
-            {canCreate && (
+            <div className="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto">
+              {/* Filter Toggle Button */}
               <button
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold flex-shrink-0 w-full sm:w-auto"
+                ref={filterButtonRef}
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex-1 sm:flex-initial"
               >
-                <span className="material-symbols-outlined">add</span>
-                <span className="whitespace-nowrap">Yeni İşlem Ekle</span>
+                <span className="material-symbols-outlined text-primary">tune</span>
+                <span className="whitespace-nowrap text-text-main">Filtreler</span>
+                {hasActiveFilters && (
+                  <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">
+                    {getActiveFiltersCount()}
+                  </span>
+                )}
               </button>
-            )}
-          </div>
 
-          {/* Filtreler */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-            <div className="sm:col-span-2 lg:col-span-2">
-              <input
-                type="text"
-                placeholder="Dosya No, Beyanname No, Alıcı/Gönderici Ara..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm md:text-base"
-              />
-            </div>
-
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm md:text-base"
-            >
-              <option value="">Tüm Durumlar</option>
-              <option value="PENDING">Bekliyor</option>
-              <option value="IN_PROGRESS">İşlemde</option>
-              <option value="COMPLETED">Tamamlandı</option>
-              <option value="CANCELLED">İptal</option>
-            </select>
-
-            {!isClientUser && (
-              <select
-                value={filters.clientId}
-                onChange={(e) => handleFilterChange('clientId', e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm md:text-base"
-              >
-                <option value="">Tüm Müşteriler</option>
-                {clientCompanies.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
-            )}
-
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-text-secondary font-medium text-sm md:text-base"
-            >
-              Filtreleri Temizle
-            </button>
-          </div>
-
-          {/* Tarih Filtreleri - Mobilde gizlenebilir */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-1">Başlangıç Tarihi</label>
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-1">Bitiş Tarihi</label>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
+              {canCreate && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold flex-1 sm:flex-initial shadow-sm"
+                >
+                  <span className="material-symbols-outlined">add</span>
+                  <span className="whitespace-nowrap">Yeni İşlem</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* İstatistikler */}
-          <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-4 text-xs md:text-sm text-text-secondary">
-            <span>Toplam: <strong className="text-text-main">{transactions.length}</strong></span>
-            <span>Filtrelenmiş: <strong className="text-text-main">{filteredTransactions.length}</strong></span>
-            <span>Sayfa: <strong className="text-text-main">{currentPage} / {totalPages || 1}</strong></span>
-            {isClientUser && (
-              <span className="text-yellow-600 flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">visibility</span>
-                Sadece Görüntüleme
-              </span>
-            )}
-          </div>
+          {/* Filter Drawer */}
+          {showFilters && (
+            <div ref={filterDrawerRef} className="mt-4 bg-white rounded-xl border border-gray-200 shadow-lg animate-slideDown overflow-hidden">
+              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-primary/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">filter_alt</span>
+                    <h3 className="text-sm font-semibold text-text-main">Filtreler</h3>
+                    {hasActiveFilters && (
+                      <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">
+                        {getActiveFiltersCount()}
+                      </span>
+                    )}
+                  </div>
+
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                      Filtreleri Temizle
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {/* Search Input - Full width */}
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                    Genel Arama
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                      search
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Dosya No, Beyanname No, Alıcı/Gönderici..."
+                      value={filters.search}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white transition-all"
+                    />
+                    {filters.search && (
+                      <button
+                        onClick={() => handleFilterChange('search', '')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status and Client Search */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Status Filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                      Durum
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                        flag
+                      </span>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                        style={{
+                          backgroundImage: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          appearance: 'none'
+                        }}
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white cursor-pointer transition-all"
+                      >
+                        <option value="">Tüm Durumlar</option>
+                        <option value="PENDING">Bekliyor</option>
+                        <option value="REGISTERED">Tescil Edildi</option>
+                        <option value="INSPECTION">Muayene Sürecinde</option>
+                        <option value="CP_COMPLETED">Gümrük İşlemleri Tamamlandı</option>
+                        <option value="WITHDRAWN">Çekildi</option>
+                        <option value="CANCELLED">İptal</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Client Search - Only for non-client users */}
+                  {!isClientUser && (
+                    <div>
+                      <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                        Müşteri
+                      </label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                          business
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Müşteri ara..."
+                          value={filters.clientSearch}
+                          onChange={(e) => handleFilterChange('clientSearch', e.target.value)}
+                          className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white transition-all"
+                        />
+                        {filters.clientSearch && (
+                          <button
+                            onClick={() => handleFilterChange('clientSearch', '')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-lg">close</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date Filters - Collapsible */}
+                <div className="pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setShowDateFilters(!showDateFilters)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
+                      <h4 className="text-xs font-semibold text-text-main">Tarih Filtreleri</h4>
+                      {(filters.dateFrom || filters.dateTo || filters.registrationDateFrom || filters.registrationDateTo ||
+                        filters.closureDateFrom || filters.closureDateTo || filters.withdrawalDateFrom || filters.withdrawalDateTo) && (
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                          Aktif
+                        </span>
+                      )}
+                    </div>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-text-main text-lg">
+                      {showDateFilters ? 'expand_less' : 'expand_more'}
+                    </span>
+                  </button>
+
+                  {showDateFilters && (
+                    <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 animate-slideDown">
+                  {/* Antrepo Varış Tarihi */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-8 w-8 bg-blue-100 rounded-lg">
+                        <span className="material-symbols-outlined text-blue-600 text-base">warehouse</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-text-main">Antrepo Varış Tarihi</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <input
+                          type="date"
+                          value={filters.dateFrom}
+                          onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <input
+                          type="date"
+                          value={filters.dateTo}
+                          onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tescil Tarihi */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-8 w-8 bg-amber-100 rounded-lg">
+                        <span className="material-symbols-outlined text-amber-600 text-base">assignment</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-text-main">Tescil Tarihi</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <input
+                          type="date"
+                          value={filters.registrationDateFrom}
+                          onChange={(e) => handleFilterChange('registrationDateFrom', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <input
+                          type="date"
+                          value={filters.registrationDateTo}
+                          onChange={(e) => handleFilterChange('registrationDateTo', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hat Kapanma Tarihi */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-8 w-8 bg-orange-100 rounded-lg">
+                        <span className="material-symbols-outlined text-orange-600 text-base">lock</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-text-main">Hat Kapanma Tarihi</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <input
+                          type="date"
+                          value={filters.closureDateFrom}
+                          onChange={(e) => handleFilterChange('closureDateFrom', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <input
+                          type="date"
+                          value={filters.closureDateTo}
+                          onChange={(e) => handleFilterChange('closureDateTo', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Çekilme Tarihi */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 rounded-lg">
+                        <span className="material-symbols-outlined text-emerald-600 text-base">check_circle</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-text-main">Çekilme Tarihi</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <input
+                          type="date"
+                          value={filters.withdrawalDateFrom}
+                          onChange={(e) => handleFilterChange('withdrawalDateFrom', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <input
+                          type="date"
+                          value={filters.withdrawalDateTo}
+                          onChange={(e) => handleFilterChange('withdrawalDateTo', e.target.value)}
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
+        <style jsx>{`
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+              max-height: 0;
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+              max-height: 1000px;
+            }
+          }
+
+          .animate-slideDown {
+            animation: slideDown 0.3s ease-out;
+          }
+        `}</style>
+
         {/* Table Container */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6">
+        <div className="flex-1 overflow-hidden p-4 md:p-6 pb-20">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="flex-1 overflow-auto">
               <TransactionsFullTable
@@ -376,6 +699,43 @@ export default function TransactionsPage() {
           isReadOnly={isClientUser}
         />
       )}
+
+      {/* Fixed Footer with Statistics */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20 lg:left-20">
+        <div className="px-4 md:px-6 py-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+              <span className="material-symbols-outlined text-blue-600 text-base">inventory</span>
+              <span className="text-xs font-medium text-blue-700">
+                Toplam: <strong className="font-bold">{transactions.length}</strong>
+              </span>
+            </div>
+
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
+                <span className="material-symbols-outlined text-green-600 text-base">filter_alt</span>
+                <span className="text-xs font-medium text-green-700">
+                  Filtrelenmiş: <strong className="font-bold">{filteredTransactions.length} / {transactions.length}</strong>
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg">
+              <span className="material-symbols-outlined text-purple-600 text-base">article</span>
+              <span className="text-xs font-medium text-purple-700">
+                Sayfa: <strong className="font-bold">{currentPage} / {totalPages || 1}</strong>
+              </span>
+            </div>
+
+            {isClientUser && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-lg border border-amber-200">
+                <span className="material-symbols-outlined text-amber-600 text-base">visibility</span>
+                <span className="text-xs font-medium text-amber-700">Sadece Görüntüleme</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </MainLayout>
   );
 }
