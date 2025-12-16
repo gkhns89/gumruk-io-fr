@@ -21,8 +21,9 @@ export default function Sidebar() {
   useEffect(() => {
     localStorage.setItem('sidebarMode', sidebarMode);
     // Dispatch custom event to notify MainLayout
-    const isPinned = sidebarMode === 'pinned-expanded';
-    window.dispatchEvent(new CustomEvent('sidebarPinChanged', { detail: { isPinned } }));
+    // MainLayout needs to know if sidebar is wide (64px) or narrow (20px)
+    const isWide = sidebarMode === 'pinned-expanded';
+    window.dispatchEvent(new CustomEvent('sidebarStateChanged', { detail: { isWide } }));
   }, [sidebarMode]);
 
   const menuItems = [

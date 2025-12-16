@@ -3,28 +3,28 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 
 export default function MainLayout({ children }) {
-  const [sidebarPinned, setSidebarPinned] = useState(() => {
+  const [sidebarWide, setSidebarWide] = useState(() => {
     // Initialize from localStorage
-    return localStorage.getItem('sidebarPinned') === 'true';
+    return localStorage.getItem('sidebarMode') === 'pinned-expanded';
   });
 
   useEffect(() => {
     // Listen for custom event from Sidebar
-    const handlePinChange = (event) => {
-      setSidebarPinned(event.detail.isPinned);
+    const handleStateChange = (event) => {
+      setSidebarWide(event.detail.isWide);
     };
 
-    window.addEventListener('sidebarPinChanged', handlePinChange);
+    window.addEventListener('sidebarStateChanged', handleStateChange);
 
     return () => {
-      window.removeEventListener('sidebarPinChanged', handlePinChange);
+      window.removeEventListener('sidebarStateChanged', handleStateChange);
     };
   }, []);
 
   // Memoize the main className to prevent unnecessary re-renders
   const mainClassName = useMemo(() =>
-    `flex-1 flex flex-col min-w-0 overflow-hidden transition-[margin] duration-300 ease-in-out ${sidebarPinned ? 'lg:ml-64' : 'lg:ml-20'}`,
-    [sidebarPinned]
+    `flex-1 flex flex-col min-w-0 overflow-hidden transition-[margin] duration-300 ease-in-out ${sidebarWide ? 'lg:ml-64' : 'lg:ml-20'}`,
+    [sidebarWide]
   );
 
   return (
