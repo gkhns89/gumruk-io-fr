@@ -13,6 +13,15 @@ const getGateBadge = (gate) => {
 export default function TransactionDetailModal({ transaction, onClose, onViewFull }) {
   if (!transaction) return null;
 
+  // Parse delay reasons from JSON
+  const delayReasons = (() => {
+    try {
+      return transaction.delayReason ? JSON.parse(transaction.delayReason) : {};
+    } catch {
+      return {};
+    }
+  })();
+
   const getStatusBadgeClass = (status) => {
     const statusMap = {
       'PENDING': { color: 'pending', label: 'BEKLİYOR' },
@@ -153,16 +162,56 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
                   </p>
                 </div>
               )}
-
-              {transaction.delayReason && (
-                <div className="bg-red-50 rounded-lg p-4 md:col-span-2 border border-red-200">
-                  <p className="text-red-600 text-sm mb-1 font-semibold">⚠️ Gecikme Nedeni</p>
-                  <p className="text-red-800">
-                    {transaction.delayReason}
-                  </p>
-                </div>
-              )}
             </div>
+
+            {/* Gecikme Nedenleri */}
+            {(delayReasons.arrivalToRegistration || delayReasons.registrationToClosure || delayReasons.closureToWithdrawal) && (
+              <div className="space-y-3 mt-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Gecikme Nedenleri</h3>
+
+                {delayReasons.arrivalToRegistration && (
+                  <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-yellow-600">warning</span>
+                      <p className="text-sm font-bold text-gray-800">
+                        Antrepo Varış → Tescil Gecikme Nedeni
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {delayReasons.arrivalToRegistration}
+                    </p>
+                  </div>
+                )}
+
+                {delayReasons.registrationToClosure && (
+                  <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-orange-600">warning</span>
+                      <p className="text-sm font-bold text-gray-800">
+                        Tescil → Kapanma Gecikme Nedeni
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {delayReasons.registrationToClosure}
+                    </p>
+                  </div>
+                )}
+
+                {delayReasons.closureToWithdrawal && (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-red-600">warning</span>
+                      <p className="text-sm font-bold text-gray-800">
+                        Kapanma → Çekilme Gecikme Nedeni
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {delayReasons.closureToWithdrawal}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -178,7 +227,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
               className="flex items-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              İşleme Git
+              İşlemi Düzenle
             </button>
           </div>
         </div>

@@ -64,6 +64,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Field-level validation errors
+  const [fieldErrors, setFieldErrors] = useState({});
+
   // INSPECTION durumu kontrolü - kritik alanlar kilitlenir
   const isInspectionStatus = transaction.status === "INSPECTION";
   const isFieldLocked = isReadOnly || isInspectionStatus;
@@ -233,6 +236,13 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     formData.withdrawalDate,
   ]);
 
+  // Clear general error message when all field errors are resolved
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0 && error) {
+      setError("");
+    }
+  }, [fieldErrors]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Mevcut işlemlerden unique gönderici isimlerini yükle
   const loadSenders = async () => {
     try {
@@ -323,11 +333,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       ...prev,
       [name]: value
     }));
+    // Clear error when user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
   };
 
   // Vergi değeri için özel validasyon (maksimum 4 ondalık basamak)
   const handleTaxChange = (e) => {
     const value = e.target.value;
+
+    // Clear error when user types
+    if (fieldErrors.tax) {
+      setFieldErrors(prev => ({ ...prev, tax: null }));
+    }
 
     // Boş değere izin ver
     if (value === '') {
@@ -354,6 +373,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }));
     setSenderSearchTerm(senderName);
     setShowSenderDropdown(false);
+    // Clear error when sender is selected
+    if (fieldErrors.senderName) {
+      setFieldErrors(prev => ({ ...prev, senderName: null }));
+    }
   };
 
   // Yeni gönderici ekle - BÜYÜK HARFE ÇEVİR
@@ -377,6 +400,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }));
     setCustomsSearchTerm(customsName);
     setShowCustomsDropdown(false);
+    // Clear error when customs is selected
+    if (fieldErrors.customsName) {
+      setFieldErrors(prev => ({ ...prev, customsName: null }));
+    }
   };
 
   // Yeni gümrük ekle - BÜYÜK HARFE ÇEVİR
@@ -400,6 +427,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }));
     setWarehouseSearchTerm(warehouseName);
     setShowWarehouseDropdown(false);
+    // Clear error when warehouse is selected
+    if (fieldErrors.customsWarehouse) {
+      setFieldErrors(prev => ({ ...prev, customsWarehouse: null }));
+    }
   };
 
   // Yeni antrepo ekle - BÜYÜK HARFE ÇEVİR
@@ -420,12 +451,68 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
+  // Validate required fields
+  const validateRequiredFields = () => {
+    const errors = {};
+
+    // Check each required field - only add error if field is empty
+    if (!formData.fileNo || !formData.fileNo.trim()) {
+      errors.fileNo = "Dosya numarası zorunludur";
+    }
+    if (!customsSearchTerm || !customsSearchTerm.trim()) {
+      errors.customsName = "Gümrük adı zorunludur";
+    }
+    if (!warehouseSearchTerm || !warehouseSearchTerm.trim()) {
+      errors.customsWarehouse = "Antrepo zorunludur";
+    }
+    if (!formData.containerAmount) {
+      errors.containerAmount = "Konteyner miktarı zorunludur";
+    }
+    if (!formData.gate) {
+      errors.gate = "Hat seçimi zorunludur";
+    }
+    if (!formData.weight) {
+      errors.weight = "Kilo zorunludur";
+    }
+    if (!formData.tax) {
+      errors.tax = "Vergi zorunludur";
+    }
+    if (!senderSearchTerm || !senderSearchTerm.trim()) {
+      errors.senderName = "Gönderici adı zorunludur";
+    }
+    if (!formData.warehouseArrivalDate) {
+      errors.warehouseArrivalDate = "Antrepo varış tarihi zorunludur";
+    }
+
+    // Beyanname No ve Tescil Tarihi birbirine bağlı validasyon
+    const hasDeclarationNumber = formData.declarationNumber && formData.declarationNumber.trim();
+    const hasRegistrationDate = formData.registrationDate;
+
+    if (hasDeclarationNumber && !hasRegistrationDate) {
+      errors.registrationDate = "Beyanname numarası girildiğinde tescil tarihi zorunludur";
+    }
+    if (hasRegistrationDate && !hasDeclarationNumber) {
+      errors.declarationNumber = "Tescil tarihi girildiğinde beyanname numarası zorunludur";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isReadOnly) return;
 
     setLoading(true);
     setError("");
+    setFieldErrors({});
+
+    // Validate required fields first
+    if (!validateRequiredFields()) {
+      setLoading(false);
+      setError("Lütfen tüm zorunlu alanları doldurun");
+      return;
+    }
 
     try {
       // Tarih sıralaması validasyonu
@@ -547,26 +634,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* ALICI - EN BAŞTA */}
-              <label className="flex flex-col w-full lg:col-span-3">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.recipient')} *
-                </p>
-                <input
-                  type="text"
-                  name="recipientName"
-                  value={formData.recipientName}
-                  onChange={(e) => {
-                    const upperValue = toUpperCase(e.target.value, locale);
-                    setFormData(prev => ({ ...prev, recipientName: upperValue }));
-                  }}
-                  disabled={isFieldLocked}
-                  required
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={toUpperCase(t('placeholders.enterRecipient'))}
-                  style={{ textTransform: 'uppercase' }}
-                />
-              </label>
 
               {/* Firma Bilgileri - Read Only */}
               <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 p-4 rounded-lg">
@@ -602,10 +669,25 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isFieldLocked}
                   required
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.fileNo
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterFileNo'))}
                   style={{ textTransform: 'uppercase' }}
                 />
+                {/* Error Message */}
+                {fieldErrors.fileNo && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.fileNo}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* Gümrük - Aranabilir Dropdown */}
@@ -649,10 +731,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             customsName: upperValue,
                           }));
                           setShowCustomsDropdown(true);
+                          // Clear error when user types
+                          if (fieldErrors.customsName) {
+                            setFieldErrors(prev => ({ ...prev, customsName: null }));
+                          }
                         }}
                         onFocus={() => setShowCustomsDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                          fieldErrors.customsName
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -783,6 +873,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     )}
                   </div>
                 )}
+                {/* Error Message */}
+                {fieldErrors.customsName && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.customsName}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Antrepo - Aranabilir Dropdown */}
@@ -826,10 +927,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             customsWarehouse: upperValue,
                           }));
                           setShowWarehouseDropdown(true);
+                          // Clear error when user types
+                          if (fieldErrors.customsWarehouse) {
+                            setFieldErrors(prev => ({ ...prev, customsWarehouse: null }));
+                          }
                         }}
                         onFocus={() => setShowWarehouseDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                          fieldErrors.customsWarehouse
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -960,6 +1069,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     )}
                   </div>
                 )}
+                {/* Error Message */}
+                {fieldErrors.customsWarehouse && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.customsWarehouse}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Kap */}
@@ -975,9 +1095,24 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.containerAmount}
                   onChange={handleChange}
                   disabled={isFieldLocked}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.containerAmount
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterContainerAmount'))}
                 />
+                {/* Error Message */}
+                {fieldErrors.containerAmount && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.containerAmount}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* Kilo */}
@@ -993,9 +1128,24 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.weight}
                   onChange={handleChange}
                   disabled={isFieldLocked}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.weight
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterWeight'))}
                 />
+                {/* Error Message */}
+                {fieldErrors.weight && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.weight}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* Vergi */}
@@ -1011,9 +1161,24 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.tax}
                   onChange={handleTaxChange}
                   disabled={isFieldLocked}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.tax
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterTax'))}
                 />
+                {/* Error Message */}
+                {fieldErrors.tax && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.tax}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* Gönderici - Aranabilir Dropdown */}
@@ -1058,10 +1223,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             senderName: upperValue,
                           }));
                           setShowSenderDropdown(true);
+                          // Clear error when user types
+                          if (fieldErrors.senderName) {
+                            setFieldErrors(prev => ({ ...prev, senderName: null }));
+                          }
                         }}
                         onFocus={() => setShowSenderDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal"
+                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                          fieldErrors.senderName
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -1192,6 +1365,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     )}
                   </div>
                 )}
+                {/* Error Message */}
+                {fieldErrors.senderName && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.senderName}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Beyanname No */}
@@ -1206,12 +1390,31 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={(e) => {
                     const upperValue = toUpperCase(e.target.value, locale);
                     setFormData(prev => ({ ...prev, declarationNumber: upperValue }));
+                    // Clear error when user types
+                    if (fieldErrors.declarationNumber) {
+                      setFieldErrors(prev => ({ ...prev, declarationNumber: null }));
+                    }
                   }}
                   disabled={isFieldLocked}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.declarationNumber
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
                   style={{ textTransform: 'uppercase' }}
                 />
+                {/* Error Message */}
+                {fieldErrors.declarationNumber && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.declarationNumber}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* Hat - Combobox (constants'dan alınıyor) */}
@@ -1224,7 +1427,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.gate}
                   onChange={handleChange}
                   disabled={isFieldLocked}
-                  className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    fieldErrors.gate
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
+                  } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                 >
                   <option value="">{toUpperCase(t('gates.select'))}</option>
                   {GATE_OPTIONS.map((option) => (
@@ -1233,6 +1440,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     </option>
                   ))}
                 </select>
+                {/* Error Message */}
+                {fieldErrors.gate && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.gate}
+                    </p>
+                  </div>
+                )}
               </label>
 
               {/* TARİH BİLGİLERİ BÖLÜMÜ */}
@@ -1258,8 +1476,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.warehouseArrivalDate}
                       onChange={handleChange}
                       disabled={isFieldLocked}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.warehouseArrivalDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                     />
+                    {/* Error Message */}
+                    {fieldErrors.warehouseArrivalDate && (
+                      <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                        <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                          error
+                        </span>
+                        <p className="text-sm text-red-700 font-medium">
+                          {fieldErrors.warehouseArrivalDate}
+                        </p>
+                      </div>
+                    )}
                   </label>
 
                   {/* Tescil Tarihi */}
@@ -1273,8 +1506,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.registrationDate}
                       onChange={handleChange}
                       disabled={isFieldLocked}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.registrationDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                     />
+                    {/* Error Message */}
+                    {fieldErrors.registrationDate && (
+                      <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                        <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                          error
+                        </span>
+                        <p className="text-sm text-red-700 font-medium">
+                          {fieldErrors.registrationDate}
+                        </p>
+                      </div>
+                    )}
                   </label>
 
                   {/* Kapanma Tarihi */}
@@ -1309,30 +1557,34 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 </div>
               </div>
 
-              {/* Açıklama */}
-              <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
-                <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.description')}
-                </p>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  disabled={isReadOnly}
-                  rows="3"
-                  className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
-                  placeholder={t('placeholders.enterDescription')}
-                />
-              </label>
-
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
-              {delays.arrivalToRegistration && !isReadOnly && (
+              {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (
                 <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-yellow-600">warning</span>
-                    <p className="text-text-main text-sm font-bold">
-                      Antrepo Varış → Tescil Gecikme Nedeni * (4 günden fazla)
-                    </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-yellow-600">warning</span>
+                      <p className="text-text-main text-sm font-bold">
+                        Antrepo Varış → Tescil Gecikme Nedeni * (4 günden fazla)
+                      </p>
+                    </div>
+                    {formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({
+                          ...formData,
+                          delayReasons: {
+                            ...formData.delayReasons,
+                            arrivalToRegistration: ''
+                          }
+                        })}
+                        className="p-1 hover:bg-yellow-200 rounded-full transition-colors"
+                        title="İçeriği temizle"
+                      >
+                        <span className="material-symbols-outlined text-yellow-700 text-lg">
+                          close
+                        </span>
+                      </button>
+                    )}
                   </div>
                   <textarea
                     value={formData.delayReasons.arrivalToRegistration}
@@ -1352,13 +1604,33 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #2: Tescil → Kapanma */}
-              {delays.registrationToClosure && !isReadOnly && (
+              {(delays.registrationToClosure || (formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0)) && !isReadOnly && (
                 <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-orange-600">warning</span>
-                    <p className="text-text-main text-sm font-bold">
-                      Tescil → Kapanma Gecikme Nedeni * (4 günden fazla)
-                    </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-orange-600">warning</span>
+                      <p className="text-text-main text-sm font-bold">
+                        Tescil → Kapanma Gecikme Nedeni * (4 günden fazla)
+                      </p>
+                    </div>
+                    {formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({
+                          ...formData,
+                          delayReasons: {
+                            ...formData.delayReasons,
+                            registrationToClosure: ''
+                          }
+                        })}
+                        className="p-1 hover:bg-orange-200 rounded-full transition-colors"
+                        title="İçeriği temizle"
+                      >
+                        <span className="material-symbols-outlined text-orange-700 text-lg">
+                          close
+                        </span>
+                      </button>
+                    )}
                   </div>
                   <textarea
                     value={formData.delayReasons.registrationToClosure}
@@ -1378,13 +1650,33 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #3: Kapanma → Çekilme */}
-              {delays.closureToWithdrawal && !isReadOnly && (
+              {(delays.closureToWithdrawal || (formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0)) && !isReadOnly && (
                 <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-red-600">warning</span>
-                    <p className="text-text-main text-sm font-bold">
-                      Kapanma → Çekilme Gecikme Nedeni * (4 günden fazla)
-                    </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-red-600">warning</span>
+                      <p className="text-text-main text-sm font-bold">
+                        Kapanma → Çekilme Gecikme Nedeni * (4 günden fazla)
+                      </p>
+                    </div>
+                    {formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({
+                          ...formData,
+                          delayReasons: {
+                            ...formData.delayReasons,
+                            closureToWithdrawal: ''
+                          }
+                        })}
+                        className="p-1 hover:bg-red-200 rounded-full transition-colors"
+                        title="İçeriği temizle"
+                      >
+                        <span className="material-symbols-outlined text-red-700 text-lg">
+                          close
+                        </span>
+                      </button>
+                    )}
                   </div>
                   <textarea
                     value={formData.delayReasons.closureToWithdrawal}
@@ -1402,6 +1694,22 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   />
                 </label>
               )}
+
+              {/* Açıklama */}
+              <label className="flex flex-col w-full md:col-span-2 lg:col-span-3">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.description')}
+                </p>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  rows="3"
+                  className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  placeholder={t('placeholders.enterDescription')}
+                />
+              </label>
             </div>
           </form>
 
