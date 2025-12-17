@@ -67,9 +67,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState({});
 
-  // INSPECTION durumu kontrolü - kritik alanlar kilitlenir
+  // Durum kontrolleri - kritik alanlar kilitlenir
   const isInspectionStatus = transaction.status === "INSPECTION";
-  const isFieldLocked = isReadOnly || isInspectionStatus;
+  const isCompletedStatus = transaction.status === "CP_COMPLETED";
+  const isWithdrawnStatus = transaction.status === "WITHDRAWN";
+  const isFieldLocked = isReadOnly || isInspectionStatus || isCompletedStatus || isWithdrawnStatus;
 
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
@@ -493,6 +495,21 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
     if (hasRegistrationDate && !hasDeclarationNumber) {
       errors.declarationNumber = "Tescil tarihi girildiğinde beyanname numarası zorunludur";
+    }
+
+    // CP_COMPLETED durumunda kapanma tarihi zorunlu
+    if (transaction.status === "CP_COMPLETED" && !formData.lineClosureDate) {
+      errors.lineClosureDate = "Gümrük işlemleri kapanan işlemler için kapanma tarihi zorunludur";
+    }
+
+    // WITHDRAWN durumunda hem kapanma hem çekilme tarihi zorunlu
+    if (transaction.status === "WITHDRAWN") {
+      if (!formData.lineClosureDate) {
+        errors.lineClosureDate = "Çekilmiş işlemler için kapanma tarihi zorunludur";
+      }
+      if (!formData.withdrawalDate) {
+        errors.withdrawalDate = "Çekilmiş işlemler için çekilme tarihi zorunludur";
+      }
     }
 
     setFieldErrors(errors);
@@ -1534,10 +1551,31 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="lineClosureDate"
                       value={formData.lineClosureDate}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Clear error when user changes
+                        if (fieldErrors.lineClosureDate) {
+                          setFieldErrors(prev => ({ ...prev, lineClosureDate: null }));
+                        }
+                      }}
                       disabled={isReadOnly}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.lineClosureDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                     />
+                    {/* Error Message */}
+                    {fieldErrors.lineClosureDate && (
+                      <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                        <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                          error
+                        </span>
+                        <p className="text-sm text-red-700 font-medium">
+                          {fieldErrors.lineClosureDate}
+                        </p>
+                      </div>
+                    )}
                   </label>
 
                   {/* Çekilme Tarihi */}
@@ -1549,10 +1587,31 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="withdrawalDate"
                       value={formData.withdrawalDate}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Clear error when user changes
+                        if (fieldErrors.withdrawalDate) {
+                          setFieldErrors(prev => ({ ...prev, withdrawalDate: null }));
+                        }
+                      }}
                       disabled={isReadOnly}
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-blue-500 border border-blue-300 bg-white focus:border-blue-500 h-12 p-3 text-base font-normal disabled:bg-gray-100"
+                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        fieldErrors.withdrawalDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
                     />
+                    {/* Error Message */}
+                    {fieldErrors.withdrawalDate && (
+                      <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                        <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                          error
+                        </span>
+                        <p className="text-sm text-red-700 font-medium">
+                          {fieldErrors.withdrawalDate}
+                        </p>
+                      </div>
+                    )}
                   </label>
                 </div>
               </div>
