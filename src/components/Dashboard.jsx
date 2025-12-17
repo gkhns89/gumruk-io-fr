@@ -8,50 +8,57 @@ import { transactionService } from "../api/transactionService";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]); // Stats için tüm işlemler
+  const [recentTransactions, setRecentTransactions] = useState([]); // Son işlemler tablosu için
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchRecentTransactions();
+    fetchTransactions();
   }, []);
 
-  const fetchRecentTransactions = async () => {
+  const fetchTransactions = async () => {
     try {
       setLoading(true);
       setError("");
-      
-      const result = await transactionService.getRecentTransactions();
-      
+
+      // Tüm işlemleri getir (kullanıcının yetkisine göre filtrelenmiş)
+      const result = await transactionService.getAllTransactions();
+
       if (result.success) {
         let dataArray = [];
-        
+
         if (Array.isArray(result.data)) {
           dataArray = result.data;
         } else if (result.data && typeof result.data === 'object') {
           const possibleArrayFields = ['transactions', 'data', 'items', 'content', 'results', 'list'];
-          
+
           for (const field of possibleArrayFields) {
             if (Array.isArray(result.data[field])) {
               dataArray = result.data[field];
               break;
             }
           }
-          
+
           if (dataArray.length === 0 && result.data) {
             dataArray = [result.data];
           }
         }
-        
-        setTransactions(dataArray.slice(0, 5));
+
+        // Tüm işlemleri Stats için sakla
+        setAllTransactions(dataArray);
+        // Son 5 işlemi TransactionsTable için sakla
+        setRecentTransactions(dataArray.slice(0, 5));
       } else {
         setError(result.error);
-        setTransactions([]);
+        setAllTransactions([]);
+        setRecentTransactions([]);
       }
     } catch (err) {
       console.error("Beklenmeyen Hata:", err);
       setError("İşlemler yüklenirken bir hata oluştu.");
-      setTransactions([]);
+      setAllTransactions([]);
+      setRecentTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -72,17 +79,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats */}
-        <Stats transactions={transactions} loading={loading} />
+        {/* Stats - Tüm işlemlerden istatistik */}
+        <Stats transactions={allTransactions} loading={loading} />
 
         {/* Recent Transactions and Announcements */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           <div className="xl:col-span-2">
-            <TransactionsTable 
-              transactions={transactions} 
+            <TransactionsTable
+              transactions={recentTransactions}
               loading={loading}
               error={error}
-              onRetry={fetchRecentTransactions}
+              onRetry={fetchTransactions}
             />
           </div>
           <div>
