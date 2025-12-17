@@ -80,6 +80,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     closureToWithdrawal: false,
   });
 
+  // İthalat işlem süresi hesaplama (INSPECTION için)
+  const [calculatedProcessingTime, setCalculatedProcessingTime] = useState(null);
+
   // Gönderici listesini yükle
   useEffect(() => {
     if (!isReadOnly) {
@@ -237,6 +240,22 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     formData.lineClosureDate,
     formData.withdrawalDate,
   ]);
+
+  // İthalat işlem süresini hesapla (sadece INSPECTION için)
+  useEffect(() => {
+    if (isInspectionStatus && formData.registrationDate && formData.lineClosureDate) {
+      const regDate = new Date(formData.registrationDate);
+      const closureDate = new Date(formData.lineClosureDate);
+
+      // Gün farkını hesapla (backend ile aynı mantık)
+      const diffTime = Math.abs(closureDate - regDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      setCalculatedProcessingTime(diffDays);
+    } else {
+      setCalculatedProcessingTime(null);
+    }
+  }, [formData.registrationDate, formData.lineClosureDate, isInspectionStatus]);
 
   // Clear general error message when all field errors are resolved
   useEffect(() => {
@@ -531,6 +550,46 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       return;
     }
 
+    // Tarih gelecekte olamaz kontrolleri
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Bugünün başlangıcı
+
+    if (formData.warehouseArrivalDate) {
+      const arrivalDate = new Date(formData.warehouseArrivalDate);
+      if (arrivalDate > today) {
+        setError("Antrepo varış tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.registrationDate) {
+      const regDate = new Date(formData.registrationDate);
+      if (regDate > today) {
+        setError("Tescil tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.lineClosureDate) {
+      const closureDate = new Date(formData.lineClosureDate);
+      if (closureDate > today) {
+        setError("Kapanma tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.withdrawalDate) {
+      const withdrawalDate = new Date(formData.withdrawalDate);
+      if (withdrawalDate > today) {
+        setError("Çekilme tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       // Tarih sıralaması validasyonu
       const { warehouseArrivalDate, registrationDate, lineClosureDate, withdrawalDate } = formData;
@@ -554,6 +613,34 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       if (lineClosureDate && withdrawalDate) {
         if (new Date(lineClosureDate) > new Date(withdrawalDate)) {
           setError("Kapanma tarihi, çekilme tarihinden sonra olamaz");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Gecikme nedenleri için minimum karakter kontrolü
+      if (delays.arrivalToRegistration && formData.delayReasons?.arrivalToRegistration) {
+        const reason = formData.delayReasons.arrivalToRegistration.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Antrepo varış - Tescil gecikme nedeni en az 10 karakter olmalıdır");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (delays.registrationToClosure && formData.delayReasons?.registrationToClosure) {
+        const reason = formData.delayReasons.registrationToClosure.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Tescil - Kapanma gecikme nedeni en az 10 karakter olmalıdır");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (delays.closureToWithdrawal && formData.delayReasons?.closureToWithdrawal) {
+        const reason = formData.delayReasons.closureToWithdrawal.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Kapanma - Çekilme gecikme nedeni en az 10 karakter olmalıdır");
           setLoading(false);
           return;
         }
@@ -1615,6 +1702,34 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </label>
                 </div>
               </div>
+
+              {/* İthalat İşlem Süresi - INSPECTION: Hesaplanan, CP_COMPLETED/WITHDRAWN: Backend'den Gelen */}
+              {(
+                // INSPECTION: Hesaplanan değeri göster
+                (isInspectionStatus && calculatedProcessingTime != null) ||
+                // CP_COMPLETED/WITHDRAWN: Backend değerini göster
+                ((isCompletedStatus || isWithdrawnStatus) && transaction.importProcessingTime != null)
+              ) && (
+                <div className="lg:col-span-3 bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-2">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-blue-600 text-2xl">
+                      schedule
+                    </span>
+                    <div>
+                      <p className="text-text-secondary text-xs font-medium">
+                        İthalat İşlem Süresi (Tescil → Kapanma)
+                        {isInspectionStatus && <span className="ml-2 text-xs italic">(Önizleme)</span>}
+                      </p>
+                      <p className="text-text-main text-2xl font-bold">
+                        {isInspectionStatus
+                          ? calculatedProcessingTime
+                          : transaction.importProcessingTime
+                        } gün
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
               {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (

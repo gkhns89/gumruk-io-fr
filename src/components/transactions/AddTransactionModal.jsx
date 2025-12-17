@@ -619,6 +619,46 @@ export default function AddTransactionModal({
       return;
     }
 
+    // Tarih gelecekte olamaz kontrolleri
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Bugünün başlangıcı
+
+    if (formData.warehouseArrivalDate) {
+      const arrivalDate = new Date(formData.warehouseArrivalDate);
+      if (arrivalDate > today) {
+        setError("Antrepo varış tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.registrationDate) {
+      const regDate = new Date(formData.registrationDate);
+      if (regDate > today) {
+        setError("Tescil tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.lineClosureDate) {
+      const closureDate = new Date(formData.lineClosureDate);
+      if (closureDate > today) {
+        setError("Kapanma tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (formData.withdrawalDate) {
+      const withdrawalDate = new Date(formData.withdrawalDate);
+      if (withdrawalDate > today) {
+        setError("Çekilme tarihi gelecekte olamaz");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       // Tarih sıralaması validasyonu
       const { warehouseArrivalDate, registrationDate, lineClosureDate, withdrawalDate } = formData;
@@ -642,6 +682,34 @@ export default function AddTransactionModal({
       if (lineClosureDate && withdrawalDate) {
         if (new Date(lineClosureDate) > new Date(withdrawalDate)) {
           setError("Kapanma tarihi, çekilme tarihinden sonra olamaz");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Gecikme nedenleri için minimum karakter kontrolü
+      if (delays.arrivalToRegistration && formData.delayReasons?.arrivalToRegistration) {
+        const reason = formData.delayReasons.arrivalToRegistration.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Antrepo varış - Tescil gecikme nedeni en az 10 karakter olmalıdır");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (delays.registrationToClosure && formData.delayReasons?.registrationToClosure) {
+        const reason = formData.delayReasons.registrationToClosure.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Tescil - Kapanma gecikme nedeni en az 10 karakter olmalıdır");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (delays.closureToWithdrawal && formData.delayReasons?.closureToWithdrawal) {
+        const reason = formData.delayReasons.closureToWithdrawal.trim();
+        if (reason.length > 0 && reason.length < 10) {
+          setError("Kapanma - Çekilme gecikme nedeni en az 10 karakter olmalıdır");
           setLoading(false);
           return;
         }
@@ -2096,7 +2164,8 @@ export default function AddTransactionModal({
                   name="declarationNumber"
                   value={formData.declarationNumber}
                   onChange={(e) => {
-                    handleChange(e);
+                    const upperValue = toUpperCase(e.target.value, locale);
+                    setFormData(prev => ({ ...prev, declarationNumber: upperValue }));
                     // Clear error when user types
                     if (fieldErrors.declarationNumber) {
                       setFieldErrors(prev => ({ ...prev, declarationNumber: null }));
