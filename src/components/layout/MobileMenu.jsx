@@ -60,7 +60,7 @@ export default function MobileMenu({ isOpen, onClose }) {
       />
       
       {/* Drawer */}
-      <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slide-in">
+      <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slide-in-left">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
           <div className="flex items-center gap-3">
@@ -165,16 +165,6 @@ export default function MobileMenu({ isOpen, onClose }) {
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes slide-in {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

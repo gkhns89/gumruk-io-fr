@@ -32,29 +32,12 @@ export default function MainLayout({ children }) {
       <Sidebar />
       <main className={mainClassName}>
         <Header />
-        <div className="flex-1 overflow-y-auto bg-background">
-          <div className="animate-slideIn h-full">
+        <div className="flex-1 overflow-y-auto bg-background pb-36">
+          <div className="animate-slide-in-left-small h-full">
             {children}
           </div>
         </div>
       </main>
-
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        .animate-slideIn {
-          animation: slideIn 0.4s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

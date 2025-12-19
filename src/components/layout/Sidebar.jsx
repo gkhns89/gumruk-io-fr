@@ -72,7 +72,7 @@ export default function Sidebar() {
       {/* Backdrop when expanded in auto mode */}
       {isExpanded && sidebarMode === 'auto' && (
         <div
-          className="fixed inset-0 bg-black/20 z-30 lg:block hidden animate-fadeIn"
+          className="fixed inset-0 bg-black/20 z-30 lg:block hidden animate-fade-in"
           onClick={() => setIsHovered(false)}
         />
       )}
@@ -169,7 +169,7 @@ export default function Sidebar() {
         </div>
 
         {/* Main Navigation */}
-        <nav className="flex flex-col gap-1 flex-grow px-2 overflow-y-auto">
+        <nav className="flex flex-col gap-1 flex-grow px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {menuItems.map((item, index) => {
             const active = isActive(item.path);
             return (
@@ -251,31 +251,6 @@ export default function Sidebar() {
           </button>
         </div>
       </aside>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-in-out;
-        }
-
-        /* Hide scrollbar for nav */
-        nav::-webkit-scrollbar {
-          display: none;
-        }
-
-        nav {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </>
   );
 }
