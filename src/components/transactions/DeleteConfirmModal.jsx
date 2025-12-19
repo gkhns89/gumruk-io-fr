@@ -30,15 +30,15 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+      <div
+        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+        <div
+          className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

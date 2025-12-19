@@ -699,15 +699,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+      <div
+        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        <div
+          className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

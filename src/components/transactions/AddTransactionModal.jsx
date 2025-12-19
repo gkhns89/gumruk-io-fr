@@ -943,14 +943,14 @@ export default function AddTransactionModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div
-          className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -2532,12 +2532,12 @@ export default function AddTransactionModal({
       {showNewClientModal && (
         <>
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-[60]"
+            className="fixed inset-0 bg-black/20 z-[60] animate-fade-in"
             onClick={() => setShowNewClientModal(false)}
           />
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div
-              className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
