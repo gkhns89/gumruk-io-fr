@@ -90,21 +90,21 @@ export const transactionService = {
     }
   },
 
-  // Tüm işlemleri getir (yetki bazlı)
+  // Tüm işlemleri getir (yetki bazlı - LIMIT YOK)
   getAllTransactions: async () => {
     try {
-      console.log("📋 Tüm işlemler getiriliyor...");
-      
-      const response = await axiosInstance.get('/transactions/recent');
-      
+      console.log("📋 Tüm işlemler getiriliyor (LIMIT yok)...");
+
+      const response = await axiosInstance.get('/transactions/all');
+
       const dataArray = safeArrayConversion(response.data, 'All Transactions');
-      
-      console.log(`✅ ${dataArray.length} işlem hazır`);
-      
+
+      console.log(`✅ ${dataArray.length} işlem hazır (toplam)`);
+
       return { success: true, data: dataArray };
     } catch (error) {
       console.error('❌ İşlemler getirme hatası:', error);
-      
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
