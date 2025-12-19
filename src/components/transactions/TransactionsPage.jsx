@@ -6,6 +6,7 @@ import MainLayout from "../layout/MainLayout";
 import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
+import TransactionDetailModal from "../common/TransactionDetailModal";
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -21,6 +22,8 @@ export default function TransactionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [filters, setFilters] = useState({
@@ -251,6 +254,26 @@ export default function TransactionsPage() {
     loadData();
   };
 
+  const handleRowClick = (transaction) => {
+    setSelectedDetailTransaction(transaction);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedDetailTransaction(null);
+  };
+
+  const handleDetailModalEdit = (transaction) => {
+    // Detail modal'ı kapat
+    setShowDetailModal(false);
+    setSelectedDetailTransaction(null);
+
+    // Edit modal'ı aç
+    setSelectedTransaction(transaction);
+    setShowEditModal(true);
+  };
+
   const renderPaginationButtons = () => {
     const buttons = [];
     const maxButtons = 5;
@@ -334,7 +357,7 @@ export default function TransactionsPage() {
 
           {/* Filter Drawer */}
           {showFilters && (
-            <div ref={filterDrawerRef} className="mt-4 bg-white rounded-xl border border-gray-200 shadow-lg animate-slideDown overflow-hidden">
+            <div ref={filterDrawerRef} className="mt-4 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden animate-slide-in-top">
               <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-primary/10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -603,27 +626,8 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        <style jsx>{`
-          @keyframes slideDown {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-              max-height: 0;
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-              max-height: 1000px;
-            }
-          }
-
-          .animate-slideDown {
-            animation: slideDown 0.3s ease-out;
-          }
-        `}</style>
-
         {/* Table Container */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6 pb-20">
+        <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="flex-1 overflow-auto">
               <TransactionsFullTable
@@ -634,49 +638,12 @@ export default function TransactionsPage() {
                 onRefresh={loadData}
                 canDelete={canDelete}
                 isReadOnly={isClientUser}
+                onRowClick={handleRowClick}
               />
             </div>
           </div>
         </div>
 
-        {/* Pagination */}
-        {!loading && filteredTransactions.length > 0 && totalPages > 1 && (
-          <div className="px-4 md:px-6 py-4 bg-white border-t border-gray-200 flex-shrink-0">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-text-secondary">
-                Gösterilen: {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredTransactions.length)} / {filteredTransactions.length}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
-                >
-                  <span className="material-symbols-outlined text-lg">chevron_left</span>
-                  <span className="hidden sm:inline">Önceki</span>
-                </button>
-
-                <div className="hidden sm:flex items-center gap-2">
-                  {renderPaginationButtons()}
-                </div>
-
-                <span className="sm:hidden text-sm text-text-main font-medium">
-                  {currentPage} / {totalPages}
-                </span>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
-                >
-                  <span className="hidden sm:inline">Sonraki</span>
-                  <span className="material-symbols-outlined text-lg">chevron_right</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Modals */}
@@ -700,40 +667,106 @@ export default function TransactionsPage() {
         />
       )}
 
-      {/* Fixed Footer with Statistics */}
+      {/* Detail Modal */}
+      {showDetailModal && selectedDetailTransaction && (
+        <TransactionDetailModal
+          transaction={selectedDetailTransaction}
+          onClose={handleCloseDetailModal}
+          onEdit={handleDetailModalEdit}
+        />
+      )}
+
+      {/* Fixed Footer with Statistics and Pagination */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20 lg:left-20">
         <div className="px-4 md:px-6 py-3">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
-              <span className="material-symbols-outlined text-blue-600 text-base">inventory</span>
-              <span className="text-xs font-medium text-blue-700">
-                Toplam: <strong className="font-bold">{transactions.length}</strong>
-              </span>
-            </div>
+          {!loading && filteredTransactions.length > 0 ? (
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Info Section */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                  <span className="material-symbols-outlined text-blue-600 text-base">inventory</span>
+                  <span className="text-xs font-medium text-blue-700">
+                    Toplam: <strong className="font-bold">{transactions.length}</strong>
+                  </span>
+                </div>
 
-            {hasActiveFilters && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
-                <span className="material-symbols-outlined text-green-600 text-base">filter_alt</span>
-                <span className="text-xs font-medium text-green-700">
-                  Filtrelenmiş: <strong className="font-bold">{filteredTransactions.length} / {transactions.length}</strong>
+                {hasActiveFilters && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
+                    <span className="material-symbols-outlined text-green-600 text-base">filter_alt</span>
+                    <span className="text-xs font-medium text-green-700">
+                      Filtrelenmiş: <strong className="font-bold">{filteredTransactions.length}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {isClientUser && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-lg border border-amber-200">
+                    <span className="material-symbols-outlined text-amber-600 text-base">visibility</span>
+                    <span className="text-xs font-medium text-amber-700">Görüntüleme</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Center: Display Info */}
+              <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+                <span className="material-symbols-outlined text-purple-600 text-base">description</span>
+                <span className="text-xs font-medium text-purple-700">
+                  Gösterilen: <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTransactions.length)}</strong> / <strong className="font-bold">{filteredTransactions.length}</strong>
                 </span>
               </div>
-            )}
 
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg">
-              <span className="material-symbols-outlined text-purple-600 text-base">article</span>
-              <span className="text-xs font-medium text-purple-700">
-                Sayfa: <strong className="font-bold">{currentPage} / {totalPages || 1}</strong>
-              </span>
-            </div>
+              {/* Right: Navigation/Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1 || totalPages <= 1}
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_left</span>
+                  <span className="hidden xl:inline">Önceki</span>
+                </button>
 
-            {isClientUser && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-lg border border-amber-200">
-                <span className="material-symbols-outlined text-amber-600 text-base">visibility</span>
-                <span className="text-xs font-medium text-amber-700">Sadece Görüntüleme</span>
+                {totalPages > 1 ? (
+                  <>
+                    <div className="hidden md:flex items-center gap-1.5">
+                      {renderPaginationButtons()}
+                    </div>
+
+                    <div className="md:hidden flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                      <span className="text-xs font-medium text-text-main">
+                        {currentPage} / {totalPages}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                    <span className="material-symbols-outlined text-gray-600 text-sm">article</span>
+                    <span className="text-xs font-medium text-gray-700">
+                      <strong className="font-bold">1 / 1</strong>
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages || totalPages <= 1}
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                >
+                  <span className="hidden xl:inline">Sonraki</span>
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                <span className="material-symbols-outlined text-gray-600 text-base">inventory</span>
+                <span className="text-xs font-medium text-gray-700">
+                  {loading ? "Yükleniyor..." : "Veri yok"}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>

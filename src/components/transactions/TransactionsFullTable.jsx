@@ -46,6 +46,7 @@ export default function TransactionsFullTable({
   onRefresh,
   canDelete,
   isReadOnly,
+  onRowClick,
 }) {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -241,7 +242,8 @@ export default function TransactionsFullTable({
               return (
                 <tr
                   key={transaction.id}
-                  className={`hover:bg-gray-50 ${statusStyle.border} transition-colors`}
+                  onClick={() => onRowClick && onRowClick(transaction)}
+                  className={`hover:bg-gray-50 ${statusStyle.border} transition-colors cursor-pointer`}
                 >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm font-medium text-text-main">
@@ -329,7 +331,10 @@ export default function TransactionsFullTable({
                     <div className="flex items-center justify-end gap-2">
                       {/* Görüntüle/Düzenle */}
                       <button
-                        onClick={() => handleEdit(transaction)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(transaction);
+                        }}
                         className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                         title={isReadOnly ? "Görüntüle" : "Düzenle"}
                       >
@@ -341,7 +346,10 @@ export default function TransactionsFullTable({
                       {/* Sil - Sadece yetkili kullanıcılar */}
                       {canDelete && !isReadOnly && (
                         <button
-                          onClick={() => handleDelete(transaction)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(transaction);
+                          }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Sil"
                         >
