@@ -3,7 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { Link } from "react-router-dom";
 import MobileMenu from "./MobileMenu";
 import { transactionService } from "../../api/transactionService";
-import TransactionDetailModal from "../dashboard/TransactionDetailModal";
+import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate } from "react-router-dom";
 
 export default function Header() {
@@ -95,9 +95,9 @@ export default function Header() {
     setSelectedTransaction(transaction);
   };
 
-  const handleViewFull = (transactionId) => {
+  const handleEditTransaction = (transaction) => {
     setSelectedTransaction(null);
-    navigate(`/transactions?edit=${transactionId}`);
+    navigate(`/transactions?edit=${transaction.id}`);
   };
 
   return (
@@ -349,7 +349,7 @@ export default function Header() {
         <TransactionDetailModal
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
-          onViewFull={handleViewFull}
+          onEdit={handleEditTransaction}
         />
       )}
 

@@ -10,7 +10,7 @@ const getGateBadge = (gate) => {
   return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
 };
 
-export default function TransactionDetailModal({ transaction, onClose, onViewFull }) {
+export default function TransactionDetailModal({ transaction, onClose, onEdit }) {
   if (!transaction) return null;
 
   // Parse delay reasons from JSON
@@ -62,15 +62,15 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-fade-in"
+      <div
+        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scale-in"
+        <div
+          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -223,7 +223,7 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
               Kapat
             </button>
             <button
-              onClick={() => onViewFull(transaction.id)}
+              onClick={() => onEdit && onEdit(transaction)}
               className="flex items-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
@@ -232,36 +232,6 @@ export default function TransactionDetailModal({ transaction, onClose, onViewFul
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes scale-in {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
-        }
-      `}</style>
     </>
   );
 }

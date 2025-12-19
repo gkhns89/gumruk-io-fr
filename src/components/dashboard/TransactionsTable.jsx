@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import TransactionDetailModal from "./TransactionDetailModal";
+import TransactionDetailModal from "../common/TransactionDetailModal";
 
 // Durum renk mapping - Sadece sol border
 const getStatusRowStyle = (status) => {
@@ -254,7 +254,10 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
         <TransactionDetailModal
           transaction={selectedTransaction}
           onClose={handleCloseModal}
-          onViewFull={handleViewFull}
+          onEdit={(transaction) => {
+            setSelectedTransaction(null);
+            navigate(`/transactions?edit=${transaction.id}`);
+          }}
         />
       )}
     </>
