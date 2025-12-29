@@ -173,4 +173,21 @@ export const agencyAgreementService = {
       };
     }
   },
+
+  // ✅ YENİ: Anlaşma güncelle
+  updateAgreement: async (agreementId, agreementData) => {
+    try {
+      const response = await axiosInstance.put(`/agreements/${agreementId}`, agreementData);
+      return {
+        success: true,
+        data: response.data,
+        message: response.data.message || 'Anlaşma başarıyla güncellendi'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Anlaşma güncellenemedi',
+      };
+    }
+  },
 };

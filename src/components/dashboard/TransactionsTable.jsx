@@ -171,7 +171,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
-                  Antrepo Varış
+                  Dosya No
                 </th>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Beyanname No
@@ -204,10 +204,10 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                     key={transaction.id}
                     className={`hover:bg-gray-50 ${statusStyle.border} transition-colors`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                      {formatDate(transaction.warehouseArrivalDate)}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main font-medium">
+                      {transaction.fileNo || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       {transaction.declarationNumber || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">

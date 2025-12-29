@@ -51,24 +51,44 @@ export const companyService = {
       console.log('📤 Client company oluşturuluyor:', companyData);
       const response = await axiosInstance.post('/companies/client', companyData);
       console.log('✅ Client company oluşturuldu:', response.data);
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: response.data,
         message: response.data.message || 'Firma başarıyla oluşturuldu'
       };
     } catch (error) {
       console.error('❌ Create client company error:', error);
-      
+
       if (error.response?.status === 429) {
         return {
           success: false,
           error: 'Müşteri firması limiti aşıldı. Lütfen aboneliğinizi yükseltin.',
         };
       }
-      
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'Firma oluşturulamadı',
+      };
+    }
+  },
+
+  // ✅ YENİ: Client company güncelle
+  updateClientCompany: async (companyId, companyData) => {
+    try {
+      console.log('📤 Client company güncelleniyor:', companyId, companyData);
+      const response = await axiosInstance.put(`/companies/${companyId}`, companyData);
+      console.log('✅ Client company güncellendi:', response.data);
+      return {
+        success: true,
+        data: response.data,
+        message: response.data.message || 'Firma başarıyla güncellendi'
+      };
+    } catch (error) {
+      console.error('❌ Update client company error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'Firma güncellenemedi',
       };
     }
   },

@@ -3,6 +3,7 @@ import { transactionService } from "../../api/transactionService";
 import { GATE_OPTIONS } from "../../utils/constants";
 import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
 import { t, getCurrentLocale } from "../../locales";
+import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly }) {
   const locale = getCurrentLocale();
@@ -760,6 +761,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </div>
                 </div>
               </div>
+
+              {/* Vekalet Bilgi Paneli */}
+              {transaction.clientCompany && (
+                <AgreementInfoPanel
+                  agreement={transaction.clientCompany.agreementId ? {
+                    agreementId: transaction.clientCompany.agreementId,
+                    agreementStatus: transaction.clientCompany.agreementStatus,
+                    agreementStartDate: transaction.clientCompany.agreementStartDate,
+                    agreementEndDate: transaction.clientCompany.agreementEndDate,
+                    documentPath: transaction.clientCompany.documentPath
+                  } : null}
+                  clientName={transaction.clientCompany.name}
+                />
+              )}
 
               {/* Dosya No */}
               <label className="flex flex-col w-full">

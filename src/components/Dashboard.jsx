@@ -47,8 +47,32 @@ export default function Dashboard() {
 
         // Tüm işlemleri Stats için sakla
         setAllTransactions(dataArray);
-        // Son 5 işlemi TransactionsTable için sakla
-        setRecentTransactions(dataArray.slice(0, 5));
+
+        // İşlemleri sırala: 3 seviye - Aktif, Kapanan, Çekilen
+        const sortedTransactions = [...dataArray].sort((a, b) => {
+          // Öncelik seviyelerini belirle
+          const getPriority = (status) => {
+            if (status === 'WITHDRAWN') return 3; // En son: Çekilenler
+            if (status === 'CP_COMPLETED' || status === 'CANCELLED') return 2; // Ortada: Kapananlar
+            return 1; // En üstte: Aktif işlemler (PENDING, REGISTERED, INSPECTION)
+          };
+
+          const priorityA = getPriority(a.status);
+          const priorityB = getPriority(b.status);
+
+          // Önce önceliğe göre sırala
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Aynı öncelik seviyesindeyse, tarihe göre sırala (yeni en üstte)
+          const dateA = new Date(a.createdAt || a.warehouseArrivalDate || 0);
+          const dateB = new Date(b.createdAt || b.warehouseArrivalDate || 0);
+          return dateB - dateA; // Azalan sıralama (yeni önce)
+        });
+
+        // Son 10 işlemi TransactionsTable için sakla
+        setRecentTransactions(sortedTransactions.slice(0, 10));
       } else {
         setError(result.error);
         setAllTransactions([]);

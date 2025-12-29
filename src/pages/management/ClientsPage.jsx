@@ -3,6 +3,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { companyService } from '../../api/companyService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddClientModal from '../../components/common/AddClientModal';
+import ViewClientModal from '../../components/common/ViewClientModal';
+import EditAgreementModal from '../../components/common/EditAgreementModal';
+import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 
 const ClientsPage = () => {
   const { user } = useAuth();
@@ -11,6 +14,13 @@ const ClientsPage = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Yeni modal state'leri
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditAgreementModal, setShowEditAgreementModal] = useState(false);
+  const [showCreateAgreementModal, setShowCreateAgreementModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -245,6 +255,10 @@ const ClientsPage = () => {
                       {/* Actions */}
                       <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                         <button
+                          onClick={() => {
+                            setSelectedClient(client);
+                            setShowViewModal(true);
+                          }}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                           title="Detayları Görüntüle"
                         >
@@ -253,6 +267,10 @@ const ClientsPage = () => {
                         </button>
                         {!hasAgreement && (
                           <button
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setShowCreateAgreementModal(true);
+                            }}
                             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                             title="Vekalet Ekle"
                           >
@@ -276,6 +294,64 @@ const ClientsPage = () => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={handleClientCreated}
           brokerCompanyId={user?.company?.id}
+        />
+
+        {/* View Client Modal */}
+        <ViewClientModal
+          isOpen={showViewModal}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedClient(null);
+          }}
+          client={selectedClient}
+          currentUser={user}
+          onSuccess={() => {
+            loadClients();
+            setShowViewModal(false);
+            setSelectedClient(null);
+          }}
+          onEditAgreement={(client, agreement) => {
+            setShowViewModal(false);
+            if (agreement) {
+              setSelectedAgreement(agreement);
+              setShowEditAgreementModal(true);
+            } else {
+              setShowCreateAgreementModal(true);
+            }
+          }}
+        />
+
+        {/* Edit Agreement Modal */}
+        <EditAgreementModal
+          isOpen={showEditAgreementModal}
+          onClose={() => {
+            setShowEditAgreementModal(false);
+            setSelectedAgreement(null);
+          }}
+          agreement={selectedAgreement}
+          clientInfo={selectedClient}
+          onSuccess={() => {
+            loadClients();
+            setShowEditAgreementModal(false);
+            setSelectedAgreement(null);
+          }}
+        />
+
+        {/* Create Agreement Modal */}
+        <CreateAgreementModal
+          isOpen={showCreateAgreementModal}
+          onClose={() => {
+            setShowCreateAgreementModal(false);
+            setSelectedClient(null);
+          }}
+          brokerCompanyId={user?.company?.id}
+          clientCompanyId={selectedClient?.id}
+          clientCompanyName={selectedClient?.name}
+          onSuccess={() => {
+            loadClients();
+            setShowCreateAgreementModal(false);
+            setSelectedClient(null);
+          }}
         />
       </div>
     </MainLayout>
