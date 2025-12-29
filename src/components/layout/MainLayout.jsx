@@ -28,7 +28,7 @@ export default function MainLayout({ children }) {
   );
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden">
+    <div className="flex w-full overflow-hidden" style={{ minHeight: '600px', height: '100vh' }}>
       <Sidebar />
       <main className={mainClassName}>
         <Header />
