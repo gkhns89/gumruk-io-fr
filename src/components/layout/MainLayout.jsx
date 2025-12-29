@@ -28,12 +28,12 @@ export default function MainLayout({ children, hasFooter = false }) {
   );
 
   return (
-    <div className="flex w-full overflow-hidden" style={{ minHeight: '600px', height: '100vh' }}>
+    <div className="flex w-full overflow-hidden" style={{ height: '100vh' }}>
       <Sidebar />
       <main className={mainClassName}>
         <Header />
         <div
-          className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-20' : 'pb-8'}`}
+          className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-4' : 'pb-2'}`}
           style={hasFooter ? { maxHeight: 'calc(100vh - 125px)' } : {}}
         >
           <div className="animate-slide-in-left-small">
