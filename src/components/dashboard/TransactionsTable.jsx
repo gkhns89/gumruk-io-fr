@@ -84,6 +84,25 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
     setSelectedTransaction(null);
   };
 
+  // Satır tıklama handler'ı - metin seçimi kontrolü ile
+  const handleRowClick = (transaction, event) => {
+    // Eğer kullanıcı metin seçiyorsa modal açma
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      return;
+    }
+
+    // Eğer tıklanan element bir button veya button içindeyse, işlemi yapma
+    // (Görüntüle butonunun kendi onClick'i çalışsın)
+    const target = event.target;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+
+    // Modal'ı aç
+    handleViewTransaction(transaction);
+  };
+
   const handleViewFull = (transactionId) => {
     // İşlem takip sayfasına yönlendir ve düzenleme modunda aç
     setSelectedTransaction(null);
@@ -202,7 +221,8 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                 return (
                   <tr
                     key={transaction.id}
-                    className={`hover:bg-gray-50 ${statusStyle.border} transition-colors`}
+                    onClick={(e) => handleRowClick(transaction, e)}
+                    className={`hover:bg-gray-50 ${statusStyle.border} transition-colors cursor-pointer`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main font-medium">
                       {transaction.fileNo || '-'}

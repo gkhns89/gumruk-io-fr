@@ -32,7 +32,7 @@ export default function MainLayout({ children }) {
       <Sidebar />
       <main className={mainClassName}>
         <Header />
-        <div className="flex-1 overflow-y-auto bg-background pb-36">
+        <div className="flex-1 overflow-y-auto bg-background pb-8">
           <div className="animate-slide-in-left-small h-full">
             {children}
           </div>

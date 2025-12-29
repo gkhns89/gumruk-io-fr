@@ -13,7 +13,12 @@ export default function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filterDrawerRef = useRef(null);
   const filterButtonRef = useRef(null);
-  
+
+  // Sidebar genişliği state'i
+  const [sidebarWide, setSidebarWide] = useState(() => {
+    return localStorage.getItem('sidebarMode') === 'pinned-expanded';
+  });
+
   // ... mevcut state'ler aynı kalacak ...
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -46,8 +51,21 @@ export default function TransactionsPage() {
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
 
+  // Sidebar değişikliklerini dinle
+  useEffect(() => {
+    const handleSidebarChange = (event) => {
+      setSidebarWide(event.detail.isWide);
+    };
+
+    window.addEventListener('sidebarStateChanged', handleSidebarChange);
+
+    return () => {
+      window.removeEventListener('sidebarStateChanged', handleSidebarChange);
+    };
+  }, []);
+
   // ... mevcut useEffect ve fonksiyonlar aynı kalacak ...
-  
+
   useEffect(() => {
     loadData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -677,7 +695,7 @@ export default function TransactionsPage() {
       )}
 
       {/* Fixed Footer with Statistics and Pagination */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20 lg:left-20">
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20 transition-[left] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
         <div className="px-4 md:px-6 py-3">
           {!loading && filteredTransactions.length > 0 ? (
             <div className="flex items-center justify-between gap-4">
