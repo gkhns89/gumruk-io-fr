@@ -645,7 +645,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6">
+        <div className="flex-1 overflow-hidden p-4 md:p-6 pb-24">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
             <div className="flex-1 overflow-auto">
               <TransactionsFullTable

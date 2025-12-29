@@ -374,19 +374,18 @@ export default function Sidebar() {
           {/* DİĞER Çekmecesi - Gizli üst menü öğeleri için */}
           {needsOtherDrawer && (
             <>
-              {/* Diğer Başlığı / Toggle Butonu */}
+              {/* Diğer Toggle Butonu */}
               {isExpanded ? (
                 <button
                   onClick={() => setIsOtherCollapsed(!isOtherCollapsed)}
-                  className="flex items-center gap-3 px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400 text-text-main"
+                  className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                  title="Diğer Menü Öğeleri"
                 >
-                  <span className="material-symbols-outlined text-base flex-shrink-0">
+                  <span></span>
+                  <span className="material-symbols-outlined text-base justify-self-center">
                     more_horiz
                   </span>
-                  <p className="text-xs font-semibold uppercase tracking-wider flex-1 text-left">
-                    Diğer
-                  </p>
-                  <span className={`material-symbols-outlined text-base transition-transform ${!isOtherCollapsed ? 'rotate-180' : ''}`}>
+                  <span className={`material-symbols-outlined text-base justify-self-end transition-transform ${!isOtherCollapsed ? 'rotate-180' : ''}`}>
                     expand_more
                   </span>
                 </button>
@@ -396,7 +395,7 @@ export default function Sidebar() {
                   className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
                   title="Diğer"
                 >
-                  <span className="material-symbols-outlined text-lg text-text-secondary">
+                  <span className="material-symbols-outlined text-lg">
                     more_horiz
                   </span>
                 </button>
@@ -507,15 +506,14 @@ export default function Sidebar() {
                   {isExpanded ? (
                     <button
                       onClick={() => setIsManagementCollapsed(!isManagementCollapsed)}
-                      className="flex items-center gap-3 px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400 text-text-main"
+                      className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                      title="Diğer Yönetim Öğeleri"
                     >
-                      <span className="material-symbols-outlined text-base flex-shrink-0">
+                      <span></span>
+                      <span className="material-symbols-outlined text-base justify-self-center">
                         more_horiz
                       </span>
-                      <p className="text-xs font-semibold uppercase tracking-wider flex-1 text-left">
-                        Diğer
-                      </p>
-                      <span className={`material-symbols-outlined text-base transition-transform ${!isManagementCollapsed ? 'rotate-180' : ''}`}>
+                      <span className={`material-symbols-outlined text-base justify-self-end transition-transform ${!isManagementCollapsed ? 'rotate-180' : ''}`}>
                         expand_more
                       </span>
                     </button>
@@ -525,7 +523,7 @@ export default function Sidebar() {
                       className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
                       title="Diğer"
                     >
-                      <span className="material-symbols-outlined text-lg text-text-secondary">
+                      <span className="material-symbols-outlined text-lg">
                         more_horiz
                       </span>
                     </button>
