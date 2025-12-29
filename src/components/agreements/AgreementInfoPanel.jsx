@@ -1,7 +1,14 @@
 import React from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 
-const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
+/**
+ * Vekalet bilgilerini gösteren panel
+ * @param {Object} agreement - Vekalet anlaşması bilgileri
+ * @param {string} clientName - Müşteri firma adı
+ * @param {function} onCreateAgreement - Vekalet oluşturma callback'i
+ * @param {boolean} compact - Dar alanlarda kullanım için kompakt mod (default: false)
+ */
+const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact = false }) => {
   const handleDownloadDocument = async () => {
     if (!agreement?.agreementId) return;
 
@@ -60,14 +67,14 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
     const badge = getStatusBadge('NO_AGREEMENT');
 
     return (
-      <div className="lg:col-span-3 bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className={`bg-gray-50 border-2 border-gray-200 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'}`}>
+        <div className={`flex items-center ${compact ? 'flex-col gap-3' : 'justify-between'}`}>
+          <div className="flex items-center gap-3 w-full">
             <span className="material-symbols-outlined text-gray-500 text-2xl">
               info
             </span>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-gray-700">
                   {clientName}
                 </span>
@@ -85,7 +92,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
             <button
               type="button"
               onClick={onCreateAgreement}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors ${compact ? 'w-full justify-center' : ''}`}
             >
               <span className="material-symbols-outlined text-lg">add</span>
               Vekalet Ekle
@@ -109,12 +116,12 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
   }
 
   return (
-    <div className={`lg:col-span-3 border-2 rounded-xl p-4 ${
+    <div className={`border-2 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} ${
       isActive ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
     }`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          <span className={`material-symbols-outlined text-2xl mt-0.5 ${
+      <div className={`flex ${compact ? 'flex-col' : 'items-start justify-between'}`}>
+        <div className={`flex items-start gap-3 flex-1 ${compact ? 'w-full' : ''}`}>
+          <span className={`material-symbols-outlined ${compact ? 'text-xl' : 'text-2xl'} mt-0.5 ${
             isActive ? 'text-green-600' : 'text-yellow-600'
           }`}>
             verified
@@ -122,7 +129,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
 
           <div className="flex-1">
             {/* Firma adı ve durum badge'i */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-sm font-semibold text-gray-800">
                 {clientName}
               </span>
@@ -133,7 +140,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
 
             {/* Tarih bilgileri */}
             {isActive && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+              <div className={`grid gap-3 mt-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
                 {/* Başlangıç tarihi */}
                 {agreement.agreementStartDate && (
                   <div className="flex items-center gap-2">
@@ -198,7 +205,9 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement }) => {
           <button
             type="button"
             onClick={handleDownloadDocument}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className={`flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors ${
+              compact ? 'w-full justify-center mt-3' : ''
+            }`}
           >
             <span className="material-symbols-outlined text-lg">download</span>
             Belge İndir

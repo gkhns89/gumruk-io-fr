@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
+import EditAgreementModal from '../../components/common/EditAgreementModal';
 import MainLayout from '../../components/layout/MainLayout';
 
 const AgreementsPage = () => {
@@ -10,7 +11,9 @@ const AgreementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
 
   // Filtreler
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -299,10 +302,14 @@ const AgreementsPage = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <button
+                                onClick={() => {
+                                  setSelectedAgreement(agreement);
+                                  setShowEditModal(true);
+                                }}
                                 className="text-primary hover:text-primary/80 transition-colors"
-                                title="Detayları Görüntüle"
+                                title="Vekaleti Düzenle"
                               >
-                                <span className="material-symbols-outlined">visibility</span>
+                                <span className="material-symbols-outlined">edit</span>
                               </button>
                             </td>
                           </tr>
@@ -332,6 +339,33 @@ const AgreementsPage = () => {
             onSuccess={() => {
               setShowCreateModal(false);
               setSelectedClient(null);
+              loadAgreements();
+            }}
+          />
+        )}
+
+        {/* Edit Agreement Modal */}
+        {showEditModal && selectedAgreement && (
+          <EditAgreementModal
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              setSelectedAgreement(null);
+            }}
+            agreement={{
+              agreementId: selectedAgreement.id,
+              agreementStatus: selectedAgreement.status,
+              agreementStartDate: selectedAgreement.startDate,
+              agreementEndDate: selectedAgreement.endDate,
+              documentPath: selectedAgreement.documentPath,
+              notes: selectedAgreement.notes
+            }}
+            clientInfo={{
+              name: selectedAgreement.clientCompany?.name
+            }}
+            onSuccess={() => {
+              setShowEditModal(false);
+              setSelectedAgreement(null);
               loadAgreements();
             }}
           />

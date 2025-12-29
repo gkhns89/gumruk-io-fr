@@ -656,10 +656,11 @@ export default function AddTransactionModal({
     // Tarih gelecekte olamaz kontrolleri
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Bugünün başlangıcı
+    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD formatında bugünün tarihi
 
     if (formData.warehouseArrivalDate) {
-      const arrivalDate = new Date(formData.warehouseArrivalDate);
-      if (arrivalDate > today) {
+      // Tarih string'ini direkt karşılaştır (timezone sorununu önler)
+      if (formData.warehouseArrivalDate > todayString) {
         setError("Antrepo varış tarihi gelecekte olamaz");
         setLoading(false);
         return;
@@ -667,8 +668,7 @@ export default function AddTransactionModal({
     }
 
     if (formData.registrationDate) {
-      const regDate = new Date(formData.registrationDate);
-      if (regDate > today) {
+      if (formData.registrationDate > todayString) {
         setError("Tescil tarihi gelecekte olamaz");
         setLoading(false);
         return;
@@ -676,8 +676,7 @@ export default function AddTransactionModal({
     }
 
     if (formData.lineClosureDate) {
-      const closureDate = new Date(formData.lineClosureDate);
-      if (closureDate > today) {
+      if (formData.lineClosureDate > todayString) {
         setError("Kapanma tarihi gelecekte olamaz");
         setLoading(false);
         return;
@@ -685,8 +684,7 @@ export default function AddTransactionModal({
     }
 
     if (formData.withdrawalDate) {
-      const withdrawalDate = new Date(formData.withdrawalDate);
-      if (withdrawalDate > today) {
+      if (formData.withdrawalDate > todayString) {
         setError("Çekilme tarihi gelecekte olamaz");
         setLoading(false);
         return;
