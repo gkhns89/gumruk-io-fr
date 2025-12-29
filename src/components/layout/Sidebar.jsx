@@ -194,8 +194,8 @@ export default function Sidebar() {
   const needsOtherDrawer = hiddenOtherItems.length > 0;
 
   const bottomMenuItems = [
-    { icon: "phone", label: "İletişim", path: "/contact" },
-    { icon: "info", label: "Yardım", path: "/help" },
+    { icon: "headset_mic", label: "İletişim", path: "/contact" },
+    { icon: "help_center", label: "Yardım", path: "/help" },
   ];
 
   const isActive = (path) => {

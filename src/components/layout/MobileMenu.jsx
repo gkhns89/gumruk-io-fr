@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
 
   // Menü açıkken body scroll'u engelle
   useEffect(() => {
@@ -35,10 +36,51 @@ export default function MobileMenu({ isOpen, onClose }) {
     { icon: "settings", label: "Ayarlar", path: "/settings" },
   ];
 
-  const bottomMenuItems = [
-    { icon: "contact_support", label: "İletişim", path: "/contact" },
-    { icon: "help", label: "Yardım", path: "/help" },
+  const managementItems = [
+    {
+      icon: "verified",
+      label: "Vekalet Yönetimi",
+      path: "/management/agreements",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "corporate_fare",
+      label: "Müşteri Firmaları",
+      path: "/management/clients",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "group",
+      label: "Kullanıcı Yönetimi",
+      path: "/management/users",
+      active: false,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
+      comingSoon: true
+    },
+    {
+      icon: "assessment",
+      label: "Raporlar",
+      path: "/management/reports",
+      active: false,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
+      comingSoon: true
+    },
   ];
+
+  const bottomMenuItems = [
+    { icon: "headset_mic", label: "İletişim", path: "/contact" },
+    { icon: "help_center", label: "Yardım", path: "/help" },
+  ];
+
+  // Kullanıcının yönetim menüsüne erişimi var mı?
+  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
+
+  // Aktif yönetim menü öğelerini filtrele
+  const visibleManagementItems = managementItems.filter(item =>
+    item.roles.includes(user?.globalRole)
+  );
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -96,6 +138,7 @@ export default function MobileMenu({ isOpen, onClose }) {
 
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto p-4">
+          {/* Ana Menü Öğeleri */}
           <div className="space-y-1">
             {menuItems.map((item, index) => {
               const active = isActive(item.path);
@@ -104,8 +147,8 @@ export default function MobileMenu({ isOpen, onClose }) {
                   key={index}
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    active 
-                      ? "bg-primary text-white shadow-md" 
+                    active
+                      ? "bg-primary text-white shadow-md"
                       : "hover:bg-gray-100 text-text-main"
                   }`}
                 >
@@ -125,10 +168,93 @@ export default function MobileMenu({ isOpen, onClose }) {
             })}
           </div>
 
+          {/* Yönetim Bölümü - Çekmeceli */}
+          {hasManagementAccess && visibleManagementItems.length > 0 && (
+            <>
+              {/* Divider */}
+              <div className="my-4 border-t border-gray-200" />
+
+              {/* Yönetim Çekmece Butonu */}
+              <button
+                onClick={() => setIsManagementOpen(!isManagementOpen)}
+                className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-gray-100 text-text-secondary transition-all mb-1"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined">
+                    admin_panel_settings
+                  </span>
+                  <p className="text-sm font-semibold uppercase tracking-wider">
+                    Yönetim
+                  </p>
+                </div>
+                <span className={`material-symbols-outlined transition-transform ${isManagementOpen ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </button>
+
+              {/* Yönetim Menü Öğeleri - Çekmece İçeriği */}
+              {isManagementOpen && (
+                <div className="space-y-1 ml-4 border-l-2 border-gray-200 pl-3">
+                  {visibleManagementItems.map((item, index) => {
+                    const active = isActive(item.path);
+                    const isDisabled = !item.active;
+
+                    if (isDisabled) {
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl opacity-50 cursor-not-allowed"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-text-secondary">
+                              {item.icon}
+                            </span>
+                            <p className="text-sm font-medium leading-normal text-text-secondary">
+                              {item.label}
+                            </p>
+                          </div>
+                          {item.comingSoon && (
+                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary rounded-full">
+                              Yakında
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={index}
+                        to={item.path}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                          active
+                            ? "bg-primary text-white shadow-md"
+                            : "hover:bg-gray-100 text-text-main"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined">
+                          {item.icon}
+                        </span>
+                        <p className="text-sm font-medium leading-normal">
+                          {item.label}
+                        </p>
+                        {active && (
+                          <span className="material-symbols-outlined ml-auto text-lg">
+                            chevron_right
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
           {/* Divider */}
           <div className="my-4 border-t border-gray-200" />
 
-          {/* Bottom Navigation */}
+          {/* Alt Menü (İletişim & Yardım) */}
           <div className="space-y-1">
             {bottomMenuItems.map((item, index) => {
               const active = isActive(item.path);
@@ -137,8 +263,8 @@ export default function MobileMenu({ isOpen, onClose }) {
                   key={index}
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    active 
-                      ? "bg-primary text-white shadow-md" 
+                    active
+                      ? "bg-primary text-white shadow-md"
                       : "hover:bg-gray-100 text-text-main"
                   }`}
                 >
