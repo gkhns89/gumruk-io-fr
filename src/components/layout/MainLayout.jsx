@@ -34,7 +34,7 @@ export default function MainLayout({ children, hasFooter = false }) {
         <Header />
         <div
           className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-4' : 'pb-2'}`}
-          style={hasFooter ? { maxHeight: 'calc(100vh - 125px)' } : {}}
+          style={hasFooter ? { maxHeight: 'calc(100vh - 130px)' } : {}}
         >
           <div className="animate-slide-in-left-small">
             {children}
