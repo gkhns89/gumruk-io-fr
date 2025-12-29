@@ -8,6 +8,9 @@ import {
   TRANSACTION_UPPERCASE_FIELDS,
 } from "../../utils/textUtils";
 import { t, getCurrentLocale } from "../../locales";
+import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
+import CreateAgreementModal from '../common/CreateAgreementModal';
+import AddClientModal from '../common/AddClientModal';
 
 export default function AddTransactionModal({
   onClose,
@@ -49,6 +52,11 @@ export default function AddTransactionModal({
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [selectedClientInfo, setSelectedClientInfo] = useState(null);
+
+  // Vekalet anlaşması state'leri
+  const [clientAgreements, setClientAgreements] = useState({}); // { clientId: agreementData }
+  const [selectedClientAgreement, setSelectedClientAgreement] = useState(null);
+  const [showCreateAgreementModal, setShowCreateAgreementModal] = useState(false);
 
   // SUPER_ADMIN için broker listesi
   const [availableBrokers, setAvailableBrokers] = useState([]);
@@ -94,12 +102,6 @@ export default function AddTransactionModal({
 
   // Yeni firma ekleme modal state
   const [showNewClientModal, setShowNewClientModal] = useState(false);
-  const [newClientForm, setNewClientForm] = useState({
-    name: "",
-    shortName: "",
-    description: "",
-  });
-  const [savingNewClient, setSavingNewClient] = useState(false);
 
   // SUPER_ADMIN ise broker listesini yükle
   useEffect(() => {
@@ -145,7 +147,7 @@ export default function AddTransactionModal({
 
   // Client arama filtresi
   useEffect(() => {
-    if (clientSearchTerm.trim() === "") {
+    if (!clientSearchTerm || clientSearchTerm.trim() === "") {
       setFilteredClients(availableClients.slice(0, 100));
     } else {
       const searchLower = clientSearchTerm.toLowerCase();
@@ -313,6 +315,11 @@ export default function AddTransactionModal({
       if (selectedClient) {
         setSelectedClientInfo(selectedClient);
         setClientSearchTerm(selectedClient.name);
+
+        // Agreement bilgisini set et
+        const agreement = clientAgreements[selectedClient.id];
+        setSelectedClientAgreement(agreement || null);
+
         // Alıcı adını büyük harfe çevir
         const recipientName =
           selectedClient.shortName || selectedClient.name || "";
@@ -323,10 +330,11 @@ export default function AddTransactionModal({
       }
     } else {
       setSelectedClientInfo(null);
+      setSelectedClientAgreement(null);
       setClientSearchTerm("");
       setFormData((prev) => ({ ...prev, recipientName: "" }));
     }
-  }, [formData.clientCompanyId, availableClients, locale]);
+  }, [formData.clientCompanyId, availableClients, clientAgreements, locale]);
 
   // Tarihlerdeki değişikliklerde gecikmeleri hesapla
   useEffect(() => {
@@ -406,19 +414,37 @@ export default function AddTransactionModal({
   const loadClientCompanies = async (brokerId) => {
     try {
       setLoadingClients(true);
+
       const result = await companyService.getClientCompanies(brokerId);
 
       if (result.success) {
         setAvailableClients(result.data);
         setFilteredClients(result.data.slice(0, 100));
+
+        // Agreement bilgilerini cache'le
+        const agreementsMap = {};
+        result.data.forEach(client => {
+          if (client.agreementId) {
+            agreementsMap[client.id] = {
+              agreementId: client.agreementId,
+              agreementStatus: client.agreementStatus,
+              agreementStartDate: client.agreementStartDate,
+              agreementEndDate: client.agreementEndDate,
+              documentPath: client.documentPath
+            };
+          }
+        });
+        setClientAgreements(agreementsMap);
       } else {
         setAvailableClients([]);
         setFilteredClients([]);
+        setClientAgreements({});
       }
     } catch (err) {
       console.error("Client listesi yükleme hatası:", err);
       setAvailableClients([]);
       setFilteredClients([]);
+      setClientAgreements({});
     } finally {
       setLoadingClients(false);
     }
@@ -560,6 +586,14 @@ export default function AddTransactionModal({
     // Check client company
     if (!formData.clientCompanyId) {
       errors.clientCompany = "Müşteri firması seçimi zorunludur";
+    }
+
+    // Vekalet kontrolü
+    if (formData.clientCompanyId) {
+      const agreement = clientAgreements[parseInt(formData.clientCompanyId)];
+      if (!agreement || agreement.agreementStatus !== 'ACTIVE') {
+        errors.clientCompany = "Seçili müşteri ile aktif vekalet anlaşmanız bulunmuyor";
+      }
     }
 
     // Check each required field - only add error if field is empty
@@ -814,44 +848,6 @@ export default function AddTransactionModal({
     }
   };
 
-  // Yeni client ekleme
-  const handleNewClientSubmit = async (e) => {
-    e.preventDefault();
-    setSavingNewClient(true);
-
-    try {
-      const result = await companyService.createClientCompany({
-        name: toUpperCase(newClientForm.name, locale),
-        shortName: toUpperCase(newClientForm.shortName, locale),
-        description: newClientForm.description,
-        parentBrokerId: parseInt(
-          formData.brokerCompanyId || currentUser?.company?.id
-        ),
-      });
-
-      if (result.success) {
-        await loadClientCompanies(
-          formData.brokerCompanyId || currentUser?.company?.id
-        );
-
-        setFormData((prev) => ({
-          ...prev,
-          clientCompanyId: result.data.companyId,
-        }));
-
-        setClientSearchTerm(newClientForm.name);
-        setShowNewClientModal(false);
-        setNewClientForm({ name: "", shortName: "", description: "" });
-      } else {
-        alert(result.error || "Client oluşturulamadı");
-      }
-    } catch (err) {
-      console.error("Client oluşturma hatası:", err);
-      alert("Client oluşturulurken beklenmeyen bir hata oluştu.");
-    } finally {
-      setSavingNewClient(false);
-    }
-  };
 
   // Gönderici seçildiğinde
   const handleSenderSelect = (senderName) => {
@@ -983,6 +979,40 @@ export default function AddTransactionModal({
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Vekalet Bilgi Paneli */}
+              {selectedClientInfo && (
+                <AgreementInfoPanel
+                  agreement={selectedClientAgreement}
+                  clientName={selectedClientInfo.name}
+                  onCreateAgreement={
+                    currentUser?.role === 'BROKER_ADMIN'
+                      ? () => setShowCreateAgreementModal(true)
+                      : undefined
+                  }
+                />
+              )}
+
+              {/* Vekalet Yoksa ve BROKER_USER ise Uyarı */}
+              {selectedClientInfo &&
+               !selectedClientAgreement &&
+               currentUser?.role === 'BROKER_USER' && (
+                <div className="lg:col-span-3 bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-orange-600 text-2xl">
+                      warning
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-orange-800">
+                        Bu firma ile aktif vekalet anlaşmanız bulunmuyor
+                      </p>
+                      <p className="text-xs text-orange-600 mt-1">
+                        İşlem oluşturmak için lütfen yöneticinizle iletişime geçin.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ALICI - EN BAŞTA VE HER ZAMAN DISABLED */}
               <label className="flex flex-col w-full lg:col-span-3">
                 <p className="text-text-main text-sm font-medium pb-2">
@@ -1341,47 +1371,75 @@ export default function AddTransactionModal({
                         </div>
                       ) : (
                         <>
-                          {filteredClients.map((client) => (
-                            <button
-                              key={client.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  clientCompanyId: client.id,
-                                }));
-                                setClientSearchTerm(client.name);
-                                setShowClientDropdown(false);
-                                // Clear error when client is selected
-                                if (fieldErrors.clientCompany) {
-                                  setFieldErrors(prev => ({ ...prev, clientCompany: null }));
-                                }
-                              }}
-                              className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                                formData.clientCompanyId === client.id
-                                  ? "bg-blue-50 text-primary font-medium"
-                                  : ""
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">
-                                    {client.name}
-                                  </p>
-                                  {client.description && (
-                                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                                      {client.description}
+                          {filteredClients.map((client) => {
+                            const agreement = clientAgreements[client.id];
+                            const isActive = agreement?.agreementStatus === 'ACTIVE';
+                            // ✅ Allow all clients to be selectable (removed disabled logic)
+
+                            return (
+                              <button
+                                key={client.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    clientCompanyId: client.id,
+                                  }));
+                                  setClientSearchTerm(client.name);
+                                  setShowClientDropdown(false);
+                                  // Clear error when client is selected
+                                  if (fieldErrors.clientCompany) {
+                                    setFieldErrors(prev => ({ ...prev, clientCompany: null }));
+                                  }
+                                }}
+                                className={`w-full text-left px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0 hover:bg-blue-50 ${
+                                  formData.clientCompanyId === client.id
+                                    ? "bg-blue-50 text-primary font-medium"
+                                    : ""
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">
+                                      {client.name}
                                     </p>
-                                  )}
+                                    {client.description && (
+                                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                                        {client.description}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {/* Agreement Badge */}
+                                    {isActive ? (
+                                      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 border border-green-300 rounded-full">
+                                        Aktif
+                                      </span>
+                                    ) : agreement?.agreementStatus === 'PENDING' ? (
+                                      <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-full">
+                                        Onay Bekliyor
+                                      </span>
+                                    ) : agreement?.agreementStatus === 'INACTIVE' ? (
+                                      <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-300 rounded-full">
+                                        Pasif
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 border border-red-300 rounded-full">
+                                        Vekalet Yok
+                                      </span>
+                                    )}
+
+                                    {formData.clientCompanyId === client.id && (
+                                      <span className="material-symbols-outlined text-primary text-lg">
+                                        check_circle
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                {formData.clientCompanyId === client.id && (
-                                  <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
-                                    check_circle
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          ))}
+                              </button>
+                            );
+                          })}
 
                           {filteredClients.length === 100 &&
                             availableClients.length > 100 && (
@@ -2529,121 +2587,36 @@ export default function AddTransactionModal({
       </div>
 
       {/* Yeni Client Ekleme Modal */}
-      {showNewClientModal && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/20 z-[60] animate-fade-in"
-            onClick={() => setShowNewClientModal(false)}
-          />
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div
-              className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <div>
-                  <h3 className="text-xl font-bold text-text-main">
-                    {t("company.addNew")}
-                  </h3>
-                  <p className="text-text-secondary text-sm mt-1">
-                    {currentUser?.company?.name || "Broker Firması"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowNewClientModal(false)}
-                  className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-text-secondary">
-                    close
-                  </span>
-                </button>
-              </div>
+      <AddClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onSuccess={(newClient) => {
+          // Set as selected client after creation
+          // Backend returns companyId and companyName, not id and name
+          if (newClient?.companyId) {
+            setFormData(prev => ({ ...prev, clientCompanyId: newClient.companyId }));
+            setClientSearchTerm(newClient.companyName || '');
+            loadClientCompanies(formData.brokerCompanyId || currentUser?.company?.id);
+          }
+        }}
+        brokerCompanyId={formData.brokerCompanyId ? parseInt(formData.brokerCompanyId) : currentUser?.company?.id}
+      />
 
-              {/* Body */}
-              <form onSubmit={handleNewClientSubmit} className="p-6">
-                <div className="space-y-4">
-                  <label className="flex flex-col w-full">
-                    <p className="text-text-main text-sm font-medium pb-2">
-                      {t("company.name")} *
-                    </p>
-                    <input
-                      type="text"
-                      value={newClientForm.name}
-                      onChange={(e) =>
-                        setNewClientForm((prev) => ({
-                          ...prev,
-                          name: toUpperCase(e.target.value, locale),
-                        }))
-                      }
-                      required
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
-                      placeholder={t("placeholders.enterName")}
-                      style={{ textTransform: "uppercase" }}
-                    />
-                  </label>
-
-                  <label className="flex flex-col w-full">
-                    <p className="text-text-main text-sm font-medium pb-2">
-                      {t("company.shortName")} *
-                    </p>
-                    <input
-                      type="text"
-                      value={newClientForm.shortName}
-                      onChange={(e) =>
-                        setNewClientForm((prev) => ({
-                          ...prev,
-                          shortName: toUpperCase(e.target.value, locale),
-                        }))
-                      }
-                      required
-                      className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary h-12 placeholder:text-neutral p-3 text-base font-normal uppercase"
-                      placeholder="Firma kısa adını girin"
-                      style={{ textTransform: "uppercase" }}
-                    />
-                  </label>
-
-                  <label className="flex flex-col w-full">
-                    <p className="text-text-main text-sm font-medium pb-2">
-                      {t("company.description")}
-                    </p>
-                    <textarea
-                      value={newClientForm.description}
-                      onChange={(e) =>
-                        setNewClientForm((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                      rows="3"
-                      className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal"
-                      placeholder={t("placeholders.enterDescription")}
-                    />
-                  </label>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-end gap-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowNewClientModal(false)}
-                    className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={savingNewClient}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined">add</span>
-                    {savingNewClient ? t("common.loading") : t("common.add")}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </>
+      {/* Vekalet Oluşturma Modalı */}
+      {showCreateAgreementModal && (
+        <CreateAgreementModal
+          isOpen={showCreateAgreementModal}
+          onClose={() => setShowCreateAgreementModal(false)}
+          brokerCompanyId={formData.brokerCompanyId ? parseInt(formData.brokerCompanyId) : currentUser?.company?.id}
+          clientCompanyId={formData.clientCompanyId ? parseInt(formData.clientCompanyId) : null}
+          clientCompanyName={selectedClientInfo?.name}
+          onSuccess={() => {
+            // Agreement oluşturuldu, client listesini yeniden yükle
+            const brokerId = formData.brokerCompanyId || currentUser?.company?.id;
+            loadClientCompanies(brokerId);
+            setShowCreateAgreementModal(false);
+          }}
+        />
       )}
     </>
   );

@@ -37,6 +37,48 @@ export default function Sidebar() {
     { icon: "settings", label: "Ayarlar", path: "/settings" },
   ];
 
+  // Yönetim menüsü - BROKER_ADMIN için
+  const managementItems = [
+    {
+      icon: "verified",
+      label: "Vekalet Yönetimi",
+      path: "/management/agreements",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "corporate_fare",
+      label: "Müşteri Firmaları",
+      path: "/management/clients",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "group",
+      label: "Kullanıcı Yönetimi",
+      path: "/management/users",
+      active: false,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
+      comingSoon: true
+    },
+    {
+      icon: "assessment",
+      label: "Raporlar",
+      path: "/management/reports",
+      active: false,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
+      comingSoon: true
+    },
+  ];
+
+  // Kullanıcının yönetim menüsüne erişimi var mı?
+  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
+
+  // Aktif yönetim menü öğelerini filtrele
+  const visibleManagementItems = managementItems.filter(item =>
+    item.roles.includes(user?.globalRole)
+  );
+
   const bottomMenuItems = [
     { icon: "contact_support", label: "İletişim", path: "/contact" },
     { icon: "help", label: "Yardım", path: "/help" },
@@ -197,6 +239,86 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          {/* Yönetim Menüsü - BROKER_ADMIN ve SUPER_ADMIN için */}
+          {hasManagementAccess && visibleManagementItems.length > 0 && (
+            <>
+              {/* Divider */}
+              <div className="my-2 mx-2 border-t border-gray-200" />
+
+              {/* Yönetim Başlığı */}
+              {isExpanded && (
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                    Yönetim
+                  </p>
+                </div>
+              )}
+
+              {/* Yönetim Menü Öğeleri */}
+              {visibleManagementItems.map((item, index) => {
+                const active = isActive(item.path);
+                const isDisabled = !item.active;
+
+                if (isDisabled) {
+                  // Disabled item - not clickable
+                  return (
+                    <div
+                      key={`mgmt-${index}`}
+                      className={`
+                        flex items-center gap-3 px-3 h-11 rounded-xl
+                        opacity-50 cursor-not-allowed
+                        ${!isExpanded && 'justify-center'}
+                      `}
+                      title={!isExpanded ? `${item.label} (Yakında)` : ''}
+                    >
+                      <span className="material-symbols-outlined text-xl flex-shrink-0 text-text-secondary">
+                        {item.icon}
+                      </span>
+                      {isExpanded && (
+                        <div className="flex items-center justify-between flex-1">
+                          <p className="text-sm font-medium leading-normal whitespace-nowrap text-text-secondary">
+                            {item.label}
+                          </p>
+                          {item.comingSoon && (
+                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary rounded-full">
+                              Yakında
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Active item - clickable
+                return (
+                  <Link
+                    key={`mgmt-${index}`}
+                    to={item.path}
+                    className={`
+                      flex items-center gap-3 px-3 h-11 rounded-xl transition-colors
+                      ${active
+                        ? "bg-primary text-white shadow-md"
+                        : "hover:bg-gray-100 text-text-main"
+                      }
+                      ${!isExpanded && 'justify-center'}
+                    `}
+                    title={!isExpanded ? item.label : ''}
+                  >
+                    <span className="material-symbols-outlined text-xl flex-shrink-0">
+                      {item.icon}
+                    </span>
+                    {isExpanded && (
+                      <p className="text-sm font-medium leading-normal whitespace-nowrap">
+                        {item.label}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* Divider */}

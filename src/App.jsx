@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
+import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
+import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
 import { useAuth } from "./hooks/useAuth";
 
 // Protected Route Component
@@ -56,15 +58,35 @@ export default function App() {
       />
       
       {/* ✅ YENİ: İşlem Takip Route */}
-      <Route 
-        path="/transactions" 
+      <Route
+        path="/transactions"
         element={
           <ProtectedRoute>
             <TransactionsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
+      {/* ✅ YÖNETİM: Vekalet Yönetimi */}
+      <Route
+        path="/management/agreements"
+        element={
+          <ProtectedRoute>
+            <AgreementsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Müşteri Firmaları */}
+      <Route
+        path="/management/clients"
+        element={
+          <ProtectedRoute>
+            <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

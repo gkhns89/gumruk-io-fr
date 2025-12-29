@@ -1,0 +1,12 @@
+# robots.txt - Gümrük Takip Sistemi
+User-agent: *
+Disallow: /uploads/
+Disallow: /api/
+Disallow: /agreements/
+
+# Sadece public sayfaları izin ver
+Allow: /
+Allow: /login
+
+# Sitemap (production'da güncellenecek)
+# Sitemap: https://aacc.gokhan.codes/sitemap.xml
