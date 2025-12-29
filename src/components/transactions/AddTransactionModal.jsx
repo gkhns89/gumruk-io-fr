@@ -985,7 +985,7 @@ export default function AddTransactionModal({
                   agreement={selectedClientAgreement}
                   clientName={selectedClientInfo.name}
                   onCreateAgreement={
-                    currentUser?.role === 'BROKER_ADMIN'
+                    currentUser?.globalRole === 'BROKER_ADMIN'
                       ? () => setShowCreateAgreementModal(true)
                       : undefined
                   }
@@ -995,7 +995,7 @@ export default function AddTransactionModal({
               {/* Vekalet Yoksa ve BROKER_USER ise Uyarı */}
               {selectedClientInfo &&
                !selectedClientAgreement &&
-               currentUser?.role === 'BROKER_USER' && (
+               currentUser?.globalRole === 'BROKER_USER' && (
                 <div className="lg:col-span-3 bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-orange-600 text-2xl">

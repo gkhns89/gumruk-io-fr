@@ -38,7 +38,7 @@ export default function ViewClientModal({
   if (!isOpen || !client) return null;
 
   // Yetki kontrolü - Sadece SUPER_ADMIN ve BROKER_ADMIN düzenleyebilir
-  const canEdit = currentUser?.globalRole === 'SUPER_ADMIN' || currentUser?.role === 'BROKER_ADMIN';
+  const canEdit = currentUser?.globalRole === 'SUPER_ADMIN' || currentUser?.globalRole === 'BROKER_ADMIN';
 
   // Vekalet bilgileri
   const hasAgreement = client.agreementId != null;
