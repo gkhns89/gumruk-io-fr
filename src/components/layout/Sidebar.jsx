@@ -298,6 +298,20 @@ export default function Sidebar() {
 
         {/* Control Buttons */}
         <div className="mx-4 mb-4 h-11 flex gap-2 items-center">
+          {/* Otomatik mod - Sağ ok butonu */}
+          {sidebarMode === 'auto' && !isHovered && (
+            <button
+              onClick={handlePin}
+              className="h-9 w-9 mx-auto flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+              title="Sabitle ve Genişlet"
+            >
+              <span className="material-symbols-outlined text-base">
+                chevron_right
+              </span>
+            </button>
+          )}
+
+          {/* Daraltılmış mod - Genişlet butonu */}
           {isPinnedCollapsed && (
             <button
               onClick={handleCollapse}
@@ -310,6 +324,7 @@ export default function Sidebar() {
             </button>
           )}
 
+          {/* Genişletilmiş mod - Daralt ve Sabitle butonları */}
           {isExpanded && !isPinnedCollapsed && (
             <>
               <button
