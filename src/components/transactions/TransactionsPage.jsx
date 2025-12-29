@@ -332,8 +332,8 @@ export default function TransactionsPage() {
   };
 
   return (
-    <MainLayout>
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <MainLayout hasFooter={true}>
+      <div className="flex flex-col">
         {/* Page Header */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
           {/* Header Section */}
@@ -645,20 +645,18 @@ export default function TransactionsPage() {
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6 pb-24">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto">
-              <TransactionsFullTable
-                transactions={currentItems}
-                loading={loading}
-                error={error}
-                onRetry={loadData}
-                onRefresh={loadData}
-                canDelete={canDelete}
-                isReadOnly={isClientUser}
-                onRowClick={handleRowClick}
-              />
-            </div>
+        <div className="p-4 md:p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <TransactionsFullTable
+              transactions={currentItems}
+              loading={loading}
+              error={error}
+              onRetry={loadData}
+              onRefresh={loadData}
+              canDelete={canDelete}
+              isReadOnly={isClientUser}
+              onRowClick={handleRowClick}
+            />
           </div>
         </div>
 
@@ -695,7 +693,7 @@ export default function TransactionsPage() {
       )}
 
       {/* Fixed Footer with Statistics and Pagination */}
-      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20 transition-[left] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-30 transition-[left] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
         <div className="px-4 md:px-6 py-3">
           {!loading && filteredTransactions.length > 0 ? (
             <div className="flex items-center justify-between gap-4">

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 
-export default function MainLayout({ children }) {
+export default function MainLayout({ children, hasFooter = false }) {
   const [sidebarWide, setSidebarWide] = useState(() => {
     // Initialize from localStorage
     return localStorage.getItem('sidebarMode') === 'pinned-expanded';
@@ -32,8 +32,11 @@ export default function MainLayout({ children }) {
       <Sidebar />
       <main className={mainClassName}>
         <Header />
-        <div className="flex-1 overflow-y-auto bg-background pb-8">
-          <div className="animate-slide-in-left-small h-full">
+        <div
+          className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-20' : 'pb-8'}`}
+          style={hasFooter ? { maxHeight: 'calc(100vh - 125px)' } : {}}
+        >
+          <div className="animate-slide-in-left-small">
             {children}
           </div>
         </div>
