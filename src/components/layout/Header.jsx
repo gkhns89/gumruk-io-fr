@@ -5,6 +5,7 @@ import MobileMenu from "./MobileMenu";
 import { transactionService } from "../../api/transactionService";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate } from "react-router-dom";
+import NewsSlider from "./NewsSlider";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -102,9 +103,11 @@ export default function Header() {
 
   return (
     <>
-      <header className="flex items-center justify-between bg-white px-4 lg:px-6 py-3 border-b border-gray-200 shadow-sm gap-2 lg:gap-4 flex-shrink-0">
-        {/* Left Section - Hamburger & Logo */}
-        <div className="flex items-center gap-3">
+      <header className="flex flex-col bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
+        {/* Üst Satır - Mevcut Header (Hamburger, Logo, Arama, Butonlar) */}
+        <div className="flex items-center justify-between px-4 lg:px-6 py-3 gap-2 lg:gap-4">
+          {/* Left Section - Hamburger & Logo */}
+          <div className="flex items-center gap-3">
           {/* Hamburger Menu - Mobilde görünür */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
@@ -252,12 +255,18 @@ export default function Header() {
           </button>
 
           {/* User Avatar */}
-          <Link 
+          <Link
             to="/profile"
             className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm lg:text-lg flex-shrink-0 hover:ring-2 hover:ring-primary/50 transition-all"
           >
             {user?.username?.charAt(0).toUpperCase() || 'U'}
           </Link>
+        </div>
+        </div>
+
+        {/* Alt Satır - Gümrük Haberleri Slider */}
+        <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-100">
+          <NewsSlider />
         </div>
       </header>
 
