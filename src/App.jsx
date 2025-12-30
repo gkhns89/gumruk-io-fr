@@ -5,6 +5,7 @@ import Dashboard from "./components/Dashboard";
 import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
 import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
 import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
+import NewsPage from "./pages/NewsPage";  // ✅ HABERLER
 import { useAuth } from "./hooks/useAuth";
 
 // Protected Route Component
@@ -83,6 +84,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ HABERLER: Gümrük Haberleri */}
+      <Route
+        path="/news"
+        element={
+          <ProtectedRoute>
+            <NewsPage />
           </ProtectedRoute>
         }
       />
