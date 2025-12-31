@@ -311,7 +311,7 @@ export default function TransactionsFullTable({
                     {transaction.customsWarehouse || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {transaction.customsName || "-"}
+                    {transaction.customs?.customsShortName || "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {transaction.gate ? (

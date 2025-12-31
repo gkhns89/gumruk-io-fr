@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { transactionService } from "../../api/transactionService";
+import { customsService } from "../../api/customsService";
 import { GATE_OPTIONS } from "../../utils/constants";
 import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
 import { t, getCurrentLocale } from "../../locales";
@@ -11,7 +12,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [formData, setFormData] = useState({
     fileNo: transaction.fileNo || "",
     recipientName: transaction.recipientName || "",
-    customsName: transaction.customsName || "",
+    customsId: transaction.customs?.id || "",
     customsWarehouse: transaction.customsWarehouse || "",
     containerAmount: transaction.containerAmount || "",
     gate: transaction.gate || "",
@@ -51,7 +52,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   // Gümrük listesi state'leri
   const [availableCustoms, setAvailableCustoms] = useState([]);
   const [filteredCustoms, setFilteredCustoms] = useState([]);
-  const [customsSearchTerm, setCustomsSearchTerm] = useState(transaction.customsName || "");
+  const [customsSearchTerm, setCustomsSearchTerm] = useState(transaction.customs?.customsShortName || "");
+  const [selectedCustomsId, setSelectedCustomsId] = useState(transaction.customs?.id || null);
   const [showCustomsDropdown, setShowCustomsDropdown] = useState(false);
   const [loadingCustoms, setLoadingCustoms] = useState(false);
 
@@ -125,7 +127,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     } else {
       const searchLower = customsSearchTerm.toLowerCase();
       const filtered = availableCustoms.filter((customs) =>
-        customs.toLowerCase().includes(searchLower)
+        customs.customsShortName.toLowerCase().includes(searchLower) ||
+        customs.customsName.toLowerCase().includes(searchLower)
       );
       setFilteredCustoms(filtered.slice(0, 50));
     }
@@ -293,21 +296,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
-  // Mevcut işlemlerden unique gümrük isimlerini yükle
+  // Aktif gümrük idarelerini yükle
   const loadCustoms = async () => {
     try {
       setLoadingCustoms(true);
-      const result = await transactionService.getAllTransactions();
+      const result = await customsService.getActiveCustoms();
 
       if (result.success) {
-        const uniqueCustoms = [...new Set(
-          result.data
-            .map((t) => t.customsName)
-            .filter((name) => name && name.trim() !== "")
-        )].sort((a, b) => a.localeCompare(b, 'tr'));
-
-        setAvailableCustoms(uniqueCustoms);
-        setFilteredCustoms(uniqueCustoms.slice(0, 50));
+        setAvailableCustoms(result.data);
+        setFilteredCustoms(result.data.slice(0, 50));
       } else {
         setAvailableCustoms([]);
         setFilteredCustoms([]);
@@ -415,29 +412,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   };
 
   // Gümrük seçildiğinde
-  const handleCustomsSelect = (customsName) => {
+  const handleCustomsSelect = (customs) => {
     setFormData((prev) => ({
       ...prev,
-      customsName: customsName,
+      customsId: customs.id,
     }));
-    setCustomsSearchTerm(customsName);
+    setSelectedCustomsId(customs.id);
+    setCustomsSearchTerm(customs.customsShortName);
     setShowCustomsDropdown(false);
     // Clear error when customs is selected
-    if (fieldErrors.customsName) {
-      setFieldErrors(prev => ({ ...prev, customsName: null }));
-    }
-  };
-
-  // Yeni gümrük ekle - BÜYÜK HARFE ÇEVİR
-  const handleAddNewCustoms = () => {
-    if (customsSearchTerm.trim()) {
-      const upperCaseCustoms = toUpperCase(customsSearchTerm.trim(), locale);
-      setFormData((prev) => ({
-        ...prev,
-        customsName: upperCaseCustoms,
-      }));
-      setCustomsSearchTerm(upperCaseCustoms);
-      setShowCustomsDropdown(false);
+    if (fieldErrors.customsId) {
+      setFieldErrors(prev => ({ ...prev, customsId: null }));
     }
   };
 
@@ -481,8 +466,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     if (!formData.fileNo || !formData.fileNo.trim()) {
       errors.fileNo = "Dosya numarası zorunludur";
     }
-    if (!customsSearchTerm || !customsSearchTerm.trim()) {
-      errors.customsName = "Gümrük adı zorunludur";
+    if (!formData.customsId) {
+      errors.customsId = "Gümrük seçimi zorunludur";
     }
     if (!warehouseSearchTerm || !warehouseSearchTerm.trim()) {
       errors.customsWarehouse = "Antrepo zorunludur";
@@ -828,7 +813,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 {isFieldLocked ? (
                   <input
                     type="text"
-                    value={formData.customsName}
+                    value={transaction.customs?.customsShortName || ""}
                     disabled
                     className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
                     placeholder={toUpperCase(t('placeholders.enterCustomsName'))}
@@ -843,20 +828,16 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         onChange={(e) => {
                           const upperValue = toUpperCase(e.target.value, locale);
                           setCustomsSearchTerm(upperValue);
-                          setFormData((prev) => ({
-                            ...prev,
-                            customsName: upperValue,
-                          }));
                           setShowCustomsDropdown(true);
                           // Clear error when user types
-                          if (fieldErrors.customsName) {
-                            setFieldErrors(prev => ({ ...prev, customsName: null }));
+                          if (fieldErrors.customsId) {
+                            setFieldErrors(prev => ({ ...prev, customsId: null }));
                           }
                         }}
                         onFocus={() => setShowCustomsDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
                         className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
-                          fieldErrors.customsName
+                          fieldErrors.customsId
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                             : 'border-neutral/30 focus:ring-primary focus:border-primary'
                         } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
@@ -869,9 +850,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           type="button"
                           onClick={() => {
                             setCustomsSearchTerm("");
+                            setSelectedCustomsId(null);
                             setFormData((prev) => ({
                               ...prev,
-                              customsName: "",
+                              customsId: "",
                             }));
                             setShowCustomsDropdown(true);
                           }}
@@ -898,29 +880,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     {/* Customs Dropdown List */}
                     {showCustomsDropdown && !loadingCustoms && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {/* Yeni gümrük ekleme seçeneği */}
-                        {customsSearchTerm.trim() && !availableCustoms.some(c => c.toUpperCase() === customsSearchTerm.toUpperCase()) && (
-                          <button
-                            type="button"
-                            onClick={handleAddNewCustoms}
-                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-green-600 text-lg">
-                                add_circle
-                              </span>
-                              <div>
-                                <p className="font-medium text-sm text-green-700">
-                                  "{toUpperCase(customsSearchTerm.trim(), locale)}" olarak ekle
-                                </p>
-                                <p className="text-xs text-green-600">
-                                  Yeni gümrük olarak kullan
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        )}
-
                         {filteredCustoms.length === 0 && !customsSearchTerm.trim() ? (
                           <div className="p-4 text-center text-gray-500">
                             <span className="material-symbols-outlined text-4xl mb-2">
@@ -928,9 +887,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             </span>
                             <p className="text-sm">
                               Henüz kayıtlı gümrük yok.
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Yeni gümrük adı yazarak ekleyebilirsiniz.
                             </p>
                           </div>
                         ) : filteredCustoms.length === 0 && customsSearchTerm.trim() ? (
@@ -941,19 +897,16 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             <p className="text-sm">
                               "{customsSearchTerm}" ile eşleşen gümrük bulunamadı.
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
-                            </p>
                           </div>
                         ) : (
                           <>
-                            {filteredCustoms.map((customs, index) => (
+                            {filteredCustoms.map((customs) => (
                               <button
-                                key={index}
+                                key={customs.id}
                                 type="button"
                                 onClick={() => handleCustomsSelect(customs)}
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                                  formData.customsName === customs
+                                  selectedCustomsId === customs.id
                                     ? "bg-blue-50 text-primary font-medium"
                                     : ""
                                 }`}
@@ -964,10 +917,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                       account_balance
                                     </span>
                                     <p className="font-medium text-sm truncate uppercase">
-                                      {customs}
+                                      {customs.customsShortName}
                                     </p>
                                   </div>
-                                  {formData.customsName === customs && (
+                                  {selectedCustomsId === customs.id && (
                                     <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
                                       check_circle
                                     </span>
@@ -991,13 +944,13 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </div>
                 )}
                 {/* Error Message */}
-                {fieldErrors.customsName && (
+                {fieldErrors.customsId && (
                   <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
                     <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
                       error
                     </span>
                     <p className="text-sm text-red-700 font-medium">
-                      {fieldErrors.customsName}
+                      {fieldErrors.customsId}
                     </p>
                   </div>
                 )}
