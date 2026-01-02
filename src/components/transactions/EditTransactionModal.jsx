@@ -384,6 +384,113 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
+  // Bugünün tarihini yerel saat dilimine göre al (timezone sorunu olmadan)
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Tarih validasyonu - gelecekteki tarihleri engelle
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+
+    // Clear any existing error for this field
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+
+    // Clear general error
+    if (error) {
+      setError("");
+    }
+
+    // Tarih boşsa validasyon yapma
+    if (!value) {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      return;
+    }
+
+    // Gelecek tarih kontrolü
+    const todayString = getTodayDateString();
+    if (value > todayString) {
+      const errorMessages = {
+        warehouseArrivalDate: "Antrepo varış tarihi gelecekte olamaz",
+        registrationDate: "Tescil tarihi gelecekte olamaz",
+        lineClosureDate: "Kapanma tarihi gelecekte olamaz",
+        withdrawalDate: "Çekilme tarihi gelecekte olamaz"
+      };
+
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: errorMessages[name] || "Tarih gelecekte olamaz"
+      }));
+      return;
+    }
+
+    // Tarih sıralaması kontrolü
+    const newFormData = { ...formData, [name]: value };
+
+    if (name === 'warehouseArrivalDate' && newFormData.registrationDate) {
+      if (value > newFormData.registrationDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Antrepo varış tarihi, tescil tarihinden sonra olamaz"
+        }));
+        return;
+      }
+    }
+
+    if (name === 'registrationDate') {
+      if (newFormData.warehouseArrivalDate && value < newFormData.warehouseArrivalDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Tescil tarihi, antrepo varış tarihinden önce olamaz"
+        }));
+        return;
+      }
+      if (newFormData.lineClosureDate && value > newFormData.lineClosureDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Tescil tarihi, kapanma tarihinden sonra olamaz"
+        }));
+        return;
+      }
+    }
+
+    if (name === 'lineClosureDate') {
+      if (newFormData.registrationDate && value < newFormData.registrationDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Kapanma tarihi, tescil tarihinden önce olamaz"
+        }));
+        return;
+      }
+      if (newFormData.withdrawalDate && value > newFormData.withdrawalDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Kapanma tarihi, çekilme tarihinden sonra olamaz"
+        }));
+        return;
+      }
+    }
+
+    if (name === 'withdrawalDate' && newFormData.lineClosureDate) {
+      if (value < newFormData.lineClosureDate) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [name]: "Çekilme tarihi, kapanma tarihinden önce olamaz"
+        }));
+        return;
+      }
+    }
+
+    // Validasyon geçtiyse değeri kaydet
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   // Gönderici seçildiğinde
   const handleSenderSelect = (senderName) => {
     setFormData((prev) => ({
@@ -527,7 +634,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
     setLoading(true);
     setError("");
-    setFieldErrors({});
 
     // Validate required fields first
     if (!validateRequiredFields()) {
@@ -536,71 +642,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       return;
     }
 
-    // Tarih gelecekte olamaz kontrolleri
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Bugünün başlangıcı
-    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD formatında bugünün tarihi
-
-    if (formData.warehouseArrivalDate) {
-      // Tarih string'ini direkt karşılaştır (timezone sorununu önler)
-      if (formData.warehouseArrivalDate > todayString) {
-        setError("Antrepo varış tarihi gelecekte olamaz");
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (formData.registrationDate) {
-      if (formData.registrationDate > todayString) {
-        setError("Tescil tarihi gelecekte olamaz");
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (formData.lineClosureDate) {
-      if (formData.lineClosureDate > todayString) {
-        setError("Kapanma tarihi gelecekte olamaz");
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (formData.withdrawalDate) {
-      if (formData.withdrawalDate > todayString) {
-        setError("Çekilme tarihi gelecekte olamaz");
-        setLoading(false);
-        return;
-      }
+    // Check if there are any field-level validation errors
+    if (Object.keys(fieldErrors).length > 0) {
+      setLoading(false);
+      setError("Lütfen formdaki hataları düzeltin");
+      return;
     }
 
     try {
-      // Tarih sıralaması validasyonu
-      const { warehouseArrivalDate, registrationDate, lineClosureDate, withdrawalDate } = formData;
-
-      if (warehouseArrivalDate && registrationDate) {
-        if (new Date(warehouseArrivalDate) > new Date(registrationDate)) {
-          setError("Antrepo varış tarihi, tescil tarihinden sonra olamaz");
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (registrationDate && lineClosureDate) {
-        if (new Date(registrationDate) > new Date(lineClosureDate)) {
-          setError("Tescil tarihi, kapanma tarihinden sonra olamaz");
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (lineClosureDate && withdrawalDate) {
-        if (new Date(lineClosureDate) > new Date(withdrawalDate)) {
-          setError("Kapanma tarihi, çekilme tarihinden sonra olamaz");
-          setLoading(false);
-          return;
-        }
-      }
 
       // Gecikme nedenleri için minimum karakter kontrolü
       if (delays.arrivalToRegistration && formData.delayReasons?.arrivalToRegistration) {
@@ -1544,7 +1593,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="warehouseArrivalDate"
                       value={formData.warehouseArrivalDate}
-                      onChange={handleChange}
+                      onChange={handleDateChange}
                       disabled={isFieldLocked}
                       className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
                         fieldErrors.warehouseArrivalDate
@@ -1574,7 +1623,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="registrationDate"
                       value={formData.registrationDate}
-                      onChange={handleChange}
+                      onChange={handleDateChange}
                       disabled={isFieldLocked}
                       className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
                         fieldErrors.registrationDate
@@ -1604,13 +1653,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="lineClosureDate"
                       value={formData.lineClosureDate}
-                      onChange={(e) => {
-                        handleChange(e);
-                        // Clear error when user changes
-                        if (fieldErrors.lineClosureDate) {
-                          setFieldErrors(prev => ({ ...prev, lineClosureDate: null }));
-                        }
-                      }}
+                      onChange={handleDateChange}
                       disabled={isReadOnly}
                       className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
                         fieldErrors.lineClosureDate
@@ -1640,13 +1683,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       type="date"
                       name="withdrawalDate"
                       value={formData.withdrawalDate}
-                      onChange={(e) => {
-                        handleChange(e);
-                        // Clear error when user changes
-                        if (fieldErrors.withdrawalDate) {
-                          setFieldErrors(prev => ({ ...prev, withdrawalDate: null }));
-                        }
-                      }}
+                      onChange={handleDateChange}
                       disabled={isReadOnly}
                       className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
                         fieldErrors.withdrawalDate
