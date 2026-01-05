@@ -42,7 +42,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
     }
 
     // Check quota
-    if (currentLimits && !currentLimits.canAddMore) {
+    if (currentLimits && (currentLimits.canAddUser === false || currentLimits.remainingUserQuota <= 0)) {
       setError('Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.');
       return;
     }
@@ -146,7 +146,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 Email *
               </label>
               <input
-                type="email"
+                type="text"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,

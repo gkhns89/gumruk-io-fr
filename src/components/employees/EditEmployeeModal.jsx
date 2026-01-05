@@ -146,7 +146,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 Email *
               </label>
               <input
-                type="email"
+                type="text"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
