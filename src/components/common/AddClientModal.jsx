@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { companyService } from '../../api/companyService';
 import { toUpperCase } from '../../utils/textUtils';
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { showSuccess } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
 
 /**
@@ -47,16 +49,17 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
 
       if (result.success) {
         // Success feedback
+        showSuccess(`${formData.name} başarıyla eklendi!`);
         onSuccess(result.data);
 
         // Reset form and close
         setFormData({ name: '', shortName: '', description: '' });
         onClose();
       } else {
-        setError(result.error || 'Müşteri oluşturulamadı');
+        handleApiResponse(result, null, setError, 'Müşteri oluşturma');
       }
     } catch (err) {
-      setError('Beklenmeyen bir hata oluştu');
+      handleError(err, setError, 'Müşteri oluşturma', 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -68,9 +71,23 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
     onClose();
   };
 
+  const handleBackdropClick = (e) => {
+    console.log('🔵 Backdrop clicked!', e.target.className);
+    handleClose();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => {
+          console.log('🟢 Modal content clicked - STOPPING propagation');
+          e.stopPropagation();
+        }}
+      >
         {/* Modal Header - ClientsPage style */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
@@ -91,12 +108,6 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-4">
             {/* Firma Adı - UPPERCASE transformation from AddTransaction */}
             <div>

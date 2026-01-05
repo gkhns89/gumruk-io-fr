@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { customsNewsService } from '../api/customsNewsService';
 import MainLayout from '../components/layout/MainLayout';
+import { handleError, handleApiResponse } from '../utils/errorUtils';
 
 const NewsPage = () => {
   const [news, setNews] = useState([]);
@@ -20,14 +21,9 @@ const NewsPage = () => {
 
     try {
       const result = await customsNewsService.getRecentNews();
-
-      if (result.success) {
-        setNews(result.data);
-      } else {
-        setError(result.error || 'Haberler yüklenirken bir hata oluştu');
-      }
-    } catch {
-      setError('Haberler yüklenirken bir hata oluştu');
+      handleApiResponse(result, () => setNews(result.data), setError, 'Haberler yükleme');
+    } catch (err) {
+      handleError(err, setError, 'Haberler yükleme', 'Haberler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }

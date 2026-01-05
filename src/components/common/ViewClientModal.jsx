@@ -3,6 +3,8 @@ import { companyService } from '../../api/companyService';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { toUpperCase } from '../../utils/textUtils';
 import { getCurrentLocale } from '../../locales';
+import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
+import { showSuccess } from '../../utils/toastUtils';
 
 /**
  * Müşteri Detay Modalı
@@ -63,14 +65,15 @@ export default function ViewClientModal({
       });
 
       if (result.success) {
+        showSuccess('Müşteri bilgileri başarıyla güncellendi!');
         onSuccess(result.data);
         setIsEditing(false);
         onClose();
       } else {
-        setError(result.error || 'Güncelleme başarısız oldu');
+        handleApiResponse(result, null, setError, 'ViewClientModal - updateClientCompany');
       }
     } catch (err) {
-      setError('Beklenmeyen bir hata oluştu');
+      handleError(err, setError, 'ViewClientModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -88,8 +91,8 @@ export default function ViewClientModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
@@ -110,12 +113,6 @@ export default function ViewClientModal({
 
         {/* Body */}
         <div className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Sol Kolon - Firma Bilgileri */}
             <div className="space-y-6">

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import MainLayout from "../layout/MainLayout";
 import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
@@ -119,11 +120,10 @@ export default function TransactionsPage() {
       if (result.success) {
         setTransactions(result.data);
       } else {
-        setError(result.error);
+        handleApiResponse(result, null, setError, 'loading transactions');
       }
     } catch (err) {
-      console.error("Veri yükleme hatası:", err);
-      setError("Veriler yüklenirken bir hata oluştu.");
+      handleError(err, setError, 'loading transactions', 'Veriler yüklenirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }

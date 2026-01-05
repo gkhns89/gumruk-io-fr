@@ -6,6 +6,8 @@ import { transactionService } from "../../api/transactionService";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
+import NotificationCenter from "./NotificationCenter";
+import { logError } from "../../utils/errorUtils";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -51,7 +53,7 @@ export default function Header() {
           setShowSearchResults(true);
         }
       } catch (error) {
-        console.error("Arama hatası:", error);
+        logError('Header - Arama işlemi', error);
       } finally {
         setSearchLoading(false);
       }
@@ -241,10 +243,7 @@ export default function Header() {
           </button>
 
           {/* Notifications */}
-          <button className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors relative">
-            <span className="material-symbols-outlined text-text-main">notifications</span>
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationCenter />
 
           {/* Logout Button - Desktop */}
           <button 

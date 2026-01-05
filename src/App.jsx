@@ -5,6 +5,7 @@ import Dashboard from "./components/Dashboard";
 import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
 import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
 import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
+import EmployeesPage from "./pages/management/EmployeesPage";  // ✅ YÖNETİM
 import NewsPage from "./pages/NewsPage";  // ✅ HABERLER
 import { useAuth } from "./hooks/useAuth";
 
@@ -84,6 +85,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Çalışan Yönetimi */}
+      <Route
+        path="/management/employees"
+        element={
+          <ProtectedRoute>
+            <EmployeesPage />
           </ProtectedRoute>
         }
       />

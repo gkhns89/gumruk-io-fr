@@ -5,6 +5,7 @@ import TransactionsTable from "./dashboard/TransactionsTable";
 import Announcements from "./dashboard/Announcements";
 import { useAuth } from "../hooks/useAuth";
 import { transactionService } from "../api/transactionService";
+import { handleError, handleApiResponse } from "../utils/errorUtils";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -74,13 +75,12 @@ export default function Dashboard() {
         // Son 10 işlemi TransactionsTable için sakla
         setRecentTransactions(sortedTransactions.slice(0, 10));
       } else {
-        setError(result.error);
+        handleApiResponse(result, null, setError, 'Dashboard - İşlemler yüklenirken');
         setAllTransactions([]);
         setRecentTransactions([]);
       }
     } catch (err) {
-      console.error("Beklenmeyen Hata:", err);
-      setError("İşlemler yüklenirken bir hata oluştu.");
+      handleError(err, setError, 'Dashboard - İşlemler yüklenirken', 'İşlemler yüklenirken bir hata oluştu.');
       setAllTransactions([]);
       setRecentTransactions([]);
     } finally {

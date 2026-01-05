@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { logError } from '../utils/errorUtils';
 
 /**
  * Customs API Service
@@ -19,7 +20,7 @@ export const customsService = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Failed to fetch customs:', error);
+      logError('CustomsService - getActiveCustoms', error);
 
       return {
         success: false,
@@ -41,7 +42,7 @@ export const customsService = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Failed to fetch all customs:', error);
+      logError('CustomsService - getAllCustoms', error);
 
       return {
         success: false,
@@ -58,7 +59,7 @@ export const customsService = {
       const response = await axiosInstance.get(`/customs/${id}`);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error(`❌ Failed to fetch customs ${id}:`, error);
+      logError('CustomsService - getCustomsById', error);
 
       return {
         success: false,
@@ -80,7 +81,7 @@ export const customsService = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Failed to refresh customs:', error);
+      logError('CustomsService - manualRefresh', error);
 
       return {
         success: false,
@@ -103,7 +104,7 @@ export const customsService = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Failed to test scheduled job:', error);
+      logError('CustomsService - testScheduledUpdate', error);
 
       return {
         success: false,

@@ -3,6 +3,8 @@ import { AuthContext } from './authContext';
 import { authService } from '../api/authService';
 import { userService } from '../api/userService';
 import { tokenManager } from '../utils/tokenManager';
+import { logError } from '../utils/errorUtils';
+import { showWarning } from '../utils/toastUtils';
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -20,10 +22,12 @@ export default function AuthProvider({ children }) {
     tokenManager.clear();
     setUser(null);
     setIsAuthenticated(false);
-    
+
     if (!window.location.pathname.includes('/login')) {
-      alert('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-      window.location.href = '/login';
+      showWarning('Oturum süreniz doldu. Lütfen tekrar giriş yapın.', {
+        autoClose: 6000,
+        onClose: () => window.location.href = '/login'
+      });
     }
   }, []);
 
@@ -67,7 +71,7 @@ export default function AuthProvider({ children }) {
             setUser((prev) => ({ ...prev, ...result.data }));
           }
         } catch (error) {
-          console.error('Profil alınamadı:', error);
+          logError('Profil alınamadı', error);
           if (error.response?.status === 401 || error.response?.status === 403) {
             handleTokenExpired();
             return;

@@ -70,9 +70,9 @@ export default function Sidebar() {
     },
     {
       icon: "group",
-      label: "Kullanıcı Yönetimi",
-      path: "/management/users",
-      active: false,
+      label: "Çalışan Yönetimi",
+      path: "/management/employees",
+      active: true,
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
       comingSoon: true
     },

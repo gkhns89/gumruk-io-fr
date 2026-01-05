@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { logError } from '../utils/errorUtils';
 
 export const agencyAgreementService = {
   // Aktif anlaşma kontrolü

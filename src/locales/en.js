@@ -114,6 +114,56 @@ export const en = {
     company: "Company",
   },
 
+  // Employee Management
+  employee: {
+    title: "Employees",
+    addNew: "Add New Employee",
+    edit: "Edit Employee",
+    delete: "Delete Employee",
+    details: "Employee Details",
+    firstName: "First Name",
+    lastName: "Last Name",
+    email: "Email",
+    password: "Password",
+    role: "Role",
+    status: "Status",
+    createdAt: "Registration Date",
+    lastLogin: "Last Login",
+    company: "Company",
+    quota: "Usage",
+    quotaExceeded: "Employee limit reached",
+    cannotDeleteSelf: "You cannot delete your own account",
+    cannotDeleteLastAdmin: "Cannot delete the last BROKER_ADMIN user",
+    selectCompany: "Select Broker Company",
+
+    roles: {
+      brokerAdmin: "Broker Administrator",
+      brokerUser: "Broker User",
+    },
+
+    statuses: {
+      active: "Active",
+      pending: "Pending",
+    },
+
+    messages: {
+      createSuccess: "Employee added successfully!",
+      updateSuccess: "Employee information updated successfully!",
+      deleteSuccess: "Employee deleted successfully!",
+      createError: "Failed to create employee",
+      updateError: "Failed to update employee",
+      deleteError: "Failed to delete employee",
+    },
+
+    placeholders: {
+      searchEmployees: "Search by name or email...",
+      firstName: "JOHN",
+      lastName: "DOE",
+      email: "john.doe@example.com",
+      password: "At least 6 characters",
+    },
+  },
+
   // Form Messages
   messages: {
     saveSuccess: "Saved successfully",
@@ -138,6 +188,7 @@ export const en = {
     enterCustomsWarehouse: "Enter customs warehouse",
     enterCustomsName: "Enter customs name",
     enterContainerAmount: "Enter container amount",
+    enterSender: "Enter sender",
     enterWeight: "Enter weight",
     enterTax: "Enter tax",
     enterImportProcessingTime: "Enter processing time",

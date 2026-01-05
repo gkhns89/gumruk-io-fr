@@ -114,6 +114,56 @@ export const tr = {
     company: "Firma",
   },
 
+  // Çalışan Yönetimi
+  employee: {
+    title: "Çalışanlar",
+    addNew: "Yeni Çalışan Ekle",
+    edit: "Çalışan Düzenle",
+    delete: "Çalışan Sil",
+    details: "Çalışan Detayları",
+    firstName: "Ad",
+    lastName: "Soyad",
+    email: "Email",
+    password: "Şifre",
+    role: "Rol",
+    status: "Durum",
+    createdAt: "Kayıt Tarihi",
+    lastLogin: "Son Giriş",
+    company: "Firma",
+    quota: "Kullanım",
+    quotaExceeded: "Çalışan limiti doldu",
+    cannotDeleteSelf: "Kendi hesabınızı silemezsiniz",
+    cannotDeleteLastAdmin: "Son BROKER_ADMIN kullanıcısı silinemez",
+    selectCompany: "Broker Firması Seçin",
+
+    roles: {
+      brokerAdmin: "Broker Yöneticisi",
+      brokerUser: "Broker Kullanıcısı",
+    },
+
+    statuses: {
+      active: "Aktif",
+      pending: "Beklemede",
+    },
+
+    messages: {
+      createSuccess: "Çalışan başarıyla eklendi!",
+      updateSuccess: "Çalışan bilgileri başarıyla güncellendi!",
+      deleteSuccess: "Çalışan başarıyla silindi!",
+      createError: "Çalışan oluşturulamadı",
+      updateError: "Çalışan güncellenemedi",
+      deleteError: "Çalışan silinemedi",
+    },
+
+    placeholders: {
+      searchEmployees: "İsim, soyisim veya email ile ara...",
+      firstName: "AHMET",
+      lastName: "YILMAZ",
+      email: "ahmet.yilmaz@example.com",
+      password: "En az 6 karakter",
+    },
+  },
+
   // Form Mesajları
   messages: {
     saveSuccess: "Başarıyla kaydedildi",
@@ -138,6 +188,7 @@ export const tr = {
     enterCustomsWarehouse: "Antrepo adı girin",
     enterCustomsName: "Gümrük adı girin",
     enterContainerAmount: "Kap miktarı girin",
+    enterSender: "Gönderici girin",
     enterWeight: "Kilo girin",
     enterTax: "Vergi girin",
     enterImportProcessingTime: "İşlem süresi girin",

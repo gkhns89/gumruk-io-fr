@@ -1,3 +1,5 @@
+import { logError } from './errorUtils';
+
 export const tokenManager = {
   setToken: (token) => {
     localStorage.setItem('token', token);
@@ -54,7 +56,7 @@ export const tokenManager = {
 
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('❌ Token decode hatası:', error);
+      logError('Token decode hatası', error);
       return null;
     }
   },

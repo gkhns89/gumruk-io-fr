@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { logError } from '../utils/errorUtils';
 
 export const companyService = {
   // Tüm firmaları getir
@@ -7,7 +8,7 @@ export const companyService = {
       const response = await axiosInstance.get('/companies');
       return { success: true, data: response.data.companies || [] };
     } catch (error) {
-      console.error('Get all companies error:', error);
+      logError('CompanyService - getAllCompanies', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Firmalar alınamadı',
@@ -23,7 +24,7 @@ export const companyService = {
       console.log('✅ Client companies yanıtı:', response.data);
       return { success: true, data: response.data.clients || [] };
     } catch (error) {
-      console.error('❌ Get client companies error:', error);
+      logError('CompanyService - getClientCompanies', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Müşteri firmaları alınamadı',
@@ -37,7 +38,7 @@ export const companyService = {
       const response = await axiosInstance.get('/companies/my-companies');
       return { success: true, data: response.data.companies || [] };
     } catch (error) {
-      console.error('Get my companies error:', error);
+      logError('CompanyService - getMyCompanies', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Firmalar alınamadı',
@@ -57,7 +58,7 @@ export const companyService = {
         message: response.data.message || 'Firma başarıyla oluşturuldu'
       };
     } catch (error) {
-      console.error('❌ Create client company error:', error);
+      logError('CompanyService - createClientCompany', error);
 
       if (error.response?.status === 429) {
         return {
@@ -85,7 +86,7 @@ export const companyService = {
         message: response.data.message || 'Firma başarıyla güncellendi'
       };
     } catch (error) {
-      console.error('❌ Update client company error:', error);
+      logError('CompanyService - updateClientCompany', error);
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'Firma güncellenemedi',

@@ -6,6 +6,7 @@ import AddClientModal from '../../components/common/AddClientModal';
 import ViewClientModal from '../../components/common/ViewClientModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
 
 const ClientsPage = () => {
   const { user } = useAuth();
@@ -28,14 +29,9 @@ const ClientsPage = () => {
 
     try {
       const result = await companyService.getClientCompanies(user?.company?.id);
-
-      if (result.success) {
-        setClients(result.data);
-      } else {
-        setError(result.error);
-      }
-    } catch {
-      setError('Müşteri firmaları yüklenirken bir hata oluştu');
+      handleApiResponse(result, () => setClients(result.data), setError, 'Müşteri firmaları yükleme');
+    } catch (err) {
+      handleError(err, setError, 'Müşteri firmaları yükleme', 'Müşteri firmaları yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }

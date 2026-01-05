@@ -4,6 +4,7 @@ import { agencyAgreementService } from '../../api/agencyAgreementService';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import MainLayout from '../../components/layout/MainLayout';
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
 
 const AgreementsPage = () => {
   const { user } = useAuth();
@@ -35,16 +36,13 @@ const AgreementsPage = () => {
       }
 
       const result = await agencyAgreementService.getBrokerAgreements(user.company.id);
+      handleApiResponse(result, () => setAgreements(result.data), setError, 'Anlaşmalar yükleme');
 
-      if (result.success) {
-        setAgreements(result.data);
-      } else {
-        setError(result.error);
+      if (!result.success) {
         setAgreements([]);
       }
     } catch (err) {
-      console.error('Anlaşmalar yüklenirken hata:', err);
-      setError('Anlaşmalar yüklenirken bir hata oluştu');
+      handleError(err, setError, 'Anlaşmalar yükleme', 'Anlaşmalar yüklenirken bir hata oluştu');
       setAgreements([]);
     } finally {
       setLoading(false);

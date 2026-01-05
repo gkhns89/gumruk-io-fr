@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { companyService } from '../../api/companyService';
 import { configService } from '../../api/configService';
+import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
+import { showSuccess } from '../../utils/toastUtils';
 
 const CreateAgreementModal = ({
   isOpen,
@@ -65,7 +67,7 @@ const CreateAgreementModal = ({
         setAvailableClients(clientsWithoutAgreement);
       }
     } catch (err) {
-      console.error('Müşteri firmaları yüklenirken hata:', err);
+      logError('Müşteri firmaları yükleme', err);
     } finally {
       setLoadingClients(false);
     }
@@ -123,8 +125,8 @@ const CreateAgreementModal = ({
     const canProceed = !showClientSelector || selectedClientId;
 
     return (
-      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
               Vekalet Anlaşması Oluştur
@@ -173,13 +175,6 @@ const CreateAgreementModal = ({
                   ))}
                 </select>
               )}
-            </div>
-          )}
-
-          {/* Hata mesajı */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {error}
             </div>
           )}
 
@@ -295,22 +290,22 @@ const CreateAgreementModal = ({
         const result = await agencyAgreementService.createAndActivateAgreement(formDataToSend);
 
         if (result.success) {
-          alert('✅ ' + result.message);
+          showSuccess(result.message || 'Vekalet başarıyla oluşturuldu!');
           onSuccess();
           onClose();
         } else {
-          setError(result.error);
+          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (quick mode)');
         }
       } catch (err) {
-        setError('Beklenmeyen bir hata oluştu');
+        handleError(err, setError, 'Vekaletname oluşturma (quick mode)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
@@ -327,12 +322,6 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleQuickCreate} className="p-6">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-4">
               {/* Başlangıç Tarihi */}
               <div>
@@ -441,18 +430,18 @@ const CreateAgreementModal = ({
           setCreatedAgreementId(result.data.agreementId);
           setWizardStep(2);
         } else {
-          setError(result.error);
+          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (step 1)');
         }
       } catch (err) {
-        setError('Beklenmeyen bir hata oluştu');
+        handleError(err, setError, 'Vekaletname oluşturma (step 1)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
@@ -475,12 +464,6 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleCreateAgreement} className="p-6">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 <strong>Müşteri:</strong> {showClientSelector ? selectedClientName : clientCompanyName}
@@ -548,18 +531,18 @@ const CreateAgreementModal = ({
         if (result.success) {
           setWizardStep(3);
         } else {
-          setError(result.error);
+          handleApiResponse(result, null, setError, 'Vekaletname belgesi yükleme');
         }
       } catch (err) {
-        setError('Beklenmeyen bir hata oluştu');
+        handleError(err, setError, 'Vekaletname belgesi yükleme', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
@@ -582,12 +565,6 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleUploadDocument} className="p-6">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800">
                 ✓ Anlaşma oluşturuldu (INACTIVE)
@@ -663,22 +640,22 @@ const CreateAgreementModal = ({
         );
 
         if (result.success) {
-          alert('✅ ' + result.message);
+          showSuccess(result.message || 'Vekalet başarıyla aktifleştirildi!');
           onSuccess();
           onClose();
         } else {
-          setError(result.error);
+          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (wizard complete)');
         }
       } catch (err) {
-        setError('Beklenmeyen bir hata oluştu');
+        handleError(err, setError, 'Vekaletname oluşturma (wizard complete)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+      <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
@@ -701,12 +678,6 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleActivate} className="p-6">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800">
                 ✓ Vekalet belgesi yüklendi (PENDING)

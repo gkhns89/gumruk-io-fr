@@ -60,19 +60,14 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
   const gateBadgeClass = getGateBadge(transaction.gate);
 
   return (
-    <>
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in"
-          onClick={(e) => e.stopPropagation()}
-        >
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
             <div className="flex items-center gap-3">
@@ -231,7 +226,6 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
             </button>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

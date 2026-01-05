@@ -3,6 +3,8 @@ import { transactionService } from "../../api/transactionService";
 import { customsService } from "../../api/customsService";
 import { GATE_OPTIONS } from "../../utils/constants";
 import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
+import { handleError, handleApiResponse, logError } from "../../utils/errorUtils";
+import { showSuccess, showError } from "../../utils/toastUtils";
 import { t, getCurrentLocale } from "../../locales";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 
@@ -288,7 +290,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFilteredSenders([]);
       }
     } catch (err) {
-      console.error("Gönderici listesi yükleme hatası:", err);
+      logError("Gönderici listesi yükleme", err);
       setAvailableSenders([]);
       setFilteredSenders([]);
     } finally {
@@ -310,7 +312,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFilteredCustoms([]);
       }
     } catch (err) {
-      console.error("Gümrük listesi yükleme hatası:", err);
+      logError("Gümrük listesi yükleme", err);
       setAvailableCustoms([]);
       setFilteredCustoms([]);
     } finally {
@@ -338,7 +340,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFilteredWarehouses([]);
       }
     } catch (err) {
-      console.error("Antrepo listesi yükleme hatası:", err);
+      logError("Antrepo listesi yükleme", err);
       setAvailableWarehouses([]);
       setFilteredWarehouses([]);
     } finally {
@@ -565,6 +567,41 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
+  // Gecikme nedeni validasyon fonksiyonu
+  const validateDelayReason = (fieldName, value) => {
+    const trimmedValue = value.trim();
+
+    // Boş değere izin ver (kullanıcı temizleyebilir)
+    if (trimmedValue.length === 0) {
+      // Error'ı temizle
+      if (fieldErrors[fieldName]) {
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+      }
+      return;
+    }
+
+    // 10 karakterden az ise hata göster
+    if (trimmedValue.length < 10) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: "Gecikme nedeni en az 10 karakter olmalıdır"
+      }));
+    } else {
+      // Hata varsa temizle
+      if (fieldErrors[fieldName]) {
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+      }
+    }
+  };
+
   // Validate required fields
   const validateRequiredFields = () => {
     const errors = {};
@@ -638,14 +675,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     // Validate required fields first
     if (!validateRequiredFields()) {
       setLoading(false);
-      setError("Lütfen tüm zorunlu alanları doldurun");
+      showError("Lütfen tüm zorunlu alanları doldurun");
       return;
     }
 
     // Check if there are any field-level validation errors
     if (Object.keys(fieldErrors).length > 0) {
       setLoading(false);
-      setError("Lütfen formdaki hataları düzeltin");
+      showError("Lütfen formdaki hataları düzeltin");
       return;
     }
 
@@ -655,7 +692,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       if (delays.arrivalToRegistration && formData.delayReasons?.arrivalToRegistration) {
         const reason = formData.delayReasons.arrivalToRegistration.trim();
         if (reason.length > 0 && reason.length < 10) {
-          setError("Antrepo varış - Tescil gecikme nedeni en az 10 karakter olmalıdır");
+          showError("Antrepo varış - Tescil gecikme nedeni en az 10 karakter olmalıdır");
           setLoading(false);
           return;
         }
@@ -664,7 +701,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       if (delays.registrationToClosure && formData.delayReasons?.registrationToClosure) {
         const reason = formData.delayReasons.registrationToClosure.trim();
         if (reason.length > 0 && reason.length < 10) {
-          setError("Tescil - Kapanma gecikme nedeni en az 10 karakter olmalıdır");
+          showError("Tescil - Kapanma gecikme nedeni en az 10 karakter olmalıdır");
           setLoading(false);
           return;
         }
@@ -673,7 +710,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       if (delays.closureToWithdrawal && formData.delayReasons?.closureToWithdrawal) {
         const reason = formData.delayReasons.closureToWithdrawal.trim();
         if (reason.length > 0 && reason.length < 10) {
-          setError("Kapanma - Çekilme gecikme nedeni en az 10 karakter olmalıdır");
+          showError("Kapanma - Çekilme gecikme nedeni en az 10 karakter olmalıdır");
           setLoading(false);
           return;
         }
@@ -717,32 +754,27 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       const result = await transactionService.updateTransaction(transaction.id, cleanedData);
 
       if (result.success) {
+        showSuccess('İşlem başarıyla güncellendi!');
         onSuccess();
       } else {
-        setError(result.error);
+        handleApiResponse(result, null, setError, "İşlem güncelleme");
       }
     } catch (err) {
-      console.error("İşlem güncelleme hatası:", err);
-      setError("İşlem güncellenirken beklenmeyen bir hata oluştu.");
+      handleError(err, setError, "İşlem güncelleme", "İşlem güncellenirken beklenmeyen bir hata oluştu.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div
-          className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
-          onClick={(e) => e.stopPropagation()}
-        >
+        className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
             <div>
@@ -760,13 +792,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               <span className="material-symbols-outlined text-text-secondary">close</span>
             </button>
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
 
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
@@ -1736,7 +1761,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
               {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (
-                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-yellow-600">warning</span>
@@ -1747,13 +1772,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     {formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          delayReasons: {
-                            ...formData.delayReasons,
-                            arrivalToRegistration: ''
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            delayReasons: {
+                              ...formData.delayReasons,
+                              arrivalToRegistration: ''
+                            }
+                          });
+                          // Clear error when field is cleared
+                          if (fieldErrors.arrivalToRegistration) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.arrivalToRegistration;
+                              return newErrors;
+                            });
                           }
-                        })}
+                        }}
                         className="p-1 hover:bg-yellow-200 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
@@ -1765,24 +1800,45 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </div>
                   <textarea
                     value={formData.delayReasons.arrivalToRegistration}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      delayReasons: {
-                        ...formData.delayReasons,
-                        arrivalToRegistration: e.target.value
-                      }
-                    })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({
+                        ...formData,
+                        delayReasons: {
+                          ...formData.delayReasons,
+                          arrivalToRegistration: value
+                        }
+                      });
+                      // Validate on change
+                      validateDelayReason('arrivalToRegistration', value);
+                    }}
+                    onBlur={(e) => validateDelayReason('arrivalToRegistration', e.target.value)}
                     required
                     rows="2"
-                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-yellow-500 border border-yellow-300 bg-white focus:border-yellow-500 placeholder:text-neutral p-3 text-base font-normal"
-                    placeholder="Lütfen antrepo varış ve tescil tarihi arasındaki gecikme nedenini açıklayın"
+                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      fieldErrors.arrivalToRegistration
+                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                        : 'border-yellow-300 focus:ring-yellow-500 focus:border-yellow-500'
+                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                    placeholder="Lütfen antrepo varış ve tescil tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
-                </label>
+                  {/* Error Message */}
+                  {fieldErrors.arrivalToRegistration && (
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                        error
+                      </span>
+                      <p className="text-sm text-red-700 font-medium">
+                        {fieldErrors.arrivalToRegistration}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Conditional Delay #2: Tescil → Kapanma */}
               {(delays.registrationToClosure || (formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0)) && !isReadOnly && (
-                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-orange-600">warning</span>
@@ -1793,13 +1849,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     {formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          delayReasons: {
-                            ...formData.delayReasons,
-                            registrationToClosure: ''
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            delayReasons: {
+                              ...formData.delayReasons,
+                              registrationToClosure: ''
+                            }
+                          });
+                          // Clear error when field is cleared
+                          if (fieldErrors.registrationToClosure) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.registrationToClosure;
+                              return newErrors;
+                            });
                           }
-                        })}
+                        }}
                         className="p-1 hover:bg-orange-200 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
@@ -1811,24 +1877,45 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </div>
                   <textarea
                     value={formData.delayReasons.registrationToClosure}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      delayReasons: {
-                        ...formData.delayReasons,
-                        registrationToClosure: e.target.value
-                      }
-                    })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({
+                        ...formData,
+                        delayReasons: {
+                          ...formData.delayReasons,
+                          registrationToClosure: value
+                        }
+                      });
+                      // Validate on change
+                      validateDelayReason('registrationToClosure', value);
+                    }}
+                    onBlur={(e) => validateDelayReason('registrationToClosure', e.target.value)}
                     required
                     rows="2"
-                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-orange-500 border border-orange-300 bg-white focus:border-orange-500 placeholder:text-neutral p-3 text-base font-normal"
-                    placeholder="Lütfen tescil ve kapanma tarihi arasındaki gecikme nedenini açıklayın"
+                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      fieldErrors.registrationToClosure
+                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                        : 'border-orange-300 focus:ring-orange-500 focus:border-orange-500'
+                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                    placeholder="Lütfen tescil ve kapanma tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
-                </label>
+                  {/* Error Message */}
+                  {fieldErrors.registrationToClosure && (
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                        error
+                      </span>
+                      <p className="text-sm text-red-700 font-medium">
+                        {fieldErrors.registrationToClosure}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Conditional Delay #3: Kapanma → Çekilme */}
               {(delays.closureToWithdrawal || (formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0)) && !isReadOnly && (
-                <label className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-red-600">warning</span>
@@ -1839,13 +1926,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     {formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          delayReasons: {
-                            ...formData.delayReasons,
-                            closureToWithdrawal: ''
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            delayReasons: {
+                              ...formData.delayReasons,
+                              closureToWithdrawal: ''
+                            }
+                          });
+                          // Clear error when field is cleared
+                          if (fieldErrors.closureToWithdrawal) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.closureToWithdrawal;
+                              return newErrors;
+                            });
                           }
-                        })}
+                        }}
                         className="p-1 hover:bg-red-200 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
@@ -1857,19 +1954,40 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   </div>
                   <textarea
                     value={formData.delayReasons.closureToWithdrawal}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      delayReasons: {
-                        ...formData.delayReasons,
-                        closureToWithdrawal: e.target.value
-                      }
-                    })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({
+                        ...formData,
+                        delayReasons: {
+                          ...formData.delayReasons,
+                          closureToWithdrawal: value
+                        }
+                      });
+                      // Validate on change
+                      validateDelayReason('closureToWithdrawal', value);
+                    }}
+                    onBlur={(e) => validateDelayReason('closureToWithdrawal', e.target.value)}
                     required
                     rows="2"
-                    className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-red-500 border border-red-300 bg-white focus:border-red-500 placeholder:text-neutral p-3 text-base font-normal"
-                    placeholder="Lütfen kapanma ve çekilme tarihi arasındaki gecikme nedenini açıklayın"
+                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      fieldErrors.closureToWithdrawal
+                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                        : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                    placeholder="Lütfen kapanma ve çekilme tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
-                </label>
+                  {/* Error Message */}
+                  {fieldErrors.closureToWithdrawal && (
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                        error
+                      </span>
+                      <p className="text-sm text-red-700 font-medium">
+                        {fieldErrors.closureToWithdrawal}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Açıklama */}
@@ -1909,9 +2027,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 {loading ? t('common.loading') : t('common.update')}
               </button>
             )}
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

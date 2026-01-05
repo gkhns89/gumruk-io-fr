@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { logError } from '../utils/errorUtils';
 
 /**
  * Gümrük Haberleri API Servisi
@@ -34,13 +35,7 @@ export const customsNewsService = {
         data: newsArray
       };
     } catch (error) {
-      console.error('❌ Haberler getirme hatası:', error);
-
-      // Hata detaylarını logla
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-      }
+      logError('CustomsNewsService - getRecentNews', error);
 
       return {
         success: false,
@@ -68,7 +63,7 @@ export const customsNewsService = {
         message: response.data?.message || 'Haberler yenilendi'
       };
     } catch (error) {
-      console.error('❌ Haber yenileme hatası:', error);
+      logError('CustomsNewsService - refreshNews', error);
 
       // 403 Forbidden - Yetki hatası
       if (error.response?.status === 403) {

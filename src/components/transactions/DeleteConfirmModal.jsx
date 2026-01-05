@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { transactionService } from "../../api/transactionService";
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { showSuccess } from '../../utils/toastUtils';
 
 export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -15,32 +17,27 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
       const result = await transactionService.cancelTransaction(transaction.id, reason);
 
       if (result.success) {
+        showSuccess('İşlem başarıyla silindi!');
         onSuccess();
       } else {
-        setError(result.error);
+        handleApiResponse(result, null, setError, 'transaction cancellation');
       }
     } catch (err) {
-      console.error("İşlem iptal hatası:", err);
-      setError("İşlem iptal edilirken beklenmeyen bir hata oluştu.");
+      handleError(err, setError, 'transaction cancellation', 'İşlem iptal edilirken beklenmeyen bir hata oluştu.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
-          onClick={(e) => e.stopPropagation()}
-        >
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header */}
           <div className="flex items-center gap-4 p-6 border-b border-gray-200">
             <div className="flex items-center justify-center h-12 w-12 bg-red-100 rounded-full">
@@ -94,13 +91,6 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
                 placeholder="İptal nedenini belirtin..."
               />
             </label>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
           </div>
 
           {/* Footer */}
@@ -122,8 +112,7 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
               {loading ? 'İptal Ediliyor...' : 'İptal Et'}
             </button>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
 }

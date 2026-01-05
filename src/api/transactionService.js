@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { logError } from '../utils/errorUtils';
 
 /**
  * API response'unu güvenli bir şekilde array'e dönüştürür
@@ -81,8 +82,8 @@ export const transactionService = {
       
       return { success: true, data: dataArray };
     } catch (error) {
-      console.error('❌ Son işlemler getirme hatası:', error);
-      
+      logError('TransactionService - getRecentTransactions', error);
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
@@ -103,7 +104,7 @@ export const transactionService = {
 
       return { success: true, data: dataArray };
     } catch (error) {
-      console.error('❌ İşlemler getirme hatası:', error);
+      logError('TransactionService - getAllTransactions', error);
 
       return {
         success: false,
@@ -125,8 +126,8 @@ export const transactionService = {
       
       return { success: true, data: dataArray };
     } catch (error) {
-      console.error('❌ Broker işlemleri getirme hatası:', error);
-      
+      logError('TransactionService - getBrokerTransactions', error);
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
@@ -147,8 +148,8 @@ export const transactionService = {
       
       return { success: true, data: dataArray };
     } catch (error) {
-      console.error('❌ Client işlemleri getirme hatası:', error);
-      
+      logError('TransactionService - getClientTransactions', error);
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
@@ -167,8 +168,8 @@ export const transactionService = {
       
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ İşlem detayı getirme hatası:', error);
-      
+      logError('TransactionService - getTransactionById', error);
+
       if (error.response?.status === 404) {
         return {
           success: false,
@@ -202,8 +203,8 @@ export const transactionService = {
         message: response.data.message || 'İşlem başarıyla oluşturuldu'
       };
     } catch (error) {
-      console.error('❌ İşlem oluşturma hatası:', error);
-      
+      logError('TransactionService - createTransaction', error);
+
       if (error.response?.status === 403) {
         return {
           success: false,
@@ -237,8 +238,8 @@ export const transactionService = {
         message: response.data.message || 'İşlem başarıyla güncellendi'
       };
     } catch (error) {
-      console.error('❌ İşlem güncelleme hatası:', error);
-      
+      logError('TransactionService - updateTransaction', error);
+
       if (error.response?.status === 403) {
         return {
           success: false,
@@ -281,8 +282,8 @@ export const transactionService = {
         message: response.data.message || 'İşlem durumu başarıyla değiştirildi'
       };
     } catch (error) {
-      console.error('❌ İşlem durumu değiştirme hatası:', error);
-      
+      logError('TransactionService - updateTransactionStatus', error);
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlem durumu değiştirilemedi',
@@ -305,8 +306,8 @@ export const transactionService = {
         message: response.data.message || 'İşlem başarıyla çekildi olarak güncellendi'
       };
     } catch (error) {
-      console.error('❌ İşlem çekildi olarak güncellenemedi', error);
-      
+      logError('TransactionService - withdrawTransaction', error);
+
       return {
         success: false,
         error: error.response?.data?.error || error.response?.data?.message || 'İşlem çekildi olarak güncellenemedi',
@@ -331,7 +332,7 @@ export const transactionService = {
         message: response.data.message || 'İşlem başarıyla iptal edildi'
       };
     } catch (error) {
-      console.error('❌ İşlem iptal hatası:', error);
+      logError('TransactionService - cancelTransaction', error);
 
       return {
         success: false,
@@ -357,7 +358,7 @@ export const transactionService = {
 
       return { success: true, data: dataArray };
     } catch (error) {
-      console.error('❌ Gecikmiş işlemler getirme hatası:', error);
+      logError('TransactionService - getDelayedTransactions', error);
 
       return {
         success: false,

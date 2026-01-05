@@ -161,5 +161,103 @@
   }
 }
 
+/* React Toastify Custom Styles - Tema Uyumlu */
+:root {
+  --toastify-color-success: #06b1ea;
+  --toastify-color-error: #e63946;
+  --toastify-color-warning: #ff9f1c;
+  --toastify-color-info: #06b1ea;
+  --toastify-toast-width: 380px;
+  --toastify-font-family: "Inter", sans-serif;
+}
+
+.Toastify__toast {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  font-size: 0.9375rem;
+  padding: 1.125rem 1.25rem;
+  font-family: var(--toastify-font-family);
+  font-weight: 500;
+  min-height: 64px;
+  backdrop-filter: blur(8px);
+}
+
+.Toastify__toast--success {
+  background: linear-gradient(135deg, #06b1ea 0%, #0396d6 100%);
+  border-left: 4px solid #0284c7;
+  color: #ffffff;
+}
+
+.Toastify__toast--error {
+  background: linear-gradient(135deg, #e63946 0%, #d62839 100%);
+  border-left: 4px solid #c1121f;
+  color: #ffffff;
+}
+
+.Toastify__toast--warning {
+  background: linear-gradient(135deg, #ff9f1c 0%, #f58500 100%);
+  border-left: 4px solid #e07000;
+  color: #ffffff;
+}
+
+.Toastify__toast--info {
+  background: linear-gradient(135deg, #06b1ea 0%, #0396d6 100%);
+  border-left: 4px solid #0284c7;
+  color: #ffffff;
+}
+
+/* Toast body text */
+.Toastify__toast-body {
+  padding: 0;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #ffffff;
+}
+
+/* Progress bar */
+.Toastify__progress-bar--success {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.Toastify__progress-bar--error {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.Toastify__progress-bar--warning {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.Toastify__progress-bar--info {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Close button */
+.Toastify__close-button {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0.9;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1;
+  color: #ffffff;
+}
+
+/* Mobile responsive */
+@media only screen and (max-width: 480px) {
+  .Toastify__toast-container {
+    width: 100vw;
+    padding: 0;
+    left: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .Toastify__toast {
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
 /* Tailwind plugin */
 @plugin "@tailwindcss/forms";

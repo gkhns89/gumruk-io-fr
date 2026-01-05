@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
+import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
+import { showSuccess } from '../../utils/toastUtils';
 
 /**
  * Vekalet Düzenleme Modalı
@@ -70,7 +72,7 @@ export default function EditAgreementModal({
       );
 
       if (!result.success) {
-        setError(result.error || 'Anlaşma güncellenemedi');
+        handleApiResponse(result, null, setError, 'EditAgreementModal - updateAgreement');
         setLoading(false);
         return;
       }
@@ -84,7 +86,7 @@ export default function EditAgreementModal({
         );
 
         if (!uploadResult.success) {
-          setError(uploadResult.error || 'Belge yüklenemedi');
+          handleApiResponse(uploadResult, null, setError, 'EditAgreementModal - uploadDocument');
           setLoading(false);
           return;
         }
@@ -92,11 +94,11 @@ export default function EditAgreementModal({
       }
 
       // Başarılı
+      showSuccess('Vekalet başarıyla güncellendi!');
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Agreement update error:', err);
-      setError('Beklenmeyen bir hata oluştu');
+      handleError(err, setError, 'EditAgreementModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -122,8 +124,8 @@ export default function EditAgreementModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
@@ -144,12 +146,6 @@ export default function EditAgreementModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-6">
             {/* Tarih Aralığı */}
             <div className="grid grid-cols-2 gap-4">

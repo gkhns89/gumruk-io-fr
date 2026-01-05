@@ -1,5 +1,6 @@
 import React from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
+import { showError } from '../../utils/toastUtils';
 
 /**
  * Vekalet bilgilerini gösteren panel
@@ -14,7 +15,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
     const result = await agencyAgreementService.downloadDocument(agreement.agreementId);
     if (!result.success) {
-      alert(result.error);
+      showError(result.error || 'Belge indirilemedi');
     }
   };
 

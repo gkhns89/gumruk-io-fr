@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { tokenManager } from '../utils/tokenManager';
+import { logError } from '../utils/errorUtils';
 
 export const authService = {
   // Login işlemi
@@ -26,8 +27,8 @@ export const authService = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Login hatası:', error);
-      
+      logError('AuthService - login', error);
+
       if (error.response?.status === 403) {
         return {
           success: false,
