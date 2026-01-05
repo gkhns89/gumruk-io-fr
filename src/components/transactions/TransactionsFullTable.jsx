@@ -252,14 +252,15 @@ export default function TransactionsFullTable({
                 Vergi (TL)
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Durum
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Antrepo Varış
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Tescil Tarihi
               </th>
-              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
-                Durum
-              </th>
+
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Kapanma Tarihi
               </th>
@@ -346,12 +347,6 @@ export default function TransactionsFullTable({
                         )
                       : "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {formatDate(transaction.warehouseArrivalDate)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
-                    {formatDate(transaction.registrationDate)}
-                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
                       className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
@@ -359,6 +354,13 @@ export default function TransactionsFullTable({
                       {statusInfo.label}
                     </span>
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.warehouseArrivalDate)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                    {formatDate(transaction.registrationDate)}
+                  </td>
+
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(transaction.lineClosureDate)}
                   </td>
