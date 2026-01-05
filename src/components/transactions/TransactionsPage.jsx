@@ -31,7 +31,7 @@ export default function TransactionsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(50);
   const [filters, setFilters] = useState({
     status: "",
     clientSearch: "",
