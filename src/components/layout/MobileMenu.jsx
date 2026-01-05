@@ -53,19 +53,17 @@ export default function MobileMenu({ isOpen, onClose }) {
     },
     {
       icon: "group",
-      label: "Kullanıcı Yönetimi",
-      path: "/management/users",
-      active: false,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-      comingSoon: true
+      label: "Çalışan Yönetimi",
+      path: "/management/employees",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
       icon: "assessment",
       label: "Raporlar",
       path: "/management/reports",
-      active: false,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-      comingSoon: true
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
   ];
 
@@ -197,30 +195,6 @@ export default function MobileMenu({ isOpen, onClose }) {
                 <div className="space-y-1 ml-4 border-l-2 border-gray-200 pl-3">
                   {visibleManagementItems.map((item, index) => {
                     const active = isActive(item.path);
-                    const isDisabled = !item.active;
-
-                    if (isDisabled) {
-                      return (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl opacity-50 cursor-not-allowed"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-text-secondary">
-                              {item.icon}
-                            </span>
-                            <p className="text-sm font-medium leading-normal text-text-secondary">
-                              {item.label}
-                            </p>
-                          </div>
-                          {item.comingSoon && (
-                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary rounded-full">
-                              Yakında
-                            </span>
-                          )}
-                        </div>
-                      );
-                    }
 
                     return (
                       <Link

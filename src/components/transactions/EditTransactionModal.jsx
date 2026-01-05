@@ -28,13 +28,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     withdrawalDate: transaction.withdrawalDate || "",
     description: transaction.description || "",
     delayReasons: (() => {
+      console.log("🔍 [EditTransactionModal] Backend'den gelen transaction.userDelayNote:", transaction.userDelayNote);
       try {
-        return transaction.delayReason ? JSON.parse(transaction.delayReason) : {
+        const parsed = transaction.userDelayNote ? JSON.parse(transaction.userDelayNote) : {
           arrivalToRegistration: "",
           registrationToClosure: "",
           closureToWithdrawal: ""
         };
-      } catch {
+        console.log("✅ [EditTransactionModal] Parse edilen delayReasons:", parsed);
+        return parsed;
+      } catch (error) {
+        console.error("❌ [EditTransactionModal] userDelayNote parse hatası:", error);
         return {
           arrivalToRegistration: "",
           registrationToClosure: "",
@@ -625,7 +629,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     if (!formData.weight) {
       errors.weight = "Kilo zorunludur";
     }
-    if (!formData.tax) {
+    if (formData.tax === '' || formData.tax === null || formData.tax === undefined) {
       errors.tax = "Vergi zorunludur";
     }
     if (!senderSearchTerm || !senderSearchTerm.trim()) {
@@ -1760,7 +1764,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
-              {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (
+              {(delays.arrivalToRegistration || (formData.delayReasons && 'arrivalToRegistration' in formData.delayReasons)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1809,8 +1813,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           arrivalToRegistration: value
                         }
                       });
-                      // Validate on change
-                      validateDelayReason('arrivalToRegistration', value);
+                      // Clear error when user types
+                      if (fieldErrors.arrivalToRegistration) {
+                        setFieldErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.arrivalToRegistration;
+                          return newErrors;
+                        });
+                      }
                     }}
                     onBlur={(e) => validateDelayReason('arrivalToRegistration', e.target.value)}
                     required
@@ -1837,7 +1847,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #2: Tescil → Kapanma */}
-              {(delays.registrationToClosure || (formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0)) && !isReadOnly && (
+              {(delays.registrationToClosure || (formData.delayReasons && 'registrationToClosure' in formData.delayReasons)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1886,8 +1896,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           registrationToClosure: value
                         }
                       });
-                      // Validate on change
-                      validateDelayReason('registrationToClosure', value);
+                      // Clear error when user types
+                      if (fieldErrors.registrationToClosure) {
+                        setFieldErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.registrationToClosure;
+                          return newErrors;
+                        });
+                      }
                     }}
                     onBlur={(e) => validateDelayReason('registrationToClosure', e.target.value)}
                     required
@@ -1914,7 +1930,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #3: Kapanma → Çekilme */}
-              {(delays.closureToWithdrawal || (formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0)) && !isReadOnly && (
+              {(delays.closureToWithdrawal || (formData.delayReasons && 'closureToWithdrawal' in formData.delayReasons)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1963,8 +1979,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           closureToWithdrawal: value
                         }
                       });
-                      // Validate on change
-                      validateDelayReason('closureToWithdrawal', value);
+                      // Clear error when user types
+                      if (fieldErrors.closureToWithdrawal) {
+                        setFieldErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.closureToWithdrawal;
+                          return newErrors;
+                        });
+                      }
                     }}
                     onBlur={(e) => validateDelayReason('closureToWithdrawal', e.target.value)}
                     required

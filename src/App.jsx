@@ -7,6 +7,14 @@ import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİ
 import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
 import EmployeesPage from "./pages/management/EmployeesPage";  // ✅ YÖNETİM
 import NewsPage from "./pages/NewsPage";  // ✅ HABERLER
+import WarehousePage from "./pages/WarehousePage";
+import ShippingPage from "./pages/ShippingPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import ContactPage from "./pages/ContactPage";
+import HelpPage from "./pages/HelpPage";
+import ReportsPage from "./pages/management/ReportsPage";
 import { useAuth } from "./hooks/useAuth";
 
 // Protected Route Component
@@ -105,6 +113,86 @@ export default function App() {
         element={
           <ProtectedRoute>
             <NewsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Antrepo Takip */}
+      <Route
+        path="/warehouse"
+        element={
+          <ProtectedRoute>
+            <WarehousePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Yük Takip */}
+      <Route
+        path="/shipping"
+        element={
+          <ProtectedRoute>
+            <ShippingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Duyurular */}
+      <Route
+        path="/announcements"
+        element={
+          <ProtectedRoute>
+            <AnnouncementsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Profil */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Ayarlar */}
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* İletişim */}
+      <Route
+        path="/contact"
+        element={
+          <ProtectedRoute>
+            <ContactPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Yardım */}
+      <Route
+        path="/help"
+        element={
+          <ProtectedRoute>
+            <HelpPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* YÖNETİM: Raporlar */}
+      <Route
+        path="/management/reports"
+        element={
+          <ProtectedRoute>
+            <ReportsPage />
           </ProtectedRoute>
         }
       />

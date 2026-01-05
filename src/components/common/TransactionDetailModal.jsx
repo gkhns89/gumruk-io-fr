@@ -16,7 +16,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
   // Parse delay reasons from JSON
   const delayReasons = (() => {
     try {
-      return transaction.delayReason ? JSON.parse(transaction.delayReason) : {};
+      return transaction.userDelayNote ? JSON.parse(transaction.userDelayNote) : {};
     } catch {
       return {};
     }
@@ -160,11 +160,11 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
             </div>
 
             {/* Gecikme Nedenleri */}
-            {(delayReasons.arrivalToRegistration || delayReasons.registrationToClosure || delayReasons.closureToWithdrawal) && (
+            {(('arrivalToRegistration' in delayReasons) || ('registrationToClosure' in delayReasons) || ('closureToWithdrawal' in delayReasons)) && (
               <div className="space-y-3 mt-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Gecikme Nedenleri</h3>
 
-                {delayReasons.arrivalToRegistration && (
+                {('arrivalToRegistration' in delayReasons) && (
                   <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-yellow-600">warning</span>
@@ -178,7 +178,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                   </div>
                 )}
 
-                {delayReasons.registrationToClosure && (
+                {('registrationToClosure' in delayReasons) && (
                   <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-orange-600">warning</span>
@@ -192,7 +192,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                   </div>
                 )}
 
-                {delayReasons.closureToWithdrawal && (
+                {('closureToWithdrawal' in delayReasons) && (
                   <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-red-600">warning</span>

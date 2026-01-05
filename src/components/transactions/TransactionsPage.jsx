@@ -69,7 +69,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     applyFilters();

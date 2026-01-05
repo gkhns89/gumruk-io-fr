@@ -73,16 +73,14 @@ export default function Sidebar() {
       label: "Çalışan Yönetimi",
       path: "/management/employees",
       active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-      comingSoon: true
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
       icon: "assessment",
       label: "Raporlar",
       path: "/management/reports",
-      active: false,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-      comingSoon: true
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
   ];
 
@@ -438,37 +436,6 @@ export default function Sidebar() {
                 <div className="flex flex-col gap-1">
                     {visibleMgmtItems.map((item, index) => {
                       const active = isActive(item.path);
-                      const isDisabled = !item.active;
-
-                      if (isDisabled) {
-                        return (
-                          <div
-                            key={`mgmt-${index}`}
-                            className={`
-                              flex items-center gap-3 px-3 h-11 rounded-xl flex-shrink-0
-                              opacity-50 cursor-not-allowed
-                              ${!isExpanded && 'justify-center'}
-                            `}
-                            title={!isExpanded ? `${item.label} (Yakında)` : ''}
-                          >
-                            <span className="material-symbols-outlined text-xl flex-shrink-0 text-text-secondary">
-                              {item.icon}
-                            </span>
-                            {isExpanded && (
-                              <div className="flex items-center justify-between flex-1">
-                                <p className="text-sm font-medium leading-normal whitespace-nowrap text-text-secondary">
-                                  {item.label}
-                                </p>
-                                {item.comingSoon && (
-                                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary rounded-full">
-                                    Yakında
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
 
                       return (
                         <Link
@@ -533,37 +500,6 @@ export default function Sidebar() {
                     <div className={`flex flex-col gap-1 ${isExpanded ? 'ml-4 border-l-2 border-gray-200 pl-2' : ''}`}>
                       {hiddenMgmtItems.map((item, index) => {
                         const active = isActive(item.path);
-                        const isDisabled = !item.active;
-
-                        if (isDisabled) {
-                          return (
-                            <div
-                              key={`mgmt-hidden-${index}`}
-                              className={`
-                                flex items-center gap-3 px-3 h-11 rounded-xl flex-shrink-0
-                                opacity-50 cursor-not-allowed
-                                ${!isExpanded && 'justify-center'}
-                              `}
-                              title={!isExpanded ? `${item.label} (Yakında)` : ''}
-                            >
-                              <span className="material-symbols-outlined text-xl flex-shrink-0 text-text-secondary">
-                                {item.icon}
-                              </span>
-                              {isExpanded && (
-                                <div className="flex items-center justify-between flex-1">
-                                  <p className="text-sm font-medium leading-normal whitespace-nowrap text-text-secondary">
-                                    {item.label}
-                                  </p>
-                                  {item.comingSoon && (
-                                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary rounded-full">
-                                      Yakında
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
 
                         return (
                           <Link

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
+import { configService } from '../../api/configService';
 import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 
@@ -32,6 +33,7 @@ export default function EditAgreementModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadConfig, setUploadConfig] = useState(null);
 
   // Agreement prop'u değiştiğinde formData'yı güncelle
   useEffect(() => {
@@ -48,6 +50,18 @@ export default function EditAgreementModal({
       setUploadProgress(0);
     }
   }, [agreement, isOpen]);
+
+  // Load file upload configuration
+  useEffect(() => {
+    if (isOpen) {
+      loadUploadConfig();
+    }
+  }, [isOpen]);
+
+  const loadUploadConfig = async () => {
+    const result = await configService.getFileUploadConfig();
+    setUploadConfig(result.data);
+  };
 
   if (!isOpen || !agreement) return null;
 
@@ -107,15 +121,37 @@ export default function EditAgreementModal({
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Dosya boyutu kontrolü (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Dosya boyutu 10MB\'dan küçük olmalıdır');
+
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    // Dosya validasyonu
+    if (uploadConfig) {
+      const validation = configService.validateFile(file, uploadConfig);
+      if (!validation.valid) {
+        setError(validation.error);
+        e.target.value = ''; // ÖNEMLİ: Input'u temizle
+        setSelectedFile(null);
         return;
       }
-      setSelectedFile(file);
-      setError('');
     }
+
+    setSelectedFile(file);
+    setError('');
+  };
+
+  // Dosya yükleme kısıtlamalarını göster
+  const renderUploadConstraints = () => {
+    if (!uploadConfig) return null;
+
+    return (
+      <p className="mt-2 text-xs text-gray-500">
+        Maksimum dosya boyutu: <strong>{uploadConfig.maxFileSizeMB} MB</strong> |
+        İzin verilen formatlar: <strong>{uploadConfig.allowedFormats}</strong>
+      </p>
+    );
   };
 
   const handleClose = () => {
@@ -241,9 +277,11 @@ export default function EditAgreementModal({
                   </button>
                 )}
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                PDF, JPG veya PNG formatında, maksimum 10MB
-              </p>
+              {renderUploadConstraints() || (
+                <p className="mt-1 text-xs text-gray-500">
+                  PDF, JPG veya PNG formatında, maksimum 10MB
+                </p>
+              )}
 
               {/* Mevcut Belge Bilgisi */}
               {agreement.documentPath && !selectedFile && (

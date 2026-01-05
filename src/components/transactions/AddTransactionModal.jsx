@@ -755,7 +755,7 @@ export default function AddTransactionModal({
     if (!formData.weight) {
       errors.weight = "Kilo zorunludur";
     }
-    if (!formData.tax) {
+    if (formData.tax === '' || formData.tax === null || formData.tax === undefined) {
       errors.tax = "Vergi zorunludur";
     }
     if (!senderSearchTerm || !senderSearchTerm.trim()) {
