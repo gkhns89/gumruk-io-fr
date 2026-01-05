@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { toUpperCase } from '../../utils/textUtils';
-import { handleError, handleApiResponse } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
 
 export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, currentLimits }) {
@@ -16,34 +15,38 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    // Clear previous errors
+    setEmailError('');
+    setPasswordError('');
 
     // Validate broker company ID
     if (!brokerCompanyId || isNaN(brokerCompanyId)) {
-      setError('Firma bilgisi eksik. Lütfen sayfayı yenileyin.');
+      showError('Firma bilgisi eksik. Lütfen sayfayı yenileyin.');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Geçerli bir email adresi giriniz');
+      setEmailError('Geçerli bir email adresi giriniz');
       return;
     }
 
     // Validate password length
     if (formData.password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır');
+      setPasswordError('Şifre en az 6 karakter olmalıdır');
       return;
     }
 
     // Check quota
     if (currentLimits && (currentLimits.canAddUser === false || currentLimits.remainingUserQuota <= 0)) {
-      setError('Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.');
+      showError('Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.');
       return;
     }
 
@@ -63,10 +66,12 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
         setFormData({ username: '', email: '', password: '', globalRole: 'BROKER_USER' });
         onClose();
       } else {
-        handleApiResponse(result, null, setError, 'Çalışan oluşturma');
+        // API error - show as toast
+        showError(result.error || 'Çalışan oluşturulamadı');
       }
     } catch (err) {
-      handleError(err, setError, 'Çalışan oluşturma', 'Beklenmeyen bir hata oluştu');
+      // Network/unexpected error - show as toast
+      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -74,7 +79,8 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
 
   const handleClose = () => {
     setFormData({ username: '', email: '', password: '', globalRole: 'BROKER_USER' });
-    setError('');
+    setEmailError('');
+    setPasswordError('');
     onClose();
   };
 
@@ -148,18 +154,27 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
               <input
                 type="text"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  email: e.target.value.toLowerCase()
-                }))}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    email: e.target.value.toLowerCase()
+                  }));
+                  if (emailError) setEmailError('');
+                }}
                 required
                 placeholder="ahmet.yilmaz@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase ${
+                  emailError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 style={{ textTransform: 'lowercase' }}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Giriş için kullanılacak email adresi
-              </p>
+              {emailError ? (
+                <p className="mt-1 text-xs text-red-600">{emailError}</p>
+              ) : (
+                <p className="mt-1 text-xs text-gray-500">
+                  Giriş için kullanılacak email adresi
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -170,18 +185,27 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  password: e.target.value
-                }))}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    password: e.target.value
+                  }));
+                  if (passwordError) setPasswordError('');
+                }}
                 required
                 minLength={6}
                 placeholder="En az 6 karakter"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
+                  passwordError ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Minimum 6 karakter
-              </p>
+              {passwordError ? (
+                <p className="mt-1 text-xs text-red-600">{passwordError}</p>
+              ) : (
+                <p className="mt-1 text-xs text-gray-500">
+                  Minimum 6 karakter
+                </p>
+              )}
             </div>
 
             {/* Role Selection */}
@@ -205,16 +229,6 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 Broker Yöneticisi: Tüm yetkilere sahip • Broker Kullanıcısı: İşlem yönetimi
               </p>
             </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-red-600 text-sm">error</span>
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
 
             {/* Quota Warning */}
             {isQuotaExceeded && (

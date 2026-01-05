@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
-import { handleError, handleApiResponse } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 
 export default function DeleteEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   // Check if deleting self
   const isDeletingSelf = currentUser?.id === employee.id;
@@ -21,11 +19,10 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
 
   const handleDelete = async () => {
     if (isDeletingSelf) {
-      setError('Kendi hesabınızı silemezsiniz');
+      showError('Kendi hesabınızı silemezsiniz');
       return;
     }
 
-    setError('');
     setLoading(true);
 
     try {
@@ -36,17 +33,18 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
         onSuccess();
         onClose();
       } else {
-        handleApiResponse(result, null, setError, 'Çalışan silme');
+        // API error - show as toast
+        showError(result.error || 'Çalışan silinemedi');
       }
     } catch (err) {
-      handleError(err, setError, 'Çalışan silme', 'Beklenmeyen bir hata oluştu');
+      // Network/unexpected error - show as toast
+      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setError('');
     onClose();
   };
 
@@ -139,16 +137,6 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
                 </div>
               </div>
             </>
-          )}
-
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-red-600 text-sm">error</span>
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            </div>
           )}
         </div>
 

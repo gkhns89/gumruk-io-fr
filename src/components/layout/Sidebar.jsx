@@ -188,7 +188,6 @@ export default function Sidebar() {
 
   // Yönetim çekmecesi gerekli mi?
   const needsMgmtDrawer = hiddenMgmtItems.length > 0;
-  const allMgmtVisible = visibleMgmtItems.length === visibleManagementItems.length;
 
   // "Diğer" çekmecesi gerekli mi?
   const needsOtherDrawer = hiddenOtherItems.length > 0;

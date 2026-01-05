@@ -6,22 +6,22 @@ import DeleteConfirmModal from "./DeleteConfirmModal";
 const getStatusRowStyle = (status) => {
   const statusStyles = {
     PENDING: {
-      border: 'border-l-4 border-l-sky-400',
+      border: "border-l-4 border-l-sky-400",
     },
     REGISTERED: {
-      border: 'border-l-4 border-l-amber-400',
+      border: "border-l-4 border-l-amber-400",
     },
     INSPECTION: {
-      border: 'border-l-4 border-l-purple-400',
+      border: "border-l-4 border-l-purple-400",
     },
     CP_COMPLETED: {
-      border: 'border-l-4 border-l-orange-700',
+      border: "border-l-4 border-l-orange-700",
     },
     WITHDRAWN: {
-      border: 'border-l-4 border-l-green-500 bg-red-50',
+      border: "border-l-4 border-l-green-500 bg-red-50",
     },
     CANCELLED: {
-      border: 'border-l-4 border-l-rose-500',
+      border: "border-l-4 border-l-rose-500",
     },
   };
 
@@ -59,8 +59,8 @@ export default function TransactionsFullTable({
     return [...transactions].sort((a, b) => {
       // Öncelik seviyelerini belirle
       const getPriority = (status) => {
-        if (status === 'WITHDRAWN') return 3; // En son: Çekilenler
-        if (status === 'CP_COMPLETED' || status === 'CANCELLED') return 2; // Ortada: Kapananlar
+        if (status === "WITHDRAWN") return 3; // En son: Çekilenler
+        if (status === "CP_COMPLETED" || status === "CANCELLED") return 2; // Ortada: Kapananlar
         return 1; // En üstte: Aktif işlemler (PENDING, REGISTERED, INSPECTION)
       };
 
@@ -148,7 +148,7 @@ export default function TransactionsFullTable({
 
     // Eğer tıklanan element bir button veya button içindeyse, işlemi yapma
     const target = event.target;
-    if (target.tagName === 'BUTTON' || target.closest('button')) {
+    if (target.tagName === "BUTTON" || target.closest("button")) {
       return;
     }
 
@@ -258,6 +258,9 @@ export default function TransactionsFullTable({
                 Tescil Tarihi
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+                Durum
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Kapanma Tarihi
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
@@ -269,13 +272,11 @@ export default function TransactionsFullTable({
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Toplam Süre (Gün)
               </th>
-              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
-                Durum
-              </th>
+
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">
                 İşlemler
               </th>
-                            <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
+              <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
                 Broker Firma
               </th>
             </tr>
@@ -351,6 +352,13 @@ export default function TransactionsFullTable({
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(transaction.registrationDate)}
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(transaction.lineClosureDate)}
                   </td>
@@ -367,13 +375,7 @@ export default function TransactionsFullTable({
                       ? "<1"
                       : transaction.totalProcessingTime ?? "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
-                    >
-                      {statusInfo.label}
-                    </span>
-                  </td>
+
                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
                       {/* Görüntüle/Düzenle */}
@@ -407,7 +409,7 @@ export default function TransactionsFullTable({
                       )}
                     </div>
                   </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                     {transaction.brokerCompany?.name || "-"}
                   </td>
                 </tr>

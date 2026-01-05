@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { companyService } from '../../api/companyService';
 import { toUpperCase } from '../../utils/textUtils';
-import { handleError, handleApiResponse } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
 
 /**
@@ -25,17 +24,15 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     // Validate brokerCompanyId
     if (!brokerCompanyId || isNaN(brokerCompanyId)) {
-      setError('Broker firma bilgisi eksik. Lütfen sayfayı yenileyin.');
+      showError('Broker firma bilgisi eksik. Lütfen sayfayı yenileyin.');
       return;
     }
 
@@ -56,10 +53,12 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
         setFormData({ name: '', shortName: '', description: '' });
         onClose();
       } else {
-        handleApiResponse(result, null, setError, 'Müşteri oluşturma');
+        // API error - show as toast
+        showError(result.error || 'Müşteri firma oluşturulamadı');
       }
     } catch (err) {
-      handleError(err, setError, 'Müşteri oluşturma', 'Beklenmeyen bir hata oluştu');
+      // Network/unexpected error - show as toast
+      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -67,7 +66,6 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
 
   const handleClose = () => {
     setFormData({ name: '', shortName: '', description: '' });
-    setError('');
     onClose();
   };
 

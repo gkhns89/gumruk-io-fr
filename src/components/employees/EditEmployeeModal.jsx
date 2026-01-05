@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { toUpperCase } from '../../utils/textUtils';
-import { handleError, handleApiResponse } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
 
 export default function EditEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
@@ -16,7 +15,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   // Populate form when employee changes
   useEffect(() => {
@@ -35,12 +34,12 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setEmailError('');
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Geçerli bir email adresi giriniz');
+      setEmailError('Geçerli bir email adresi giriniz');
       return;
     }
 
@@ -65,17 +64,19 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
         onSuccess(result.data);
         onClose();
       } else {
-        handleApiResponse(result, null, setError, 'Çalışan güncelleme');
+        // API error - show as toast
+        showError(result.error || 'Çalışan güncellenemedi');
       }
     } catch (err) {
-      handleError(err, setError, 'Çalışan güncelleme', 'Beklenmeyen bir hata oluştu');
+      // Network/unexpected error - show as toast
+      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setError('');
+    setEmailError('');
     onClose();
   };
 
@@ -148,15 +149,23 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
               <input
                 type="text"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  email: e.target.value.toLowerCase()
-                }))}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    email: e.target.value.toLowerCase()
+                  }));
+                  if (emailError) setEmailError('');
+                }}
                 required
                 placeholder="ahmet.yilmaz@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase ${
+                  emailError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 style={{ textTransform: 'lowercase' }}
               />
+              {emailError && (
+                <p className="mt-1 text-xs text-red-600">{emailError}</p>
+              )}
             </div>
 
             {/* Role Selection - Disabled when editing self */}
@@ -208,16 +217,6 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 </p>
               )}
             </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-red-600 text-sm">error</span>
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Modal Footer */}
