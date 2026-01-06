@@ -1574,7 +1574,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   name="gate"
                   value={formData.gate}
                   onChange={handleChange}
-                  disabled={isFieldLocked}
+                  disabled={isReadOnly || isCompletedStatus || isWithdrawnStatus}
                   className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
                     fieldErrors.gate
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -1764,7 +1764,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
-              {(delays.arrivalToRegistration || (formData.delayReasons && 'arrivalToRegistration' in formData.delayReasons)) && !isReadOnly && (
+              {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1847,7 +1847,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #2: Tescil → Kapanma */}
-              {(delays.registrationToClosure || (formData.delayReasons && 'registrationToClosure' in formData.delayReasons)) && !isReadOnly && (
+              {(delays.registrationToClosure || (formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1930,7 +1930,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               )}
 
               {/* Conditional Delay #3: Kapanma → Çekilme */}
-              {(delays.closureToWithdrawal || (formData.delayReasons && 'closureToWithdrawal' in formData.delayReasons)) && !isReadOnly && (
+              {(delays.closureToWithdrawal || (formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0)) && !isReadOnly && (
                 <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
