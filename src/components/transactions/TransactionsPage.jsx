@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
@@ -8,6 +8,7 @@ import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import TransactionDetailModal from "../common/TransactionDetailModal";
+import AutoRefreshControl from "./AutoRefreshControl";
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ export default function TransactionsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(50);
+  const [itemsPerPage] = useState(20);
   const [filters, setFilters] = useState({
     status: "",
     clientSearch: "",
@@ -216,10 +217,37 @@ export default function TransactionsPage() {
     setFilteredTransactions(result);
   };
 
+  // Sort transactions: 3 levels - Active, Closed, Withdrawn
+  const sortedTransactions = useMemo(() => {
+    if (!filteredTransactions) return [];
+
+    return [...filteredTransactions].sort((a, b) => {
+      // Priority levels: 1 = Active, 2 = Closed, 3 = Withdrawn
+      const getPriority = (status) => {
+        if (status === "WITHDRAWN") return 3; // Last: Withdrawn
+        if (status === "CP_COMPLETED" || status === "CANCELLED") return 2; // Middle: Closed
+        return 1; // First: Active transactions (PENDING, REGISTERED, INSPECTION)
+      };
+
+      const priorityA = getPriority(a.status);
+      const priorityB = getPriority(b.status);
+
+      // Sort by priority first
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Within same priority level, sort by date (newest first)
+      const dateA = new Date(a.createdAt || a.warehouseArrivalDate || 0);
+      const dateB = new Date(b.createdAt || b.warehouseArrivalDate || 0);
+      return dateB - dateA; // Descending order (newest first)
+    });
+  }, [filteredTransactions]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const currentItems = sortedTransactions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -360,6 +388,15 @@ export default function TransactionsPage() {
                   </span>
                 )}
               </button>
+
+              {/* Auto-Refresh Control */}
+              <AutoRefreshControl
+                onRefresh={loadData}
+                loading={loading}
+                isModalOpen={showAddModal || showEditModal || showDetailModal}
+                isFilterOpen={showFilters}
+                onOpen={() => setShowFilters(false)}
+              />
 
               {canCreate && (
                 <button

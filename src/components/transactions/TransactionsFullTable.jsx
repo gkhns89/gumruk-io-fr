@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
@@ -51,33 +51,6 @@ export default function TransactionsFullTable({
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // İşlemleri sırala: 3 seviye - Aktif, Kapanan, Çekilen
-  const sortedTransactions = useMemo(() => {
-    if (!transactions) return [];
-
-    return [...transactions].sort((a, b) => {
-      // Öncelik seviyelerini belirle
-      const getPriority = (status) => {
-        if (status === "WITHDRAWN") return 3; // En son: Çekilenler
-        if (status === "CP_COMPLETED" || status === "CANCELLED") return 2; // Ortada: Kapananlar
-        return 1; // En üstte: Aktif işlemler (PENDING, REGISTERED, INSPECTION)
-      };
-
-      const priorityA = getPriority(a.status);
-      const priorityB = getPriority(b.status);
-
-      // Önce önceliğe göre sırala
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-
-      // Aynı öncelik seviyesindeyse, tarihe göre sırala (yeni en üstte)
-      const dateA = new Date(a.createdAt || a.warehouseArrivalDate || 0);
-      const dateB = new Date(b.createdAt || b.warehouseArrivalDate || 0);
-      return dateB - dateA; // Azalan sıralama (yeni önce)
-    });
-  }, [transactions]);
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
@@ -197,7 +170,7 @@ export default function TransactionsFullTable({
   }
 
   // Empty state
-  if (!sortedTransactions || sortedTransactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return (
       <div className="bg-white p-8 flex flex-col items-center justify-center gap-4">
         <span className="material-symbols-outlined text-6xl text-text-secondary">
@@ -283,7 +256,7 @@ export default function TransactionsFullTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sortedTransactions.map((transaction) => {
+            {transactions.map((transaction) => {
               const statusInfo = getStatusBadgeClass(transaction.status);
               const statusStyle = getStatusRowStyle(transaction.status);
               const gateBadgeClass = getGateBadge(transaction.gate);
