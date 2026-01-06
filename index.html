@@ -31,8 +31,24 @@
           var ua = navigator.userAgent;
           var browser = { name: 'unknown', version: 0 };
 
-          // Chrome (Edge değil)
-          if (/Chrome\/(\d+)/.test(ua) && !/Edg\//.test(ua)) {
+          // Edge (Chromium-based)
+          if (/Edg\/(\d+)/.test(ua)) {
+            browser.name = 'Edge';
+            browser.version = parseInt(ua.match(/Edg\/(\d+)/)[1]);
+          }
+          // Firefox
+          else if (/Firefox\/(\d+)/.test(ua)) {
+            browser.name = 'Firefox';
+            browser.version = parseInt(ua.match(/Firefox\/(\d+)/)[1]);
+          }
+          // Opera
+          else if (/OPR\/(\d+)/.test(ua) || /Opera\/(\d+)/.test(ua)) {
+            var match = ua.match(/OPR\/(\d+)/) || ua.match(/Opera\/(\d+)/);
+            browser.name = 'Opera';
+            browser.version = parseInt(match[1]);
+          }
+          // Chrome (Edge ve Opera değil)
+          else if (/Chrome\/(\d+)/.test(ua)) {
             browser.name = 'Chrome';
             browser.version = parseInt(ua.match(/Chrome\/(\d+)/)[1]);
           }
@@ -66,6 +82,9 @@
           var browser = getBrowserInfo();
           var requirements = {
             'Chrome': 113,
+            'Edge': 139,
+            'Firefox': 140,
+            'Opera': 121,
             'Safari': 27,
             'iOS Safari': 27,
             'Samsung Internet': 29
@@ -78,9 +97,24 @@
           return false; // Bilinmeyen tarayıcılar için uyarı gösterme
         }
 
+        // Minimum gereksinimi döndür
+        function getRequiredVersion(browserName) {
+          var requirements = {
+            'Chrome': 113,
+            'Edge': 139,
+            'Firefox': 140,
+            'Opera': 121,
+            'Safari': 27,
+            'iOS Safari': 27,
+            'Samsung Internet': 29
+          };
+          return requirements[browserName] || '?';
+        }
+
         // Uyarı banner'ını oluştur
         function createWarningBanner() {
           var browser = getBrowserInfo();
+          var requiredVersion = getRequiredVersion(browser.name);
 
           var banner = document.createElement('div');
           banner.id = 'browser-warning-banner';
@@ -98,8 +132,8 @@
                 '<span style="font-size: 24px;">⚠️</span>' +
                 '<div>' +
                   '<strong style="font-size: 15px; display: block; margin-bottom: 4px;">Tarayıcı Uyarısı</strong>' +
-                  '<span>Tarayıcınız (' + browser.name + ' ' + browser.version + ') güncel değil. Bu uygulama düzgün çalışmayabilir. ' +
-                  'Lütfen tarayıcınızı güncelleyin veya güncel bir tarayıcı kullanın.</span>' +
+                  '<span>Tarayıcınız (' + browser.name + ' ' + browser.version + ') güncel değil (minimum: ' + browser.name + ' ' + requiredVersion + '+). ' +
+                  'Bu uygulama düzgün çalışmayabilir. Lütfen tarayıcınızı güncelleyin veya güncel bir tarayıcı kullanın.</span>' +
                 '</div>' +
               '</div>' +
               '<div style="display: flex; gap: 8px;">' +

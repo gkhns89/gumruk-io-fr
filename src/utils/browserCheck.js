@@ -6,8 +6,24 @@ export function getBrowserInfo() {
   const ua = navigator.userAgent;
   const browser = { name: 'unknown', version: 0 };
 
-  // Chrome (Edge değil)
-  if (/Chrome\/(\d+)/.test(ua) && !/Edg\//.test(ua)) {
+  // Edge (Chromium-based)
+  if (/Edg\/(\d+)/.test(ua)) {
+    browser.name = 'Edge';
+    browser.version = parseInt(ua.match(/Edg\/(\d+)/)[1]);
+  }
+  // Firefox
+  else if (/Firefox\/(\d+)/.test(ua)) {
+    browser.name = 'Firefox';
+    browser.version = parseInt(ua.match(/Firefox\/(\d+)/)[1]);
+  }
+  // Opera
+  else if (/OPR\/(\d+)/.test(ua) || /Opera\/(\d+)/.test(ua)) {
+    const match = ua.match(/OPR\/(\d+)/) || ua.match(/Opera\/(\d+)/);
+    browser.name = 'Opera';
+    browser.version = parseInt(match[1]);
+  }
+  // Chrome (Edge ve Opera değil)
+  else if (/Chrome\/(\d+)/.test(ua)) {
     browser.name = 'Chrome';
     browser.version = parseInt(ua.match(/Chrome\/(\d+)/)[1]);
   }
@@ -43,6 +59,9 @@ export function getBrowserInfo() {
 export function getBrowserRequirements() {
   return {
     'Chrome': 113,
+    'Edge': 139,
+    'Firefox': 140,
+    'Opera': 121,
     'Safari': 27,
     'iOS Safari': 27,
     'Samsung Internet': 29
