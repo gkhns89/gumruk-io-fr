@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TransactionDetailModal from "../common/TransactionDetailModal";
+import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 
 // Durum renk mapping - Sadece sol border
 const getStatusRowStyle = (status) => {
@@ -41,6 +42,13 @@ const getGateBadge = (gate) => {
 export default function TransactionsTable({ transactions, loading, error, onRetry }) {
   const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  // Edge-scrolling functionality - auto-scroll when mouse near edges
+  const { containerRef: scrollContainerRef, scrollDirection } = useEdgeScroll({
+    edgeZoneWidth: 25,
+    scrollSpeed: 10,
+    enableOnTouch: false,
+  });
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
@@ -185,7 +193,25 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
         </span>
       </div>
       <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-        <div className="overflow-x-auto">
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto relative"
+        >
+          {/* Scroll direction indicator overlay - covers full scroll width */}
+          {scrollDirection && (
+            <div className="absolute inset-y-0 left-0 right-0 min-w-full pointer-events-none flex items-center justify-center z-10">
+              <div className="sticky left-1/2 -translate-x-1/2">
+                <div className="bg-black/10 dark:bg-white/10 backdrop-blur-sm rounded-full p-2 shadow-2xl">
+                  <div className="bg-white dark:bg-gray-800 rounded-full p-6 shadow-lg animate-pulse w-20 h-20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-6xl text-primary font-bold">
+                      {scrollDirection === "left" ? "arrow_back" : "arrow_forward"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <table className="w-full text-left">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <tr>
