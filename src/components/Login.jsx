@@ -163,7 +163,7 @@ export default function Login() {
       <footer className="w-full bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors">
         <div className="max-w-7xl mx-auto">
           <p className="text-center text-xs text-text-secondary">
-            © 2024 AACC Tracker. Tüm hakları saklıdır.
+            © {new Date().getFullYear()} AACC Tracker. Tüm hakları saklıdır.
           </p>
         </div>
       </footer>
