@@ -332,9 +332,9 @@ export default function TransactionsPage() {
 
     if (startPage > 1) {
       buttons.push(
-        <button key="first" onClick={() => handlePageChange(1)} className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</button>
+        <button key="first" onClick={() => handlePageChange(1)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-text-main">1</button>
       );
-      if (startPage > 2) buttons.push(<span key="dots1" className="px-2">...</span>);
+      if (startPage > 2) buttons.push(<span key="dots1" className="px-2 text-text-secondary">...</span>);
     }
 
     for (let i = startPage; i <= endPage; i++) {
@@ -342,7 +342,7 @@ export default function TransactionsPage() {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-2 border rounded-lg transition-colors ${currentPage === i ? 'bg-primary text-white border-primary' : 'border-gray-300 hover:bg-gray-50'}`}
+          className={`px-3 py-2 border rounded-lg transition-colors ${currentPage === i ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-text-main'}`}
         >
           {i}
         </button>
@@ -350,9 +350,9 @@ export default function TransactionsPage() {
     }
 
     if (endPage < totalPages) {
-      if (endPage < totalPages - 1) buttons.push(<span key="dots2" className="px-2">...</span>);
+      if (endPage < totalPages - 1) buttons.push(<span key="dots2" className="px-2 text-text-secondary">...</span>);
       buttons.push(
-        <button key="last" onClick={() => handlePageChange(totalPages)} className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{totalPages}</button>
+        <button key="last" onClick={() => handlePageChange(totalPages)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-text-main">{totalPages}</button>
       );
     }
 
@@ -773,9 +773,9 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1 || totalPages <= 1}
-                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
-                  <span className="material-symbols-outlined text-base">chevron_left</span>
+                  <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_left</span>
                   <span className="hidden xl:inline">Önceki</span>
                 </button>
 
@@ -803,10 +803,10 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages || totalPages <= 1}
-                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
                   <span className="hidden xl:inline">Sonraki</span>
-                  <span className="material-symbols-outlined text-base">chevron_right</span>
+                  <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_right</span>
                 </button>
               </div>
             </div>
