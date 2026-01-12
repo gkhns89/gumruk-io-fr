@@ -204,7 +204,7 @@ export default function NotificationCenter() {
       {/* Zil Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors relative"
+        className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
       >
         <span className="material-symbols-outlined text-text-main">notifications</span>
 
@@ -218,9 +218,9 @@ export default function NotificationCenter() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 animate-slide-in-top">
+        <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 z-50 animate-slide-in-top transition-colors">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-xl transition-colors">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">notifications_active</span>
               <h3 className="text-base font-bold text-text-main">Bildirimler</h3>
@@ -234,7 +234,7 @@ export default function NotificationCenter() {
             {/* Close button */}
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
+              className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               <span className="material-symbols-outlined text-text-secondary text-lg">close</span>
             </button>
@@ -242,11 +242,11 @@ export default function NotificationCenter() {
 
           {/* Action Buttons */}
           {notifications.length > 0 && (
-            <div className="flex items-center gap-2 p-3 border-b border-gray-100 bg-white">
+            <div className="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors">
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={loading || unreadCount === 0}
-                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-primary hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-sm">done_all</span>
                 Tümünü Okundu İşaretle
@@ -254,7 +254,7 @@ export default function NotificationCenter() {
               <button
                 onClick={handleClearAll}
                 disabled={loading}
-                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-sm">delete_sweep</span>
                 Tümünü Temizle
@@ -271,7 +271,7 @@ export default function NotificationCenter() {
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
-                <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3 transition-colors">
                   <span className="material-symbols-outlined text-gray-400 text-3xl">
                     notifications_off
                   </span>
@@ -282,15 +282,15 @@ export default function NotificationCenter() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {notifications.map((notification) => {
                   const { icon, color } = getNotificationIcon(notification.type);
 
                   return (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer group ${
-                        !notification.isRead ? 'bg-blue-50/50' : ''
+                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group ${
+                        !notification.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                       }`}
                       onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
                     >
@@ -328,7 +328,7 @@ export default function NotificationCenter() {
                             e.stopPropagation();
                             handleDeleteNotification(notification.id);
                           }}
-                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-gray-200 transition-all"
+                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                         >
                           <span className="material-symbols-outlined text-gray-500 text-lg">
                             close
@@ -344,7 +344,7 @@ export default function NotificationCenter() {
 
           {/* Footer - Bilgi */}
           {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl transition-colors">
               <p className="text-xs text-center text-gray-500">
                 Bildirimler 30 gün sonra otomatik olarak silinir
               </p>

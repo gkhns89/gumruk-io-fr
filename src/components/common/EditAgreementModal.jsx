@@ -147,7 +147,7 @@ export default function EditAgreementModal({
     if (!uploadConfig) return null;
 
     return (
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-text-secondary">
         Maksimum dosya boyutu: <strong>{uploadConfig.maxFileSizeMB} MB</strong> |
         İzin verilen formatlar: <strong>{uploadConfig.allowedFormats}</strong>
       </p>
@@ -161,20 +161,20 @@ export default function EditAgreementModal({
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={handleClose}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               Vekalet Anlaşmasını Düzenle
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               {clientInfo?.name || 'Müşteri'}
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <span className="material-symbols-outlined text-3xl">close</span>
           </button>
@@ -186,7 +186,7 @@ export default function EditAgreementModal({
             {/* Tarih Aralığı */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Başlangıç Tarihi *
                 </label>
                 <input
@@ -194,12 +194,12 @@ export default function EditAgreementModal({
                   value={formData.startDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Bitiş Tarihi *
                 </label>
                 <input
@@ -207,33 +207,33 @@ export default function EditAgreementModal({
                   value={formData.endDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                 />
               </div>
             </div>
 
             {/* Durum */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Durum *
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               >
                 <option value="ACTIVE">✅ Aktif - Vekalet geçerli ve kullanımda</option>
                 <option value="SUSPENDED">⏸️ Askıda - Geçici olarak durdurulmuş</option>
                 <option value="TERMINATED">🚫 Sonlandırılmış - Kalıcı olarak iptal edilmiş</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-secondary">
                 💡 Not: PENDING ve INACTIVE durumları yalnızca belge yükleme işlemi sırasında otomatik olarak ayarlanır.
               </p>
             </div>
 
             {/* Notlar */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Notlar
               </label>
               <textarea
@@ -241,22 +241,22 @@ export default function EditAgreementModal({
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={4}
                 placeholder="Anlaşma hakkında notlar..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
             </div>
 
             {/* Belge Yükleme */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Vekalet Belgesi
               </label>
               <div className="flex items-center gap-4">
                 <label className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary transition-colors">
-                    <span className="material-symbols-outlined text-gray-400">
+                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-primary transition-colors">
+                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
                       upload_file
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-text-secondary">
                       {selectedFile ? selectedFile.name : 'Yeni belge seç (opsiyonel)'}
                     </span>
                   </div>
@@ -271,22 +271,22 @@ export default function EditAgreementModal({
                   <button
                     type="button"
                     onClick={() => setSelectedFile(null)}
-                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 )}
               </div>
               {renderUploadConstraints() || (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-text-secondary">
                   PDF, JPG veya PNG formatında, maksimum 10MB
                 </p>
               )}
 
               {/* Mevcut Belge Bilgisi */}
               {agreement.documentPath && !selectedFile && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors">
+                  <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                     <span className="material-symbols-outlined text-lg">description</span>
                     <span>Mevcut belge kayıtlı</span>
                   </div>
@@ -294,14 +294,14 @@ export default function EditAgreementModal({
               )}
             </div>
 
-            {/* Upload Progress */}
+              {/* Upload Progress */}
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-text-secondary">
                   <span>Yükleniyor...</span>
                   <span>{uploadProgress}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors">
                   <div
                     className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
@@ -312,12 +312,12 @@ export default function EditAgreementModal({
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
             >
               İptal
             </button>

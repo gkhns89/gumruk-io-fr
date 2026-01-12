@@ -107,10 +107,10 @@ export default function Stats({ transactions, loading }) {
         return (
           <div
             key={index}
-            className={`flex flex-col gap-1 md:gap-2 rounded-xl p-4 md:p-6 ${colors.bg} border border-gray-200 hover:shadow-lg transition-shadow`}
+            className={`flex flex-col gap-1 md:gap-2 rounded-xl p-4 md:p-6 ${colors.bg} border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all`}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs md:text-sm lg:text-base font-medium leading-normal truncate opacity-80">
+              <p className="text-xs md:text-sm lg:text-base font-medium leading-normal truncate opacity-90 text-text-main">
                 {stat.label}
               </p>
               <span
@@ -121,7 +121,7 @@ export default function Stats({ transactions, loading }) {
             </div>
             {loading ? (
               <div className="h-8 md:h-12 flex items-center">
-                <div className="animate-pulse bg-gray-200 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
               </div>
             ) : (
               <p

@@ -80,25 +80,25 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300"
         onClick={(e) => {
           console.log('🟢 Modal content clicked - STOPPING propagation');
           e.stopPropagation();
         }}
       >
         {/* Modal Header - ClientsPage style */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               Yeni Müşteri Firması Ekle
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               Yeni bir müşteri firma kaydı oluşturun
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <span className="material-symbols-outlined text-3xl">close</span>
           </button>
@@ -109,7 +109,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
           <div className="space-y-4">
             {/* Firma Adı - UPPERCASE transformation from AddTransaction */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Firma Adı *
               </label>
               <input
@@ -121,14 +121,14 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                 }))}
                 required
                 placeholder="Örn: ABC DIŞ TİCARET LTD. ŞTİ."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
             </div>
 
             {/* Kısa Ad - UPPERCASE transformation + Required */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Kısa Ad *
               </label>
               <input
@@ -140,17 +140,17 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                 }))}
                 required
                 placeholder="Örn: ABC DT"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-secondary">
                 Belgelerde ve raporlarda kullanılacak kısa ad
               </p>
             </div>
 
             {/* Açıklama - Optional, NO uppercase */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Açıklama (İsteğe Bağlı)
               </label>
               <textarea
@@ -161,17 +161,17 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                 }))}
                 rows={3}
                 placeholder="Firma hakkında notlar..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
             </div>
           </div>
 
           {/* Modal Footer */}
-          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
               İptal
             </button>

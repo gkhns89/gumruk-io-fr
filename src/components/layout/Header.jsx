@@ -7,6 +7,7 @@ import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
 import NotificationCenter from "./NotificationCenter";
+import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
 
 export default function Header() {
@@ -105,7 +106,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="flex flex-col bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
+      <header className="flex flex-col bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 transition-colors duration-300">
         {/* Üst Satır - Mevcut Header (Hamburger, Logo, Arama, Butonlar) */}
         <div className="flex items-center justify-between px-4 lg:px-6 py-3 gap-2 lg:gap-4">
           {/* Left Section - Hamburger & Logo */}
@@ -113,7 +114,7 @@ export default function Header() {
           {/* Hamburger Menu - Mobilde görünür */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-main">menu</span>
           </button>
@@ -143,13 +144,13 @@ export default function Header() {
         <div className="hidden md:flex flex-1 justify-center px-4 lg:px-8 max-w-2xl" ref={searchRef}>
           <div className="w-full relative">
             <div className="flex w-full flex-1 items-stretch rounded-lg h-10">
-              <div className="text-text-secondary flex border border-gray-300 bg-white items-center justify-center pl-3 rounded-l-lg border-r-0">
+              <div className="text-text-secondary flex border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 items-center justify-center pl-3 rounded-l-lg border-r-0 transition-colors">
                 <span className="material-symbols-outlined text-xl">search</span>
               </div>
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 bg-white focus:border-primary h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-sm lg:text-base font-normal leading-normal"
+                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-sm lg:text-base font-normal leading-normal transition-colors"
                 placeholder="Dosya No, Beyanname No Ara..."
               />
               {searchQuery && (
@@ -158,7 +159,7 @@ export default function Header() {
                     setSearchQuery("");
                     setShowSearchResults(false);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <span className="material-symbols-outlined text-lg">close</span>
                 </button>
@@ -167,7 +168,7 @@ export default function Header() {
 
             {/* Search Results Dropdown */}
             {showSearchResults && (
-              <div className="absolute z-40 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto">
+              <div className="absolute z-40 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-96 overflow-y-auto transition-colors">
                 {searchLoading ? (
                   <div className="p-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -175,7 +176,7 @@ export default function Header() {
                   </div>
                 ) : searchResults.items.length > 0 ? (
                   <>
-                    <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
                       <p className="text-xs font-semibold text-text-secondary uppercase">
                         {searchResults.total > 5
                           ? `İlk 5 Sonuç (Toplam ${searchResults.total})`
@@ -187,7 +188,7 @@ export default function Header() {
                       <button
                         key={transaction.id}
                         onClick={(e) => handleTransactionClick(e, transaction)}
-                        className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">
@@ -235,12 +236,17 @@ export default function Header() {
               e.stopPropagation();
               setIsSearchOpen(!isSearchOpen);
             }}
-            className="flex md:hidden items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex md:hidden items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-main">
               {isSearchOpen ? 'close' : 'search'}
             </span>
           </button>
+
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-center h-10">
+            <ThemeToggle />
+          </div>
 
           {/* Notifications */}
           <NotificationCenter />
@@ -264,23 +270,23 @@ export default function Header() {
         </div>
 
         {/* Alt Satır - Gümrük Haberleri Slider */}
-        <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-100">
+        <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 border-t border-gray-100 dark:border-gray-700 transition-colors duration-300">
           <NewsSlider />
         </div>
       </header>
 
       {/* Mobile Search Bar - Expandable */}
-      <div className={`md:hidden px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 transition-all duration-200 ${isSearchOpen ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+      <div className={`md:hidden px-4 py-3 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-all duration-200 ${isSearchOpen ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
           <div className="relative" ref={mobileSearchRef}>
             <div className="flex w-full items-stretch rounded-lg h-10">
-              <div className="text-text-secondary flex border border-gray-300 bg-gray-50 items-center justify-center pl-3 rounded-l-lg border-r-0">
+              <div className="text-text-secondary flex border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 items-center justify-center pl-3 rounded-l-lg border-r-0 transition-colors">
                 <span className="material-symbols-outlined text-xl">search</span>
               </div>
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 bg-gray-50 focus:border-primary focus:bg-white h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:border-primary focus:bg-white dark:focus:bg-gray-700 h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal transition-colors"
                 placeholder="Dosya No, Beyanname No Ara..."
               />
               {searchQuery && (
@@ -289,7 +295,7 @@ export default function Header() {
                     setSearchQuery("");
                     setShowSearchResults(false);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <span className="material-symbols-outlined text-lg">close</span>
                 </button>
@@ -298,7 +304,7 @@ export default function Header() {
 
             {/* Mobile Search Results */}
             {showSearchResults && (
-              <div className="absolute z-40 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+              <div className="absolute z-40 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto transition-colors">
                 {searchLoading ? (
                   <div className="p-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -306,7 +312,7 @@ export default function Header() {
                   </div>
                 ) : searchResults.items.length > 0 ? (
                   <>
-                    <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
                       <p className="text-xs font-semibold text-text-secondary uppercase">
                         {searchResults.total > 5
                           ? `İlk 5 (Toplam ${searchResults.total})`
@@ -318,7 +324,7 @@ export default function Header() {
                       <button
                         key={transaction.id}
                         onClick={(e) => handleTransactionClick(e, transaction)}
-                        className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">

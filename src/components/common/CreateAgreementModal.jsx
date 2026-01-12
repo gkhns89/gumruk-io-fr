@@ -113,7 +113,7 @@ const CreateAgreementModal = ({
     if (!uploadConfig) return null;
 
     return (
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-text-secondary">
         Maksimum dosya boyutu: <strong>{uploadConfig.maxFileSizeMB} MB</strong> |
         İzin verilen formatlar: <strong>{uploadConfig.allowedFormats}</strong>
       </p>
@@ -126,14 +126,14 @@ const CreateAgreementModal = ({
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full p-8 transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               Vekalet Anlaşması Oluştur
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <span className="material-symbols-outlined text-3xl">close</span>
             </button>
@@ -142,16 +142,16 @@ const CreateAgreementModal = ({
           {/* Firma Seçici (sadece showClientSelector true ise) */}
           {showClientSelector && (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Müşteri Firma Seçin *
               </label>
               {loadingClients ? (
-                <div className="p-4 border border-gray-300 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Firmalar yükleniyor...</p>
+                <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg text-center transition-colors">
+                  <p className="text-sm text-text-secondary">Firmalar yükleniyor...</p>
                 </div>
               ) : availableClients.length === 0 ? (
-                <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
-                  <p className="text-sm text-yellow-800">
+                <div className="p-4 border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg transition-colors">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
                     Aktif vekaleti olmayan müşteri firmanız bulunmuyor.
                   </p>
                 </div>
@@ -165,7 +165,7 @@ const CreateAgreementModal = ({
                     setSelectedClientName(client?.name || '');
                     setError('');
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="">-- Firma Seçiniz --</option>
                   {availableClients.map(client => (
@@ -178,7 +178,7 @@ const CreateAgreementModal = ({
             </div>
           )}
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-text-secondary mb-6">
             {showClientSelector ? (
               selectedClientName ? (
                 <>
@@ -208,7 +208,7 @@ const CreateAgreementModal = ({
               className={`p-6 border-2 rounded-xl transition-all text-left group ${
                 canProceed
                   ? 'border-blue-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
-                  : 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60'
               }`}
             >
               <span className={`material-symbols-outlined text-4xl mb-3 transition-transform ${
@@ -216,10 +216,10 @@ const CreateAgreementModal = ({
               }`}>
                 bolt
               </span>
-              <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-gray-800' : 'text-gray-500'}`}>
+              <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-text-main' : 'text-text-secondary'}`}>
                 Hızlı Oluştur
               </h3>
-              <p className={`text-sm ${canProceed ? 'text-gray-600' : 'text-gray-400'}`}>
+              <p className={`text-sm ${canProceed ? 'text-text-secondary' : 'text-gray-400 dark:text-gray-500'}`}>
                 Tek adımda tüm bilgileri girin ve anlaşmayı hemen aktifleştirin.
               </p>
             </button>
@@ -237,7 +237,7 @@ const CreateAgreementModal = ({
               className={`p-6 border-2 rounded-xl transition-all text-left group ${
                 canProceed
                   ? 'border-green-200 hover:border-green-500 hover:bg-green-50 cursor-pointer'
-                  : 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60'
               }`}
             >
               <span className={`material-symbols-outlined text-4xl mb-3 transition-transform ${
@@ -245,10 +245,10 @@ const CreateAgreementModal = ({
               }`}>
                 checklist
               </span>
-              <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-gray-800' : 'text-gray-500'}`}>
+              <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-text-main' : 'text-text-secondary'}`}>
                 Adım Adım
               </h3>
-              <p className={`text-sm ${canProceed ? 'text-gray-600' : 'text-gray-400'}`}>
+              <p className={`text-sm ${canProceed ? 'text-text-secondary' : 'text-gray-400 dark:text-gray-500'}`}>
                 Anlaşmayı oluşturun, belge yükleyin, sonra aktifleştirin.
               </p>
             </button>
@@ -305,17 +305,17 @@ const CreateAgreementModal = ({
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+        <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-text-main">
                 Hızlı Vekalet Oluştur
               </h2>
-              <p className="text-sm text-gray-600 mt-1">{showClientSelector ? selectedClientName : clientCompanyName}</p>
+              <p className="text-sm text-text-secondary mt-1">{showClientSelector ? selectedClientName : clientCompanyName}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <span className="material-symbols-outlined text-3xl">close</span>
             </button>
@@ -325,7 +325,7 @@ const CreateAgreementModal = ({
             <div className="space-y-4">
               {/* Başlangıç Tarihi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Başlangıç Tarihi *
                 </label>
                 <input
@@ -334,13 +334,13 @@ const CreateAgreementModal = ({
                   value={formData.startDate}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </div>
 
               {/* Bitiş Tarihi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Bitiş Tarihi *
                 </label>
                 <input
@@ -349,13 +349,13 @@ const CreateAgreementModal = ({
                   value={formData.endDate}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </div>
 
               {/* Vekalet Belgesi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Vekalet Belgesi *
                 </label>
                 <input
@@ -363,7 +363,7 @@ const CreateAgreementModal = ({
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleFileChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
                 {formData.document && (
                   <p className="mt-2 text-sm text-green-600">
@@ -375,7 +375,7 @@ const CreateAgreementModal = ({
 
               {/* Notlar */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Notlar (İsteğe Bağlı)
                 </label>
                 <textarea
@@ -383,7 +383,7 @@ const CreateAgreementModal = ({
                   value={formData.notes}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="Anlaşma ile ilgili notlarınız..."
                 />
               </div>
@@ -393,7 +393,7 @@ const CreateAgreementModal = ({
               <button
                 type="button"
                 onClick={() => setMode(null)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
                 Geri
               </button>
@@ -441,15 +441,15 @@ const CreateAgreementModal = ({
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-text-main">
                 Adım 1/3: Anlaşma Bilgileri
               </h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <span className="material-symbols-outlined text-3xl">close</span>
               </button>
@@ -464,17 +464,17 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleCreateAgreement} className="p-6">
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>Müşteri:</strong> {showClientSelector ? selectedClientName : clientCompanyName}
               </p>
-              <p className="text-xs text-blue-600 mt-2">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                 İlk adımda anlaşma taslağı oluşturulacak (INACTIVE durumunda)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Notlar (İsteğe Bağlı)
               </label>
               <textarea
@@ -482,7 +482,7 @@ const CreateAgreementModal = ({
                 value={formData.notes}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Anlaşma ile ilgili notlarınız..."
               />
             </div>
@@ -491,7 +491,7 @@ const CreateAgreementModal = ({
               <button
                 type="button"
                 onClick={() => setMode(null)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
                 Geri
               </button>
@@ -542,15 +542,15 @@ const CreateAgreementModal = ({
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-text-main">
                 Adım 2/3: Vekalet Belgesi Yükle
               </h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <span className="material-symbols-outlined text-3xl">close</span>
               </button>
@@ -565,17 +565,17 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleUploadDocument} className="p-6">
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
+            <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg transition-colors">
+              <p className="text-sm text-green-800 dark:text-green-300">
                 ✓ Anlaşma oluşturuldu (INACTIVE)
               </p>
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                 Agreement ID: {createdAgreementId}
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Vekalet Belgesi *
               </label>
               <input
@@ -583,7 +583,7 @@ const CreateAgreementModal = ({
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
               {formData.document && (
                 <p className="mt-2 text-sm text-green-600 flex items-center gap-2">
@@ -598,7 +598,7 @@ const CreateAgreementModal = ({
               <button
                 type="button"
                 onClick={() => setWizardStep(1)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
                 Geri
               </button>
@@ -655,15 +655,15 @@ const CreateAgreementModal = ({
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-text-main">
                 Adım 3/3: Anlaşmayı Aktifleştir
               </h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <span className="material-symbols-outlined text-3xl">close</span>
               </button>
@@ -678,18 +678,18 @@ const CreateAgreementModal = ({
           </div>
 
           <form onSubmit={handleActivate} className="p-6">
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
+            <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg transition-colors">
+              <p className="text-sm text-green-800 dark:text-green-300">
                 ✓ Vekalet belgesi yüklendi (PENDING)
               </p>
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                 Son adım: Başlangıç ve bitiş tarihlerini belirleyin
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Başlangıç Tarihi *
                 </label>
                 <input
@@ -698,12 +698,12 @@ const CreateAgreementModal = ({
                   value={formData.startDate}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-main mb-2">
                   Bitiş Tarihi *
                 </label>
                 <input
@@ -712,7 +712,7 @@ const CreateAgreementModal = ({
                   value={formData.endDate}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -721,7 +721,7 @@ const CreateAgreementModal = ({
               <button
                 type="button"
                 onClick={() => setWizardStep(2)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
                 Geri
               </button>

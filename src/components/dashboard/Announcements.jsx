@@ -27,13 +27,13 @@ export default function Announcements() {
       <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
         Duyurular
       </h2>
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 flex flex-col gap-4">
+      <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex flex-col gap-4 transition-colors duration-300">
         {announcements.map((announcement, index) => (
           <div
             key={index}
             className={`${
               index !== announcements.length - 1
-                ? "border-b border-gray-200 pb-4"
+                ? "border-b border-gray-200 dark:border-gray-700 pb-4"
                 : ""
             }`}
           >

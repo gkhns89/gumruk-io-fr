@@ -92,20 +92,20 @@ export default function ViewClientModal({
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={handleClose}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               {isEditing ? 'Müşteri Bilgilerini Düzenle' : 'Müşteri Detayları'}
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               {client.name}
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <span className="material-symbols-outlined text-3xl">close</span>
           </button>
@@ -116,7 +116,7 @@ export default function ViewClientModal({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Sol Kolon - Firma Bilgileri */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+              <h3 className="text-lg font-semibold text-text-main border-b border-gray-200 dark:border-gray-700 pb-2">
                 Firma Bilgileri
               </h3>
 
@@ -124,7 +124,7 @@ export default function ViewClientModal({
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Firma Adı */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                       Firma Adı *
                     </label>
                     <input
@@ -135,14 +135,14 @@ export default function ViewClientModal({
                         name: toUpperCase(e.target.value, locale)
                       }))}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                       style={{ textTransform: 'uppercase' }}
                     />
                   </div>
 
                   {/* Kısa Ad */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                       Kısa Ad *
                     </label>
                     <input
@@ -153,14 +153,14 @@ export default function ViewClientModal({
                         shortName: toUpperCase(e.target.value, locale)
                       }))}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                       style={{ textTransform: 'uppercase' }}
                     />
                   </div>
 
                   {/* Açıklama */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                       Açıklama
                     </label>
                     <textarea
@@ -170,7 +170,7 @@ export default function ViewClientModal({
                         description: e.target.value
                       }))}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                     />
                   </div>
 
@@ -186,7 +186,7 @@ export default function ViewClientModal({
                           description: client?.description || ''
                         });
                       }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                     >
                       İptal
                     </button>
@@ -203,40 +203,40 @@ export default function ViewClientModal({
                 <div className="space-y-4">
                   {/* Firma Adı */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
                       Firma Adı
                     </label>
-                    <p className="text-base font-semibold text-gray-800">
+                    <p className="text-base font-semibold text-text-main">
                       {client.name}
                     </p>
                   </div>
 
                   {/* Kısa Ad */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
                       Kısa Ad
                     </label>
-                    <p className="text-base font-semibold text-gray-800">
+                    <p className="text-base font-semibold text-text-main">
                       {client.shortName || '-'}
                     </p>
                   </div>
 
                   {/* Açıklama */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
                       Açıklama
                     </label>
-                    <p className="text-base text-gray-700">
+                    <p className="text-base text-text-main">
                       {client.description || '-'}
                     </p>
                   </div>
 
                   {/* Oluşturulma Tarihi */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
                       Oluşturulma Tarihi
                     </label>
-                    <p className="text-base text-gray-700">
+                    <p className="text-base text-text-main">
                       {client.createdAt
                         ? new Date(client.createdAt).toLocaleDateString('tr-TR', {
                             year: 'numeric',
@@ -251,7 +251,7 @@ export default function ViewClientModal({
                   {canEdit && !isEditing && (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                     >
                       <span className="material-symbols-outlined">edit</span>
                       Firma Bilgilerini Düzenle
@@ -263,7 +263,7 @@ export default function ViewClientModal({
 
             {/* Sağ Kolon - Vekalet Bilgileri */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+              <h3 className="text-lg font-semibold text-text-main border-b border-gray-200 dark:border-gray-700 pb-2">
                 Vekalet Bilgileri
               </h3>
 
@@ -283,7 +283,7 @@ export default function ViewClientModal({
               {hasAgreement && canEdit && onEditAgreement && (
                 <button
                   onClick={() => onEditAgreement(client, agreement)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
                 >
                   <span className="material-symbols-outlined">edit_document</span>
                   Vekalet Bilgilerini Düzenle
@@ -294,10 +294,10 @@ export default function ViewClientModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end transition-colors duration-300">
           <button
             onClick={handleClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition-colors"
+            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors"
           >
             Kapat
           </button>

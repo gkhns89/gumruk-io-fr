@@ -65,11 +65,11 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white">
                 <span className="material-symbols-outlined text-2xl">description</span>
@@ -107,42 +107,42 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
 
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Alıcı Firma</p>
                 <p className="text-text-main font-semibold">
                   {transaction.clientCompany?.name || transaction.recipientName || '-'}
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Beyanname No</p>
                 <p className="text-text-main font-semibold">
                   {transaction.declarationNumber || '-'}
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Antrepo Varış Tarihi</p>
                 <p className="text-text-main font-semibold">
                   {formatDate(transaction.warehouseArrivalDate)}
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Gümrük Antrepo</p>
                 <p className="text-text-main font-semibold">
                   {transaction.customsWarehouse || '-'}
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Kap</p>
                 <p className="text-text-main font-semibold">
                   {transaction.containerAmount || '-'}
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Ağırlık</p>
                 <p className="text-text-main font-semibold">
                   {transaction.weight ? `${transaction.weight} kg` : '-'}
@@ -150,7 +150,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               </div>
 
               {transaction.description && (
-                <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 md:col-span-2 transition-colors">
                   <p className="text-text-secondary text-sm mb-1">Açıklama</p>
                   <p className="text-text-main">
                     {transaction.description}
@@ -210,7 +210,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               onClick={onClose}
               className="px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"

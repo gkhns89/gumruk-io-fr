@@ -363,7 +363,7 @@ export default function TransactionsPage() {
     <MainLayout hasFooter={true}>
       <div className="flex flex-col">
         {/* Page Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors duration-300">
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -378,7 +378,7 @@ export default function TransactionsPage() {
               <button
                 ref={filterButtonRef}
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex-1 sm:flex-initial"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold flex-1 sm:flex-initial"
               >
                 <span className="material-symbols-outlined text-primary">tune</span>
                 <span className="whitespace-nowrap text-text-main">Filtreler</span>
@@ -412,8 +412,8 @@ export default function TransactionsPage() {
 
           {/* Filter Drawer */}
           {showFilters && (
-            <div ref={filterDrawerRef} className="mt-4 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden animate-slide-in-top">
-              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-primary/10">
+            <div ref={filterDrawerRef} className="mt-4 bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-slide-in-top transition-colors duration-300">
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 transition-colors duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">filter_alt</span>
@@ -428,7 +428,7 @@ export default function TransactionsPage() {
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800"
                     >
                       <span className="material-symbols-outlined text-sm">close</span>
                       Filtreleri Temizle
@@ -452,7 +452,7 @@ export default function TransactionsPage() {
                       placeholder="Dosya No, Beyanname No, Alıcı/Gönderici..."
                       value={filters.search}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white transition-all"
+                      className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary dark:bg-gray-800 dark:text-gray-100 text-sm bg-white transition-all"
                     />
                     {filters.search && (
                       <button
@@ -555,7 +555,7 @@ export default function TransactionsPage() {
                   {showDateFilters && (
                     <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 animate-slideDown">
                   {/* Antrepo Varış Tarihi */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex items-center justify-center h-8 w-8 bg-blue-100 rounded-lg">
                         <span className="material-symbols-outlined text-blue-600 text-base">warehouse</span>
@@ -585,7 +585,7 @@ export default function TransactionsPage() {
                   </div>
 
                   {/* Tescil Tarihi */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex items-center justify-center h-8 w-8 bg-amber-100 rounded-lg">
                         <span className="material-symbols-outlined text-amber-600 text-base">assignment</span>
@@ -615,7 +615,7 @@ export default function TransactionsPage() {
                   </div>
 
                   {/* Hat Kapanma Tarihi */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex items-center justify-center h-8 w-8 bg-orange-100 rounded-lg">
                         <span className="material-symbols-outlined text-orange-600 text-base">lock</span>
@@ -645,7 +645,7 @@ export default function TransactionsPage() {
                   </div>
 
                   {/* Çekilme Tarihi */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 rounded-lg">
                         <span className="material-symbols-outlined text-emerald-600 text-base">check_circle</span>
@@ -683,7 +683,7 @@ export default function TransactionsPage() {
 
         {/* Table Container */}
         <div className="p-4 md:p-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <TransactionsFullTable
               transactions={currentItems}
               loading={loading}
@@ -730,40 +730,40 @@ export default function TransactionsPage() {
       )}
 
       {/* Fixed Footer with Statistics and Pagination */}
-      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-30 transition-[left] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
+      <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 shadow-lg z-30 transition-[left,colors] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
         <div className="px-4 md:px-6 py-3">
           {!loading && filteredTransactions.length > 0 ? (
             <div className="flex items-center justify-between gap-4">
               {/* Left: Info Section */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
-                  <span className="material-symbols-outlined text-blue-600 text-base">inventory</span>
-                  <span className="text-xs font-medium text-blue-700">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">inventory</span>
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                     Toplam: <strong className="font-bold">{transactions.length}</strong>
                   </span>
                 </div>
 
                 {hasActiveFilters && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
-                    <span className="material-symbols-outlined text-green-600 text-base">filter_alt</span>
-                    <span className="text-xs font-medium text-green-700">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base">filter_alt</span>
+                    <span className="text-xs font-medium text-green-700 dark:text-green-300">
                       Filtrelenmiş: <strong className="font-bold">{filteredTransactions.length}</strong>
                     </span>
                   </div>
                 )}
 
                 {isClientUser && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-lg border border-amber-200">
-                    <span className="material-symbols-outlined text-amber-600 text-base">visibility</span>
-                    <span className="text-xs font-medium text-amber-700">Görüntüleme</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 transition-colors">
+                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">visibility</span>
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Görüntüleme</span>
                   </div>
                 )}
               </div>
 
               {/* Center: Display Info */}
-              <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
-                <span className="material-symbols-outlined text-purple-600 text-base">description</span>
-                <span className="text-xs font-medium text-purple-700">
+              <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors">
+                <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">description</span>
+                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
                   Gösterilen: <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTransactions.length)}</strong> / <strong className="font-bold">{filteredTransactions.length}</strong>
                 </span>
               </div>
@@ -773,7 +773,7 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1 || totalPages <= 1}
-                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
                 >
                   <span className="material-symbols-outlined text-base">chevron_left</span>
                   <span className="hidden xl:inline">Önceki</span>
@@ -785,16 +785,16 @@ export default function TransactionsPage() {
                       {renderPaginationButtons()}
                     </div>
 
-                    <div className="md:hidden flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                    <div className="md:hidden flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                       <span className="text-xs font-medium text-text-main">
                         {currentPage} / {totalPages}
                       </span>
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-                    <span className="material-symbols-outlined text-gray-600 text-sm">article</span>
-                    <span className="text-xs font-medium text-gray-700">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                    <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-sm">article</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       <strong className="font-bold">1 / 1</strong>
                     </span>
                   </div>
@@ -803,7 +803,7 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages || totalPages <= 1}
-                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                  className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
                 >
                   <span className="hidden xl:inline">Sonraki</span>
                   <span className="material-symbols-outlined text-base">chevron_right</span>
@@ -812,9 +812,9 @@ export default function TransactionsPage() {
             </div>
           ) : (
             <div className="flex items-center justify-center">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-                <span className="material-symbols-outlined text-gray-600 text-base">inventory</span>
-                <span className="text-xs font-medium text-gray-700">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-base">inventory</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                   {loading ? "Yükleniyor..." : "Veri yok"}
                 </span>
               </div>

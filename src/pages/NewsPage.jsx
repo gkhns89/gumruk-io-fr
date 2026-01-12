@@ -85,12 +85,12 @@ const NewsPage = () => {
   const renderNewsCard = (item, index) => (
     <div
       key={item.id || index}
-      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200 flex flex-col cursor-pointer"
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col cursor-pointer"
       onClick={() => handleNewsClick(item)}
     >
       {/* Card Header */}
-      <div className="p-3 border-b border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-2 text-gray-600">
+      <div className="p-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 transition-colors">
+        <div className="flex items-center gap-2 text-text-secondary">
           <span className="material-symbols-outlined text-base">
             newspaper
           </span>
@@ -102,18 +102,18 @@ const NewsPage = () => {
 
       {/* Card Content */}
       <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-base font-semibold text-gray-800 mb-2 line-clamp-2 leading-tight">
+        <h3 className="text-base font-semibold text-text-main mb-2 line-clamp-2 leading-tight">
           {item.title}
         </h3>
 
         {item.summary && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-3 leading-relaxed flex-1">
+          <p className="text-sm text-text-secondary mb-3 line-clamp-3 leading-relaxed flex-1">
             {item.summary}
           </p>
         )}
 
         {item.publishedDate && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 mt-auto">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-auto">
             <span className="material-symbols-outlined text-base">
               schedule
             </span>
@@ -166,16 +166,16 @@ const NewsPage = () => {
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Page Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">
                   feed
                 </span>
                 Gümrük Haberleri
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-text-secondary mt-2">
                 T.C. Ticaret Bakanlığı gümrük haberlerini buradan takip edebilirsiniz
               </p>
             </div>
@@ -184,7 +184,7 @@ const NewsPage = () => {
           {/* Search Bar */}
           <div className="mt-4 flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
                 search
               </span>
               <input
@@ -192,7 +192,7 @@ const NewsPage = () => {
                 placeholder="Haberlerde ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
               />
             </div>
             <button
@@ -210,36 +210,36 @@ const NewsPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-6 transition-colors">
           {loading && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <span className="material-symbols-outlined text-5xl text-primary animate-spin">
                   refresh
                 </span>
-                <p className="mt-4 text-gray-600">Haberler yükleniyor...</p>
+                <p className="mt-4 text-text-secondary">Haberler yükleniyor...</p>
               </div>
             </div>
           )}
 
           {error && !loading && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <span className="material-symbols-outlined text-red-500 text-xl">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 flex items-start gap-3 transition-colors">
+              <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-xl">
                 error
               </span>
               <div>
-                <p className="text-red-800 font-medium">Hata</p>
-                <p className="text-red-600 text-sm mt-1">{error}</p>
+                <p className="text-red-800 dark:text-red-300 font-medium">Hata</p>
+                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>
               </div>
             </div>
           )}
 
           {!loading && !error && filteredNews.length === 0 && (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-              <span className="material-symbols-outlined text-6xl text-gray-300">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center transition-colors">
+              <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600">
                 feed
               </span>
-              <p className="mt-4 text-gray-600">
+              <p className="mt-4 text-text-secondary">
                 {searchTerm ? 'Arama kriterlerine uygun haber bulunamadı' : 'Henüz haber bulunmuyor'}
               </p>
             </div>
@@ -257,14 +257,14 @@ const NewsPage = () => {
                       </span>
                       <h2 className="text-base font-bold">Bugünün Haberleri</h2>
                     </div>
-                    <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent"></div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-primary/20 dark:from-primary/30 to-transparent"></div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     {todayNews.map((item, index) => (
                       <div
                         key={item.id || index}
-                        className="bg-gradient-to-br from-white to-blue-50/50 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-primary/20 hover:border-primary/50 flex flex-col cursor-pointer transform hover:-translate-y-1"
+                        className="bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-800 dark:to-blue-950/30 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-primary/20 dark:border-primary/30 hover:border-primary/50 dark:hover:border-primary/60 flex flex-col cursor-pointer transform hover:-translate-y-1"
                         onClick={() => handleNewsClick(item)}
                       >
                         {/* Featured Badge */}
@@ -289,12 +289,12 @@ const NewsPage = () => {
 
                         {/* Content */}
                         <div className="p-5 md:p-6 flex-1 flex flex-col">
-                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+                          <h3 className="text-lg md:text-xl font-bold text-text-main mb-3 line-clamp-2 leading-tight">
                             {item.title}
                           </h3>
 
                           {item.summary && (
-                            <p className="text-sm md:text-base text-gray-700 mb-4 line-clamp-3 leading-relaxed flex-1">
+                            <p className="text-sm md:text-base text-text-secondary mb-4 line-clamp-3 leading-relaxed flex-1">
                               {item.summary}
                             </p>
                           )}
@@ -322,13 +322,13 @@ const NewsPage = () => {
               {yesterdayNews.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
                       <span className="material-symbols-outlined text-lg">
                         schedule
                       </span>
                       <h2 className="text-sm font-semibold">Dün</h2>
                     </div>
-                    <div className="flex-1 h-px bg-gray-200"></div>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -341,13 +341,13 @@ const NewsPage = () => {
               {thisWeekNews.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
                       <span className="material-symbols-outlined text-lg">
                         calendar_month
                       </span>
                       <h2 className="text-sm font-semibold">Bu Hafta</h2>
                     </div>
-                    <div className="flex-1 h-px bg-gray-200"></div>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -360,13 +360,13 @@ const NewsPage = () => {
               {olderNews.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
                       <span className="material-symbols-outlined text-lg">
                         history
                       </span>
                       <h2 className="text-sm font-semibold">Önceki Haberler</h2>
                     </div>
-                    <div className="flex-1 h-px bg-gray-200"></div>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -382,25 +382,25 @@ const NewsPage = () => {
       {/* Detail Modal */}
       {showModal && selectedNews && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto animate-slide-up"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto animate-slide-up transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10 rounded-t-lg">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10 rounded-t-lg transition-colors">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="material-symbols-outlined text-primary text-2xl">newspaper</span>
                 <h2 className="text-lg font-bold text-text-main truncate">Gümrük Haberi</h2>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 ml-2"
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0 ml-2"
                 aria-label="Kapat"
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-text-main">close</span>
               </button>
             </div>
 
@@ -411,7 +411,7 @@ const NewsPage = () => {
               </h3>
 
               {selectedNews.publishedDate && (
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                   <span className="material-symbols-outlined text-base">schedule</span>
                   <time dateTime={selectedNews.publishedDate}>
                     {formatDate(selectedNews.publishedDate)}
@@ -424,7 +424,7 @@ const NewsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 {selectedNews.link && (
                   <button
                     onClick={handleGoToLink}
@@ -437,7 +437,7 @@ const NewsPage = () => {
 
                 <button
                   onClick={handleCloseModal}
-                  className="px-5 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-text-main"
                 >
                   Kapat
                 </button>
@@ -499,13 +499,25 @@ const NewsPage = () => {
           border-radius: 10px;
         }
 
+        .dark .overflow-y-auto::-webkit-scrollbar-track {
+          background: #374151;
+        }
+
         .overflow-y-auto::-webkit-scrollbar-thumb {
           background: #888;
           border-radius: 10px;
         }
 
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #6b7280;
+        }
+
         .overflow-y-auto::-webkit-scrollbar-thumb:hover {
           background: #555;
+        }
+
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
         }
       `}</style>
     </MainLayout>

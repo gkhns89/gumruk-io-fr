@@ -23,39 +23,39 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
   const getStatusBadge = (status) => {
     const badges = {
       ACTIVE: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
-        border: 'border-green-300',
+        bg: 'bg-green-100 dark:bg-green-900/30',
+        text: 'text-green-800 dark:text-green-300',
+        border: 'border-green-300 dark:border-green-700',
         label: 'Aktif'
       },
       PENDING: {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
-        border: 'border-yellow-300',
+        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+        text: 'text-yellow-800 dark:text-yellow-300',
+        border: 'border-yellow-300 dark:border-yellow-700',
         label: 'Onay Bekliyor'
       },
       INACTIVE: {
-        bg: 'bg-gray-100',
-        text: 'text-gray-800',
-        border: 'border-gray-300',
+        bg: 'bg-gray-100 dark:bg-gray-800',
+        text: 'text-gray-800 dark:text-gray-300',
+        border: 'border-gray-300 dark:border-gray-600',
         label: 'Pasif'
       },
       SUSPENDED: {
-        bg: 'bg-orange-100',
-        text: 'text-orange-800',
-        border: 'border-orange-300',
+        bg: 'bg-orange-100 dark:bg-orange-900/30',
+        text: 'text-orange-800 dark:text-orange-300',
+        border: 'border-orange-300 dark:border-orange-700',
         label: 'Askıda'
       },
       TERMINATED: {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
-        border: 'border-red-300',
+        bg: 'bg-red-100 dark:bg-red-900/30',
+        text: 'text-red-800 dark:text-red-300',
+        border: 'border-red-300 dark:border-red-700',
         label: 'Sonlandırıldı'
       },
       NO_AGREEMENT: {
-        bg: 'bg-gray-100',
-        text: 'text-gray-600',
-        border: 'border-gray-300',
+        bg: 'bg-gray-100 dark:bg-gray-800',
+        text: 'text-gray-600 dark:text-gray-400',
+        border: 'border-gray-300 dark:border-gray-600',
         label: 'Anlaşma Yok'
       }
     };
@@ -68,22 +68,22 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
     const badge = getStatusBadge('NO_AGREEMENT');
 
     return (
-      <div className={`bg-gray-50 border-2 border-gray-200 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'}`}>
+      <div className={`bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} transition-colors`}>
         <div className={`flex items-center ${compact ? 'flex-col gap-3' : 'justify-between'}`}>
           <div className="flex items-center gap-3 w-full">
-            <span className="material-symbols-outlined text-gray-500 text-2xl">
+            <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-2xl">
               info
             </span>
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gray-700">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {clientName}
                 </span>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
                   {badge.label}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Bu müşteri ile vekalet anlaşmanız bulunmamaktadır
               </p>
             </div>
@@ -117,13 +117,13 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
   }
 
   return (
-    <div className={`border-2 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} ${
-      isActive ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+    <div className={`border-2 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} transition-colors ${
+      isActive ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
     }`}>
       <div className={`flex ${compact ? 'flex-col' : 'items-start justify-between'}`}>
         <div className={`flex items-start gap-3 flex-1 ${compact ? 'w-full' : ''}`}>
           <span className={`material-symbols-outlined ${compact ? 'text-xl' : 'text-2xl'} mt-0.5 ${
-            isActive ? 'text-green-600' : 'text-yellow-600'
+            isActive ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
           }`}>
             verified
           </span>
@@ -131,10 +131,10 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
           <div className="flex-1">
             {/* Firma adı ve durum badge'i */}
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-800">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {clientName}
               </span>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
                 {badge.label}
               </span>
             </div>
@@ -145,12 +145,12 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                 {/* Başlangıç tarihi */}
                 {agreement.agreementStartDate && (
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 text-sm">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
                       event
                     </span>
                     <div>
-                      <p className="text-xs text-gray-600">Başlangıç</p>
-                      <p className="text-sm font-semibold text-gray-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Başlangıç</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                         {new Date(agreement.agreementStartDate).toLocaleDateString('tr-TR')}
                       </p>
                     </div>
@@ -160,12 +160,12 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                 {/* Bitiş tarihi */}
                 {agreement.agreementEndDate && (
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 text-sm">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
                       event
                     </span>
                     <div>
-                      <p className="text-xs text-gray-600">Bitiş</p>
-                      <p className="text-sm font-semibold text-gray-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Bitiş</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                         {new Date(agreement.agreementEndDate).toLocaleDateString('tr-TR')}
                       </p>
                     </div>
@@ -175,13 +175,13 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                 {/* Kalan süre */}
                 {remainingDays !== null && (
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 text-sm">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
                       schedule
                     </span>
                     <div>
-                      <p className="text-xs text-gray-600">Kalan Süre</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Kalan Süre</p>
                       <p className={`text-sm font-semibold ${
-                        remainingDays < 30 ? 'text-red-600' : 'text-gray-800'
+                        remainingDays < 30 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-200'
                       }`}>
                         {remainingDays} gün
                         {remainingDays < 30 && ' ⚠️'}
@@ -194,7 +194,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
             {/* PENDING durumu için uyarı */}
             {agreement.agreementStatus === 'PENDING' && (
-              <p className="text-xs text-yellow-700 mt-2">
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
                 ⏳ Anlaşma onay bekliyor. Aktifleştirme için yöneticinizle iletişime geçin.
               </p>
             )}
@@ -206,7 +206,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
           <button
             type="button"
             onClick={handleDownloadDocument}
-            className={`flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
               compact ? 'w-full justify-center mt-3' : ''
             }`}
           >

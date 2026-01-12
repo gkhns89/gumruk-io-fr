@@ -203,7 +203,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             onOpen();
           }
         }}
-        className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-semibold flex-1 sm:flex-initial relative"
+        className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold flex-1 sm:flex-initial relative"
         title="Otomatik Yenileme"
       >
         {/* Refresh Icon with Spinning Animation */}
@@ -226,10 +226,10 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
       {isOpen && (
         <div
           ref={panelRef}
-          className="absolute right-0 mt-4 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden animate-slide-in-top w-80 z-50"
+          className="absolute right-0 mt-4 bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-slide-in-top w-80 z-50 transition-colors"
         >
           {/* Header */}
-          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">schedule</span>
@@ -286,7 +286,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                     onClick={() => handleIntervalChange(option.value)}
                     className={`px-3 py-2 text-xs font-medium rounded-lg border-2 transition-colors ${refreshInterval === option.value
                         ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-text-main border-gray-200 hover:border-primary hover:bg-gray-50'
+                        : 'bg-white dark:bg-gray-800 text-text-main border-gray-200 dark:border-gray-600 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                   >
                     {option.label}
@@ -296,7 +296,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             </div>
 
             {/* Divider */}
-            <div className="border-t border-gray-100"></div>
+            <div className="border-t border-gray-100 dark:border-gray-700"></div>
 
             {/* Last Refresh Info */}
             <div className="flex items-center gap-2 text-xs text-text-secondary">
@@ -321,9 +321,9 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
 
             {/* Smart Pause Indicator */}
             {isEnabled && isModalOpen && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                <span className="material-symbols-outlined text-amber-600 text-base">pause_circle</span>
-                <span className="text-xs font-medium text-amber-700">
+              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg transition-colors">
+                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">pause_circle</span>
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
                   Modal açıkken otomatik yenileme duraklatıldı
                 </span>
               </div>

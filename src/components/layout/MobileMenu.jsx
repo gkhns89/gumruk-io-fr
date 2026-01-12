@@ -100,9 +100,9 @@ export default function MobileMenu({ isOpen, onClose }) {
       />
       
       {/* Drawer */}
-      <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slide-in-left">
+      <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-background-dark shadow-2xl flex flex-col animate-slide-in-left transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-lg">
               {user?.username?.charAt(0).toUpperCase() || "U"}
@@ -118,7 +118,7 @@ export default function MobileMenu({ isOpen, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-secondary">close</span>
           </button>
@@ -126,7 +126,7 @@ export default function MobileMenu({ isOpen, onClose }) {
 
         {/* Company Info */}
         {user?.company?.name && (
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Firma</p>
             <p className="text-sm text-text-main font-medium truncate">
               {user.company.name}
@@ -147,7 +147,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     active
                       ? "bg-primary text-white shadow-md"
-                      : "hover:bg-gray-100 text-text-main"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                   }`}
                 >
                   <span className="material-symbols-outlined">
@@ -239,7 +239,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     active
                       ? "bg-primary text-white shadow-md"
-                      : "hover:bg-gray-100 text-text-main"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                   }`}
                 >
                   <span className="material-symbols-outlined">

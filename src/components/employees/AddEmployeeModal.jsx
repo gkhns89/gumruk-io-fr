@@ -92,32 +92,32 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               Yeni Çalışan Ekle
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               Yeni bir çalışan kaydı oluşturun
             </p>
             {currentLimits && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {currentLimits.currentBrokerUsers} / {currentLimits.maxBrokerUsers} broker kullanıcı
                 {isQuotaExceeded && (
-                  <span className="ml-2 text-red-600 font-semibold">• Limit doldu!</span>
+                  <span className="ml-2 text-red-600 dark:text-red-400 font-semibold">• Limit doldu!</span>
                 )}
               </p>
             )}
           </div>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <span className="material-symbols-outlined text-gray-600">close</span>
+            <span className="material-symbols-outlined text-text-secondary">close</span>
           </button>
         </div>
 
@@ -126,7 +126,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
           <div className="space-y-4">
             {/* Username - UPPERCASE transformation */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Kullanıcı Adı *
               </label>
               <input
@@ -138,17 +138,17 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 }))}
                 required
                 placeholder="AHMET YILMAZ"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-secondary">
                 Çalışanın adı ve soyadı
               </p>
             </div>
 
             {/* Email - lowercase transformation */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Email *
               </label>
               <input
@@ -163,15 +163,15 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 }}
                 required
                 placeholder="ahmet.yilmaz@example.com"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase ${
-                  emailError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-primary lowercase transition-colors ${
+                  emailError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 style={{ textTransform: 'lowercase' }}
               />
               {emailError ? (
                 <p className="mt-1 text-xs text-red-600">{emailError}</p>
               ) : (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-text-secondary">
                   Giriş için kullanılacak email adresi
                 </p>
               )}
@@ -179,7 +179,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Şifre *
               </label>
               <input
@@ -195,14 +195,14 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 required
                 minLength={6}
                 placeholder="En az 6 karakter"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
-                  passwordError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${
+                  passwordError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
               />
               {passwordError ? (
                 <p className="mt-1 text-xs text-red-600">{passwordError}</p>
               ) : (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-text-secondary">
                   Minimum 6 karakter
                 </p>
               )}
@@ -210,7 +210,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
 
             {/* Role Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Rol *
               </label>
               <select
@@ -220,22 +220,22 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                   globalRole: e.target.value
                 }))}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               >
                 <option value="BROKER_USER">Broker Kullanıcısı</option>
                 <option value="BROKER_ADMIN">Broker Yöneticisi</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-secondary">
                 Broker Yöneticisi: Tüm yetkilere sahip • Broker Kullanıcısı: İşlem yönetimi
               </p>
             </div>
 
             {/* Quota Warning */}
             {isQuotaExceeded && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="bg-amber-50 dark:bg-gray-800 border border-amber-200 dark:border-amber-700 rounded-lg p-3 transition-colors duration-300">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
-                  <p className="text-amber-800 text-sm">
+                  <p className="text-amber-800 dark:text-amber-300 text-sm">
                     Çalışan limiti doldu. Yeni çalışan ekleyebilmek için aboneliğinizi yükseltin.
                   </p>
                 </div>
@@ -244,11 +244,11 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
           </div>
 
           {/* Modal Footer */}
-          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
               İptal
             </button>

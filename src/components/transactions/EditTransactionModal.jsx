@@ -776,11 +776,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
             <div>
               <h2 className="text-2xl font-bold text-text-main">
                 {isReadOnly ? t('transaction.details') : t('transaction.edit')}
@@ -802,7 +802,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
               {/* Firma Bilgileri - Read Only */}
-              <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 p-4 rounded-lg">
+              <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg transition-colors">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-text-secondary text-sm font-medium pb-2">
@@ -849,11 +849,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isFieldLocked}
                   required
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.fileNo
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterFileNo'))}
                   style={{ textTransform: 'uppercase' }}
                 />
@@ -893,7 +893,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     type="text"
                     value={transaction.customs?.customsShortName || ""}
                     disabled
-                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 h-12 placeholder:text-neutral p-3 text-base font-normal"
                     placeholder={toUpperCase(t('placeholders.enterCustomsName'))}
                     style={{ textTransform: 'uppercase' }}
                   />
@@ -914,11 +914,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         }}
                         onFocus={() => setShowCustomsDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.customsId
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
+                            : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                        } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -957,9 +957,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                     {/* Customs Dropdown List */}
                     {showCustomsDropdown && !loadingCustoms && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
                         {filteredCustoms.length === 0 && !customsSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               account_balance
                             </span>
@@ -968,7 +968,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             </p>
                           </div>
                         ) : filteredCustoms.length === 0 && customsSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               search_off
                             </span>
@@ -983,18 +983,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 key={customs.id}
                                 type="button"
                                 onClick={() => handleCustomsSelect(customs)}
-                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   selectedCustomsId === customs.id
-                                    ? "bg-blue-50 text-primary font-medium"
+                                    ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
                                     : ""
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-lg">
                                       account_balance
                                     </span>
-                                    <p className="font-medium text-sm truncate uppercase">
+                                    <p className="font-medium text-sm truncate uppercase text-text-main">
                                       {customs.customsShortName}
                                     </p>
                                   </div>
@@ -1009,8 +1009,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                             {filteredCustoms.length === 50 &&
                               availableCustoms.length > 50 && (
-                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
-                                  <p className="text-xs text-yellow-800">
+                                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-700 text-center transition-colors">
+                                  <p className="text-xs text-yellow-800 dark:text-yellow-300">
                                     İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
                                   </p>
                                 </div>
@@ -1057,7 +1057,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     type="text"
                     value={formData.customsWarehouse}
                     disabled
-                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 h-12 placeholder:text-neutral p-3 text-base font-normal"
                     placeholder={toUpperCase(t('placeholders.enterCustomsWarehouse'))}
                     style={{ textTransform: 'uppercase' }}
                   />
@@ -1082,11 +1082,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         }}
                         onFocus={() => setShowWarehouseDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.customsWarehouse
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
+                            : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                        } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -1124,23 +1124,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                     {/* Warehouse Dropdown List */}
                     {showWarehouseDropdown && !loadingWarehouses && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
                         {/* Yeni antrepo ekleme seçeneği */}
                         {warehouseSearchTerm.trim() && !availableWarehouses.some(w => w.toUpperCase() === warehouseSearchTerm.toUpperCase()) && (
                           <button
                             type="button"
                             onClick={handleAddNewWarehouse}
-                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-green-600 text-lg">
+                              <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-lg">
                                 add_circle
                               </span>
                               <div>
-                                <p className="font-medium text-sm text-green-700">
+                                <p className="font-medium text-sm text-green-700 dark:text-green-300">
                                   "{toUpperCase(warehouseSearchTerm.trim(), locale)}" olarak ekle
                                 </p>
-                                <p className="text-xs text-green-600">
+                                <p className="text-xs text-green-600 dark:text-green-400">
                                   Yeni antrepo olarak kullan
                                 </p>
                               </div>
@@ -1149,7 +1149,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         )}
 
                         {filteredWarehouses.length === 0 && !warehouseSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               warehouse
                             </span>
@@ -1161,7 +1161,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             </p>
                           </div>
                         ) : filteredWarehouses.length === 0 && warehouseSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               search_off
                             </span>
@@ -1179,18 +1179,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 key={index}
                                 type="button"
                                 onClick={() => handleWarehouseSelect(warehouse)}
-                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.customsWarehouse === warehouse
-                                    ? "bg-blue-50 text-primary font-medium"
+                                    ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
                                     : ""
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-lg">
                                       warehouse
                                     </span>
-                                    <p className="font-medium text-sm truncate uppercase">
+                                    <p className="font-medium text-sm truncate uppercase text-text-main">
                                       {warehouse}
                                     </p>
                                   </div>
@@ -1205,8 +1205,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                             {filteredWarehouses.length === 50 &&
                               availableWarehouses.length > 50 && (
-                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
-                                  <p className="text-xs text-yellow-800">
+                                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-700 text-center transition-colors">
+                                  <p className="text-xs text-yellow-800 dark:text-yellow-300">
                                     İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
                                   </p>
                                 </div>
@@ -1243,11 +1243,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.containerAmount}
                   onChange={handleChange}
                   disabled={isFieldLocked}
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.containerAmount
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterContainerAmount'))}
                 />
                 {/* Error Message */}
@@ -1276,11 +1276,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.weight}
                   onChange={handleChange}
                   disabled={isFieldLocked}
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.weight
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterWeight'))}
                 />
                 {/* Error Message */}
@@ -1309,11 +1309,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.tax}
                   onChange={handleTaxChange}
                   disabled={isFieldLocked}
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.tax
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterTax'))}
                 />
                 {/* Error Message */}
@@ -1352,7 +1352,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     type="text"
                     value={formData.senderName}
                     disabled
-                    className="form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-gray-100 h-12 placeholder:text-neutral p-3 text-base font-normal"
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 h-12 placeholder:text-neutral p-3 text-base font-normal"
                     placeholder={toUpperCase(t('placeholders.enterSender'))}
                     style={{ textTransform: 'uppercase' }}
                   />
@@ -1378,11 +1378,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         }}
                         onFocus={() => setShowSenderDropdown(true)}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
-                        className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                        className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.senderName
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                        } bg-white h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
+                            : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                        } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors`}
                         style={{ textTransform: 'uppercase' }}
                       />
 
@@ -1420,23 +1420,23 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                     {/* Sender Dropdown List */}
                     {showSenderDropdown && !loadingSenders && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
                         {/* Yeni gönderici ekleme seçeneği */}
                         {senderSearchTerm.trim() && !availableSenders.some(s => s.toUpperCase() === senderSearchTerm.toUpperCase()) && (
                           <button
                             type="button"
                             onClick={handleAddNewSender}
-                            className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-200 bg-green-50/50"
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors border-b border-gray-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-green-600 text-lg">
+                              <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-lg">
                                 add_circle
                               </span>
                               <div>
-                                <p className="font-medium text-sm text-green-700">
+                                <p className="font-medium text-sm text-green-700 dark:text-green-300">
                                   "{toUpperCase(senderSearchTerm.trim(), locale)}" olarak ekle
                                 </p>
-                                <p className="text-xs text-green-600">
+                                <p className="text-xs text-green-600 dark:text-green-400">
                                   Yeni gönderici olarak kullan
                                 </p>
                               </div>
@@ -1445,7 +1445,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         )}
 
                         {filteredSenders.length === 0 && !senderSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               local_shipping
                             </span>
@@ -1457,7 +1457,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             </p>
                           </div>
                         ) : filteredSenders.length === 0 && senderSearchTerm.trim() ? (
-                          <div className="p-4 text-center text-gray-500">
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                             <span className="material-symbols-outlined text-4xl mb-2">
                               search_off
                             </span>
@@ -1475,18 +1475,18 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 key={index}
                                 type="button"
                                 onClick={() => handleSenderSelect(sender)}
-                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.senderName === sender
-                                    ? "bg-blue-50 text-primary font-medium"
+                                    ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
                                     : ""
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-gray-400 text-lg">
+                                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-lg">
                                       local_shipping
                                     </span>
-                                    <p className="font-medium text-sm truncate uppercase">
+                                    <p className="font-medium text-sm truncate uppercase text-text-main">
                                       {sender}
                                     </p>
                                   </div>
@@ -1501,8 +1501,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
                             {filteredSenders.length === 50 &&
                               availableSenders.length > 50 && (
-                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
-                                  <p className="text-xs text-yellow-800">
+                                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-700 text-center transition-colors">
+                                  <p className="text-xs text-yellow-800 dark:text-yellow-300">
                                     İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
                                   </p>
                                 </div>
@@ -1544,11 +1544,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     }
                   }}
                   disabled={isFieldLocked}
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.declarationNumber
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                   placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
                   style={{ textTransform: 'uppercase' }}
                 />
@@ -1575,11 +1575,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   value={formData.gate}
                   onChange={handleChange}
                   disabled={isReadOnly || isCompletedStatus || isWithdrawnStatus}
-                  className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.gate
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                      : 'border-neutral/30 focus:ring-primary focus:border-primary'
-                  } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                 >
                   <option value="">{toUpperCase(t('gates.select'))}</option>
                   {GATE_OPTIONS.map((option) => (
@@ -1602,7 +1602,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               </label>
 
               {/* TARİH BİLGİLERİ BÖLÜMÜ */}
-              <div className="lg:col-span-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 mt-2">
+              <div className="lg:col-span-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-5 mt-2 transition-colors">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="material-symbols-outlined text-blue-600 text-xl">
                     calendar_month
@@ -1624,11 +1624,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.warehouseArrivalDate}
                       onChange={handleDateChange}
                       disabled={isFieldLocked}
-                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.warehouseArrivalDate
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
-                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                          : 'border-blue-300 dark:border-blue-700 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                     />
                     {/* Error Message */}
                     {fieldErrors.warehouseArrivalDate && (
@@ -1654,11 +1654,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.registrationDate}
                       onChange={handleDateChange}
                       disabled={isFieldLocked}
-                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.registrationDate
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
-                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                          : 'border-blue-300 dark:border-blue-700 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                     />
                     {/* Error Message */}
                     {fieldErrors.registrationDate && (
@@ -1684,11 +1684,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.lineClosureDate}
                       onChange={handleDateChange}
                       disabled={isReadOnly}
-                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.lineClosureDate
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
-                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                          : 'border-blue-300 dark:border-blue-700 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                     />
                     {/* Error Message */}
                     {fieldErrors.lineClosureDate && (
@@ -1714,11 +1714,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       value={formData.withdrawalDate}
                       onChange={handleDateChange}
                       disabled={isReadOnly}
-                      className={`form-input w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                      className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.withdrawalDate
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                          : 'border-blue-300 focus:ring-blue-500 focus:border-blue-500'
-                      } bg-white h-12 p-3 text-base font-normal disabled:bg-gray-100 transition-colors`}
+                          : 'border-blue-300 dark:border-blue-700 focus:ring-blue-500 focus:border-blue-500'
+                      } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
                     />
                     {/* Error Message */}
                     {fieldErrors.withdrawalDate && (
@@ -1742,7 +1742,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 // CP_COMPLETED/WITHDRAWN: Backend değerini göster
                 ((isCompletedStatus || isWithdrawnStatus) && transaction.importProcessingTime != null)
               ) && (
-                <div className="lg:col-span-3 bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-2">
+                <div className="lg:col-span-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-4 mt-2 transition-colors">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-blue-600 text-2xl">
                       schedule
@@ -1765,10 +1765,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Conditional Delay #1: Antrepo Varış → Tescil */}
               {(delays.arrivalToRegistration || (formData.delayReasons?.arrivalToRegistration && formData.delayReasons.arrivalToRegistration.length > 0)) && !isReadOnly && (
-                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-4 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-yellow-600">warning</span>
+                      <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
                         Antrepo Varış → Tescil Gecikme Nedeni * (4 günden fazla)
                       </p>
@@ -1793,10 +1793,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             });
                           }
                         }}
-                        className="p-1 hover:bg-yellow-200 rounded-full transition-colors"
+                        className="p-1 hover:bg-yellow-200 dark:hover:bg-yellow-700/30 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
-                        <span className="material-symbols-outlined text-yellow-700 text-lg">
+                        <span className="material-symbols-outlined text-yellow-700 dark:text-yellow-300 text-lg">
                           close
                         </span>
                       </button>
@@ -1825,20 +1825,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     onBlur={(e) => validateDelayReason('arrivalToRegistration', e.target.value)}
                     required
                     rows="2"
-                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    className={`form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                       fieldErrors.arrivalToRegistration
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                        : 'border-yellow-300 focus:ring-yellow-500 focus:border-yellow-500'
-                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                        : 'border-yellow-300 dark:border-yellow-700 focus:ring-yellow-500 focus:border-yellow-500'
+                    } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
                     placeholder="Lütfen antrepo varış ve tescil tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
                   {/* Error Message */}
                   {fieldErrors.arrivalToRegistration && (
-                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
-                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg animate-fadeIn transition-colors">
+                      <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-lg flex-shrink-0">
                         error
                       </span>
-                      <p className="text-sm text-red-700 font-medium">
+                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
                         {fieldErrors.arrivalToRegistration}
                       </p>
                     </div>
@@ -1848,10 +1848,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Conditional Delay #2: Tescil → Kapanma */}
               {(delays.registrationToClosure || (formData.delayReasons?.registrationToClosure && formData.delayReasons.registrationToClosure.length > 0)) && !isReadOnly && (
-                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg p-4 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-orange-600">warning</span>
+                      <span className="material-symbols-outlined text-orange-600 dark:text-orange-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
                         Tescil → Kapanma Gecikme Nedeni * (4 günden fazla)
                       </p>
@@ -1876,10 +1876,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             });
                           }
                         }}
-                        className="p-1 hover:bg-orange-200 rounded-full transition-colors"
+                        className="p-1 hover:bg-orange-200 dark:hover:bg-orange-700/30 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
-                        <span className="material-symbols-outlined text-orange-700 text-lg">
+                        <span className="material-symbols-outlined text-orange-700 dark:text-orange-300 text-lg">
                           close
                         </span>
                       </button>
@@ -1908,20 +1908,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     onBlur={(e) => validateDelayReason('registrationToClosure', e.target.value)}
                     required
                     rows="2"
-                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    className={`form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                       fieldErrors.registrationToClosure
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                        : 'border-orange-300 focus:ring-orange-500 focus:border-orange-500'
-                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                        : 'border-orange-300 dark:border-orange-700 focus:ring-orange-500 focus:border-orange-500'
+                    } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
                     placeholder="Lütfen tescil ve kapanma tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
                   {/* Error Message */}
                   {fieldErrors.registrationToClosure && (
-                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
-                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg animate-fadeIn transition-colors">
+                      <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-lg flex-shrink-0">
                         error
                       </span>
-                      <p className="text-sm text-red-700 font-medium">
+                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
                         {fieldErrors.registrationToClosure}
                       </p>
                     </div>
@@ -1931,10 +1931,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
               {/* Conditional Delay #3: Kapanma → Çekilme */}
               {(delays.closureToWithdrawal || (formData.delayReasons?.closureToWithdrawal && formData.delayReasons.closureToWithdrawal.length > 0)) && !isReadOnly && (
-                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <div className="flex flex-col w-full md:col-span-2 lg:col-span-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-red-600">warning</span>
+                      <span className="material-symbols-outlined text-red-600 dark:text-red-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
                         Kapanma → Çekilme Gecikme Nedeni * (4 günden fazla)
                       </p>
@@ -1959,10 +1959,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                             });
                           }
                         }}
-                        className="p-1 hover:bg-red-200 rounded-full transition-colors"
+                        className="p-1 hover:bg-red-200 dark:hover:bg-red-700/30 rounded-full transition-colors"
                         title="İçeriği temizle"
                       >
-                        <span className="material-symbols-outlined text-red-700 text-lg">
+                        <span className="material-symbols-outlined text-red-700 dark:text-red-300 text-lg">
                           close
                         </span>
                       </button>
@@ -1991,20 +1991,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     onBlur={(e) => validateDelayReason('closureToWithdrawal', e.target.value)}
                     required
                     rows="2"
-                    className={`form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 ${
+                    className={`form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                       fieldErrors.closureToWithdrawal
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                        : 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                    } bg-white placeholder:text-neutral p-3 text-base font-normal`}
+                        : 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
+                    } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
                     placeholder="Lütfen kapanma ve çekilme tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
                   />
                   {/* Error Message */}
                   {fieldErrors.closureToWithdrawal && (
-                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
-                      <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                    <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg animate-fadeIn transition-colors">
+                      <span className="material-symbols-outlined text-red-500 dark:text-red-400 text-lg flex-shrink-0">
                         error
                       </span>
-                      <p className="text-sm text-red-700 font-medium">
+                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
                         {fieldErrors.closureToWithdrawal}
                       </p>
                     </div>
@@ -2023,7 +2023,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   rows="3"
-                  className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 bg-white focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100"
+                  className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors"
                   placeholder={t('placeholders.enterDescription')}
                 />
               </label>
@@ -2031,7 +2031,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               type="button"
               onClick={onClose}

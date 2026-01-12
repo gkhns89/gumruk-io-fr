@@ -54,20 +54,20 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-100/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20 transition-colors duration-300">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="material-symbols-outlined text-red-600 text-2xl">warning</span>
+            <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center transition-colors">
+              <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-2xl">warning</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-text-main">
                 Çalışanı Sil
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 Bu işlem geri alınamaz
               </p>
             </div>
@@ -78,12 +78,12 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
         <div className="p-6 space-y-4">
           {/* Self-delete warning */}
           {isDeletingSelf ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 transition-colors duration-300">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-amber-600">block</span>
+                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">block</span>
                 <div>
-                  <p className="text-amber-900 font-semibold">Kendi Hesabınızı Silemezsiniz</p>
-                  <p className="text-amber-800 text-sm mt-1">
+                  <p className="text-amber-900 dark:text-amber-300 font-semibold">Kendi Hesabınızı Silemezsiniz</p>
+                  <p className="text-amber-800 dark:text-amber-400 text-sm mt-1">
                     Hesabınızı silmek için bir yöneticiye başvurun.
                   </p>
                 </div>
@@ -92,26 +92,26 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
           ) : (
             <>
               {/* Employee info */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors duration-300">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0 h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="flex-shrink-0 h-10 w-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center transition-colors">
                     <span className="material-symbols-outlined text-primary">
                       person
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{employee.username}</p>
-                    <p className="text-xs text-gray-600">{employee.email}</p>
+                    <p className="text-sm font-semibold text-text-main">{employee.username}</p>
+                    <p className="text-xs text-text-secondary">{employee.email}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <p className="text-gray-500">Rol</p>
-                    <p className="text-gray-800 font-medium">{getRoleText(employee.globalRole)}</p>
+                    <p className="text-text-secondary">Rol</p>
+                    <p className="text-text-main font-medium">{getRoleText(employee.globalRole)}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Durum</p>
-                    <p className="text-gray-800 font-medium">
+                    <p className="text-text-secondary">Durum</p>
+                    <p className="text-text-main font-medium">
                       {employee.isActive ? 'Aktif' : 'Beklemede'}
                     </p>
                   </div>
@@ -119,18 +119,18 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
               </div>
 
               {/* Warning message */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800 text-sm">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 transition-colors duration-300">
+                <p className="text-red-800 dark:text-red-300 text-sm">
                   <span className="font-semibold">{employee.username}</span> adlı çalışanı silmek üzeresiniz.
                   Bu çalışanın hesabı devre dışı bırakılacaktır.
                 </p>
               </div>
 
               {/* Info about soft delete */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 transition-colors duration-300">
                 <div className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-blue-600 text-sm mt-0.5">info</span>
-                  <p className="text-blue-800 text-xs">
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm mt-0.5">info</span>
+                  <p className="text-blue-800 dark:text-blue-300 text-xs">
                     Bu işlem çalışanı sistemden tamamen kaldırmaz, hesabı devre dışı bırakır.
                     Gerekirse daha sonra yeniden aktif hale getirilebilir.
                   </p>
@@ -144,7 +144,7 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
         <div className="flex gap-3 p-6 pt-0">
           <button
             onClick={handleClose}
-            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
           >
             İptal
           </button>

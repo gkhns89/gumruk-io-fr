@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import ThemeToggle from "./common/ThemeToggle";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -30,10 +31,31 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background dark:bg-background-dark transition-colors duration-300">
+      {/* Login Page Header */}
+      <header className="w-full bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Logo ve Başlık */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white">
+              <span className="material-symbols-outlined text-2xl">anchor</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-text-main">AACC Tracker</h1>
+              <p className="text-xs text-text-secondary hidden sm:block">Gümrük Takip Sistemi</p>
+            </div>
+          </div>
+
+          {/* Tema Toggle */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+
       <div className="flex flex-1 justify-center items-center py-5">
-        <div className="flex flex-col max-w-lg w-full gap-8 bg-white p-8 md:p-12 rounded-xl shadow-sm">
-          
+        <div className="flex flex-col max-w-lg w-full gap-8 bg-white dark:bg-background-dark p-8 md:p-12 rounded-xl shadow-sm transition-colors duration-300">
+
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-4">
             <div className="flex items-center justify-center h-16 w-16 bg-primary rounded-full text-white">
@@ -51,7 +73,7 @@ export default function Login() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg transition-colors duration-300">
               <p className="text-sm">{error}</p>
             </div>
           )}
@@ -66,7 +88,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:ring-0 h-12 placeholder:text-text-secondary p-3 text-base font-normal"
+                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main dark:text-gray-100 dark:bg-gray-800 dark:border-gray-600 focus:ring-0 h-12 placeholder:text-text-secondary dark:placeholder:text-gray-400 p-3 text-base font-normal transition-colors"
               />
             </label>
 
@@ -79,13 +101,13 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:ring-0 h-12 placeholder:text-text-secondary p-3 pr-10 text-base font-normal"
+                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main dark:text-gray-100 dark:bg-gray-800 dark:border-gray-600 focus:ring-0 h-12 placeholder:text-text-secondary dark:placeholder:text-gray-400 p-3 pr-10 text-base font-normal transition-colors"
                 />
-                <div 
+                <div
                   className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  <span className="material-symbols-outlined text-text-secondary">
+                  <span className="material-symbols-outlined text-text-secondary dark:text-gray-400">
                     {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </div>
@@ -99,7 +121,7 @@ export default function Login() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="form-checkbox h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="form-checkbox h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary dark:bg-gray-800 transition-colors"
                 />
                 <p className="text-text-main text-sm font-normal">Beni Hatırla</p>
               </label>
@@ -136,6 +158,15 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="w-full bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-xs text-text-secondary">
+            © 2024 AACC Tracker. Tüm hakları saklıdır.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -227,7 +227,7 @@ export default function Sidebar() {
           flex items-center gap-3 px-3 h-11 rounded-xl transition-colors flex-shrink-0
           ${active
             ? "bg-primary text-white shadow-md"
-            : "hover:bg-gray-100 text-text-main"
+            : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
           }
           ${!isExpanded && 'justify-center'}
         `}
@@ -260,7 +260,7 @@ export default function Sidebar() {
         onMouseEnter={() => sidebarMode === 'auto' && setIsHovered(true)}
         onMouseLeave={() => sidebarMode === 'auto' && setIsHovered(false)}
         className={`
-          hidden lg:flex flex-col bg-white shadow-lg border-r border-gray-100
+          hidden lg:flex flex-col bg-white dark:bg-background-dark shadow-lg border-r border-gray-100 dark:border-gray-700
           transition-all duration-300 ease-in-out
           fixed left-0 top-0 bottom-0 z-40
           overflow-x-hidden overflow-y-auto sidebar-scroll
@@ -326,7 +326,7 @@ export default function Sidebar() {
             <>
               <button
                 onClick={handleCollapse}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-text-secondary hover:text-text-main transition-colors flex-1"
+                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-secondary hover:text-text-main transition-colors flex-1"
                 title="Daralt"
               >
                 <span className="material-symbols-outlined text-base">
@@ -342,7 +342,7 @@ export default function Sidebar() {
                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors flex-1 ${
                   isPinnedExpanded
                     ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'bg-gray-100 hover:bg-gray-200 text-text-secondary hover:text-text-main'
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-secondary hover:text-text-main'
                 }`}
                 title={isPinnedExpanded ? "Sabitlemeyi Kaldır" : "Sabitle"}
               >
@@ -375,7 +375,7 @@ export default function Sidebar() {
               {isExpanded ? (
                 <button
                   onClick={() => setIsOtherCollapsed(!isOtherCollapsed)}
-                  className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                  className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                   title="Diğer Menü Öğeleri"
                 >
                   <span></span>
@@ -389,7 +389,7 @@ export default function Sidebar() {
               ) : (
                 <button
                   onClick={() => setIsOtherCollapsed(!isOtherCollapsed)}
-                  className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                  className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                   title="Diğer"
                 >
                   <span className="material-symbols-outlined text-lg">
@@ -400,7 +400,7 @@ export default function Sidebar() {
 
               {/* Diğer Menü Öğeleri */}
               {!isOtherCollapsed && (
-                <div className={`flex flex-col gap-1 ${isExpanded ? 'ml-4 border-l-2 border-gray-200 pl-2' : ''}`}>
+                <div className={`flex flex-col gap-1 ${isExpanded ? 'ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-2' : ''}`}>
                   {hiddenOtherItems.map((item, index) => renderMenuItem(item, index, 'hidden-other-'))}
                 </div>
               )}
@@ -411,7 +411,7 @@ export default function Sidebar() {
           {hasManagementAccess && visibleManagementItems.length > 0 && (
             <>
               {/* Divider */}
-              <div className="my-2 mx-2 border-t border-gray-200" />
+              <div className="my-2 mx-2 border-t border-gray-200 dark:border-gray-700" />
 
               {/* Yönetim Başlığı - Her zaman göster */}
               {isExpanded ? (
@@ -445,7 +445,7 @@ export default function Sidebar() {
                             flex items-center gap-3 px-3 h-11 rounded-xl transition-colors flex-shrink-0
                             ${active
                               ? "bg-primary text-white shadow-md"
-                              : "hover:bg-gray-100 text-text-main"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                             }
                             ${!isExpanded && 'justify-center'}
                           `}
@@ -472,7 +472,7 @@ export default function Sidebar() {
                   {isExpanded ? (
                     <button
                       onClick={() => setIsManagementCollapsed(!isManagementCollapsed)}
-                      className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                      className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                       title="Diğer Yönetim Öğeleri"
                     >
                       <span></span>
@@ -486,7 +486,7 @@ export default function Sidebar() {
                   ) : (
                     <button
                       onClick={() => setIsManagementCollapsed(!isManagementCollapsed)}
-                      className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 hover:bg-gray-400"
+                      className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                       title="Diğer"
                     >
                       <span className="material-symbols-outlined text-lg">
@@ -497,7 +497,7 @@ export default function Sidebar() {
 
                   {/* Gizli yönetim öğeleri */}
                   {!isManagementCollapsed && (
-                    <div className={`flex flex-col gap-1 ${isExpanded ? 'ml-4 border-l-2 border-gray-200 pl-2' : ''}`}>
+                    <div className={`flex flex-col gap-1 ${isExpanded ? 'ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-2' : ''}`}>
                       {hiddenMgmtItems.map((item, index) => {
                         const active = isActive(item.path);
 
@@ -509,7 +509,7 @@ export default function Sidebar() {
                               flex items-center gap-3 px-3 h-11 rounded-xl transition-colors flex-shrink-0
                               ${active
                                 ? "bg-primary text-white shadow-md"
-                                : "hover:bg-gray-100 text-text-main"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                               }
                               ${!isExpanded && 'justify-center'}
                             `}
@@ -535,7 +535,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Divider */}
-        <div className="my-2 mx-4 border-t border-gray-200" />
+        <div className="my-2 mx-4 border-t border-gray-200 dark:border-gray-700" />
 
         {/* Bottom Navigation */}
         <div className="flex flex-col gap-1 px-2 pb-4">
@@ -549,7 +549,7 @@ export default function Sidebar() {
                   flex items-center gap-3 px-3 h-11 rounded-xl transition-colors flex-shrink-0
                   ${active
                     ? "bg-primary text-white shadow-md"
-                    : "hover:bg-gray-100 text-text-main"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                   }
                   ${!isExpanded && 'justify-center'}
                 `}
@@ -571,7 +571,7 @@ export default function Sidebar() {
             onClick={logout}
             className={`
               flex items-center gap-3 px-3 h-11 rounded-xl flex-shrink-0
-              hover:bg-red-50 text-text-main hover:text-red-600
+              hover:bg-red-50 dark:hover:bg-red-900/20 text-text-main hover:text-red-600 dark:hover:text-red-400
               w-full transition-colors mt-2
               ${!isExpanded && 'justify-center'}
             `}

@@ -18,7 +18,7 @@ const getStatusRowStyle = (status) => {
       border: 'border-l-4 border-l-orange-700',
     },
     'WITHDRAWN': {
-      border: 'border-l-4 border-l-green-500 bg-red-50',
+      border: 'border-l-4 border-l-green-500 bg-red-50 dark:bg-red-900/30',
     },
     'CANCELLED': {
       border: 'border-l-4 border-l-rose-500',
@@ -31,11 +31,11 @@ const getStatusRowStyle = (status) => {
 // Hat badge renkleri
 const getGateBadge = (gate) => {
   const badgeStyles = {
-    'SARI': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    'KIRMIZI': 'bg-red-100 text-red-800 border border-red-300',
+    'SARI': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700',
+    'KIRMIZI': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700',
   };
 
-  return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
+  return badgeStyles[gate] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
 };
 
 export default function TransactionsTable({ transactions, loading, error, onRetry }) {
@@ -55,13 +55,13 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
     const statusInfo = statusMap[status] || { color: 'default', label: status };
 
     const colors = {
-      pending: "bg-sky-50 text-sky-700 border border-sky-300",
-      registered: "bg-amber-50 text-amber-700 border border-amber-300",
-      inspection: "bg-purple-50 text-purple-700 border border-purple-300",
-      completed: "bg-orange-50 text-orange-700 border border-orange-300",
-      withdrawn: "bg-emerald-50 text-emerald-700 border border-emerald-300",
-      cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
-      default: "bg-gray-50 text-gray-600 border border-gray-300",
+      pending: "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700",
+      registered: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700",
+      inspection: "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700",
+      completed: "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-700",
+      withdrawn: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700",
+      cancelled: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700",
+      default: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600",
     };
 
     return {
@@ -116,7 +116,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+        <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="text-text-secondary">İşlemler yükleniyor...</p>
         </div>
@@ -131,7 +131,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+        <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <span className="material-symbols-outlined text-6xl text-red-500">error</span>
           <div className="text-center">
             <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
@@ -160,7 +160,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
         <h2 className="text-text-main text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-2">
           Son İşlemler
         </h2>
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 flex flex-col items-center justify-center gap-4">
+        <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <span className="material-symbols-outlined text-6xl text-text-secondary">inbox</span>
           <div className="text-center">
             <p className="text-text-main font-semibold mb-2">Henüz İşlem Yok</p>
@@ -184,10 +184,10 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
           {transactions.length} işlem gösteriliyor
         </span>
       </div>
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 transition-colors duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
                   Dosya No
@@ -212,7 +212,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.map((transaction) => {
                 const statusInfo = getStatusBadgeClass(transaction.status);
                 const statusStyle = getStatusRowStyle(transaction.status);
@@ -222,7 +222,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                   <tr
                     key={transaction.id}
                     onClick={(e) => handleRowClick(transaction, e)}
-                    className={`hover:bg-gray-50 ${statusStyle.border} transition-colors cursor-pointer`}
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${statusStyle.border} transition-colors cursor-pointer`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main font-medium">
                       {transaction.fileNo || '-'}
@@ -255,7 +255,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleViewTransaction(transaction)}
-                        className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                        className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-lg">visibility</span>
                         Görüntüle

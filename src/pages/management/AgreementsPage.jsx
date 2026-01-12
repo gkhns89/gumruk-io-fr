@@ -52,33 +52,33 @@ const AgreementsPage = () => {
   const getStatusBadge = (status) => {
     const badges = {
       ACTIVE: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
-        border: 'border-green-300',
+        bg: 'bg-green-100 dark:bg-green-900/30',
+        text: 'text-green-800 dark:text-green-300',
+        border: 'border-green-300 dark:border-green-700',
         label: 'Aktif'
       },
       PENDING: {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
-        border: 'border-yellow-300',
+        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+        text: 'text-yellow-800 dark:text-yellow-300',
+        border: 'border-yellow-300 dark:border-yellow-700',
         label: 'Onay Bekliyor'
       },
       INACTIVE: {
-        bg: 'bg-gray-100',
-        text: 'text-gray-800',
-        border: 'border-gray-300',
+        bg: 'bg-gray-100 dark:bg-gray-800',
+        text: 'text-gray-800 dark:text-gray-300',
+        border: 'border-gray-300 dark:border-gray-600',
         label: 'Pasif'
       },
       SUSPENDED: {
-        bg: 'bg-orange-100',
-        text: 'text-orange-800',
-        border: 'border-orange-300',
+        bg: 'bg-orange-100 dark:bg-orange-900/30',
+        text: 'text-orange-800 dark:text-orange-300',
+        border: 'border-orange-300 dark:border-orange-700',
         label: 'Askıda'
       },
       TERMINATED: {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
-        border: 'border-red-300',
+        bg: 'bg-red-100 dark:bg-red-900/30',
+        text: 'text-red-800 dark:text-red-300',
+        border: 'border-red-300 dark:border-red-700',
         label: 'Sonlandırıldı'
       }
     };
@@ -96,16 +96,16 @@ const AgreementsPage = () => {
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Page Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">
                   verified
                 </span>
                 Vekalet Yönetimi
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-text-secondary mt-2">
                 Müşteri firmalarınızla olan vekalet anlaşmalarınızı yönetin
               </p>
             </div>
@@ -124,17 +124,17 @@ const AgreementsPage = () => {
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 md:p-6 space-y-6">
             {/* Filters */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Durum Filtresi */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-main mb-2">
                     Durum Filtresi
                   </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                   >
                     <option value="ALL">Tümü</option>
                     <option value="ACTIVE">Aktif</option>
@@ -147,11 +147,11 @@ const AgreementsPage = () => {
 
                 {/* Arama */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-main mb-2">
                     Müşteri Ara
                   </label>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                       search
                     </span>
                     <input
@@ -159,7 +159,7 @@ const AgreementsPage = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Müşteri adı ile ara..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                     />
                   </div>
                 </div>
@@ -168,36 +168,36 @@ const AgreementsPage = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+              <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
                 <div className="flex items-center justify-center gap-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <p className="text-gray-600">Yükleniyor...</p>
+                  <p className="text-text-secondary">Yükleniyor...</p>
                 </div>
               </div>
             )}
 
             {/* Error State */}
             {error && !loading && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 transition-colors">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-red-600">error</span>
-                  <p className="text-red-800">{error}</p>
+                  <span className="material-symbols-outlined text-red-600 dark:text-red-400">error</span>
+                  <p className="text-red-800 dark:text-red-300">{error}</p>
                 </div>
               </div>
             )}
 
             {/* Empty State */}
             {!loading && !error && filteredAgreements.length === 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                <span className="material-symbols-outlined text-6xl text-gray-300 mb-4 block">
+              <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
+                <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-500 mb-4 block">
                   verified
                 </span>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <h3 className="text-xl font-semibold text-text-main mb-2">
                   {searchTerm || statusFilter !== 'ALL'
                     ? 'Filtre kriterlerine uygun anlaşma bulunamadı'
                     : 'Henüz vekalet anlaşmanız bulunmuyor'}
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-text-secondary mb-6">
                   {searchTerm || statusFilter !== 'ALL'
                     ? 'Farklı filtreler deneyerek arama yapabilirsiniz'
                     : 'Müşterileriniz ile vekalet anlaşması oluşturmak için "Yeni Vekalet Ekle" butonuna tıklayın'}
@@ -216,32 +216,32 @@ const AgreementsPage = () => {
 
             {/* Agreements Table */}
             {!loading && !error && filteredAgreements.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 transition-colors">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">
                           Müşteri Firma
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                           Durum
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                           Başlangıç
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                           Bitiş
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                           Kalan Süre
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                           İşlemler
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredAgreements.map((agreement) => {
                         const badge = getStatusBadge(agreement.status);
                         let remainingDays = null;
@@ -253,18 +253,18 @@ const AgreementsPage = () => {
                         }
 
                         return (
-                          <tr key={agreement.id} className="hover:bg-gray-50">
+                          <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <span className="material-symbols-outlined text-primary mr-3">
                                   corporate_fare
                                 </span>
                                 <div>
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-sm font-medium text-text-main">
                                     {agreement.clientCompany?.name}
                                   </div>
                                   {agreement.clientCompany?.shortName && (
-                                    <div className="text-sm text-gray-500">
+                                    <div className="text-sm text-text-secondary">
                                       {agreement.clientCompany.shortName}
                                     </div>
                                   )}
@@ -276,12 +276,12 @@ const AgreementsPage = () => {
                                 {badge.label}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                               {agreement.startDate
                                 ? new Date(agreement.startDate).toLocaleDateString('tr-TR')
                                 : '-'}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                               {agreement.endDate
                                 ? new Date(agreement.endDate).toLocaleDateString('tr-TR')
                                 : '-'}
@@ -289,13 +289,13 @@ const AgreementsPage = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               {remainingDays !== null ? (
                                 <span className={`text-sm font-semibold ${
-                                  remainingDays < 30 ? 'text-red-600' : 'text-green-600'
+                                  remainingDays < 30 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                                 }`}>
                                   {remainingDays} gün
                                   {remainingDays < 30 && ' ⚠️'}
                                 </span>
                               ) : (
-                                <span className="text-sm text-gray-400">-</span>
+                                <span className="text-sm text-text-secondary">-</span>
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

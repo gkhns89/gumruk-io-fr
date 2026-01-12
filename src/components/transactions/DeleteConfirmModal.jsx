@@ -35,11 +35,11 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
-          <div className="flex items-center gap-4 p-6 border-b border-gray-200">
+          <div className="flex items-center gap-4 p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-center h-12 w-12 bg-red-100 rounded-full">
               <span className="material-symbols-outlined text-red-600 text-2xl">warning</span>
             </div>
@@ -56,7 +56,7 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
           {/* Body */}
           <div className="p-6">
             {/* Transaction Info */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-text-secondary text-sm">Dosya No:</span>
                 <span className="text-text-main font-semibold">{transaction.fileNo}</span>
@@ -87,14 +87,14 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows="3"
-                className="form-textarea w-full rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-red-500 border border-gray-300 bg-white focus:border-red-500 placeholder:text-neutral p-3 text-base font-normal"
+                className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-red-500 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-red-500 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                 placeholder="İptal nedenini belirtin..."
               />
             </label>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               type="button"
               onClick={onClose}

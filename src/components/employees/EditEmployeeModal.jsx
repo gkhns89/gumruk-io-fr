@@ -86,24 +86,24 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-primary/5">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-text-main">
               Çalışan Düzenle
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               {isEditingSelf ? 'Kendi bilgilerinizi düzenleyin' : 'Çalışan bilgilerini güncelleyin'}
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <span className="material-symbols-outlined text-gray-600">close</span>
+            <span className="material-symbols-outlined text-text-secondary">close</span>
           </button>
         </div>
 
@@ -112,10 +112,10 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
           <div className="space-y-4">
             {/* Self-edit warning */}
             {isEditingSelf && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 transition-colors duration-300">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-blue-600 text-sm">info</span>
-                  <p className="text-blue-800 text-sm">
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">info</span>
+                  <p className="text-blue-800 dark:text-blue-300 text-sm">
                     Kendi rolünüzü ve durumunuzu değiştiremezsiniz
                   </p>
                 </div>
@@ -124,7 +124,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
 
             {/* Username - UPPERCASE transformation */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Kullanıcı Adı *
               </label>
               <input
@@ -136,14 +136,14 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 }))}
                 required
                 placeholder="AHMET YILMAZ"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
             </div>
 
             {/* Email - lowercase transformation */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Email *
               </label>
               <input
@@ -158,8 +158,8 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 }}
                 required
                 placeholder="ahmet.yilmaz@example.com"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase ${
-                  emailError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors ${
+                  emailError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 style={{ textTransform: 'lowercase' }}
               />
@@ -170,7 +170,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
 
             {/* Role Selection - Disabled when editing self */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Rol *
               </label>
               <select
@@ -181,13 +181,13 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 }))}
                 disabled={isEditingSelf}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
               >
                 <option value="BROKER_USER">Broker Kullanıcısı</option>
                 <option value="BROKER_ADMIN">Broker Yöneticisi</option>
               </select>
               {isEditingSelf && (
-                <p className="mt-1 text-xs text-amber-600">
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                   Kendi rolünüzü değiştiremezsiniz
                 </p>
               )}
@@ -195,7 +195,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
 
             {/* Status Selection - Disabled when editing self */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-main mb-2">
                 Durum *
               </label>
               <select
@@ -206,13 +206,13 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 }))}
                 disabled={isEditingSelf}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
               >
                 <option value="true">Aktif</option>
                 <option value="false">Beklemede</option>
               </select>
               {isEditingSelf && (
-                <p className="mt-1 text-xs text-amber-600">
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                   Kendi durumunuzu değiştiremezsiniz
                 </p>
               )}
@@ -220,11 +220,11 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
           </div>
 
           {/* Modal Footer */}
-          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
               İptal
             </button>
