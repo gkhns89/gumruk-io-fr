@@ -485,7 +485,7 @@ export default function TransactionsPage() {
                           MozAppearance: 'none',
                           appearance: 'none'
                         }}
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white cursor-pointer transition-all"
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
                       >
                         <option value="">Tüm Durumlar</option>
                         <option value="PENDING">Bekliyor</option>
@@ -516,7 +516,7 @@ export default function TransactionsPage() {
                           placeholder="Müşteri ara..."
                           value={filters.clientSearch}
                           onChange={(e) => handleFilterChange('clientSearch', e.target.value)}
-                          className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white transition-all"
+                          className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
                         />
                         {filters.clientSearch && (
                           <button
@@ -532,10 +532,10 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* Date Filters - Collapsible */}
-                <div className="pt-3 border-t border-gray-100">
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
                   <button
                     onClick={() => setShowDateFilters(!showDateFilters)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
                   >
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
@@ -557,8 +557,8 @@ export default function TransactionsPage() {
                   {/* Antrepo Varış Tarihi */}
                   <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center justify-center h-8 w-8 bg-blue-100 rounded-lg">
-                        <span className="material-symbols-outlined text-blue-600 text-base">warehouse</span>
+                      <div className="flex items-center justify-center h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">warehouse</span>
                       </div>
                       <h3 className="text-sm font-semibold text-text-main">Antrepo Varış Tarihi</h3>
                     </div>
@@ -569,7 +569,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.dateFrom}
                           onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                       <div>
@@ -578,7 +578,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.dateTo}
                           onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                     </div>
@@ -587,8 +587,8 @@ export default function TransactionsPage() {
                   {/* Tescil Tarihi */}
                   <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center justify-center h-8 w-8 bg-amber-100 rounded-lg">
-                        <span className="material-symbols-outlined text-amber-600 text-base">assignment</span>
+                      <div className="flex items-center justify-center h-8 w-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">assignment</span>
                       </div>
                       <h3 className="text-sm font-semibold text-text-main">Tescil Tarihi</h3>
                     </div>
@@ -599,7 +599,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.registrationDateFrom}
                           onChange={(e) => handleFilterChange('registrationDateFrom', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                       <div>
@@ -608,7 +608,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.registrationDateTo}
                           onChange={(e) => handleFilterChange('registrationDateTo', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                     </div>
@@ -617,8 +617,8 @@ export default function TransactionsPage() {
                   {/* Hat Kapanma Tarihi */}
                   <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center justify-center h-8 w-8 bg-orange-100 rounded-lg">
-                        <span className="material-symbols-outlined text-orange-600 text-base">lock</span>
+                      <div className="flex items-center justify-center h-8 w-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-base">lock</span>
                       </div>
                       <h3 className="text-sm font-semibold text-text-main">Hat Kapanma Tarihi</h3>
                     </div>
@@ -629,7 +629,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.closureDateFrom}
                           onChange={(e) => handleFilterChange('closureDateFrom', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                       <div>
@@ -638,7 +638,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.closureDateTo}
                           onChange={(e) => handleFilterChange('closureDateTo', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                     </div>
@@ -647,8 +647,8 @@ export default function TransactionsPage() {
                   {/* Çekilme Tarihi */}
                   <div className="bg-white dark:bg-background-dark rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 rounded-lg">
-                        <span className="material-symbols-outlined text-emerald-600 text-base">check_circle</span>
+                      <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-base">check_circle</span>
                       </div>
                       <h3 className="text-sm font-semibold text-text-main">Çekilme Tarihi</h3>
                     </div>
@@ -659,7 +659,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.withdrawalDateFrom}
                           onChange={(e) => handleFilterChange('withdrawalDateFrom', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                       <div>
@@ -668,7 +668,7 @@ export default function TransactionsPage() {
                           type="date"
                           value={filters.withdrawalDateTo}
                           onChange={(e) => handleFilterChange('withdrawalDateTo', e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white"
+                          className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
                         />
                       </div>
                     </div>
