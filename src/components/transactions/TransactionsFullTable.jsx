@@ -197,26 +197,30 @@ export default function TransactionsFullTable({
   // Success state with data
   return (
     <>
-      <div
-        ref={scrollContainerRef}
-        className="bg-white dark:bg-background-dark overflow-x-auto transition-colors duration-300 relative"
-      >
-        {/* Scroll direction indicator overlay - covers full scroll width */}
+      <div className="bg-white dark:bg-background-dark transition-colors duration-300 relative">
+        {/* Ok göstergesi - scroll container dışında, sabit pozisyon */}
         {scrollDirection && (
-          <div className="absolute inset-y-0 left-0 right-0 min-w-full pointer-events-none flex items-center justify-center z-10">
-            <div className="sticky left-1/2 -translate-x-1/2">
-              <div className="bg-black/10 dark:bg-white/10 backdrop-blur-sm rounded-full p-2 shadow-2xl">
-                <div className="bg-white dark:bg-gray-800 rounded-full p-6 shadow-lg animate-pulse w-20 h-20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-6xl text-primary font-bold">
-                    {scrollDirection === "left" ? "arrow_back" : "arrow_forward"}
-                  </span>
-                </div>
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <div className="bg-black/10 dark:bg-white/10 backdrop-blur-sm rounded-full p-2 shadow-2xl">
+              <div className="bg-white dark:bg-gray-800 rounded-full p-6 shadow-lg animate-pulse w-20 h-20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-6xl text-primary font-bold">
+                  {scrollDirection === "left" ? "arrow_back" : "arrow_forward"}
+                </span>
               </div>
             </div>
           </div>
         )}
 
-        <table className="w-full text-left min-w-max">
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto"
+        >
+          {/* Saydam overlay - tablo genişliğinin tamamını kaplar */}
+          {scrollDirection && (
+            <div className="absolute inset-0 bg-black/10 dark:bg-white/10 pointer-events-none z-10" style={{ width: '100%', minWidth: 'max-content' }} />
+          )}
+
+          <table className="w-full text-left min-w-max relative">
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 transition-colors duration-300">
             <tr>
               <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">
