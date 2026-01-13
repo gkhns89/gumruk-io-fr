@@ -107,6 +107,10 @@ export default function AddTransactionModal({
   // Yeni firma ekleme modal state
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
+  // Number formatlama için display state'leri
+  const [displayWeight, setDisplayWeight] = useState("");
+  const [displayTax, setDisplayTax] = useState("");
+
   // SUPER_ADMIN ise broker listesini yükle
   useEffect(() => {
     if (isSuperAdmin) {
@@ -538,6 +542,25 @@ export default function AddTransactionModal({
     }
   };
 
+  // Number formatlama yardımcı fonksiyonları
+  const formatNumber = (value, decimals = 2) => {
+    if (!value || value === "") return "";
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(num)) return "";
+    return num.toLocaleString("tr-TR", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
+
+  const parseFormattedNumber = (formattedValue) => {
+    if (!formattedValue || formattedValue === "") return "";
+    // Türkçe formatı parse et: . binlik ayraç, , ondalık ayraç
+    const cleaned = formattedValue.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? "" : num;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -546,29 +569,91 @@ export default function AddTransactionModal({
     }));
   };
 
-  // Vergi değeri için özel validasyon (maksimum 4 ondalık basamak)
+  // Weight değeri için özel handler (formatlama ile)
+  const handleWeightChange = (e) => {
+    const inputValue = e.target.value;
+
+    // Clear error when user types
+    if (fieldErrors.weight) {
+      setFieldErrors(prev => ({ ...prev, weight: null }));
+    }
+
+    // Display değerini güncelle
+    setDisplayWeight(inputValue);
+
+    // Boş değere izin ver
+    if (inputValue === '') {
+      setFormData(prev => ({ ...prev, weight: '' }));
+      return;
+    }
+
+    // Parse et ve formData'ya kaydet
+    const parsedValue = parseFormattedNumber(inputValue);
+    if (parsedValue !== "") {
+      setFormData(prev => ({ ...prev, weight: parsedValue }));
+    }
+  };
+
+  const handleWeightBlur = () => {
+    // onBlur'da formatla ve göster
+    if (formData.weight) {
+      setDisplayWeight(formatNumber(formData.weight, 2));
+    }
+  };
+
+  const handleWeightFocus = () => {
+    // onFocus'ta ham değeri göster
+    if (formData.weight) {
+      setDisplayWeight(formData.weight.toString());
+    }
+  };
+
+  // Vergi değeri için özel handler (formatlama + maksimum 4 ondalık basamak)
   const handleTaxChange = (e) => {
-    const value = e.target.value;
+    const inputValue = e.target.value;
 
     // Clear error when user types
     if (fieldErrors.tax) {
       setFieldErrors(prev => ({ ...prev, tax: null }));
     }
 
+    // Display değerini güncelle
+    setDisplayTax(inputValue);
+
     // Boş değere izin ver
-    if (value === '') {
+    if (inputValue === '') {
       setFormData(prev => ({ ...prev, tax: '' }));
       return;
     }
 
-    // Değeri kontrol et - maksimum 4 ondalık basamak
-    const parts = value.split('.');
-    if (parts.length === 2 && parts[1].length > 4) {
-      // 4 haneden fazla ondalık varsa, 4 haneye kısalt
-      const truncatedValue = `${parts[0]}.${parts[1].substring(0, 4)}`;
-      setFormData(prev => ({ ...prev, tax: truncatedValue }));
-    } else {
-      setFormData(prev => ({ ...prev, tax: value }));
+    // Parse et
+    const parsedValue = parseFormattedNumber(inputValue);
+    if (parsedValue !== "") {
+      // Maksimum 2 ondalık basamak kontrolü
+      const valueStr = parsedValue.toString();
+      const parts = valueStr.split(',');
+      if (parts.length === 2 && parts[1].length > 2) {
+        // 2 haneden fazla ondalık varsa, 2 haneye kısalt
+        const truncatedValue = parseFloat(`${parts[0]}.${parts[1].substring(0, 2)}`);
+        setFormData(prev => ({ ...prev, tax: truncatedValue }));
+        setDisplayTax(truncatedValue.toString());
+      } else {
+        setFormData(prev => ({ ...prev, tax: parsedValue }));
+      }
+    }
+  };
+
+  const handleTaxBlur = () => {
+    // onBlur'da formatla ve göster
+    if (formData.tax) {
+      setDisplayTax(formatNumber(formData.tax, 2));
+    }
+  };
+
+  const handleTaxFocus = () => {
+    // onFocus'ta ham değeri göster
+    if (formData.tax) {
+      setDisplayTax(formData.tax.toString());
     }
   };
 
@@ -774,6 +859,11 @@ export default function AddTransactionModal({
     }
     if (hasRegistrationDate && !hasDeclarationNumber) {
       errors.declarationNumber = "Tescil tarihi girildiğinde beyanname numarası zorunludur";
+    }
+
+    // Beyanname numarası 18 karakter kontrolü
+    if (hasDeclarationNumber && formData.declarationNumber.trim().length !== 18) {
+      errors.declarationNumber = "Beyanname numarası 18 karakter olmalıdır";
     }
 
     setFieldErrors(errors);
@@ -1980,18 +2070,12 @@ export default function AddTransactionModal({
                   {t("transaction.weight")} *
                 </p>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
                   name="weight"
-                  value={formData.weight}
-                  onChange={(e) => {
-                    handleChange(e);
-                    // Clear error when user types
-                    if (fieldErrors.weight) {
-                      setFieldErrors(prev => ({ ...prev, weight: null }));
-                    }
-                  }}
+                  value={displayWeight || formData.weight}
+                  onChange={handleWeightChange}
+                  onBlur={handleWeightBlur}
+                  onFocus={handleWeightFocus}
                   className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.weight
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -2018,12 +2102,12 @@ export default function AddTransactionModal({
                   {t("transaction.tax")} *
                 </p>
                 <input
-                  type="number"
-                  step="1"
-                  min="0"
+                  type="text"
                   name="tax"
-                  value={formData.tax}
+                  value={displayTax || formData.tax}
                   onChange={handleTaxChange}
+                  onBlur={handleTaxBlur}
+                  onFocus={handleTaxFocus}
                   className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                     fieldErrors.tax
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
