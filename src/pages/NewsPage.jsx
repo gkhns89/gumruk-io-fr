@@ -43,12 +43,21 @@ const NewsPage = () => {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const lastWeek = new Date(today);
-    lastWeek.setDate(lastWeek.getDate() - 7);
+    // Bu haftanın başlangıcını bul (Pazartesi)
+    const thisWeekStart = new Date(today);
+    const dayOfWeek = today.getDay(); // 0 = Pazar, 1 = Pazartesi, ..., 6 = Cumartesi
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Pazar ise 6, diğer günler için dayOfWeek - 1
+    thisWeekStart.setDate(today.getDate() - daysFromMonday);
+    thisWeekStart.setHours(0, 0, 0, 0);
+
+    // Geçen haftanın başlangıcını bul (geçen Pazartesi)
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
 
     const todayNews = [];
     const yesterdayNews = [];
     const thisWeekNews = [];
+    const lastWeekNews = [];
     const olderNews = [];
 
     newsList.forEach(item => {
@@ -64,17 +73,19 @@ const NewsPage = () => {
         todayNews.push(item);
       } else if (itemDate.getTime() === yesterday.getTime()) {
         yesterdayNews.push(item);
-      } else if (itemDate >= lastWeek) {
+      } else if (itemDate >= thisWeekStart) {
         thisWeekNews.push(item);
+      } else if (itemDate >= lastWeekStart) {
+        lastWeekNews.push(item);
       } else {
         olderNews.push(item);
       }
     });
 
-    return { todayNews, yesterdayNews, thisWeekNews, olderNews };
+    return { todayNews, yesterdayNews, thisWeekNews, lastWeekNews, olderNews };
   };
 
-  const { todayNews, yesterdayNews, thisWeekNews, olderNews } = groupNewsByDate(filteredNews);
+  const { todayNews, yesterdayNews, thisWeekNews, lastWeekNews, olderNews } = groupNewsByDate(filteredNews);
 
   const handleNewsClick = (newsItem) => {
     setSelectedNews(newsItem);
@@ -356,7 +367,26 @@ const NewsPage = () => {
                 </div>
               )}
 
-              {/* Eski Haberler */}
+              {/* Geçen Haftanın Haberleri */}
+              {lastWeekNews.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
+                      <span className="material-symbols-outlined text-lg">
+                        event
+                      </span>
+                      <h2 className="text-sm font-semibold">Geçen Hafta</h2>
+                    </div>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {lastWeekNews.map((item, index) => renderNewsCard(item, index))}
+                  </div>
+                </div>
+              )}
+
+              {/* Daha Eski Haberler */}
               {olderNews.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
@@ -364,7 +394,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-lg">
                         history
                       </span>
-                      <h2 className="text-sm font-semibold">Önceki Haberler</h2>
+                      <h2 className="text-sm font-semibold">Daha Eski Haberler</h2>
                     </div>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
