@@ -62,15 +62,15 @@ export default function TransactionsFullTable({
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      PENDING: { color: "pending", label: "Bekliyor" },
-      REGISTERED: { color: "registered", label: "Tescil Edildi" },
-      INSPECTION: { color: "inspection", label: "Muayene Sürecinde" },
+      PENDING: { color: "pending", label: "BEKLİYOR" },
+      REGISTERED: { color: "registered", label: "TESCİL EDİLDİ" },
+      INSPECTION: { color: "inspection", label: "MUAYENEDE" },
       CP_COMPLETED: {
         color: "completed",
-        label: "Gümrük İşlemleri Tamamlandı",
+        label: "TAMAMLANDI",
       },
-      WITHDRAWN: { color: "withdrawn", label: "Çekildi" },
-      CANCELLED: { color: "cancelled", label: "İptal" },
+      WITHDRAWN: { color: "withdrawn", label: "ÇEKİLDİ" },
+      CANCELLED: { color: "cancelled", label: "İPTAL" },
     };
 
     const statusInfo = statusMap[status] || { color: "default", label: status };
@@ -317,7 +317,7 @@ export default function TransactionsFullTable({
                   <td className="px-4 py-3 whitespace-nowrap">
                     {transaction.gate ? (
                       <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${gateBadgeClass}`}
+                        className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full w-20 ${gateBadgeClass}`}
                       >
                         {transaction.gate}
                       </span>
@@ -348,7 +348,7 @@ export default function TransactionsFullTable({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
+                      className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full min-w-[140px] ${statusInfo.className}`}
                     >
                       {statusInfo.label}
                     </span>
@@ -418,6 +418,7 @@ export default function TransactionsFullTable({
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Edit/View Modal */}

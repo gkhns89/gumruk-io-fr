@@ -54,8 +54,8 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
     const statusMap = {
       'PENDING': { color: 'pending', label: 'BEKLİYOR' },
       'REGISTERED': { color: 'registered', label: 'TESCİL EDİLDİ' },
-      'INSPECTION': { color: 'inspection', label: 'MUAYENE SÜRECİNDE' },
-      'CP_COMPLETED': { color: 'completed', label: 'GÜMRÜK İŞLEMLERİ TAMAMLANDI' },
+      'INSPECTION': { color: 'inspection', label: 'MUAYENEDE' },
+      'CP_COMPLETED': { color: 'completed', label: 'TAMAMLANDI' },
       'WITHDRAWN': { color: 'withdrawn', label: 'ÇEKİLDİ' },
       'CANCELLED': { color: 'cancelled', label: 'İPTAL' },
     };
@@ -76,12 +76,6 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
       className: colors[statusInfo.color],
       label: statusInfo.label,
     };
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR');
   };
 
   const handleViewTransaction = (transaction) => {
@@ -109,12 +103,6 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
 
     // Modal'ı aç
     handleViewTransaction(transaction);
-  };
-
-  const handleViewFull = (transactionId) => {
-    // İşlem takip sayfasına yönlendir ve düzenleme modunda aç
-    setSelectedTransaction(null);
-    navigate(`/transactions?edit=${transactionId}`);
   };
 
   // Loading state
@@ -212,7 +200,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
             </div>
           )}
 
-          <table className="w-full text-left">
+          <table className="w-full text-left relative">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-text-main uppercase tracking-wider">
@@ -264,7 +252,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {transaction.gate ? (
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${gateBadgeClass}`}>
+                        <span className={`px-2 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full w-20 ${gateBadgeClass}`}>
                           {transaction.gate}
                         </span>
                       ) : (
@@ -273,7 +261,7 @@ export default function TransactionsTable({ transactions, loading, error, onRetr
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.className}`}
+                        className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full min-w-[140px] ${statusInfo.className}`}
                       >
                         {statusInfo.label}
                       </span>
