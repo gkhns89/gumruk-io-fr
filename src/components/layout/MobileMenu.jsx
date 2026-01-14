@@ -170,12 +170,12 @@ export default function MobileMenu({ isOpen, onClose }) {
           {hasManagementAccess && visibleManagementItems.length > 0 && (
             <>
               {/* Divider */}
-              <div className="my-4 border-t border-gray-200" />
+              <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
 
               {/* Yönetim Çekmece Butonu */}
               <button
                 onClick={() => setIsManagementOpen(!isManagementOpen)}
-                className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-gray-100 text-text-secondary transition-all mb-1"
+                className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-text-secondary transition-all mb-1"
               >
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined">
@@ -192,7 +192,7 @@ export default function MobileMenu({ isOpen, onClose }) {
 
               {/* Yönetim Menü Öğeleri - Çekmece İçeriği */}
               {isManagementOpen && (
-                <div className="space-y-1 ml-4 border-l-2 border-gray-200 pl-3">
+                <div className="space-y-1 ml-4 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
                   {visibleManagementItems.map((item, index) => {
                     const active = isActive(item.path);
 
@@ -203,7 +203,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                           active
                             ? "bg-primary text-white shadow-md"
-                            : "hover:bg-gray-100 text-text-main"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
                         }`}
                       >
                         <span className="material-symbols-outlined">
@@ -226,7 +226,7 @@ export default function MobileMenu({ isOpen, onClose }) {
           )}
 
           {/* Divider */}
-          <div className="my-4 border-t border-gray-200" />
+          <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
 
           {/* Alt Menü (İletişim & Yardım) */}
           <div className="space-y-1">
@@ -255,10 +255,10 @@ export default function MobileMenu({ isOpen, onClose }) {
         </nav>
 
         {/* Footer - Logout */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors font-medium"
           >
             <span className="material-symbols-outlined">logout</span>
             <span>Oturumu Kapat</span>
