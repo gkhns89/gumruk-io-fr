@@ -361,7 +361,7 @@ export default function TransactionsPage() {
 
   return (
     <MainLayout hasFooter={true}>
-      <div className="flex flex-col">
+      <div className="flex flex-col pb-24">
         {/* Page Header */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors duration-300">
           {/* Header Section */}
