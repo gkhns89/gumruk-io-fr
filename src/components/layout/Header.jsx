@@ -276,7 +276,7 @@ export default function Header() {
       </header>
 
       {/* Mobile Search Bar - Expandable */}
-      <div className={`md:hidden px-4 py-3 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-all duration-200 ${isSearchOpen ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+      <div className={`md:hidden bg-white dark:bg-background-dark flex-shrink-0 transition-all duration-200 ${isSearchOpen ? 'opacity-100 max-h-24 px-4 py-3 border-b border-gray-200 dark:border-gray-700' : 'opacity-0 max-h-0 overflow-hidden px-0 py-0 border-0'}`}>
           <div className="relative" ref={mobileSearchRef}>
             <div className="flex w-full items-stretch rounded-lg h-10">
               <div className="text-text-secondary flex border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 items-center justify-center pl-3 rounded-l-lg border-r-0 transition-colors">
