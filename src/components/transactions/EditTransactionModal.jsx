@@ -1853,10 +1853,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                         {isInspectionStatus && <span className="ml-2 text-xs italic">(Önizleme)</span>}
                       </p>
                       <p className="text-text-main text-2xl font-bold">
-                        {isInspectionStatus
-                          ? calculatedProcessingTime
-                          : transaction.importProcessingTime
-                        } gün
+                        {(() => {
+                          const days = isInspectionStatus
+                            ? calculatedProcessingTime
+                            : transaction.importProcessingTime;
+                          return days === 0 ? "Gün İçerisinde" : `${days} gün`;
+                        })()}
                       </p>
                     </div>
                   </div>
