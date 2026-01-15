@@ -2784,25 +2784,25 @@ export default function AddTransactionModal({
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
+          <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-end gap-3 md:gap-4 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               type="button"
               onClick={handleClear}
-              className="px-6 py-3 bg-neutral/20 text-text-main rounded-lg hover:bg-neutral/30 transition-colors font-semibold"
+              className="w-full md:w-auto px-6 py-3 bg-neutral/20 text-text-main rounded-lg hover:bg-neutral/30 transition-colors font-semibold"
             >
               {t("common.clear")}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
+              className="w-full md:w-auto px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
               {t("common.cancel")}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">save</span>
               {loading ? t("common.loading") : t("common.save")}
