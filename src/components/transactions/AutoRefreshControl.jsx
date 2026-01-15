@@ -36,6 +36,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
   const intervalIdRef = useRef(null);
   const onRefreshRef = useRef(onRefresh);
   const loadingRef = useRef(loading);
+  const previousLoadingRef = useRef(loading);
 
   // Keep refs updated
   useEffect(() => {
@@ -43,11 +44,23 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
   }, [onRefresh]);
 
   useEffect(() => {
+    previousLoadingRef.current = loadingRef.current;
     loadingRef.current = loading;
   }, [loading]);
 
   // ===== EFFECTS =====
-  // Effect 1: Auto-refresh interval management
+  // Effect 1: Update last refresh time when loading completes
+  useEffect(() => {
+    // When loading changes from true to false, data has been refreshed
+    if (!loading && previousLoadingRef.current) {
+      const now = Date.now();
+      setLastRefreshTime(now);
+      localStorage.setItem('transactionsAutoRefresh_lastTime', now.toString());
+      console.log('Data refreshed, updating last refresh time');
+    }
+  }, [loading]);
+
+  // Effect 2: Auto-refresh interval management
   useEffect(() => {
     // Validate interval value
     if (!refreshInterval || refreshInterval < 60000) {
@@ -70,8 +83,6 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
           console.log('Auto-refresh triggered');
           try {
             onRefreshRef.current();
-            setLastRefreshTime(Date.now());
-            localStorage.setItem('transactionsAutoRefresh_lastTime', Date.now().toString());
           } catch (error) {
             console.error('Auto-refresh error:', error);
           }
@@ -91,7 +102,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
     };
   }, [isEnabled, refreshInterval, isModalOpen]);
 
-  // Effect 2: Click outside detection
+  // Effect 3: Click outside detection
   useEffect(() => {
     const handleClickOutside = (event) => {
       const isClickInsidePanel = panelRef.current?.contains(event.target);
@@ -111,17 +122,17 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
     };
   }, [isOpen]);
 
-  // Effect 3: Persist enabled state
+  // Effect 4: Persist enabled state
   useEffect(() => {
     localStorage.setItem('transactionsAutoRefresh_enabled', isEnabled.toString());
   }, [isEnabled]);
 
-  // Effect 4: Persist interval
+  // Effect 5: Persist interval
   useEffect(() => {
     localStorage.setItem('transactionsAutoRefresh_interval', refreshInterval.toString());
   }, [refreshInterval]);
 
-  // Effect 5: Close panel when filter opens (mutual exclusivity)
+  // Effect 6: Close panel when filter opens (mutual exclusivity)
   useEffect(() => {
     if (isFilterOpen && isOpen) {
       setIsOpen(false);
@@ -157,9 +168,8 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
 
     try {
       await onRefreshRef.current();
-      setLastRefreshTime(Date.now());
-      localStorage.setItem('transactionsAutoRefresh_lastTime', Date.now().toString());
       console.log('Manual refresh completed');
+      // Note: lastRefreshTime is automatically updated by Effect 1 when loading completes
     } catch (error) {
       console.error('Manual refresh error:', error);
     } finally {
