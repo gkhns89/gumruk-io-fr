@@ -68,22 +68,22 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
     const badge = getStatusBadge('NO_AGREEMENT');
 
     return (
-      <div className={`bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} transition-colors`}>
-        <div className={`flex items-center ${compact ? 'flex-col gap-3' : 'justify-between'}`}>
-          <div className="flex items-center gap-3 w-full">
-            <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-2xl">
+      <div className={`bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 ${compact ? '' : 'lg:col-span-3'} transition-colors`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center gap-4 ${compact ? '' : 'sm:justify-between'}`}>
+          <div className="flex items-start gap-3 w-full">
+            <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-xl sm:text-2xl flex-shrink-0 mt-0.5">
               info
             </span>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <span className="text-base sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {clientName}
                 </span>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
+                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
                   {badge.label}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-xs text-gray-500 dark:text-gray-400 mt-1.5 sm:mt-1">
                 Bu müşteri ile vekalet anlaşmanız bulunmamaktadır
               </p>
             </div>
@@ -93,7 +93,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
             <button
               type="button"
               onClick={onCreateAgreement}
-              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors ${compact ? 'w-full justify-center' : ''}`}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors ${compact ? 'w-full' : 'w-full sm:w-auto'} whitespace-nowrap`}
             >
               <span className="material-symbols-outlined text-lg">add</span>
               Vekalet Ekle
@@ -117,40 +117,40 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
   }
 
   return (
-    <div className={`border-2 rounded-xl p-4 ${compact ? '' : 'lg:col-span-3'} transition-colors ${
+    <div className={`border-2 rounded-xl p-4 sm:p-5 ${compact ? '' : 'lg:col-span-3'} transition-colors ${
       isActive ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
     }`}>
-      <div className={`flex ${compact ? 'flex-col' : 'items-start justify-between'}`}>
+      <div className={`flex flex-col ${compact ? '' : 'lg:flex-row lg:items-start lg:justify-between'} gap-4`}>
         <div className={`flex items-start gap-3 flex-1 ${compact ? 'w-full' : ''}`}>
-          <span className={`material-symbols-outlined ${compact ? 'text-xl' : 'text-2xl'} mt-0.5 ${
+          <span className={`material-symbols-outlined text-xl sm:text-2xl mt-0.5 flex-shrink-0 ${
             isActive ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
           }`}>
             verified
           </span>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Firma adı ve durum badge'i */}
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+            <div className="flex items-center gap-2 mb-2 sm:mb-2.5 flex-wrap">
+              <span className="text-base sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {clientName}
               </span>
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
+              <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors ${badge.bg} ${badge.text} ${badge.border}`}>
                 {badge.label}
               </span>
             </div>
 
             {/* Tarih bilgileri */}
             {isActive && (
-              <div className={`grid gap-3 mt-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
+              <div className={`grid gap-3 sm:gap-4 mt-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
                 {/* Başlangıç tarihi */}
                 {agreement.agreementStartDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
+                  <div className="flex items-center gap-2.5 sm:gap-2 bg-white/50 dark:bg-gray-800/50 p-2.5 sm:p-2 rounded-lg">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base sm:text-sm flex-shrink-0">
                       event
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-gray-600 dark:text-gray-400">Başlangıç</p>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
                         {new Date(agreement.agreementStartDate).toLocaleDateString('tr-TR')}
                       </p>
                     </div>
@@ -159,13 +159,13 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
                 {/* Bitiş tarihi */}
                 {agreement.agreementEndDate && (
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
+                  <div className="flex items-center gap-2.5 sm:gap-2 bg-white/50 dark:bg-gray-800/50 p-2.5 sm:p-2 rounded-lg">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base sm:text-sm flex-shrink-0">
                       event
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-gray-600 dark:text-gray-400">Bitiş</p>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
                         {new Date(agreement.agreementEndDate).toLocaleDateString('tr-TR')}
                       </p>
                     </div>
@@ -174,11 +174,11 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
                 {/* Kalan süre */}
                 {remainingDays !== null && (
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-sm">
+                  <div className="flex items-center gap-2.5 sm:gap-2 bg-white/50 dark:bg-gray-800/50 p-2.5 sm:p-2 rounded-lg">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base sm:text-sm flex-shrink-0">
                       schedule
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-gray-600 dark:text-gray-400">Kalan Süre</p>
                       <p className={`text-sm font-semibold ${
                         remainingDays < 30 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-200'
@@ -194,7 +194,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
             {/* PENDING durumu için uyarı */}
             {agreement.agreementStatus === 'PENDING' && (
-              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+              <p className="text-sm sm:text-xs text-yellow-700 dark:text-yellow-300 mt-3 sm:mt-2 p-2.5 sm:p-2 bg-yellow-100/50 dark:bg-yellow-900/20 rounded-lg">
                 ⏳ Anlaşma onay bekliyor. Aktifleştirme için yöneticinizle iletişime geçin.
               </p>
             )}
@@ -206,9 +206,9 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
           <button
             type="button"
             onClick={handleDownloadDocument}
-            className={`flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-              compact ? 'w-full justify-center mt-3' : ''
-            }`}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors ${
+              compact ? 'w-full mt-3' : 'w-full lg:w-auto lg:flex-shrink-0'
+            } whitespace-nowrap`}
           >
             <span className="material-symbols-outlined text-lg">download</span>
             Belge İndir
