@@ -145,18 +145,6 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
     return `${diffDays} gün önce`;
   };
 
-  const getIntervalLabel = (ms) => {
-    const labels = {
-      60000: '1 dk',
-      300000: '5 dk',
-      900000: '15 dk',
-      1800000: '30 dk',
-      3600000: '1 sa',
-      7200000: '2 sa'
-    };
-    return labels[ms] || '5 dk';
-  };
-
   // ===== EVENT HANDLERS =====
   const handleManualRefresh = async () => {
     if (loadingRef.current) {
@@ -203,7 +191,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             onOpen();
           }
         }}
-        className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold flex-1 sm:flex-initial relative"
+        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold relative"
         title="Otomatik Yenileme"
       >
         {/* Refresh Icon with Spinning Animation */}
@@ -214,20 +202,144 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
           refresh
         </span>
 
-        <span className="whitespace-nowrap text-text-main">Oto-Yenileme</span>
+        <span className="whitespace-nowrap text-text-main hidden md:inline">Oto-Yenileme</span>
 
         {/* Active Badge */}
         {isEnabled && (
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></span>
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
         )}
       </button>
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div
-          ref={panelRef}
-          className="absolute right-0 mt-4 bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-slide-in-top w-80 z-50 transition-colors"
-        >
+        <div ref={panelRef}>
+          {/* Mobile: Centered on viewport */}
+          <div
+            className="sm:hidden fixed left-1/2 -translate-x-1/2 top-[120px] bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-slide-in-top w-[min(320px,calc(100vw-1rem))] z-50 transition-colors"
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">schedule</span>
+                  <h3 className="text-sm font-semibold text-text-main">Otomatik Yenileme</h3>
+                  {isEnabled && (
+                    <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
+                      Aktif
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Kapat"
+                >
+                  <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-xl">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              {/* Enable/Disable Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-base">
+                    {isEnabled ? 'toggle_on' : 'toggle_off'}
+                  </span>
+                  <span className="text-sm font-medium text-text-main">
+                    Otomatik yenileme
+                  </span>
+                </div>
+                <button
+                  onClick={handleToggleEnabled}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEnabled ? 'bg-primary' : 'bg-gray-300'
+                    }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                  />
+                </button>
+              </div>
+
+              {/* Interval Selection */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-2">
+                  Yenileme Aralığı
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 60000, label: '1 dakika' },
+                    { value: 300000, label: '5 dakika' },
+                    { value: 900000, label: '15 dakika' },
+                    { value: 1800000, label: '30 dakika' },
+                    { value: 3600000, label: '1 saat' },
+                    { value: 7200000, label: '2 saat' }
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleIntervalChange(option.value)}
+                      className={`px-3 py-2 text-xs font-medium rounded-lg border-2 transition-colors ${refreshInterval === option.value
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white dark:bg-gray-800 text-text-main border-gray-200 dark:border-gray-600 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+              {/* Last Refresh Info */}
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
+                <span className="material-symbols-outlined text-base">history</span>
+                <span>Son yenileme: {formatLastRefresh(lastRefreshTime)}</span>
+              </div>
+
+              {/* Manual Refresh Button */}
+              <button
+                onClick={handleManualRefresh}
+                disabled={loading || isRefreshing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span
+                  className={`material-symbols-outlined text-base ${(loading || isRefreshing) ? 'animate-spin' : ''
+                    }`}
+                >
+                  refresh
+                </span>
+                <span>Şimdi Yenile</span>
+              </button>
+
+              {/* Smart Pause Indicator */}
+              {isEnabled && isModalOpen && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">pause_circle</span>
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Modal açıkken otomatik yenileme duraklatıldı
+                  </span>
+                </div>
+              )}
+
+              {/* Close Button - Mobile Only */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+                <span>Kapat</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop: Below button, aligned right */}
+          <div
+            className="hidden sm:block absolute mt-2 right-0 bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden animate-slide-in-top w-80 z-50 transition-colors"
+          >
           {/* Header */}
           <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 transition-colors">
             <div className="flex items-center justify-between">
@@ -240,6 +352,13 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                   </span>
                 )}
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Kapat"
+              >
+                <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-xl">close</span>
+              </button>
             </div>
           </div>
 
@@ -329,6 +448,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               </div>
             )}
           </div>
+        </div>
         </div>
       )}
     </div>
