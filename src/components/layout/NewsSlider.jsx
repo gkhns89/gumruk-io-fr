@@ -191,10 +191,10 @@ export default function NewsSlider() {
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in"
           onClick={handleCloseModal}
         >
-          <div className="relative flex items-center gap-4 max-w-full">
+          <div className="relative flex flex-col md:flex-row items-center gap-4 max-w-full w-full md:w-auto">
             {/* Modal Content */}
             <div
-              className="bg-white dark:bg-background-dark rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto animate-slide-up transition-colors"
+              className="bg-white dark:bg-background-dark rounded-lg shadow-2xl w-full max-w-2xl max-h-[70vh] md:max-h-[85vh] overflow-y-auto animate-slide-up transition-colors"
               onClick={(e) => e.stopPropagation()}
               onMouseEnter={() => {
                 setShowButtons(true);
@@ -235,14 +235,12 @@ export default function NewsSlider() {
 
                 {currentNews.publishedDate && (
                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    <span className="material-symbols-outlined text-base">schedule</span>
+                    <span className="material-symbols-outlined text-base">calendar_today</span>
                     <time dateTime={currentNews.publishedDate}>
                       {new Date(currentNews.publishedDate).toLocaleDateString('tr-TR', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        day: 'numeric'
                       })}
                     </time>
                   </div>
@@ -274,10 +272,10 @@ export default function NewsSlider() {
               </div>
             </div>
 
-            {/* Floating Navigation Buttons - Modal Sağında */}
+            {/* Floating Navigation Buttons - Mobilde Alt, Desktop'ta Sağ */}
             {news.length > 1 && (
               <div
-                className={`flex flex-col items-center gap-3 transition-opacity duration-300 ${showButtons ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`flex flex-row md:flex-col items-center gap-3 transition-opacity duration-300 opacity-100 md:opacity-0 ${showButtons ? 'md:opacity-100' : 'md:pointer-events-none'}`}
                 onClick={(e) => e.stopPropagation()} // Backdrop click'ini engelle
                 onMouseEnter={() => {
                   setShowButtons(true);
@@ -295,7 +293,7 @@ export default function NewsSlider() {
                   }, 2000);
                 }}
               >
-                {/* Yukarı (Önceki) Buton */}
+                {/* Önceki Buton - Mobilde Sol, Desktop'ta Yukarı */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -305,7 +303,12 @@ export default function NewsSlider() {
                   aria-label="Önceki Haber"
                   title="Önceki Haber"
                 >
-                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors">
+                  {/* Mobil ikon */}
+                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors block md:!hidden">
+                    chevron_left
+                  </span>
+                  {/* Desktop ikon */}
+                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors !hidden md:!block">
                     keyboard_arrow_up
                   </span>
                 </button>
@@ -317,7 +320,7 @@ export default function NewsSlider() {
                   </span>
                 </div>
 
-                {/* Aşağı (Sonraki) Buton */}
+                {/* Sonraki Buton - Mobilde Sağ, Desktop'ta Aşağı */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -327,7 +330,12 @@ export default function NewsSlider() {
                   aria-label="Sonraki Haber"
                   title="Sonraki Haber"
                 >
-                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors">
+                  {/* Mobil ikon */}
+                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors block md:!hidden">
+                    chevron_right
+                  </span>
+                  {/* Desktop ikon */}
+                  <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors !hidden md:!block">
                     keyboard_arrow_down
                   </span>
                 </button>
