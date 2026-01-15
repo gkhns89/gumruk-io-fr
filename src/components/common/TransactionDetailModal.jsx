@@ -3,11 +3,11 @@ import React from "react";
 // Hat badge renkleri
 const getGateBadge = (gate) => {
   const badgeStyles = {
-    'SARI': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    'KIRMIZI': 'bg-red-100 text-red-800 border border-red-300',
+    'SARI': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700',
+    'KIRMIZI': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700',
   };
 
-  return badgeStyles[gate] || 'bg-gray-100 text-gray-800';
+  return badgeStyles[gate] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
 };
 
 export default function TransactionDetailModal({ transaction, onClose, onEdit }) {
@@ -26,8 +26,8 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
     const statusMap = {
       'PENDING': { color: 'pending', label: 'BEKLİYOR' },
       'REGISTERED': { color: 'registered', label: 'TESCİL EDİLDİ' },
-      'INSPECTION': { color: 'inspection', label: 'MUAYENE SÜRECİNDE' },
-      'CP_COMPLETED': { color: 'completed', label: 'GÜMRÜK İŞLEMLERİ TAMAMLANDI' },
+      'INSPECTION': { color: 'inspection', label: 'MUAYENEDE' },
+      'CP_COMPLETED': { color: 'completed', label: 'TAMAMLANDI' },
       'WITHDRAWN': { color: 'withdrawn', label: 'ÇEKİLDİ' },
       'CANCELLED': { color: 'cancelled', label: 'İPTAL' },
     };
@@ -35,13 +35,13 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
     const statusInfo = statusMap[status] || { color: 'default', label: status };
 
     const colors = {
-      pending: "bg-sky-50 text-sky-700 border border-sky-300",
-      registered: "bg-amber-50 text-amber-700 border border-amber-300",
-      inspection: "bg-purple-50 text-purple-700 border border-purple-300",
-      completed: "bg-orange-50 text-orange-700 border border-orange-300",
-      withdrawn: "bg-emerald-50 text-emerald-700 border border-emerald-300",
-      cancelled: "bg-rose-50 text-rose-700 border border-rose-300",
-      default: "bg-gray-50 text-gray-600 border border-gray-300",
+      pending: "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700",
+      registered: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700",
+      inspection: "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700",
+      completed: "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-700",
+      withdrawn: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700",
+      cancelled: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700",
+      default: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600",
     };
 
     return {
@@ -100,7 +100,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               </span>
               {transaction.gate && (
                 <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${gateBadgeClass}`}>
-                  {transaction.gate} Hat
+                  {transaction.gate}
                 </span>
               )}
             </div>
@@ -145,7 +145,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Ağırlık</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.weight ? `${transaction.weight} kg` : '-'}
+                  {transaction.weight ? `${transaction.weight.toLocaleString('tr-TR')} kg` : '-'}
                 </p>
               </div>
 
@@ -210,16 +210,16 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
+          <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-between gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               onClick={onClose}
-              className="px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"
+              className="w-full md:w-auto px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
               Kapat
             </button>
             <button
               onClick={() => onEdit && onEdit(transaction)}
-              className="flex items-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
               İşlemi Düzenle
