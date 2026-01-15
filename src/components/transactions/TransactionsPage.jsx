@@ -373,15 +373,16 @@ export default function TransactionsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* Filter Toggle Button */}
               <button
                 ref={filterButtonRef}
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold flex-1 sm:flex-initial"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold"
+                title="Filtreler"
               >
                 <span className="material-symbols-outlined text-primary">tune</span>
-                <span className="whitespace-nowrap text-text-main">Filtreler</span>
+                <span className="whitespace-nowrap text-text-main hidden md:inline">Filtreler</span>
                 {hasActiveFilters && (
                   <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">
                     {getActiveFiltersCount()}
@@ -401,10 +402,11 @@ export default function TransactionsPage() {
               {canCreate && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold flex-1 sm:flex-initial shadow-sm"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold shadow-sm"
+                  title="Yeni İşlem Ekle"
                 >
                   <span className="material-symbols-outlined">add</span>
-                  <span className="whitespace-nowrap">Yeni İşlem</span>
+                  <span className="whitespace-nowrap hidden md:inline">Yeni İşlem</span>
                 </button>
               )}
             </div>
