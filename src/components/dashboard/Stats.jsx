@@ -19,6 +19,13 @@ export default function Stats({ transactions, loading }) {
       transactions?.filter((t) => t.delayReason && t.delayReason.trim() !== "")?.length || 0,
   };
 
+  // Hat bazlı çekilen işlem sayıları
+  const withdrawnTransactions = transactions?.filter((t) => t.status === "WITHDRAWN") || [];
+  const withdrawnByGate = {
+    SARI: withdrawnTransactions.filter((t) => t.gate === "SARI").length,
+    KIRMIZI: withdrawnTransactions.filter((t) => t.gate === "KIRMIZI").length,
+  };
+
   const statsData = [
     {
       label: "Toplam İşlem",
@@ -55,6 +62,8 @@ export default function Stats({ transactions, loading }) {
       value: stats.withdrawn,
       color: "withdrawn",
       icon: "check_circle",
+      showGateBreakdown: true,
+      gateBreakdown: withdrawnByGate,
     },
     {
       label: "Gecikenler",
@@ -100,6 +109,47 @@ export default function Stats({ transactions, loading }) {
     };
   };
 
+  // Hat breakdown gösterim fonksiyonu
+  const renderGateBreakdown = (breakdown) => {
+    const gateConfig = {
+      SARI: {
+        label: "Sarı",
+        emoji: "🟡",
+        bgClass: "bg-yellow-100 dark:bg-yellow-900/30",
+        textClass: "text-yellow-800 dark:text-yellow-300",
+        borderClass: "border-yellow-300 dark:border-yellow-700",
+      },
+      KIRMIZI: {
+        label: "Kırmızı",
+        emoji: "🔴",
+        bgClass: "bg-red-100 dark:bg-red-900/30",
+        textClass: "text-red-800 dark:text-red-300",
+        borderClass: "border-red-300 dark:border-red-700",
+      },
+    };
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+        {Object.entries(breakdown).map(([gate, count]) => {
+          const config = gateConfig[gate];
+          if (!config) return null;
+
+          return (
+            <div
+              key={gate}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md border ${config.bgClass} ${config.borderClass} transition-transform hover:scale-105 cursor-default`}
+            >
+              <span className="text-sm">{config.emoji}</span>
+              <span className={`text-xs font-semibold ${config.textClass}`}>
+                {config.label}: {count}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
       {statsData.map((stat, index) => {
@@ -124,11 +174,16 @@ export default function Stats({ transactions, loading }) {
                 <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
               </div>
             ) : (
-              <p
-                className={`tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}`}
-              >
-                {stat.value}
-              </p>
+              <>
+                <p
+                  className={`tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}`}
+                >
+                  {stat.value}
+                </p>
+                {stat.showGateBreakdown && stat.gateBreakdown && (
+                  renderGateBreakdown(stat.gateBreakdown)
+                )}
+              </>
             )}
           </div>
         );
