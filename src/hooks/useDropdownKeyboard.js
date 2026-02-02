@@ -7,9 +7,10 @@ import { useState, useEffect, useCallback } from 'react';
  * @param {Array} items - Array of items in the dropdown
  * @param {Function} onSelect - Callback when an item is selected
  * @param {Function} onClose - Callback to close the dropdown
+ * @param {string} dropdownId - Unique ID for the dropdown (for scrolling)
  * @returns {Object} - { highlightedIndex, handleKeyDown, resetHighlight }
  */
-export function useDropdownKeyboard(isOpen, items, onSelect, onClose) {
+export function useDropdownKeyboard(isOpen, items, onSelect, onClose, dropdownId = 'dropdown') {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Reset highlight when dropdown opens/closes or items change
@@ -21,6 +22,21 @@ export function useDropdownKeyboard(isOpen, items, onSelect, onClose) {
       setHighlightedIndex(0);
     }
   }, [isOpen, items]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0) {
+      const element = document.querySelector(
+        `[data-dropdown-id="${dropdownId}"][data-dropdown-index="${highlightedIndex}"]`
+      );
+      if (element) {
+        element.scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [highlightedIndex, isOpen, dropdownId]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e) => {

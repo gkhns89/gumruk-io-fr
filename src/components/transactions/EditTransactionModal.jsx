@@ -120,7 +120,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFieldErrors((prev) => ({ ...prev, customsId: null }));
       }
     },
-    () => setShowCustomsDropdown(false)
+    () => setShowCustomsDropdown(false),
+    'edit-customs-dropdown'
   );
 
   const warehouseKeyboard = useDropdownKeyboard(
@@ -134,7 +135,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFieldErrors((prev) => ({ ...prev, customsWarehouse: null }));
       }
     },
-    () => setShowWarehouseDropdown(false)
+    () => setShowWarehouseDropdown(false),
+    'edit-warehouse-dropdown'
   );
 
   const senderKeyboard = useDropdownKeyboard(
@@ -148,7 +150,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         setFieldErrors((prev) => ({ ...prev, senderName: null }));
       }
     },
-    () => setShowSenderDropdown(false)
+    () => setShowSenderDropdown(false),
+    'edit-sender-dropdown'
   );
 
   // Gönderici listesini yükle
@@ -1154,6 +1157,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                               <button
                                 key={customs.id}
                                 type="button"
+                                data-dropdown-id="edit-customs-dropdown"
+                                data-dropdown-index={index}
                                 onClick={() => handleCustomsSelect(customs)}
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   selectedCustomsId === customs.id
@@ -1355,6 +1360,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                               <button
                                 key={index}
                                 type="button"
+                                data-dropdown-id="edit-warehouse-dropdown"
+                                data-dropdown-index={index}
                                 onClick={() => handleWarehouseSelect(warehouse)}
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.customsWarehouse === warehouse
@@ -1656,6 +1663,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                               <button
                                 key={index}
                                 type="button"
+                                data-dropdown-id="edit-sender-dropdown"
+                                data-dropdown-index={index}
                                 onClick={() => handleSenderSelect(sender)}
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.senderName === sender

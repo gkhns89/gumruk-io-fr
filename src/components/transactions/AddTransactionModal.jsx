@@ -124,7 +124,8 @@ export default function AddTransactionModal({
         setFieldErrors((prev) => ({ ...prev, brokerCompany: null }));
       }
     },
-    () => setShowBrokerDropdown(false)
+    () => setShowBrokerDropdown(false),
+    'broker-dropdown'
   );
 
   const clientKeyboard = useDropdownKeyboard(
@@ -138,7 +139,8 @@ export default function AddTransactionModal({
         setFieldErrors((prev) => ({ ...prev, clientCompany: null }));
       }
     },
-    () => setShowClientDropdown(false)
+    () => setShowClientDropdown(false),
+    'client-dropdown'
   );
 
   const customsKeyboard = useDropdownKeyboard(
@@ -153,7 +155,8 @@ export default function AddTransactionModal({
         setFieldErrors((prev) => ({ ...prev, customsId: null }));
       }
     },
-    () => setShowCustomsDropdown(false)
+    () => setShowCustomsDropdown(false),
+    'customs-dropdown'
   );
 
   const warehouseKeyboard = useDropdownKeyboard(
@@ -167,7 +170,8 @@ export default function AddTransactionModal({
         setFieldErrors((prev) => ({ ...prev, customsWarehouse: null }));
       }
     },
-    () => setShowWarehouseDropdown(false)
+    () => setShowWarehouseDropdown(false),
+    'warehouse-dropdown'
   );
 
   const senderKeyboard = useDropdownKeyboard(
@@ -181,7 +185,8 @@ export default function AddTransactionModal({
         setFieldErrors((prev) => ({ ...prev, senderName: null }));
       }
     },
-    () => setShowSenderDropdown(false)
+    () => setShowSenderDropdown(false),
+    'sender-dropdown'
   );
 
   // SUPER_ADMIN ise broker listesini yükle
@@ -1391,6 +1396,8 @@ export default function AddTransactionModal({
                               <button
                                 key={broker.id}
                                 type="button"
+                                data-dropdown-id="broker-dropdown"
+                                data-dropdown-index={index}
                                 onClick={() => {
                                   setFormData((prev) => ({
                                     ...prev,
@@ -1631,6 +1638,8 @@ export default function AddTransactionModal({
                               <button
                                 key={client.id}
                                 type="button"
+                                data-dropdown-id="client-dropdown"
+                                data-dropdown-index={index}
                                 onClick={() => {
                                   setFormData((prev) => ({
                                     ...prev,
@@ -1898,6 +1907,8 @@ export default function AddTransactionModal({
                             <button
                               key={customs.id}
                               type="button"
+                              data-dropdown-id="customs-dropdown"
+                              data-dropdown-index={index}
                               onClick={() => handleCustomsSelect(customs)}
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 selectedCustomsId === customs.id
@@ -2089,6 +2100,8 @@ export default function AddTransactionModal({
                             <button
                               key={index}
                               type="button"
+                              data-dropdown-id="warehouse-dropdown"
+                              data-dropdown-index={index}
                               onClick={() => handleWarehouseSelect(warehouse)}
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 formData.customsWarehouse === warehouse
@@ -2393,6 +2406,8 @@ export default function AddTransactionModal({
                             <button
                               key={index}
                               type="button"
+                              data-dropdown-id="sender-dropdown"
+                              data-dropdown-index={index}
                               onClick={() => handleSenderSelect(sender)}
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 formData.senderName === sender
