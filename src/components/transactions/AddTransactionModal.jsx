@@ -1176,13 +1176,18 @@ export default function AddTransactionModal({
   // Auto-focus first enabled input when modal opens
   useEffect(() => {
     if (modalRef.current) {
-      // Small delay to ensure modal animation is complete
+      // Delay to ensure modal animation and data loading is complete
       const timer = setTimeout(() => {
-        const firstInput = modalRef.current.querySelector('input:not([disabled])');
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 150);
+        // Use requestAnimationFrame to wait for all renders to complete
+        requestAnimationFrame(() => {
+          if (modalRef.current) {
+            const firstInput = modalRef.current.querySelector('input:not([disabled])');
+            if (firstInput) {
+              firstInput.focus();
+            }
+          }
+        });
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, []);
