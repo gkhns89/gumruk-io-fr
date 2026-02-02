@@ -112,9 +112,6 @@ export default function AddTransactionModal({
   const [displayWeight, setDisplayWeight] = useState("");
   const [displayTax, setDisplayTax] = useState("");
 
-  // Ref for first input auto-focus
-  const firstInputRef = useRef(null);
-
   // Keyboard navigation hooks for dropdowns
   const brokerKeyboard = useDropdownKeyboard(
     showBrokerDropdown,
@@ -1173,15 +1170,16 @@ export default function AddTransactionModal({
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
-  // Auto-focus first input when modal opens
+  // Auto-focus first enabled input when modal opens
   useEffect(() => {
-    if (firstInputRef.current) {
-      // Small delay to ensure modal animation is complete
-      const timer = setTimeout(() => {
-        firstInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+    // Small delay to ensure modal animation is complete
+    const timer = setTimeout(() => {
+      const firstInput = document.querySelector('.fixed.inset-0 input:not([disabled])');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
   }, []);
 
   // Keyboard shortcuts: ESC to close, CTRL+S to save
@@ -1320,7 +1318,6 @@ export default function AddTransactionModal({
                   <div className="relative" id="broker-dropdown-container">
                     <div className="relative">
                       <input
-                        ref={firstInputRef}
                         type="text"
                         value={brokerSearchTerm}
                         onChange={(e) => {
@@ -1549,7 +1546,6 @@ export default function AddTransactionModal({
                 <div className="relative" id="client-dropdown-container">
                   <div className="relative">
                     <input
-                      ref={!isSuperAdmin ? firstInputRef : null}
                       type="text"
                       value={clientSearchTerm}
                       onChange={(e) => {

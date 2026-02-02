@@ -107,9 +107,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return "";
   });
 
-  // Ref for first input auto-focus
-  const firstInputRef = useRef(null);
-
   // Keyboard navigation hooks for dropdowns
   const customsKeyboard = useDropdownKeyboard(
     showCustomsDropdown,
@@ -921,13 +918,16 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
-  // Auto-focus first input when modal opens (if not read-only)
+  // Auto-focus first enabled input when modal opens (if not read-only)
   useEffect(() => {
-    if (!isReadOnly && firstInputRef.current) {
+    if (!isReadOnly) {
       // Small delay to ensure modal animation is complete
       const timer = setTimeout(() => {
-        firstInputRef.current?.focus();
-      }, 100);
+        const firstInput = document.querySelector('.fixed.inset-0 input:not([disabled])');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [isReadOnly]);
@@ -1087,7 +1087,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   <div className="relative" id="edit-customs-dropdown-container">
                     <div className="relative">
                       <input
-                        ref={firstInputRef}
                         type="text"
                         value={customsSearchTerm}
                         onChange={(e) => {
