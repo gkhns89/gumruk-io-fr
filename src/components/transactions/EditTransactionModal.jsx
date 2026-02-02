@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { transactionService } from "../../api/transactionService";
 import { customsService } from "../../api/customsService";
 import { GATE_OPTIONS } from "../../utils/constants";
@@ -106,6 +106,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
     return "";
   });
+
+  // Ref for first input auto-focus
+  const firstInputRef = useRef(null);
 
   // Keyboard navigation hooks for dropdowns
   const customsKeyboard = useDropdownKeyboard(
@@ -918,6 +921,17 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
+  // Auto-focus first input when modal opens (if not read-only)
+  useEffect(() => {
+    if (!isReadOnly && firstInputRef.current) {
+      // Small delay to ensure modal animation is complete
+      const timer = setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isReadOnly]);
+
   // Keyboard shortcuts: ESC to close, CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1073,6 +1087,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   <div className="relative" id="edit-customs-dropdown-container">
                     <div className="relative">
                       <input
+                        ref={firstInputRef}
                         type="text"
                         value={customsSearchTerm}
                         onChange={(e) => {

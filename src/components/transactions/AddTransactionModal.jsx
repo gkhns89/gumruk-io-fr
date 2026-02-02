@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
@@ -111,6 +111,9 @@ export default function AddTransactionModal({
   // Number formatlama için display state'leri
   const [displayWeight, setDisplayWeight] = useState("");
   const [displayTax, setDisplayTax] = useState("");
+
+  // Ref for first input auto-focus
+  const firstInputRef = useRef(null);
 
   // Keyboard navigation hooks for dropdowns
   const brokerKeyboard = useDropdownKeyboard(
@@ -1170,6 +1173,17 @@ export default function AddTransactionModal({
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
+  // Auto-focus first input when modal opens
+  useEffect(() => {
+    if (firstInputRef.current) {
+      // Small delay to ensure modal animation is complete
+      const timer = setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Keyboard shortcuts: ESC to close, CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1306,6 +1320,7 @@ export default function AddTransactionModal({
                   <div className="relative" id="broker-dropdown-container">
                     <div className="relative">
                       <input
+                        ref={firstInputRef}
                         type="text"
                         value={brokerSearchTerm}
                         onChange={(e) => {
@@ -1534,6 +1549,7 @@ export default function AddTransactionModal({
                 <div className="relative" id="client-dropdown-container">
                   <div className="relative">
                     <input
+                      ref={!isSuperAdmin ? firstInputRef : null}
                       type="text"
                       value={clientSearchTerm}
                       onChange={(e) => {
