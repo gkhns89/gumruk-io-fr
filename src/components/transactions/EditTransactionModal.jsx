@@ -1096,6 +1096,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   <div className="relative" id="edit-customs-dropdown-container">
                     <div className="relative">
                       <input
+                        autoFocus={!isReadOnly}
                         type="text"
                         value={customsSearchTerm}
                         onChange={(e) => {

@@ -1173,25 +1173,6 @@ export default function AddTransactionModal({
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
-  // Auto-focus first enabled input when modal opens
-  useEffect(() => {
-    if (modalRef.current) {
-      // Delay to ensure modal animation and data loading is complete
-      const timer = setTimeout(() => {
-        // Use requestAnimationFrame to wait for all renders to complete
-        requestAnimationFrame(() => {
-          if (modalRef.current) {
-            const firstInput = modalRef.current.querySelector('input:not([disabled])');
-            if (firstInput) {
-              firstInput.focus();
-            }
-          }
-        });
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
   // Keyboard shortcuts: ESC to close, CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1329,6 +1310,7 @@ export default function AddTransactionModal({
                   <div className="relative" id="broker-dropdown-container">
                     <div className="relative">
                       <input
+                        autoFocus
                         type="text"
                         value={brokerSearchTerm}
                         onChange={(e) => {
@@ -1557,6 +1539,7 @@ export default function AddTransactionModal({
                 <div className="relative" id="client-dropdown-container">
                   <div className="relative">
                     <input
+                      autoFocus={!isSuperAdmin}
                       type="text"
                       value={clientSearchTerm}
                       onChange={(e) => {
