@@ -7,6 +7,7 @@ import { handleError, handleApiResponse, logError } from "../../utils/errorUtils
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { t, getCurrentLocale } from "../../locales";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
+import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly }) {
   const locale = getCurrentLocale();
@@ -105,6 +106,50 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
     return "";
   });
+
+  // Keyboard navigation hooks for dropdowns
+  const customsKeyboard = useDropdownKeyboard(
+    showCustomsDropdown,
+    filteredCustoms,
+    (customs) => {
+      setSelectedCustomsId(customs.id);
+      setFormData((prev) => ({ ...prev, customsId: customs.id }));
+      setCustomsSearchTerm(customs.customsShortName);
+      setShowCustomsDropdown(false);
+      if (fieldErrors.customsId) {
+        setFieldErrors((prev) => ({ ...prev, customsId: null }));
+      }
+    },
+    () => setShowCustomsDropdown(false)
+  );
+
+  const warehouseKeyboard = useDropdownKeyboard(
+    showWarehouseDropdown,
+    filteredWarehouses,
+    (warehouse) => {
+      setWarehouseSearchTerm(warehouse);
+      setFormData((prev) => ({ ...prev, customsWarehouse: warehouse }));
+      setShowWarehouseDropdown(false);
+      if (fieldErrors.customsWarehouse) {
+        setFieldErrors((prev) => ({ ...prev, customsWarehouse: null }));
+      }
+    },
+    () => setShowWarehouseDropdown(false)
+  );
+
+  const senderKeyboard = useDropdownKeyboard(
+    showSenderDropdown,
+    filteredSenders,
+    (sender) => {
+      setSenderSearchTerm(sender);
+      setFormData((prev) => ({ ...prev, senderName: sender }));
+      setShowSenderDropdown(false);
+      if (fieldErrors.senderName) {
+        setFieldErrors((prev) => ({ ...prev, senderName: null }));
+      }
+    },
+    () => setShowSenderDropdown(false)
+  );
 
   // Gönderici listesini yükle
   useEffect(() => {
@@ -870,6 +915,30 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
+  // Keyboard shortcuts: ESC to close, CTRL+S to save
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // ESC to close modal
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      // CTRL+S (or CMD+S on Mac) to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (!loading && !isReadOnly) {
+          handleSubmit(e);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [loading, isReadOnly, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div
       className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
@@ -1013,6 +1082,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           }
                         }}
                         onFocus={() => setShowCustomsDropdown(true)}
+                        onKeyDown={customsKeyboard.handleKeyDown}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.customsId
@@ -1026,6 +1096,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {customsSearchTerm && (
                         <button
                           type="button"
+                          tabIndex={-1}
                           onClick={() => {
                             setCustomsSearchTerm("");
                             setSelectedCustomsId(null);
@@ -1046,6 +1117,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {/* Dropdown Icon */}
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => setShowCustomsDropdown(!showCustomsDropdown)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       >
@@ -1078,7 +1150,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           </div>
                         ) : (
                           <>
-                            {filteredCustoms.map((customs) => (
+                            {filteredCustoms.map((customs, index) => (
                               <button
                                 key={customs.id}
                                 type="button"
@@ -1086,6 +1158,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   selectedCustomsId === customs.id
                                     ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
+                                    : index === customsKeyboard.highlightedIndex
+                                    ? "bg-blue-100 dark:bg-blue-800/30"
                                     : ""
                                 }`}
                               >
@@ -1181,6 +1255,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           }
                         }}
                         onFocus={() => setShowWarehouseDropdown(true)}
+                        onKeyDown={warehouseKeyboard.handleKeyDown}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.customsWarehouse
@@ -1194,6 +1269,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {warehouseSearchTerm && (
                         <button
                           type="button"
+                          tabIndex={-1}
                           onClick={() => {
                             setWarehouseSearchTerm("");
                             setFormData((prev) => ({
@@ -1213,6 +1289,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {/* Dropdown Icon */}
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => setShowWarehouseDropdown(!showWarehouseDropdown)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       >
@@ -1282,6 +1359,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.customsWarehouse === warehouse
                                     ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
+                                    : index === warehouseKeyboard.highlightedIndex
+                                    ? "bg-blue-100 dark:bg-blue-800/30"
                                     : ""
                                 }`}
                               >
@@ -1477,6 +1556,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                           }
                         }}
                         onFocus={() => setShowSenderDropdown(true)}
+                        onKeyDown={senderKeyboard.handleKeyDown}
                         placeholder={toUpperCase(t('placeholders.selectOrType'))}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.senderName
@@ -1490,6 +1570,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {senderSearchTerm && (
                         <button
                           type="button"
+                          tabIndex={-1}
                           onClick={() => {
                             setSenderSearchTerm("");
                             setFormData((prev) => ({
@@ -1509,6 +1590,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                       {/* Dropdown Icon */}
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => setShowSenderDropdown(!showSenderDropdown)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       >
@@ -1578,6 +1660,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.senderName === sender
                                     ? "bg-blue-50 dark:bg-blue-900/30 text-primary font-medium"
+                                    : index === senderKeyboard.highlightedIndex
+                                    ? "bg-blue-100 dark:bg-blue-800/30"
                                     : ""
                                 }`}
                               >

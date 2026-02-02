@@ -14,6 +14,7 @@ import { t, getCurrentLocale } from "../../locales";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import CreateAgreementModal from '../common/CreateAgreementModal';
 import AddClientModal from '../common/AddClientModal';
+import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
 export default function AddTransactionModal({
   onClose,
@@ -110,6 +111,78 @@ export default function AddTransactionModal({
   // Number formatlama için display state'leri
   const [displayWeight, setDisplayWeight] = useState("");
   const [displayTax, setDisplayTax] = useState("");
+
+  // Keyboard navigation hooks for dropdowns
+  const brokerKeyboard = useDropdownKeyboard(
+    showBrokerDropdown,
+    filteredBrokers,
+    (broker) => {
+      setFormData((prev) => ({ ...prev, brokerCompanyId: broker.id }));
+      setBrokerSearchTerm(broker.name);
+      setShowBrokerDropdown(false);
+      if (fieldErrors.brokerCompany) {
+        setFieldErrors((prev) => ({ ...prev, brokerCompany: null }));
+      }
+    },
+    () => setShowBrokerDropdown(false)
+  );
+
+  const clientKeyboard = useDropdownKeyboard(
+    showClientDropdown,
+    filteredClients,
+    (client) => {
+      setFormData((prev) => ({ ...prev, clientCompanyId: client.id }));
+      setClientSearchTerm(client.name);
+      setShowClientDropdown(false);
+      if (fieldErrors.clientCompany) {
+        setFieldErrors((prev) => ({ ...prev, clientCompany: null }));
+      }
+    },
+    () => setShowClientDropdown(false)
+  );
+
+  const customsKeyboard = useDropdownKeyboard(
+    showCustomsDropdown,
+    filteredCustoms,
+    (customs) => {
+      setSelectedCustomsId(customs.id);
+      setFormData((prev) => ({ ...prev, customsId: customs.id }));
+      setCustomsSearchTerm(customs.customsShortName);
+      setShowCustomsDropdown(false);
+      if (fieldErrors.customsId) {
+        setFieldErrors((prev) => ({ ...prev, customsId: null }));
+      }
+    },
+    () => setShowCustomsDropdown(false)
+  );
+
+  const warehouseKeyboard = useDropdownKeyboard(
+    showWarehouseDropdown,
+    filteredWarehouses,
+    (warehouse) => {
+      setWarehouseSearchTerm(warehouse);
+      setFormData((prev) => ({ ...prev, customsWarehouse: warehouse }));
+      setShowWarehouseDropdown(false);
+      if (fieldErrors.customsWarehouse) {
+        setFieldErrors((prev) => ({ ...prev, customsWarehouse: null }));
+      }
+    },
+    () => setShowWarehouseDropdown(false)
+  );
+
+  const senderKeyboard = useDropdownKeyboard(
+    showSenderDropdown,
+    filteredSenders,
+    (sender) => {
+      setSenderSearchTerm(sender);
+      setFormData((prev) => ({ ...prev, senderName: sender }));
+      setShowSenderDropdown(false);
+      if (fieldErrors.senderName) {
+        setFieldErrors((prev) => ({ ...prev, senderName: null }));
+      }
+    },
+    () => setShowSenderDropdown(false)
+  );
 
   // SUPER_ADMIN ise broker listesini yükle
   useEffect(() => {
@@ -1092,6 +1165,30 @@ export default function AddTransactionModal({
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
+  // Keyboard shortcuts: ESC to close, CTRL+S to save
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // ESC to close modal
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      // CTRL+S (or CMD+S on Mac) to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (!loading) {
+          handleSubmit(e);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [loading, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
       <div
@@ -1215,6 +1312,7 @@ export default function AddTransactionModal({
                           }
                         }}
                         onFocus={() => setShowBrokerDropdown(true)}
+                        onKeyDown={brokerKeyboard.handleKeyDown}
                         placeholder={toUpperCase(
                           t("placeholders.typeToSearch")
                         )}
@@ -1230,6 +1328,7 @@ export default function AddTransactionModal({
                       {brokerSearchTerm && (
                         <button
                           type="button"
+                          tabIndex={-1}
                           onClick={() => {
                             setBrokerSearchTerm("");
                             setFormData((prev) => ({
@@ -1249,6 +1348,7 @@ export default function AddTransactionModal({
                       {/* Dropdown Icon */}
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() =>
                           setShowBrokerDropdown(!showBrokerDropdown)
                         }
@@ -1287,7 +1387,7 @@ export default function AddTransactionModal({
                           </div>
                         ) : (
                           <>
-                            {filteredBrokers.map((broker) => (
+                            {filteredBrokers.map((broker, index) => (
                               <button
                                 key={broker.id}
                                 type="button"
@@ -1306,6 +1406,8 @@ export default function AddTransactionModal({
                                 className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                   formData.brokerCompanyId === broker.id
                                     ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                    : index === brokerKeyboard.highlightedIndex
+                                    ? "bg-blue-100 dark:bg-blue-800/30"
                                     : ""
                                 }`}
                               >
@@ -1436,6 +1538,7 @@ export default function AddTransactionModal({
                         }
                       }}
                       onFocus={() => setShowClientDropdown(true)}
+                      onKeyDown={clientKeyboard.handleKeyDown}
                       placeholder={toUpperCase(t("placeholders.typeToSearch"))}
                       disabled={
                         loadingClients ||
@@ -1452,6 +1555,7 @@ export default function AddTransactionModal({
                     {clientSearchTerm && (
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => {
                           setClientSearchTerm("");
                           setFormData((prev) => ({
@@ -1471,6 +1575,7 @@ export default function AddTransactionModal({
                     {/* Dropdown Icon */}
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => setShowClientDropdown(!showClientDropdown)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     >
@@ -1517,7 +1622,7 @@ export default function AddTransactionModal({
                         </div>
                       ) : (
                         <>
-                          {filteredClients.map((client) => {
+                          {filteredClients.map((client, index) => {
                             const agreement = clientAgreements[client.id];
                             const isActive = agreement?.agreementStatus === 'ACTIVE';
                             // ✅ Allow all clients to be selectable (removed disabled logic)
@@ -1541,6 +1646,8 @@ export default function AddTransactionModal({
                                 className={`w-full text-left px-4 py-3 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
                                   formData.clientCompanyId === client.id
                                     ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                    : index === clientKeyboard.highlightedIndex
+                                    ? "bg-blue-100 dark:bg-blue-800/30"
                                     : ""
                                 }`}
                               >
@@ -1713,6 +1820,7 @@ export default function AddTransactionModal({
                         }
                       }}
                       onFocus={() => setShowCustomsDropdown(true)}
+                      onKeyDown={customsKeyboard.handleKeyDown}
                       placeholder={toUpperCase(t("placeholders.selectOrType"))}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.customsId
@@ -1726,6 +1834,7 @@ export default function AddTransactionModal({
                     {customsSearchTerm && (
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => {
                           setCustomsSearchTerm("");
                           setSelectedCustomsId(null);
@@ -1746,6 +1855,7 @@ export default function AddTransactionModal({
                     {/* Dropdown Icon */}
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => setShowCustomsDropdown(!showCustomsDropdown)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     >
@@ -1784,7 +1894,7 @@ export default function AddTransactionModal({
                         </div>
                       ) : (
                         <>
-                          {filteredCustoms.map((customs) => (
+                          {filteredCustoms.map((customs, index) => (
                             <button
                               key={customs.id}
                               type="button"
@@ -1792,6 +1902,8 @@ export default function AddTransactionModal({
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 selectedCustomsId === customs.id
                                   ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                  : index === customsKeyboard.highlightedIndex
+                                  ? "bg-blue-100 dark:bg-blue-800/30"
                                   : ""
                               }`}
                             >
@@ -1877,6 +1989,7 @@ export default function AddTransactionModal({
                         }
                       }}
                       onFocus={() => setShowWarehouseDropdown(true)}
+                      onKeyDown={warehouseKeyboard.handleKeyDown}
                       placeholder={toUpperCase(t("placeholders.selectOrType"))}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.customsWarehouse
@@ -1890,6 +2003,7 @@ export default function AddTransactionModal({
                     {warehouseSearchTerm && (
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => {
                           setWarehouseSearchTerm("");
                           setFormData((prev) => ({
@@ -1909,6 +2023,7 @@ export default function AddTransactionModal({
                     {/* Dropdown Icon */}
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => setShowWarehouseDropdown(!showWarehouseDropdown)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     >
@@ -1978,6 +2093,8 @@ export default function AddTransactionModal({
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 formData.customsWarehouse === warehouse
                                   ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                  : index === warehouseKeyboard.highlightedIndex
+                                  ? "bg-blue-100 dark:bg-blue-800/30"
                                   : ""
                               }`}
                             >
@@ -2166,6 +2283,7 @@ export default function AddTransactionModal({
                         }
                       }}
                       onFocus={() => setShowSenderDropdown(true)}
+                      onKeyDown={senderKeyboard.handleKeyDown}
                       placeholder={toUpperCase(t("placeholders.selectOrType"))}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.senderName
@@ -2179,6 +2297,7 @@ export default function AddTransactionModal({
                     {senderSearchTerm && (
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => {
                           setSenderSearchTerm("");
                           setFormData((prev) => ({
@@ -2198,6 +2317,7 @@ export default function AddTransactionModal({
                     {/* Dropdown Icon */}
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => setShowSenderDropdown(!showSenderDropdown)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     >
@@ -2277,6 +2397,8 @@ export default function AddTransactionModal({
                               className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
                                 formData.senderName === sender
                                   ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                  : index === senderKeyboard.highlightedIndex
+                                  ? "bg-blue-100 dark:bg-blue-800/30"
                                   : ""
                               }`}
                             >
