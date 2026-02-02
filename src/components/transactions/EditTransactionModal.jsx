@@ -107,6 +107,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return "";
   });
 
+  // Ref for modal container (for auto-focus)
+  const modalRef = useRef(null);
+
   // Keyboard navigation hooks for dropdowns
   const customsKeyboard = useDropdownKeyboard(
     showCustomsDropdown,
@@ -920,10 +923,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
   // Auto-focus first enabled input when modal opens (if not read-only)
   useEffect(() => {
-    if (!isReadOnly) {
+    if (!isReadOnly && modalRef.current) {
       // Small delay to ensure modal animation is complete
       const timer = setTimeout(() => {
-        const firstInput = document.querySelector('.fixed.inset-0 input:not([disabled])');
+        const firstInput = modalRef.current.querySelector('input:not([disabled])');
         if (firstInput) {
           firstInput.focus();
         }
@@ -962,6 +965,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >

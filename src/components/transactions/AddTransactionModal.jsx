@@ -112,6 +112,9 @@ export default function AddTransactionModal({
   const [displayWeight, setDisplayWeight] = useState("");
   const [displayTax, setDisplayTax] = useState("");
 
+  // Ref for modal container (for auto-focus)
+  const modalRef = useRef(null);
+
   // Keyboard navigation hooks for dropdowns
   const brokerKeyboard = useDropdownKeyboard(
     showBrokerDropdown,
@@ -1172,14 +1175,16 @@ export default function AddTransactionModal({
 
   // Auto-focus first enabled input when modal opens
   useEffect(() => {
-    // Small delay to ensure modal animation is complete
-    const timer = setTimeout(() => {
-      const firstInput = document.querySelector('.fixed.inset-0 input:not([disabled])');
-      if (firstInput) {
-        firstInput.focus();
-      }
-    }, 150);
-    return () => clearTimeout(timer);
+    if (modalRef.current) {
+      // Small delay to ensure modal animation is complete
+      const timer = setTimeout(() => {
+        const firstInput = modalRef.current.querySelector('input:not([disabled])');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Keyboard shortcuts: ESC to close, CTRL+S to save
@@ -1213,6 +1218,7 @@ export default function AddTransactionModal({
         onClick={onClose}
       >
         <div
+          ref={modalRef}
           className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
           onClick={(e) => e.stopPropagation()}
         >
