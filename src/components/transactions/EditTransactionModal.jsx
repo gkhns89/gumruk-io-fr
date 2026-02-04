@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { transactionService } from "../../api/transactionService";
+import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
 import { GATE_OPTIONS } from "../../utils/constants";
 import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
@@ -9,10 +10,15 @@ import { t, getCurrentLocale } from "../../locales";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
-export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly }) {
+export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
 
+  // Yetki kontrolü
+  const isAdmin = currentUser?.globalRole === "SUPER_ADMIN" || currentUser?.globalRole === "BROKER_ADMIN";
+
   const [formData, setFormData] = useState({
+    brokerCompanyId: transaction.brokerCompany?.id || "",
+    clientCompanyId: transaction.clientCompany?.id || "",
     fileNo: transaction.fileNo || "",
     recipientName: transaction.recipientName || "",
     customsId: transaction.customs?.id || "",
@@ -49,6 +55,20 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     })(),
   });
 
+  // Broker ve client company state'leri (sadece admin için)
+  const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
+  const [availableBrokers, setAvailableBrokers] = useState([]);
+  const [filteredBrokers, setFilteredBrokers] = useState([]);
+  const [brokerSearchTerm, setBrokerSearchTerm] = useState(transaction.brokerCompany?.name || "");
+  const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
+  const [loadingBrokers, setLoadingBrokers] = useState(false);
+
+  const [availableClients, setAvailableClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState(transaction.clientCompany?.name || "");
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [loadingClients, setLoadingClients] = useState(false);
+
   // Gönderici listesi state'leri
   const [availableSenders, setAvailableSenders] = useState([]);
   const [filteredSenders, setFilteredSenders] = useState([]);
@@ -81,7 +101,8 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const isInspectionStatus = transaction.status === "INSPECTION";
   const isCompletedStatus = transaction.status === "CP_COMPLETED";
   const isWithdrawnStatus = transaction.status === "WITHDRAWN";
-  const isFieldLocked = isReadOnly || isInspectionStatus || isCompletedStatus || isWithdrawnStatus;
+  // Admin kullanıcılar tüm alanları her durumda düzenleyebilir
+  const isFieldLocked = isAdmin ? false : (isReadOnly || isInspectionStatus || isCompletedStatus || isWithdrawnStatus);
 
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
@@ -156,6 +177,92 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     () => setShowSenderDropdown(false),
     'edit-sender-dropdown'
   );
+
+  // Broker firma keyboard navigation (sadece SUPER_ADMIN için)
+  const brokerKeyboard = useDropdownKeyboard(
+    showBrokerDropdown,
+    filteredBrokers,
+    (broker) => {
+      setBrokerSearchTerm(broker.name);
+      setFormData((prev) => ({ ...prev, brokerCompanyId: broker.id }));
+      setShowBrokerDropdown(false);
+      if (fieldErrors.brokerCompany) {
+        setFieldErrors((prev) => ({ ...prev, brokerCompany: null }));
+      }
+    },
+    () => setShowBrokerDropdown(false),
+    'edit-broker-dropdown'
+  );
+
+  // Client firma keyboard navigation
+  const clientKeyboard = useDropdownKeyboard(
+    showClientDropdown,
+    filteredClients,
+    (client) => {
+      setClientSearchTerm(client.name);
+      setFormData((prev) => ({ ...prev, clientCompanyId: client.id }));
+      setShowClientDropdown(false);
+      if (fieldErrors.clientCompany) {
+        setFieldErrors((prev) => ({ ...prev, clientCompany: null }));
+      }
+    },
+    () => setShowClientDropdown(false),
+    'edit-client-dropdown'
+  );
+
+  // Broker ve client listelerini yükle (admin için)
+  useEffect(() => {
+    if (isAdmin) {
+      if (isSuperAdmin) {
+        loadBrokerCompanies();
+      }
+      // Mevcut broker ID'si varsa client'ları yükle
+      if (formData.brokerCompanyId) {
+        loadClientCompanies(formData.brokerCompanyId);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Broker değiştiğinde client'ları yükle (SUPER_ADMIN için)
+  useEffect(() => {
+    if (isSuperAdmin && formData.brokerCompanyId) {
+      loadClientCompanies(formData.brokerCompanyId);
+      // Client seçimini temizle
+      setFormData((prev) => ({
+        ...prev,
+        clientCompanyId: "",
+      }));
+      setClientSearchTerm("");
+    }
+  }, [formData.brokerCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Broker arama filtresi
+  useEffect(() => {
+    if (brokerSearchTerm.trim() === "") {
+      setFilteredBrokers(availableBrokers.slice(0, 100));
+    } else {
+      const searchLower = brokerSearchTerm.toLowerCase();
+      const filtered = availableBrokers.filter(
+        (broker) =>
+          broker.name.toLowerCase().includes(searchLower) ||
+          (broker.shortName && broker.shortName.toLowerCase().includes(searchLower))
+      );
+      setFilteredBrokers(filtered.slice(0, 100));
+    }
+  }, [brokerSearchTerm, availableBrokers]);
+
+  // Client arama filtresi
+  useEffect(() => {
+    if (clientSearchTerm.trim() === "") {
+      setFilteredClients(availableClients.slice(0, 100));
+    } else {
+      const searchLower = clientSearchTerm.toLowerCase();
+      const filtered = availableClients.filter((client) =>
+        client.name.toLowerCase().includes(searchLower)
+      );
+      setFilteredClients(filtered.slice(0, 100));
+    }
+  }, [clientSearchTerm, availableClients]);
 
   // Gönderici listesini yükle
   useEffect(() => {
@@ -414,6 +521,54 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       setFilteredWarehouses([]);
     } finally {
       setLoadingWarehouses(false);
+    }
+  };
+
+  // Broker firma listesini yükle (sadece SUPER_ADMIN için)
+  const loadBrokerCompanies = async () => {
+    try {
+      setLoadingBrokers(true);
+      const result = await companyService.getAllCompanies();
+
+      if (result.success) {
+        const brokers = result.data.filter(
+          (c) => c.companyType === "CUSTOMS_BROKER"
+        );
+        setAvailableBrokers(brokers);
+        setFilteredBrokers(brokers.slice(0, 100));
+      } else {
+        setAvailableBrokers([]);
+        setFilteredBrokers([]);
+      }
+    } catch (err) {
+      logError("Broker listesi yükleme", err);
+      setAvailableBrokers([]);
+      setFilteredBrokers([]);
+    } finally {
+      setLoadingBrokers(false);
+    }
+  };
+
+  // Client firma listesini yükle
+  const loadClientCompanies = async (brokerId) => {
+    try {
+      setLoadingClients(true);
+
+      const result = await companyService.getClientCompanies(brokerId);
+
+      if (result.success) {
+        setAvailableClients(result.data);
+        setFilteredClients(result.data.slice(0, 100));
+      } else {
+        setAvailableClients([]);
+        setFilteredClients([]);
+      }
+    } catch (err) {
+      logError("Client listesi yükleme", err);
+      setAvailableClients([]);
+      setFilteredClients([]);
+    } finally {
+      setLoadingClients(false);
     }
   };
 
@@ -756,6 +911,16 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const validateRequiredFields = () => {
     const errors = {};
 
+    // Admin kullanıcılar için broker ve client company zorunlu
+    if (isAdmin) {
+      if (isSuperAdmin && !formData.brokerCompanyId) {
+        errors.brokerCompany = "Broker firması seçimi zorunludur";
+      }
+      if (!formData.clientCompanyId) {
+        errors.clientCompany = "Müşteri firması seçimi zorunludur";
+      }
+    }
+
     // Check each required field - only add error if field is empty
     if (!formData.fileNo || !formData.fileNo.trim()) {
       errors.fileNo = "Dosya numarası zorunludur";
@@ -996,27 +1161,393 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-              {/* Firma Bilgileri - Read Only */}
-              <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg transition-colors">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-text-secondary text-sm font-medium pb-2">
-                      {t('transaction.brokerCompany')}
-                    </p>
-                    <p className="text-text-main font-semibold">
-                      {transaction.brokerCompany?.name || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-text-secondary text-sm font-medium pb-2">
-                      {t('transaction.clientCompany')}
-                    </p>
-                    <p className="text-text-main font-semibold">
-                      {transaction.clientCompany?.name || '-'}
-                    </p>
+              {/* Firma Bilgileri - Admin için düzenlenebilir, diğerleri için read-only */}
+              {!isAdmin ? (
+                // Normal kullanıcılar için read-only
+                <div className="flex flex-col w-full lg:col-span-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg transition-colors">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-text-secondary text-sm font-medium pb-2">
+                        {t('transaction.brokerCompany')}
+                      </p>
+                      <p className="text-text-main font-semibold">
+                        {transaction.brokerCompany?.name || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-text-secondary text-sm font-medium pb-2">
+                        {t('transaction.clientCompany')}
+                      </p>
+                      <p className="text-text-main font-semibold">
+                        {transaction.clientCompany?.name || '-'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Admin kullanıcılar için düzenlenebilir dropdownlar
+                <>
+                  {/* BROKER FİRMASI - SADECE SUPER_ADMIN için */}
+                  {isSuperAdmin && (
+                    <div className="flex flex-col w-full lg:col-span-3">
+                      <div className="flex items-center justify-between pb-2">
+                        <p className="text-text-main text-sm font-medium">
+                          {t("transaction.brokerCompany")} *
+                          {loadingBrokers && (
+                            <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                              {t("common.loading")}
+                            </span>
+                          )}
+                          {!loadingBrokers && availableBrokers.length > 0 && (
+                            <span className="text-xs text-gray-500 ml-2">
+                              ({availableBrokers.length} broker kayıtlı)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Aranabilir Broker Input */}
+                      <div className="relative" id="edit-broker-dropdown-container">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={brokerSearchTerm}
+                            onChange={(e) => {
+                              setBrokerSearchTerm(e.target.value);
+                              setShowBrokerDropdown(true);
+                              if (fieldErrors.brokerCompany) {
+                                setFieldErrors(prev => ({ ...prev, brokerCompany: null }));
+                              }
+                            }}
+                            onFocus={() => setShowBrokerDropdown(true)}
+                            onKeyDown={brokerKeyboard.handleKeyDown}
+                            placeholder={toUpperCase(t("placeholders.typeToSearch"))}
+                            disabled={loadingBrokers}
+                            className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
+                              fieldErrors.brokerCompany
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                            } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
+                          />
+
+                          {/* Clear Button */}
+                          {brokerSearchTerm && (
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              onClick={() => {
+                                setBrokerSearchTerm("");
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  brokerCompanyId: "",
+                                }));
+                                setShowBrokerDropdown(true);
+                              }}
+                              className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                close
+                              </span>
+                            </button>
+                          )}
+
+                          {/* Dropdown Icon */}
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => setShowBrokerDropdown(!showBrokerDropdown)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              {showBrokerDropdown ? "expand_less" : "expand_more"}
+                            </span>
+                          </button>
+                        </div>
+
+                        {/* Broker Dropdown List */}
+                        {showBrokerDropdown && !loadingBrokers && (
+                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
+                            {filteredBrokers.length === 0 ? (
+                              <div className="p-4 text-center text-text-secondary">
+                                {availableBrokers.length === 0 ? (
+                                  <>
+                                    <span className="material-symbols-outlined text-4xl mb-2 text-orange-500">
+                                      warning
+                                    </span>
+                                    <p className="text-sm">Kayıtlı broker bulunamadı.</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="material-symbols-outlined text-4xl mb-2">
+                                      search_off
+                                    </span>
+                                    <p className="text-sm">
+                                      "{brokerSearchTerm}" için sonuç bulunamadı
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {filteredBrokers.map((broker, index) => (
+                                  <button
+                                    key={broker.id}
+                                    type="button"
+                                    data-dropdown-id="edit-broker-dropdown"
+                                    data-dropdown-index={index}
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        brokerCompanyId: broker.id,
+                                      }));
+                                      setBrokerSearchTerm(broker.name);
+                                      setShowBrokerDropdown(false);
+                                      if (fieldErrors.brokerCompany) {
+                                        setFieldErrors(prev => ({ ...prev, brokerCompany: null }));
+                                      }
+                                    }}
+                                    className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                                      formData.brokerCompanyId === broker.id
+                                        ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                        : index === brokerKeyboard.highlightedIndex
+                                        ? "bg-blue-100 dark:bg-blue-800/30"
+                                        : ""
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate text-text-main">
+                                          {broker.name}
+                                        </p>
+                                        {broker.description && (
+                                          <p className="text-xs text-text-secondary truncate mt-0.5">
+                                            {broker.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {formData.brokerCompanyId === broker.id && (
+                                        <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                          check_circle
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
+
+                                {filteredBrokers.length === 100 && availableBrokers.length > 100 && (
+                                  <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                    <p className="text-xs text-yellow-800">
+                                      İlk 100 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                    </p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Error Message */}
+                      {fieldErrors.brokerCompany && (
+                        <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                          <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                            error
+                          </span>
+                          <p className="text-sm text-red-700 font-medium">
+                            {fieldErrors.brokerCompany}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MÜŞTERİ FİRMASI - Tüm adminler için */}
+                  <div className="flex flex-col w-full lg:col-span-3">
+                    <div className="flex items-center justify-between pb-2">
+                      <p className="text-text-main text-sm font-medium">
+                        {t("transaction.clientCompany")} *
+                        {loadingClients && (
+                          <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                            {t("common.loading")}
+                          </span>
+                        )}
+                        {!loadingClients && availableClients.length > 0 && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            ({availableClients.length} firma kayıtlı)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* SUPER_ADMIN için uyarı: Önce broker seç */}
+                    {isSuperAdmin && !formData.brokerCompanyId && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+                        <p className="text-xs text-yellow-800 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">info</span>
+                          Önce yukarıdan broker firması seçin
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Aranabilir Client Input */}
+                    <div className="relative" id="edit-client-dropdown-container">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={clientSearchTerm}
+                          onChange={(e) => {
+                            setClientSearchTerm(e.target.value);
+                            setShowClientDropdown(true);
+                            if (fieldErrors.clientCompany) {
+                              setFieldErrors(prev => ({ ...prev, clientCompany: null }));
+                            }
+                          }}
+                          onFocus={() => setShowClientDropdown(true)}
+                          onKeyDown={clientKeyboard.handleKeyDown}
+                          placeholder={toUpperCase(t("placeholders.typeToSearch"))}
+                          disabled={loadingClients || (isSuperAdmin && !formData.brokerCompanyId)}
+                          className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
+                            fieldErrors.clientCompany
+                              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                              : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                          } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
+                        />
+
+                        {/* Clear Button */}
+                        {clientSearchTerm && (
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => {
+                              setClientSearchTerm("");
+                              setFormData((prev) => ({
+                                ...prev,
+                                clientCompanyId: "",
+                              }));
+                              setShowClientDropdown(true);
+                            }}
+                            className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              close
+                            </span>
+                          </button>
+                        )}
+
+                        {/* Dropdown Icon */}
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={() => setShowClientDropdown(!showClientDropdown)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            {showClientDropdown ? "expand_less" : "expand_more"}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Client Dropdown List */}
+                      {showClientDropdown && !loadingClients && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
+                          {filteredClients.length === 0 ? (
+                            <div className="p-4 text-center text-text-secondary">
+                              {availableClients.length === 0 ? (
+                                <>
+                                  <span className="material-symbols-outlined text-4xl mb-2 text-orange-500">
+                                    warning
+                                  </span>
+                                  <p className="text-sm">
+                                    {isSuperAdmin && !formData.brokerCompanyId
+                                      ? "Önce broker firması seçin"
+                                      : "Kayıtlı müşteri bulunamadı."}
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined text-4xl mb-2">
+                                    search_off
+                                  </span>
+                                  <p className="text-sm">
+                                    "{clientSearchTerm}" için sonuç bulunamadı
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {filteredClients.map((client, index) => (
+                                <button
+                                  key={client.id}
+                                  type="button"
+                                  data-dropdown-id="edit-client-dropdown"
+                                  data-dropdown-index={index}
+                                  onClick={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      clientCompanyId: client.id,
+                                    }));
+                                    setClientSearchTerm(client.name);
+                                    setShowClientDropdown(false);
+                                    if (fieldErrors.clientCompany) {
+                                      setFieldErrors(prev => ({ ...prev, clientCompany: null }));
+                                    }
+                                  }}
+                                  className={`w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                                    formData.clientCompanyId === client.id
+                                      ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium"
+                                      : index === clientKeyboard.highlightedIndex
+                                      ? "bg-blue-100 dark:bg-blue-800/30"
+                                      : ""
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm truncate text-text-main">
+                                        {client.name}
+                                      </p>
+                                      {client.description && (
+                                        <p className="text-xs text-text-secondary truncate mt-0.5">
+                                          {client.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {formData.clientCompanyId === client.id && (
+                                      <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
+                                        check_circle
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+
+                              {filteredClients.length === 100 && availableClients.length > 100 && (
+                                <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
+                                  <p className="text-xs text-yellow-800">
+                                    İlk 100 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Error Message */}
+                    {fieldErrors.clientCompany && (
+                      <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                        <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                          error
+                        </span>
+                        <p className="text-sm text-red-700 font-medium">
+                          {fieldErrors.clientCompany}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Vekalet Bilgi Paneli */}
               {transaction.clientCompany && (

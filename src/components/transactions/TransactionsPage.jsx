@@ -719,6 +719,7 @@ export default function TransactionsPage() {
           }}
           onSuccess={handleEditSuccess}
           isReadOnly={isClientUser}
+          currentUser={user}
         />
       )}
 
