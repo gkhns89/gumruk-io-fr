@@ -47,7 +47,9 @@ html {
     background-color: #ffffff;
     color: #252525;
     border-color: #dbe3e6;
-    caret-color: #252525;
+    caret-color: #252525 !important;
+    /* Disable caret-color transition to prevent it changing to white */
+    transition-property: background-color, border-color, color, box-shadow !important;
   }
 
   .dark .form-input,
@@ -56,7 +58,9 @@ html {
     background-color: #1f2937;
     color: #f3f4f6;
     border-color: #4b5563;
-    caret-color: #f3f4f6;
+    caret-color: #f3f4f6 !important;
+    /* Disable caret-color transition to prevent it changing to white */
+    transition-property: background-color, border-color, color, box-shadow !important;
   }
 
   .form-input:focus,
@@ -65,18 +69,19 @@ html {
     border-color: var(--color-primary);
     outline: none;
     box-shadow: none;
+    caret-color: inherit !important;
   }
 
   /* Ensure caret stays correct color on focus in light mode */
   .form-input:focus,
   .form-textarea:focus {
-    caret-color: #252525;
+    caret-color: #252525 !important;
   }
 
   /* Ensure caret stays correct color on focus in dark mode */
   .dark .form-input:focus,
   .dark .form-textarea:focus {
-    caret-color: #f3f4f6;
+    caret-color: #f3f4f6 !important;
   }
 
   .form-input::placeholder,
