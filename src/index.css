@@ -41,14 +41,38 @@ html {
 
 /* Component stilleri */
 @layer components {
-  .form-input {
+  .form-input,
+  .form-textarea,
+  .form-select {
+    background-color: #ffffff;
+    color: #252525;
     border-color: #dbe3e6;
   }
 
-  .form-input:focus {
+  .dark .form-input,
+  .dark .form-textarea,
+  .dark .form-select {
+    background-color: #1f2937;
+    color: #f3f4f6;
+    border-color: #4b5563;
+  }
+
+  .form-input:focus,
+  .form-textarea:focus,
+  .form-select:focus {
     border-color: var(--color-primary);
     outline: none;
     box-shadow: none;
+  }
+
+  .form-input::placeholder,
+  .form-textarea::placeholder {
+    color: #9ca3af;
+  }
+
+  .dark .form-input::placeholder,
+  .dark .form-textarea::placeholder {
+    color: #6b7280;
   }
 
   .form-checkbox:checked {

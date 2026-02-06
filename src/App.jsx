@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
+import CargoTrackingPage from "./components/cargo/CargoTrackingPage";  // ✅ YÜK TAKİP
 import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
 import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
 import EmployeesPage from "./pages/management/EmployeesPage";  // ✅ YÖNETİM
@@ -73,6 +74,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <TransactionsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÜK TAKİP: Yük Takip Route */}
+      <Route
+        path="/cargo"
+        element={
+          <ProtectedRoute>
+            <CargoTrackingPage />
           </ProtectedRoute>
         }
       />

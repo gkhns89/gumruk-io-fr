@@ -199,6 +199,15 @@ export const en = {
     selectOrType: "Select or type...",
     enterDelayReason: "Specify potential delay reasons...",
     firstSelectClient: "First select client company",
+    // Cargo placeholders
+    enterLicensePlate: "Enter license plate",
+    enterConsignmentNumber: "Enter consignment number",
+    enterBillOfLading: "Enter B/L",
+    enterContainerNumber: "Enter container number",
+    enterContainerCount: "Enter container count",
+    enterCostsAmount: "Enter costs amount",
+    enterDocumentReceiver: "Enter document receiver",
+    enterTransportInfo: "Enter transport info",
   },
 
   // Time related

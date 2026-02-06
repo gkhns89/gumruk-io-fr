@@ -140,6 +140,90 @@ export const COMPANY_TYPES = [
 ];
 
 /**
+ * Yük Takip Durumları
+ * Cargo tracking statuses with color coding
+ */
+export const CARGO_STATUS = [
+  {
+    value: "TRACKING",
+    labelKey: "cargo.status.tracking",
+    displayName: "Takip",
+    color: "blue",
+    sortOrder: 1,
+    bgClass: "bg-blue-50 dark:bg-blue-900/20",
+    textClass: "text-blue-700 dark:text-blue-300",
+    iconClass: "text-blue-600 dark:text-blue-400",
+    borderClass: "border-l-blue-400",
+    badgeClass: "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700",
+  },
+  {
+    value: "ARRIVED",
+    labelKey: "cargo.status.arrived",
+    displayName: "Varış Yaptı",
+    color: "green",
+    sortOrder: 2,
+    bgClass: "bg-green-50 dark:bg-green-900/20",
+    textClass: "text-green-700 dark:text-green-300",
+    iconClass: "text-green-600 dark:text-green-400",
+    borderClass: "border-l-green-400",
+    badgeClass: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700",
+  },
+  {
+    value: "COMPLETED",
+    labelKey: "cargo.status.completed",
+    displayName: "Tamamlandı",
+    color: "red",
+    sortOrder: 3,
+    bgClass: "bg-red-50 dark:bg-red-900/20",
+    textClass: "text-red-700 dark:text-red-300",
+    iconClass: "text-red-600 dark:text-red-400",
+    borderClass: "border-l-red-400",
+    badgeClass: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700",
+  },
+];
+
+/**
+ * Araç Tipleri
+ * Vehicle types with specific field requirements
+ */
+export const VEHICLE_TYPES = [
+  {
+    value: "AIRPLANE",
+    labelKey: "cargo.vehicleType.airplane",
+    displayName: "UÇAK",
+    icon: "flight",
+    color: "sky",
+    fields: ["consignmentNumber"], // Sadece Konşimento
+  },
+  {
+    value: "SHIP",
+    labelKey: "cargo.vehicleType.ship",
+    displayName: "GEMİ",
+    icon: "directions_boat",
+    color: "blue",
+    fields: ["billOfLading", "containerNumber"], // B/L + Konteyner No
+  },
+  {
+    value: "TRUCK",
+    labelKey: "cargo.vehicleType.truck",
+    displayName: "KAMYON",
+    icon: "local_shipping",
+    color: "orange",
+    fields: ["licensePlate"], // Sadece Plaka
+  },
+];
+
+/**
+ * Para Birimleri
+ * Currency options for costs
+ */
+export const CURRENCY_OPTIONS = [
+  { value: "TRY", symbol: "₺", label: "Türk Lirası", labelKey: "currency.try" },
+  { value: "USD", symbol: "$", label: "Amerikan Doları", labelKey: "currency.usd" },
+  { value: "EUR", symbol: "€", label: "Euro", labelKey: "currency.eur" },
+];
+
+/**
  * Gate seçeneğini değere göre bul
  * @param {string} value - Gate değeri (Sarı, Kırmızı, vb.)
  * @returns {Object|null} Gate seçeneği objesi
@@ -172,13 +256,79 @@ export const getGateBadgeClasses = (gateValue) => {
   return { bg: option.badgeBg, text: option.badgeText };
 };
 
+/**
+ * Cargo status'ü değere göre bul
+ * @param {string} value - Status değeri
+ * @returns {Object|null} Status objesi
+ */
+export const getCargoStatus = (value) => {
+  return CARGO_STATUS.find((status) => status.value === value) || null;
+};
+
+/**
+ * Vehicle type'ı değere göre bul
+ * @param {string} value - Vehicle type değeri
+ * @returns {Object|null} Vehicle type objesi
+ */
+export const getVehicleType = (value) => {
+  return VEHICLE_TYPES.find((type) => type.value === value) || null;
+};
+
+/**
+ * Para birimini değere göre bul
+ * @param {string} value - Currency kodu (TRY, USD, EUR)
+ * @returns {Object|null} Currency objesi
+ */
+export const getCurrency = (value) => {
+  return CURRENCY_OPTIONS.find((currency) => currency.value === value) || null;
+};
+
+/**
+ * Cargo status için satır stil sınıflarını döndürür
+ * @param {string} statusValue - Status değeri
+ * @returns {string} Tailwind CSS sınıfları
+ */
+export const getCargoStatusRowClasses = (statusValue) => {
+  const status = getCargoStatus(statusValue);
+  if (!status) return "border-l-4 border-l-gray-300";
+  return `border-l-4 ${status.borderClass} ${status.bgClass} hover:opacity-90`;
+};
+
+/**
+ * Para birimi ile formatlanmış tutar döndürür
+ * @param {number} amount - Tutar
+ * @param {string} currencyCode - Para birimi kodu
+ * @returns {string} Formatlanmış tutar
+ */
+export const formatCurrency = (amount, currencyCode = "TRY") => {
+  if (amount == null) return "-";
+
+  const currency = getCurrency(currencyCode);
+  const symbol = currency?.symbol || "";
+
+  const formatted = amount.toLocaleString('tr-TR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  return `${symbol}${formatted}`;
+};
+
 export default {
   GATE_OPTIONS,
   TRANSACTION_STATUS,
   SPECIAL_STATUS_COLORS,
   USER_ROLES,
   COMPANY_TYPES,
+  CARGO_STATUS,
+  VEHICLE_TYPES,
+  CURRENCY_OPTIONS,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
+  getCargoStatus,
+  getVehicleType,
+  getCurrency,
+  getCargoStatusRowClasses,
+  formatCurrency,
 };

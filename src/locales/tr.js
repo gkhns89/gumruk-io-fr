@@ -199,6 +199,15 @@ export const tr = {
     selectOrType: "Seçin veya yazın...",
     enterDelayReason: "Olası gecikme nedenlerini belirtin...",
     firstSelectClient: "Önce müşteri firması seçin",
+    // Cargo placeholders
+    enterLicensePlate: "Plaka girin",
+    enterConsignmentNumber: "Konşimento girin",
+    enterBillOfLading: "B/L girin",
+    enterContainerNumber: "Konteyner numarası girin",
+    enterContainerCount: "Kap sayısı girin",
+    enterCostsAmount: "Masraf tutarı girin",
+    enterDocumentReceiver: "Evrak teslim alan girin",
+    enterTransportInfo: "Taşıma bilgileri girin",
   },
 
   // Zaman ile ilgili

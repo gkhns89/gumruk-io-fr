@@ -29,7 +29,7 @@ export default function MobileMenu({ isOpen, onClose }) {
     { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
-    { icon: "local_shipping", label: "Yük Takip", path: "/shipping" },
+    { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
     { icon: "person", label: "Hesabım", path: "/profile" },

@@ -129,6 +129,19 @@ export const USER_UPPERCASE_FIELDS = [
   'lastName',
 ];
 
+/**
+ * Yük (Cargo) formu için büyük harfe çevrilecek alanlar
+ */
+export const CARGO_UPPERCASE_FIELDS = [
+  'senderCompany',
+  'carrierName',
+  'billOfLading',
+  'licensePlate',
+  'consignmentNumber',
+  'containerNumber',
+  'documentReceiver',
+];
+
 export default {
   toUpperCase,
   toLowerCase,
@@ -138,4 +151,5 @@ export default {
   TRANSACTION_UPPERCASE_FIELDS,
   COMPANY_UPPERCASE_FIELDS,
   USER_UPPERCASE_FIELDS,
+  CARGO_UPPERCASE_FIELDS,
 };
