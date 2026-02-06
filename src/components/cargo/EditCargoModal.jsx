@@ -52,6 +52,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const [agreementInfo, setAgreementInfo] = useState(null);
   const [clientAgreements, setClientAgreements] = useState({});
 
+  // Vehicle type change confirmation
+  const [pendingVehicleType, setPendingVehicleType] = useState(null);
+  const [showVehicleTypeConfirmModal, setShowVehicleTypeConfirmModal] = useState(false);
+
   // Load clients if admin
   useEffect(() => {
     if (canEditClientCompany && cargo.brokerCompany?.id) {
@@ -142,8 +146,35 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   const vehicleTypeInfo = getVehicleType(formData.vehicleType);
 
-  // Handle vehicle type change - clear fields from other vehicle types
-  const handleVehicleTypeChange = (newVehicleType) => {
+  // Check if current vehicle type has any data
+  const hasVehicleTypeData = () => {
+    return !!(
+      formData.licensePlate ||
+      formData.consignmentNumber ||
+      formData.billOfLading ||
+      formData.containerNumber
+    );
+  };
+
+  // Handle vehicle type change request
+  const handleVehicleTypeChangeRequest = (newVehicleType) => {
+    // If same type, do nothing
+    if (formData.vehicleType === newVehicleType) {
+      return;
+    }
+
+    // If there's data in current vehicle type fields, show confirmation
+    if (hasVehicleTypeData()) {
+      setPendingVehicleType(newVehicleType);
+      setShowVehicleTypeConfirmModal(true);
+    } else {
+      // No data, just change
+      confirmVehicleTypeChange(newVehicleType);
+    }
+  };
+
+  // Actually change vehicle type and clear fields
+  const confirmVehicleTypeChange = (newVehicleType) => {
     setFormData(prev => ({
       ...prev,
       vehicleType: newVehicleType,
@@ -153,6 +184,16 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       billOfLading: "",
       containerNumber: "",
     }));
+
+    // Close confirmation modal if open
+    setShowVehicleTypeConfirmModal(false);
+    setPendingVehicleType(null);
+  };
+
+  // Cancel vehicle type change
+  const cancelVehicleTypeChange = () => {
+    setShowVehicleTypeConfirmModal(false);
+    setPendingVehicleType(null);
   };
 
   const handleChange = (e) => {
@@ -249,7 +290,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                   <button
                     key={type.value}
                     type="button"
-                    onClick={() => handleVehicleTypeChange(type.value)}
+                    onClick={() => handleVehicleTypeChangeRequest(type.value)}
                     className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
                       formData.vehicleType === type.value
                         ? "border-primary bg-primary/10 dark:bg-primary/20"
@@ -734,6 +775,63 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           )}
         </div>
       </div>
+
+      {/* Vehicle Type Change Confirmation Modal */}
+      {showVehicleTypeConfirmModal && (
+        <div
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-[60] p-4 animate-fade-in"
+          onClick={cancelVehicleTypeChange}
+        >
+          <div
+            className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-zoom-in transition-colors duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-500/10 to-orange-500/5 dark:from-orange-500/20 dark:to-orange-500/10">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-3xl">
+                  warning
+                </span>
+                <div>
+                  <h3 className="text-xl font-bold text-text-main">Araç Tipi Değişikliği</h3>
+                  <p className="text-text-secondary text-sm mt-1">
+                    Girilen veriler silinecektir
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-text-main text-sm">
+                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen tüm bilgiler silinecektir.
+              </p>
+              <p className="text-text-secondary text-sm mt-3">
+                Devam etmek istediğinize emin misiniz?
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <button
+                type="button"
+                onClick={cancelVehicleTypeChange}
+                className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmVehicleTypeChange(pendingVehicleType)}
+                className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <span className="material-symbols-outlined text-lg">check</span>
+                <span>Devam Et</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

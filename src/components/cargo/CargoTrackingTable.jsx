@@ -58,7 +58,9 @@ export default function CargoTrackingTable({
   // Status-based row styling
   const getRowClasses = (cargoItem) => {
     const statusInfo = getCargoStatus(cargoItem.status);
-    return `border-l-4 ${statusInfo?.borderClass} hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer`;
+    // Add background color for COMPLETED status (like TransactionsTable)
+    const bgClass = cargoItem.status === 'COMPLETED' ? statusInfo?.bgClass : '';
+    return `border-l-4 ${statusInfo?.borderClass} ${bgClass} hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer`;
   };
 
   // Loading state
