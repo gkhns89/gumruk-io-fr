@@ -29,6 +29,8 @@ export default function CargoTrackingTable({
   const getVisibleColumns = () => {
     const baseColumns = [
       "status",
+      "vehicleType", // Moved earlier - before buyer company
+      "estimatedArrivalDate", // Moved to be right after vehicle type
       "buyerCompany",
       "senderCompany",
       "containerCount",
@@ -51,13 +53,24 @@ export default function CargoTrackingTable({
       "transportInfo",
       "documentReceiver",
       "documentDeliveryDate",
-      "estimatedArrivalDate",
-      "vehicleType",
       "actions",
     ];
   };
 
   const visibleColumns = getVisibleColumns();
+
+  // Sort cargo by status: ARRIVED -> TRACKING -> COMPLETED
+  const STATUS_PRIORITY = {
+    'ARRIVED': 1,      // Varış Yaptı önce
+    'TRACKING': 2,     // Takip ikinci
+    'COMPLETED': 3,    // Tamamlandı son
+  };
+
+  const sortedCargo = [...cargo].sort((a, b) => {
+    const priorityA = STATUS_PRIORITY[a.status] || 999;
+    const priorityB = STATUS_PRIORITY[b.status] || 999;
+    return priorityA - priorityB;
+  });
 
   // Status-based row styling
   const getRowClasses = (cargoItem) => {
@@ -147,6 +160,11 @@ export default function CargoTrackingTable({
                   Araç Tipi
                 </th>
               )}
+              {visibleColumns.includes("estimatedArrivalDate") && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  ETA
+                </th>
+              )}
               {visibleColumns.includes("buyerCompany") && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Alıcı Firma
@@ -212,11 +230,6 @@ export default function CargoTrackingTable({
                   Dosya Teslim
                 </th>
               )}
-              {visibleColumns.includes("estimatedArrivalDate") && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  ETA
-                </th>
-              )}
               {visibleColumns.includes("actions") && !isReadOnly && (
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   İşlemler
@@ -225,7 +238,7 @@ export default function CargoTrackingTable({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
-            {cargo.map((cargoItem) => {
+            {sortedCargo.map((cargoItem) => {
               const statusInfo = getCargoStatus(cargoItem.status);
               const vehicleType = VEHICLE_TYPES.find(v => v.value === cargoItem.vehicleType);
 
@@ -238,7 +251,7 @@ export default function CargoTrackingTable({
                   {visibleColumns.includes("status") && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo?.badgeClass}`}>
-                        {statusInfo?.displayName}
+                        {statusInfo?.displayName?.toUpperCase()}
                       </span>
                     </td>
                   )}
@@ -250,6 +263,25 @@ export default function CargoTrackingTable({
                         </span>
                         <span className="text-sm text-text-main dark:text-gray-300">{vehicleType?.displayName}</span>
                       </div>
+                    </td>
+                  )}
+                  {visibleColumns.includes("estimatedArrivalDate") && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-text-secondary dark:text-gray-400">
+                        {cargoItem.estimatedArrivalDate ?
+                          new Date(cargoItem.estimatedArrivalDate).toLocaleDateString('tr-TR') :
+                          "-"
+                        }
+                      </div>
+                      {/* Show warning if ETA is in past and status not COMPLETED */}
+                      {cargoItem.estimatedArrivalDate &&
+                       cargoItem.status !== 'COMPLETED' &&
+                       new Date(cargoItem.estimatedArrivalDate) < new Date() && (
+                        <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1 animate-pulse">
+                          <span className="material-symbols-outlined text-xs">warning</span>
+                          Geçmiş
+                        </span>
+                      )}
                     </td>
                   )}
                   {visibleColumns.includes("buyerCompany") && (
@@ -268,7 +300,7 @@ export default function CargoTrackingTable({
                   )}
                   {visibleColumns.includes("containerCount") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">
-                      {cargoItem.containerCount || "-"}
+                      {cargoItem.containerCount ? Number(cargoItem.containerCount).toLocaleString('tr-TR') : "-"}
                     </td>
                   )}
                   {visibleColumns.includes("weight") && (
@@ -290,7 +322,7 @@ export default function CargoTrackingTable({
                                   {cost.type}:
                                 </span>
                                 <span className="text-xs font-semibold text-text-main dark:text-gray-300">
-                                  {cost.amount} {cost.currency}
+                                  {Number(cost.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cost.currency}
                                 </span>
                               </div>
                             ))}
@@ -310,15 +342,15 @@ export default function CargoTrackingTable({
                     <td className="px-6 py-4 whitespace-nowrap">
                       {cargoItem.paymentStatus === 'PAID' ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                          Ödendi
+                          ÖDENDİ
                         </span>
                       ) : cargoItem.paymentStatus === 'COMPANY_PAID' ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                          Firma Tarafından
+                          FİRMA TARAFINDAN
                         </span>
                       ) : (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300">
-                          Ödeme Yok
+                          ÖDEME YOK
                         </span>
                       )}
                     </td>
@@ -374,25 +406,6 @@ export default function CargoTrackingTable({
                   {visibleColumns.includes("documentDeliveryDate") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
                       {cargoItem.documentDeliveryDate ? new Date(cargoItem.documentDeliveryDate).toLocaleDateString('tr-TR') : "-"}
-                    </td>
-                  )}
-                  {visibleColumns.includes("estimatedArrivalDate") && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-text-secondary dark:text-gray-400">
-                        {cargoItem.estimatedArrivalDate ?
-                          new Date(cargoItem.estimatedArrivalDate).toLocaleDateString('tr-TR') :
-                          "-"
-                        }
-                      </div>
-                      {/* Show warning if ETA is in past and status not COMPLETED */}
-                      {cargoItem.estimatedArrivalDate &&
-                       cargoItem.status !== 'COMPLETED' &&
-                       new Date(cargoItem.estimatedArrivalDate) < new Date() && (
-                        <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1">
-                          <span className="material-symbols-outlined text-xs">warning</span>
-                          Geçmiş
-                        </span>
-                      )}
                     </td>
                   )}
                   {visibleColumns.includes("actions") && !isReadOnly && (
