@@ -273,15 +273,41 @@ export default function CargoTrackingTable({
                           "-"
                         }
                       </div>
-                      {/* Show warning if ETA is in past and status not COMPLETED */}
-                      {cargoItem.estimatedArrivalDate &&
-                       cargoItem.status !== 'COMPLETED' &&
-                       new Date(cargoItem.estimatedArrivalDate) < new Date() && (
-                        <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1 animate-pulse">
-                          <span className="material-symbols-outlined text-xs">warning</span>
-                          Geçmiş
-                        </span>
-                      )}
+                      {/* ETA Warnings - only show if status is not COMPLETED */}
+                      {cargoItem.estimatedArrivalDate && cargoItem.status !== 'COMPLETED' && (() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Reset to start of day
+                        const eta = new Date(cargoItem.estimatedArrivalDate);
+                        eta.setHours(0, 0, 0, 0); // Reset to start of day
+                        const diffInDays = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
+
+                        if (diffInDays === 0) {
+                          // Today - "Varış Günü"
+                          return (
+                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                              <span className="material-symbols-outlined text-xs">check_circle</span>
+                              Varış Günü
+                            </span>
+                          );
+                        } else if (diffInDays === 1) {
+                          // Tomorrow - "Yaklaşıyor"
+                          return (
+                            <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                              <span className="material-symbols-outlined text-xs">schedule</span>
+                              Yaklaşıyor
+                            </span>
+                          );
+                        } else if (diffInDays < 0) {
+                          // Past - "Gecikme"
+                          return (
+                            <span className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                              <span className="material-symbols-outlined text-xs">error</span>
+                              Gecikme
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </td>
                   )}
                   {visibleColumns.includes("buyerCompany") && (
