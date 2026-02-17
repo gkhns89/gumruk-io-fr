@@ -183,6 +183,31 @@ export const CARGO_STATUS = [
 ];
 
 /**
+ * Payment Status Options
+ * For cargo tracking payment tracking
+ */
+export const PAYMENT_STATUS_OPTIONS = [
+  {
+    value: 'NO_PAYMENT',
+    label: 'Ödeme Yok',
+    color: 'gray',
+    badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+  },
+  {
+    value: 'PAID',
+    label: 'Ödendi',
+    color: 'green',
+    badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+  },
+  {
+    value: 'COMPANY_PAID',
+    label: 'Firma Tarafından Ödendi',
+    color: 'blue',
+    badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+  }
+];
+
+/**
  * Araç Tipleri
  * Vehicle types with specific field requirements
  */
@@ -201,7 +226,7 @@ export const VEHICLE_TYPES = [
     displayName: "GEMİ",
     icon: "directions_boat",
     color: "blue",
-    fields: ["billOfLading", "containerNumber"], // B/L + Konteyner No
+    fields: ["billOfLading", "containerNumbers"], // B/L + Konteyner Numaraları
   },
   {
     value: "TRUCK",
@@ -321,6 +346,7 @@ export default {
   USER_ROLES,
   COMPANY_TYPES,
   CARGO_STATUS,
+  PAYMENT_STATUS_OPTIONS,
   VEHICLE_TYPES,
   CURRENCY_OPTIONS,
   getGateOption,

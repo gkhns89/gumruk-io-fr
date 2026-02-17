@@ -12,6 +12,11 @@ import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
 export default function CargoTrackingPage() {
   const { user } = useAuth();
 
+  // Sidebar state for footer positioning
+  const [sidebarWide, setSidebarWide] = useState(() => {
+    return localStorage.getItem('sidebarMode') === 'pinned-expanded';
+  });
+
   const [cargo, setCargo] = useState([]);
   const [filteredCargo, setFilteredCargo] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +48,19 @@ export default function CargoTrackingPage() {
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
+
+  // Sidebar değişikliklerini dinle
+  useEffect(() => {
+    const handleSidebarChange = (event) => {
+      setSidebarWide(event.detail.isWide);
+    };
+
+    window.addEventListener('sidebarStateChanged', handleSidebarChange);
+
+    return () => {
+      window.removeEventListener('sidebarStateChanged', handleSidebarChange);
+    };
+  }, []);
 
   // Load data
   useEffect(() => {
@@ -184,9 +202,50 @@ export default function CargoTrackingPage() {
     setSelectedCargo(null);
   };
 
+  // Render pagination buttons with ellipsis
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+    if (endPage - startPage < maxButtons - 1) {
+      startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    if (startPage > 1) {
+      buttons.push(
+        <button key="first" onClick={() => handlePageChange(1)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-text-main">1</button>
+      );
+      if (startPage > 2) buttons.push(<span key="dots1" className="px-2 text-text-secondary">...</span>);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-2 border rounded-lg transition-colors ${currentPage === i ? 'bg-primary text-white border-primary' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-text-main'}`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) buttons.push(<span key="dots2" className="px-2 text-text-secondary">...</span>);
+      buttons.push(
+        <button key="last" onClick={() => handlePageChange(totalPages)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-text-main">{totalPages}</button>
+      );
+    }
+
+    return buttons;
+  };
+
   return (
-    <MainLayout>
-      <div className="p-6 space-y-6">
+    <MainLayout hasFooter={true}>
+      <div className="flex flex-col pb-24">
+        <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -347,85 +406,105 @@ export default function CargoTrackingPage() {
           canDelete={canDelete}
           isReadOnly={isClientUser}
           onRowClick={handleRowClick}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
           selectedVehicleType={selectedVehicleType}
         />
+        </div>
 
-        {/* Pagination Footer */}
-        {!loading && sortedCargo.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-            <div className="flex items-center justify-between">
-              {/* Statistics */}
-              <div className="flex items-center gap-4">
-                <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <span className="text-sm text-text-secondary dark:text-gray-400">
-                    Toplam: <strong className="text-text-main dark:text-gray-300">{cargo.length}</strong>
-                  </span>
-                </div>
-                {activeFilterCount > 0 && (
-                  <div className="px-3 py-1 bg-primary/10 rounded-lg">
-                    <span className="text-sm text-primary">
-                      Filtrelenmiş: <strong>{sortedCargo.length}</strong>
+        {/* Fixed Footer with Statistics and Pagination */}
+        <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 shadow-lg z-30 transition-[left,colors] duration-300 ease-in-out ${sidebarWide ? 'lg:left-64' : 'lg:left-20'}`}>
+          <div className="px-4 md:px-6 py-3">
+            {!loading && sortedCargo.length > 0 ? (
+              <div className="flex items-center justify-between gap-4">
+                {/* Left: Info Section */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
+                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">local_shipping</span>
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                      Toplam: <strong className="font-bold">{cargo.length}</strong>
                     </span>
                   </div>
-                )}
-                <div className="text-sm text-text-secondary dark:text-gray-400">
-                  Gösterilen: {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedCargo.length)}
-                </div>
-              </div>
 
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
+                  {activeFilterCount > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">
+                      <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base">filter_alt</span>
+                      <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                        Filtrelenmiş: <strong className="font-bold">{sortedCargo.length}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {isClientUser && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 transition-colors">
+                      <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">visibility</span>
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Görüntüleme</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Center: Display Info */}
+                <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors">
+                  <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">description</span>
+                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                    Gösterilen: <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedCargo.length)}</strong> / <strong className="font-bold">{sortedCargo.length}</strong>
+                  </span>
+                </div>
+
+                {/* Right: Navigation/Pagination */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={currentPage === 1 || totalPages <= 1}
+                    className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                   >
-                    <span className="material-symbols-outlined">chevron_left</span>
+                    <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_left</span>
+                    <span className="hidden xl:inline">Önceki</span>
                   </button>
 
-                  {/* Page Numbers */}
-                  {[...Array(totalPages)].map((_, index) => {
-                    const pageNumber = index + 1;
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === totalPages ||
-                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => handlePageChange(pageNumber)}
-                          className={`px-3 py-1 rounded-lg transition-colors ${
-                            currentPage === pageNumber
-                              ? 'bg-primary text-white'
-                              : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      );
-                    } else if (
-                      pageNumber === currentPage - 2 ||
-                      pageNumber === currentPage + 2
-                    ) {
-                      return <span key={pageNumber}>...</span>;
-                    }
-                    return null;
-                  })}
+                  {totalPages > 1 ? (
+                    <>
+                      <div className="hidden md:flex items-center gap-1.5">
+                        {renderPaginationButtons()}
+                      </div>
+
+                      <div className="md:hidden flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                        <span className="text-xs font-medium text-text-main">
+                          {currentPage} / {totalPages}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                      <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-sm">article</span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <strong className="font-bold">1 / 1</strong>
+                      </span>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={currentPage === totalPages || totalPages <= 1}
+                    className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                   >
-                    <span className="material-symbols-outlined">chevron_right</span>
+                    <span className="hidden xl:inline">Sonraki</span>
+                    <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_right</span>
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-base">local_shipping</span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {loading ? "Yükleniyor..." : "Veri yok"}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Modals */}

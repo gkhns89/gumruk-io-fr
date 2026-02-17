@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, formatCurrency } from '../../utils/constants';
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
+import { getCostBreakdown, formatCostsDisplay } from '../../utils/costsUtils';
 
 export default function CargoTrackingTable({
   cargo,
@@ -11,6 +12,8 @@ export default function CargoTrackingTable({
   canDelete,
   isReadOnly,
   onRowClick,
+  onEdit,
+  onDelete,
   selectedVehicleType = "", // For dynamic column visibility
 }) {
   const [selectedCargo, setSelectedCargo] = useState(null);
@@ -31,14 +34,14 @@ export default function CargoTrackingTable({
       "containerCount",
       "weight",
       "costs",
-      "paymentReceived",
+      "paymentStatus",
       "carrier",
     ];
 
     const vehicleColumns = {
-      "": ["billOfLading", "licensePlate", "consignmentNumber", "containerNumber"], // Show all if no filter
+      "": ["billOfLading", "licensePlate", "consignmentNumber", "containerNumbers"], // Show all if no filter
       "AIRPLANE": ["consignmentNumber"],
-      "SHIP": ["billOfLading", "containerNumber"],
+      "SHIP": ["billOfLading", "containerNumbers"],
       "TRUCK": ["licensePlate"],
     };
 
@@ -48,6 +51,7 @@ export default function CargoTrackingTable({
       "transportInfo",
       "documentReceiver",
       "documentDeliveryDate",
+      "estimatedArrivalDate",
       "vehicleType",
       "actions",
     ];
@@ -168,9 +172,9 @@ export default function CargoTrackingTable({
                   Masraflar
                 </th>
               )}
-              {visibleColumns.includes("paymentReceived") && (
+              {visibleColumns.includes("paymentStatus") && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ödeme
+                  Ödeme Durumu
                 </th>
               )}
               {visibleColumns.includes("carrier") && (
@@ -183,9 +187,9 @@ export default function CargoTrackingTable({
                   B/L
                 </th>
               )}
-              {visibleColumns.includes("containerNumber") && (
+              {visibleColumns.includes("containerNumbers") && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Konteyner No
+                  Konteyner Numaraları
                 </th>
               )}
               {visibleColumns.includes("licensePlate") && (
@@ -206,6 +210,11 @@ export default function CargoTrackingTable({
               {visibleColumns.includes("documentDeliveryDate") && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Dosya Teslim
+                </th>
+              )}
+              {visibleColumns.includes("estimatedArrivalDate") && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  ETA
                 </th>
               )}
               {visibleColumns.includes("actions") && !isReadOnly && (
@@ -246,7 +255,7 @@ export default function CargoTrackingTable({
                   {visibleColumns.includes("buyerCompany") && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-text-main dark:text-gray-300">
-                        {cargoItem.clientCompany?.name || "-"}
+                        {cargoItem.clientCompany?.shortName || cargoItem.clientCompany?.name || "-"}
                       </div>
                     </td>
                   )}
@@ -268,19 +277,48 @@ export default function CargoTrackingTable({
                     </td>
                   )}
                   {visibleColumns.includes("costs") && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main dark:text-gray-300">
-                      {cargoItem.costsAmount ? formatCurrency(cargoItem.costsAmount, cargoItem.costsCurrency) : "-"}
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const breakdown = getCostBreakdown(cargoItem);
+                        if (breakdown.length === 0) return <span className="text-sm text-gray-400">-</span>;
+
+                        return (
+                          <div className="space-y-1">
+                            {breakdown.map((cost, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 min-w-[50px]">
+                                  {cost.type}:
+                                </span>
+                                <span className="text-xs font-semibold text-text-main dark:text-gray-300">
+                                  {cost.amount} {cost.currency}
+                                </span>
+                              </div>
+                            ))}
+                            {breakdown.length > 1 && (
+                              <div className="pt-1 mt-1 border-t border-gray-200 dark:border-gray-700">
+                                <span className="text-xs font-bold text-primary dark:text-primary-light">
+                                  Toplam: {formatCostsDisplay(cargoItem)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   )}
-                  {visibleColumns.includes("paymentReceived") && (
+                  {visibleColumns.includes("paymentStatus") && (
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {cargoItem.paymentReceived ? (
+                      {cargoItem.paymentStatus === 'PAID' ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                          Alındı
+                          Ödendi
+                        </span>
+                      ) : cargoItem.paymentStatus === 'COMPANY_PAID' ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                          Firma Tarafından
                         </span>
                       ) : (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
-                          Alınmadı
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300">
+                          Ödeme Yok
                         </span>
                       )}
                     </td>
@@ -295,9 +333,27 @@ export default function CargoTrackingTable({
                       {cargoItem.billOfLading || "-"}
                     </td>
                   )}
-                  {visibleColumns.includes("containerNumber") && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">
-                      {cargoItem.containerNumber || "-"}
+                  {visibleColumns.includes("containerNumbers") && (
+                    <td className="px-6 py-4">
+                      {cargoItem.containerNumbers && cargoItem.containerNumbers.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {cargoItem.containerNumbers.slice(0, 4).map((container, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
+                            >
+                              {container}
+                            </span>
+                          ))}
+                          {cargoItem.containerNumbers.length > 4 && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                              +{cargoItem.containerNumbers.length - 4} daha
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-text-secondary dark:text-gray-400">-</span>
+                      )}
                     </td>
                   )}
                   {visibleColumns.includes("licensePlate") && (
@@ -320,14 +376,34 @@ export default function CargoTrackingTable({
                       {cargoItem.documentDeliveryDate ? new Date(cargoItem.documentDeliveryDate).toLocaleDateString('tr-TR') : "-"}
                     </td>
                   )}
+                  {visibleColumns.includes("estimatedArrivalDate") && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-text-secondary dark:text-gray-400">
+                        {cargoItem.estimatedArrivalDate ?
+                          new Date(cargoItem.estimatedArrivalDate).toLocaleDateString('tr-TR') :
+                          "-"
+                        }
+                      </div>
+                      {/* Show warning if ETA is in past and status not COMPLETED */}
+                      {cargoItem.estimatedArrivalDate &&
+                       cargoItem.status !== 'COMPLETED' &&
+                       new Date(cargoItem.estimatedArrivalDate) < new Date() && (
+                        <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1">
+                          <span className="material-symbols-outlined text-xs">warning</span>
+                          Geçmiş
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {visibleColumns.includes("actions") && !isReadOnly && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Edit action
+                          onEdit && onEdit(cargoItem);
                         }}
-                        className="text-primary hover:text-primary-dark mr-3 transition-colors"
+                        className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary mr-3 transition-colors"
+                        title="Düzenle"
                       >
                         <span className="material-symbols-outlined text-lg">edit</span>
                       </button>
@@ -335,9 +411,10 @@ export default function CargoTrackingTable({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Delete action
+                            onDelete && onDelete(cargoItem);
                           }}
-                          className="text-red-600 hover:text-red-800 transition-colors"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                          title="Sil"
                         >
                           <span className="material-symbols-outlined text-lg">delete</span>
                         </button>

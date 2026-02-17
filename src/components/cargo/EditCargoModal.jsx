@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, getVehicleType } from '../../utils/constants';
+import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
+import TagInput from '../common/TagInput';
 import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
@@ -25,17 +26,22 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     senderCompany: cargo.senderCompany || "",
     containerCount: cargo.containerCount || "",
     weightKg: cargo.weightKg || "",
-    costsAmount: cargo.costsAmount || "",
-    costsCurrency: cargo.costsCurrency || "TRY",
-    paymentReceived: cargo.paymentReceived || false,
+    lokalAmount: cargo.lokalAmount || "",
+    lokalCurrency: cargo.lokalCurrency || "TRY",
+    depositoAmount: cargo.depositoAmount || "",
+    depositoCurrency: cargo.depositoCurrency || "TRY",
+    ordinoAmount: cargo.ordinoAmount || "",
+    ordinoCurrency: cargo.ordinoCurrency || "TRY",
+    paymentStatus: cargo.paymentStatus || "NO_PAYMENT",
     carrierName: cargo.carrierName || "",
     billOfLading: cargo.billOfLading || "",
     licensePlate: cargo.licensePlate || "",
     consignmentNumber: cargo.consignmentNumber || "",
-    containerNumber: cargo.containerNumber || "",
+    containerNumbers: cargo.containerNumbers || [],
     transportInfo: cargo.transportInfo || "",
     documentReceiver: cargo.documentReceiver || "",
     documentDeliveryDate: cargo.documentDeliveryDate || "",
+    estimatedArrivalDate: cargo.estimatedArrivalDate || "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -78,7 +84,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       );
       if (selectedClient) {
         setSelectedClientInfo(selectedClient);
-        setClientSearchTerm(selectedClient.name);
+        setClientSearchTerm(selectedClient.shortName || selectedClient.name);
 
         // Agreement bilgisini set et
         const agreement = clientAgreements[selectedClient.id];
@@ -136,7 +142,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     filteredClients,
     (client) => {
       setFormData(prev => ({ ...prev, clientCompanyId: client.id }));
-      setClientSearchTerm(client.name);
+      setClientSearchTerm(client.shortName || client.name);
       setSelectedClientInfo(client);
       setShowClientDropdown(false);
     },
@@ -152,7 +158,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       formData.licensePlate ||
       formData.consignmentNumber ||
       formData.billOfLading ||
-      formData.containerNumber
+      (formData.containerNumbers && formData.containerNumbers.length > 0)
     );
   };
 
@@ -182,7 +188,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       licensePlate: "",
       consignmentNumber: "",
       billOfLading: "",
-      containerNumber: "",
+      containerNumbers: [],
     }));
 
     // Close confirmation modal if open
@@ -200,7 +206,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     const { name, value, type, checked } = e.target;
 
     // Uppercase transformation for specific fields
-    const uppercaseFields = ['licensePlate', 'consignmentNumber', 'billOfLading', 'containerNumber', 'documentReceiver', 'senderCompany', 'carrierName'];
+    const uppercaseFields = ['licensePlate', 'consignmentNumber', 'billOfLading', 'documentReceiver', 'senderCompany', 'carrierName'];
     const finalValue = type === 'checkbox' ? checked : (uppercaseFields.includes(name) ? toUpperCase(value) : value);
 
     setFormData(prev => ({
@@ -397,7 +403,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                           data-dropdown-index={index}
                           onClick={() => {
                             setFormData(prev => ({ ...prev, clientCompanyId: client.id }));
-                            setClientSearchTerm(client.name);
+                            setClientSearchTerm(client.shortName || client.name);
                             setSelectedClientInfo(client);
                             setShowClientDropdown(false);
                           }}
@@ -415,7 +421,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                                 business
                               </span>
                               <div className="flex flex-col min-w-0 flex-1">
-                                <p className="font-medium text-sm text-text-main truncate">{client.name}</p>
+                                <p className="font-medium text-sm text-text-main truncate">{client.shortName || client.name}</p>
                                 {client.agreementId && (
                                   <div className="flex items-center gap-1 mt-0.5">
                                     <span className="material-symbols-outlined text-xs text-green-600 dark:text-green-400">
@@ -556,40 +562,98 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Masraflar
-              </label>
-              <input
-                type="number"
-                name="costsAmount"
-                value={formData.costsAmount}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                step="0.01"
-                min="0"
-                placeholder={toUpperCase(t("placeholders.enterCostsAmount"))}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-              />
-            </div>
+            {/* Costs Section - Lokal, Depozito, Ordino */}
+            <div className="col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+              <h3 className="text-base font-semibold text-text-main mb-4">Masraflar</h3>
 
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Para Birimi
-              </label>
-              <select
-                name="costsCurrency"
-                value={formData.costsCurrency}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                className="form-select w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {CURRENCY_OPTIONS.map(currency => (
-                  <option key={currency.value} value={currency.value}>
-                    {currency.symbol} {currency.label}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Lokal Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Lokal Masrafı</label>
+                  <input
+                    type="number"
+                    name="lokalAmount"
+                    value={formData.lokalAmount}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterLokalAmount")}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  />
+                  <select
+                    name="lokalCurrency"
+                    value={formData.lokalCurrency}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Depozito Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Depozito Masrafı</label>
+                  <input
+                    type="number"
+                    name="depositoAmount"
+                    value={formData.depositoAmount}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterDepositoAmount")}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  />
+                  <select
+                    name="depositoCurrency"
+                    value={formData.depositoCurrency}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Ordino Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Ordino Masrafı</label>
+                  <input
+                    type="number"
+                    name="ordinoAmount"
+                    value={formData.ordinoAmount}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterOrdinoAmount")}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  />
+                  <select
+                    name="ordinoCurrency"
+                    value={formData.ordinoCurrency}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -653,20 +717,24 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 </div>
               )}
 
-              {vehicleTypeInfo?.fields.includes("containerNumber") && (
-                <div>
+              {vehicleTypeInfo?.fields.includes("containerNumbers") && (
+                <div className="col-span-2">
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Konteyner No
+                    Konteyner Numaraları <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 ml-2">
+                      (Enter ile ekleyin)
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    name="containerNumber"
-                    value={formData.containerNumber}
-                    onChange={handleChange}
-                    disabled={isReadOnly}
+                  <TagInput
+                    value={formData.containerNumbers}
+                    onChange={(newContainers) => setFormData(prev => ({
+                      ...prev,
+                      containerNumbers: newContainers
+                    }))}
                     placeholder={toUpperCase(t("placeholders.enterContainerNumber"))}
-                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-                    style={{ textTransform: "uppercase" }}
+                    uppercase={true}
+                    maxLength={50}
+                    disabled={isReadOnly}
                   />
                 </div>
               )}
@@ -704,6 +772,27 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
             </div>
+
+            {/* ETA Field */}
+            <div>
+              <label className="block text-sm font-medium text-text-main pb-2">
+                Tahmini Varış Tarihi (ETA)
+              </label>
+              <input
+                type="date"
+                name="estimatedArrivalDate"
+                value={formData.estimatedArrivalDate}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+              />
+              {formData.estimatedArrivalDate && formData.documentDeliveryDate && new Date(formData.documentDeliveryDate) > new Date(formData.estimatedArrivalDate) && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-orange-600 dark:text-orange-400">
+                  <span className="material-symbols-outlined text-sm">warning</span>
+                  <span>Gerçek tarih ETA'dan sonra!</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mb-6">
@@ -721,25 +810,37 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             />
           </div>
 
-          {/* Payment Received Toggle */}
-          <div className="mb-6 flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-            <label className="text-sm font-medium text-text-main">
-              Ödeme Alındı mı?
+          {/* Payment Status Radio Buttons */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-text-main pb-2">
+              Ödeme Durumu
             </label>
-            <button
-              type="button"
-              onClick={() => !isReadOnly && setFormData(prev => ({ ...prev, paymentReceived: !prev.paymentReceived }))}
-              disabled={isReadOnly}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                formData.paymentReceived ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
-              } ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.paymentReceived ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {PAYMENT_STATUS_OPTIONS.map(option => (
+                <label
+                  key={option.value}
+                  className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.paymentStatus === option.value
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  } ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentStatus"
+                    value={option.value}
+                    checked={formData.paymentStatus === option.value}
+                    onChange={(e) => !isReadOnly && setFormData(prev => ({
+                      ...prev,
+                      paymentStatus: e.target.value
+                    }))}
+                    disabled={isReadOnly}
+                    className="w-4 h-4 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-text-main">{option.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -804,8 +905,24 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             {/* Body */}
             <div className="p-6">
               <p className="text-text-main text-sm">
-                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen tüm bilgiler silinecektir.
+                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen aşağıdaki alanlar silinecektir:
               </p>
+              <div className="mt-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                <ul className="list-disc list-inside text-sm text-text-main space-y-1">
+                  {formData.vehicleType === 'SHIP' && (
+                    <>
+                      <li>B/L Numarası{formData.billOfLading && `: ${formData.billOfLading}`}</li>
+                      <li>Konteyner Numaraları{formData.containerNumbers?.length > 0 && ` (${formData.containerNumbers.length} adet)`}</li>
+                    </>
+                  )}
+                  {formData.vehicleType === 'TRUCK' && (
+                    <li>Plaka{formData.licensePlate && `: ${formData.licensePlate}`}</li>
+                  )}
+                  {formData.vehicleType === 'AIRPLANE' && (
+                    <li>Konşimento Numarası{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
+                  )}
+                </ul>
+              </div>
               <p className="text-text-secondary text-sm mt-3">
                 Devam etmek istediğinize emin misiniz?
               </p>

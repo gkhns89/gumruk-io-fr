@@ -138,8 +138,8 @@ export const CARGO_UPPERCASE_FIELDS = [
   'billOfLading',
   'licensePlate',
   'consignmentNumber',
-  'containerNumber',
   'documentReceiver',
+  'transportInfo',
 ];
 
 export default {

@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { VEHICLE_TYPES, CURRENCY_OPTIONS } from '../../utils/constants';
+import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
+import AddClientModal from '../common/AddClientModal';
+import TagInput from '../common/TagInput';
 import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 
@@ -21,17 +23,22 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     senderCompany: "",
     containerCount: "",
     weightKg: "",
-    costsAmount: "",
-    costsCurrency: "TRY",
-    paymentReceived: false,
+    lokalAmount: "",
+    lokalCurrency: "TRY",
+    depositoAmount: "",
+    depositoCurrency: "TRY",
+    ordinoAmount: "",
+    ordinoCurrency: "TRY",
+    paymentStatus: "NO_PAYMENT",
     carrierName: "",
     billOfLading: "",
     licensePlate: "",
     consignmentNumber: "",
-    containerNumber: "",
+    containerNumbers: [],
     transportInfo: "",
     documentReceiver: "",
     documentDeliveryDate: "",
+    estimatedArrivalDate: "",
   });
 
   const [availableClients, setAvailableClients] = useState([]);
@@ -73,6 +80,13 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   const [pendingVehicleType, setPendingVehicleType] = useState(null);
   const [showVehicleTypeConfirmModal, setShowVehicleTypeConfirmModal] = useState(false);
 
+  // Document warning modal and delay warnings
+  const [showDocumentWarningModal, setShowDocumentWarningModal] = useState(false);
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [delayWarnings, setDelayWarnings] = useState({
+    hasEtaDelay: false
+  });
+
   // Load brokers (SUPER_ADMIN only)
   useEffect(() => {
     if (isSuperAdmin) {
@@ -101,7 +115,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       );
       if (selectedClient) {
         setSelectedClientInfo(selectedClient);
-        setClientSearchTerm(selectedClient.name);
+        setClientSearchTerm(selectedClient.shortName || selectedClient.name);
 
         // Agreement bilgisini set et
         const agreement = clientAgreements[selectedClient.id];
@@ -161,6 +175,18 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       setFilteredCarriers(filtered.slice(0, 50));
     }
   }, [carrierSearchTerm, availableCarriers]);
+
+  // Calculate ETA delay warnings
+  useEffect(() => {
+    if (formData.estimatedArrivalDate && formData.documentDeliveryDate) {
+      const eta = new Date(formData.estimatedArrivalDate);
+      const actual = new Date(formData.documentDeliveryDate);
+      const daysDiff = Math.floor((actual - eta) / (1000 * 60 * 60 * 24));
+      setDelayWarnings({ hasEtaDelay: daysDiff > 0 });
+    } else {
+      setDelayWarnings({ hasEtaDelay: false });
+    }
+  }, [formData.estimatedArrivalDate, formData.documentDeliveryDate]);
 
   const loadBrokers = async () => {
     setLoadingBrokers(true);
@@ -268,7 +294,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     filteredClients,
     (client) => {
       setFormData(prev => ({ ...prev, clientCompanyId: client.id }));
-      setClientSearchTerm(client.name);
+      setClientSearchTerm(client.shortName || client.name);
       setSelectedClientInfo(client);
       setShowClientDropdown(false);
       if (fieldErrors.clientCompanyId) {
@@ -324,7 +350,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       formData.licensePlate ||
       formData.consignmentNumber ||
       formData.billOfLading ||
-      formData.containerNumber
+      (formData.containerNumbers && formData.containerNumbers.length > 0)
     );
   };
 
@@ -360,13 +386,19 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       licensePlate: "",
       consignmentNumber: "",
       billOfLading: "",
-      containerNumber: "",
+      containerNumbers: [],
     }));
 
-    // Clear vehicle type error
-    if (fieldErrors.vehicleType) {
-      setFieldErrors(prev => ({ ...prev, vehicleType: null }));
-    }
+    // Clear vehicle type and vehicle-specific field errors
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.vehicleType;
+      delete newErrors.licensePlate;
+      delete newErrors.consignmentNumber;
+      delete newErrors.billOfLading;
+      delete newErrors.containerNumbers;
+      return newErrors;
+    });
 
     // Close confirmation modal if open
     setShowVehicleTypeConfirmModal(false);
@@ -424,8 +456,8 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       if (!formData.billOfLading || formData.billOfLading.trim() === "") {
         errors.billOfLading = "Gemi için B/L gereklidir";
       }
-      if (!formData.containerNumber || formData.containerNumber.trim() === "") {
-        errors.containerNumber = "Gemi için konteyner numarası gereklidir";
+      if (!formData.containerNumbers || formData.containerNumbers.length === 0) {
+        errors.containerNumbers = "Gemi için en az bir konteyner numarası gereklidir";
       }
     }
 
@@ -433,6 +465,16 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       if (!formData.licensePlate || formData.licensePlate.trim() === "") {
         errors.licensePlate = "Kamyon için plaka gereklidir";
       }
+    }
+
+    // Document fields validation (both required together)
+    const hasReceiver = formData.documentReceiver && formData.documentReceiver.trim();
+    const hasDate = formData.documentDeliveryDate;
+    if (hasReceiver && !hasDate) {
+      errors.documentDeliveryDate = "Evrak alan girildiğinde tarih de girilmelidir";
+    }
+    if (hasDate && !hasReceiver) {
+      errors.documentReceiver = "Teslim tarihi girildiğinde evrak alan da girilmelidir";
     }
 
     // Numeric field validations
@@ -444,8 +486,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       errors.weightKg = "Ağırlık negatif olamaz";
     }
 
-    if (formData.costsAmount && parseFloat(formData.costsAmount) < 0) {
-      errors.costsAmount = "Masraf negatif olamaz";
+    if (formData.lokalAmount && parseFloat(formData.lokalAmount) < 0) {
+      errors.lokalAmount = "Lokal masraf negatif olamaz";
+    }
+    if (formData.depositoAmount && parseFloat(formData.depositoAmount) < 0) {
+      errors.depositoAmount = "Depozito masrafı negatif olamaz";
+    }
+    if (formData.ordinoAmount && parseFloat(formData.ordinoAmount) < 0) {
+      errors.ordinoAmount = "Ordino masrafı negatif olamaz";
     }
 
     setFieldErrors(errors);
@@ -460,6 +508,19 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       return;
     }
 
+    // Check for auto-complete due to document fields
+    const hasReceiver = formData.documentReceiver && formData.documentReceiver.trim();
+    const hasDate = formData.documentDeliveryDate;
+
+    if (hasReceiver && hasDate) {
+      setShowDocumentWarningModal(true);
+      return; // Wait for user confirmation
+    }
+
+    await submitCargo();
+  };
+
+  const submitCargo = async () => {
     setLoading(true);
     setError("");
 
@@ -472,7 +533,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         ...transformedData,
         containerCount: transformedData.containerCount ? parseInt(transformedData.containerCount) : null,
         weightKg: transformedData.weightKg ? parseFloat(transformedData.weightKg) : null,
-        costsAmount: transformedData.costsAmount ? parseFloat(transformedData.costsAmount) : null,
+        lokalAmount: transformedData.lokalAmount ? parseFloat(transformedData.lokalAmount) : null,
+        depositoAmount: transformedData.depositoAmount ? parseFloat(transformedData.depositoAmount) : null,
+        ordinoAmount: transformedData.ordinoAmount ? parseFloat(transformedData.ordinoAmount) : null,
       };
 
       const result = await cargoService.createCargo(dataToSend);
@@ -675,14 +738,26 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
             {/* Client Selection */}
             <div className="flex flex-col w-full lg:col-span-3">
-              <p className="text-text-main text-sm font-medium pb-2">
-                Alıcı Firma <span className="text-red-500">*</span>
-                {loadingClients && (
-                  <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                    Yükleniyor...
-                  </span>
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-text-main text-sm font-medium">
+                  Alıcı Firma <span className="text-red-500">*</span>
+                  {loadingClients && (
+                    <span className="text-xs text-blue-600 ml-2 animate-pulse">
+                      Yükleniyor...
+                    </span>
+                  )}
+                </p>
+                {formData.brokerCompanyId && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewClientModal(true)}
+                    className="text-xs text-primary hover:text-primary/80 dark:text-primary-light dark:hover:text-primary font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    Yeni Firma Ekle
+                  </button>
                 )}
-              </p>
+              </div>
               <div className="relative">
                 <div className="relative">
                   <input
@@ -756,7 +831,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                           data-dropdown-index={index}
                           onClick={() => {
                             setFormData(prev => ({ ...prev, clientCompanyId: client.id }));
-                            setClientSearchTerm(client.name);
+                            setClientSearchTerm(client.shortName || client.name);
                             setSelectedClientInfo(client);
                             setShowClientDropdown(false);
                             if (fieldErrors.clientCompanyId) {
@@ -777,7 +852,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                                 business
                               </span>
                               <div className="flex flex-col min-w-0 flex-1">
-                                <p className="font-medium text-sm text-text-main truncate">{client.name}</p>
+                                <p className="font-medium text-sm text-text-main truncate">{client.shortName || client.name}</p>
                                 {client.agreementId && (
                                   <div className="flex items-center gap-1 mt-0.5">
                                     <span className="material-symbols-outlined text-xs text-green-600 dark:text-green-400">
@@ -928,24 +1003,24 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                     </div>
                   )}
 
-                  {visibleFields.includes("containerNumber") && (
+                  {visibleFields.includes("containerNumbers") && (
                     <div>
                       <label className="block text-sm font-medium text-text-main pb-2">
-                        Konteyner No <span className="text-red-500">*</span>
+                        Konteyner Numaraları <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">(Enter ile ekleyin)</span>
                       </label>
-                      <input
-                        type="text"
-                        name="containerNumber"
-                        value={formData.containerNumber}
-                        onChange={handleChange}
+                      <TagInput
+                        value={formData.containerNumbers}
+                        onChange={(newContainers) => setFormData(prev => ({
+                          ...prev,
+                          containerNumbers: newContainers
+                        }))}
                         placeholder={toUpperCase(t("placeholders.enterContainerNumber"))}
-                        className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
-                          fieldErrors.containerNumber ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
-                        }`}
-                        style={{ textTransform: "uppercase" }}
+                        uppercase={true}
+                        maxLength={50}
                       />
-                      {fieldErrors.containerNumber && (
-                        <p className="text-red-500 text-xs mt-1">{fieldErrors.containerNumber}</p>
+                      {fieldErrors.containerNumbers && (
+                        <p className="text-red-500 text-xs mt-1">{fieldErrors.containerNumbers}</p>
                       )}
                     </div>
                   )}
@@ -1224,42 +1299,108 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
               )}
             </label>
 
-            {/* Costs Amount */}
-            <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Masraflar</p>
-              <input
-                type="number"
-                name="costsAmount"
-                value={formData.costsAmount}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                placeholder={toUpperCase(t("placeholders.enterCostsAmount"))}
-                className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
-                  fieldErrors.costsAmount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
-                }`}
-              />
-              {fieldErrors.costsAmount && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.costsAmount}</p>
-              )}
-            </label>
+            {/* Costs Section - Lokal, Depozito, Ordino */}
+            <div className="lg:col-span-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+              <h3 className="text-base font-semibold text-text-main mb-4">Masraflar</h3>
 
-            {/* Currency */}
-            <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Para Birimi</p>
-              <select
-                name="costsCurrency"
-                value={formData.costsCurrency}
-                onChange={handleChange}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal transition-colors"
-              >
-                {CURRENCY_OPTIONS.map(currency => (
-                  <option key={currency.value} value={currency.value}>
-                    {currency.symbol} {currency.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Lokal Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Lokal Masrafı</label>
+                  <input
+                    type="number"
+                    name="lokalAmount"
+                    value={formData.lokalAmount}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterLokalAmount")}
+                    className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors ${
+                      fieldErrors.lokalAmount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
+                    }`}
+                  />
+                  <select
+                    name="lokalCurrency"
+                    value={formData.lokalCurrency}
+                    onChange={handleChange}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.lokalAmount && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.lokalAmount}</p>
+                  )}
+                </div>
+
+                {/* Depozito Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Depozito Masrafı</label>
+                  <input
+                    type="number"
+                    name="depositoAmount"
+                    value={formData.depositoAmount}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterDepositoAmount")}
+                    className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors ${
+                      fieldErrors.depositoAmount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
+                    }`}
+                  />
+                  <select
+                    name="depositoCurrency"
+                    value={formData.depositoCurrency}
+                    onChange={handleChange}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.depositoAmount && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.depositoAmount}</p>
+                  )}
+                </div>
+
+                {/* Ordino Masrafı */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-main">Ordino Masrafı</label>
+                  <input
+                    type="number"
+                    name="ordinoAmount"
+                    value={formData.ordinoAmount}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    placeholder={t("placeholders.enterOrdinoAmount")}
+                    className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-10 placeholder:text-neutral p-2 text-sm font-normal transition-colors ${
+                      fieldErrors.ordinoAmount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
+                    }`}
+                  />
+                  <select
+                    name="ordinoCurrency"
+                    value={formData.ordinoCurrency}
+                    onChange={handleChange}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-10 p-2 text-sm font-normal transition-colors"
+                  >
+                    {CURRENCY_OPTIONS.map(currency => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.symbol} {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.ordinoAmount && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.ordinoAmount}</p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Document Fields */}
             <div className="lg:col-span-3 grid grid-cols-2 gap-4">
@@ -1276,6 +1417,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                   style={{ textTransform: "uppercase" }}
                 />
+                {fieldErrors.documentReceiver && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.documentReceiver}</p>
+                )}
               </div>
 
               <div>
@@ -1289,6 +1433,29 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                 />
+                {fieldErrors.documentDeliveryDate && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.documentDeliveryDate}</p>
+                )}
+              </div>
+
+              {/* ETA Field */}
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">
+                  Tahmini Varış Tarihi (ETA)
+                </label>
+                <input
+                  type="date"
+                  name="estimatedArrivalDate"
+                  value={formData.estimatedArrivalDate}
+                  onChange={handleChange}
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                />
+                {delayWarnings.hasEtaDelay && (
+                  <div className="flex items-center gap-1 mt-1 text-xs text-orange-600 dark:text-orange-400">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    <span>Gerçek tarih ETA'dan sonra!</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1307,24 +1474,32 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
               />
             </div>
 
-            {/* Payment Received Toggle */}
-            <div className="lg:col-span-3 flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-              <label className="text-sm font-medium text-text-main">
-                Ödeme Alındı mı?
+            {/* Payment Status Radio Buttons */}
+            <div className="lg:col-span-3">
+              <label className="block text-sm font-medium text-text-main pb-2">
+                Ödeme Durumu
               </label>
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, paymentReceived: !prev.paymentReceived }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.paymentReceived ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    formData.paymentReceived ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {PAYMENT_STATUS_OPTIONS.map(option => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="paymentStatus"
+                      value={option.value}
+                      checked={formData.paymentStatus === option.value}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        paymentStatus: e.target.value
+                      }))}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="text-sm text-text-main">{option.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </form>
@@ -1387,8 +1562,24 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             {/* Body */}
             <div className="p-6">
               <p className="text-text-main text-sm">
-                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen tüm bilgiler silinecektir.
+                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen aşağıdaki alanlar silinecektir:
               </p>
+              <div className="mt-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                <ul className="list-disc list-inside text-sm text-text-main space-y-1">
+                  {formData.vehicleType === 'SHIP' && (
+                    <>
+                      <li>B/L Numarası{formData.billOfLading && `: ${formData.billOfLading}`}</li>
+                      <li>Konteyner Numaraları{formData.containerNumbers?.length > 0 && ` (${formData.containerNumbers.length} adet)`}</li>
+                    </>
+                  )}
+                  {formData.vehicleType === 'TRUCK' && (
+                    <li>Plaka{formData.licensePlate && `: ${formData.licensePlate}`}</li>
+                  )}
+                  {formData.vehicleType === 'AIRPLANE' && (
+                    <li>Konşimento Numarası{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
+                  )}
+                </ul>
+              </div>
               <p className="text-text-secondary text-sm mt-3">
                 Devam etmek istediğinize emin misiniz?
               </p>
@@ -1415,6 +1606,64 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
           </div>
         </div>
       )}
+
+      {/* Document Warning Modal */}
+      {showDocumentWarningModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[60] p-4 animate-fade-in">
+          <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-500/10 to-blue-500/5">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-blue-600 text-3xl">info</span>
+                <div>
+                  <h3 className="text-xl font-bold text-text-main">Otomatik Tamamlama</h3>
+                  <p className="text-text-secondary text-sm mt-1">
+                    Durum TAMAMLANDI olarak işaretlenecek
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-text-main text-sm">
+                Evrak teslim bilgileri eksiksiz girildi. Yük durumu otomatik olarak
+                <strong> TAMAMLANDI</strong> olarak işaretlenecek ve listenin altına taşınacaktır.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setShowDocumentWarningModal(false)}
+                className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDocumentWarningModal(false);
+                  submitCargo();
+                }}
+                className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-lg">check</span>
+                <span>Devam Et</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Client Modal */}
+      <AddClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onSuccess={(newClient) => {
+          setShowNewClientModal(false);
+          loadClients(formData.brokerCompanyId);
+          setFormData(prev => ({ ...prev, clientCompanyId: newClient.id }));
+          setClientSearchTerm(newClient.shortName || newClient.name);
+        }}
+        brokerCompanyId={formData.brokerCompanyId}
+      />
     </div>
   );
 }
