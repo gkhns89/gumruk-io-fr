@@ -36,6 +36,8 @@ export default function TransactionsPage() {
   const [filters, setFilters] = useState({
     status: "",
     clientSearch: "",
+    customsOffice: "",
+    warehouse: "",
     search: "",
     dateFrom: "",
     dateTo: "",
@@ -141,6 +143,20 @@ export default function TransactionsPage() {
       const searchLower = filters.clientSearch.toLowerCase();
       result = result.filter(t =>
         t.clientCompany?.name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters.customsOffice) {
+      const customsLower = filters.customsOffice.toLowerCase();
+      result = result.filter(t =>
+        t.customs?.customsShortName?.toLowerCase().includes(customsLower)
+      );
+    }
+
+    if (filters.warehouse) {
+      const warehouseLower = filters.warehouse.toLowerCase();
+      result = result.filter(t =>
+        t.customsWarehouse?.toLowerCase().includes(warehouseLower)
       );
     }
 
@@ -262,6 +278,8 @@ export default function TransactionsPage() {
     setFilters({
       status: "",
       clientSearch: "",
+      customsOffice: "",
+      warehouse: "",
       search: "",
       dateFrom: "",
       dateTo: "",
@@ -279,6 +297,8 @@ export default function TransactionsPage() {
     let count = 0;
     if (filters.status) count++;
     if (filters.clientSearch) count++;
+    if (filters.customsOffice) count++;
+    if (filters.warehouse) count++;
     if (filters.search) count++;
     if (filters.dateFrom || filters.dateTo) count++;
     if (filters.registrationDateFrom || filters.registrationDateTo) count++;
@@ -467,8 +487,8 @@ export default function TransactionsPage() {
                   </div>
                 </div>
 
-                {/* Status and Client Search */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Status, Customs, Warehouse and Client Search */}
+                <div className={`grid grid-cols-1 gap-3 ${isClientUser ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
                   {/* Status Filter */}
                   <div>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">
@@ -500,6 +520,60 @@ export default function TransactionsPage() {
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
                         expand_more
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Customs Filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                      Gümrük
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                        location_city
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Gümrük ara..."
+                        value={filters.customsOffice}
+                        onChange={(e) => handleFilterChange('customsOffice', e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
+                      />
+                      {filters.customsOffice && (
+                        <button
+                          onClick={() => handleFilterChange('customsOffice', '')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Warehouse Filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                      Antrepo
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                        warehouse
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Antrepo ara..."
+                        value={filters.warehouse}
+                        onChange={(e) => handleFilterChange('warehouse', e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
+                      />
+                      {filters.warehouse && (
+                        <button
+                          onClick={() => handleFilterChange('warehouse', '')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
