@@ -60,6 +60,7 @@ export default function CargoTrackingTable({
   const visibleColumns = getVisibleColumns();
 
   // Sort cargo by status: ARRIVED -> TRACKING -> COMPLETED
+  // Within each status, sort by ETA (closest date first)
   const STATUS_PRIORITY = {
     'ARRIVED': 1,      // Varış Yaptı önce
     'TRACKING': 2,     // Takip ikinci
@@ -69,7 +70,16 @@ export default function CargoTrackingTable({
   const sortedCargo = [...cargo].sort((a, b) => {
     const priorityA = STATUS_PRIORITY[a.status] || 999;
     const priorityB = STATUS_PRIORITY[b.status] || 999;
-    return priorityA - priorityB;
+
+    // First sort by status priority
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // Then sort by ETA within same status (closest date first)
+    const etaA = a.estimatedArrivalDate ? new Date(a.estimatedArrivalDate).getTime() : Infinity;
+    const etaB = b.estimatedArrivalDate ? new Date(b.estimatedArrivalDate).getTime() : Infinity;
+    return etaA - etaB; // Ascending order (closest date first)
   });
 
   // Status-based row styling
