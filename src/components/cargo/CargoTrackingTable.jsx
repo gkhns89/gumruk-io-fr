@@ -273,39 +273,78 @@ export default function CargoTrackingTable({
                           "-"
                         }
                       </div>
-                      {/* ETA Warnings - only show if status is not COMPLETED */}
-                      {cargoItem.estimatedArrivalDate && cargoItem.status !== 'COMPLETED' && (() => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Reset to start of day
+                      {/* ETA Warnings - Different logic for each status */}
+                      {cargoItem.estimatedArrivalDate && (() => {
                         const eta = new Date(cargoItem.estimatedArrivalDate);
-                        eta.setHours(0, 0, 0, 0); // Reset to start of day
-                        const diffInDays = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
+                        eta.setHours(0, 0, 0, 0);
 
-                        if (diffInDays === 0) {
-                          // Today - "Varış Günü"
-                          return (
-                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">check_circle</span>
-                              Varış Günü
-                            </span>
-                          );
-                        } else if (diffInDays === 1) {
-                          // Tomorrow - "Yaklaşıyor"
-                          return (
-                            <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">schedule</span>
-                              Yaklaşıyor
-                            </span>
-                          );
-                        } else if (diffInDays < 0) {
-                          // Past - "Gecikme"
-                          return (
-                            <span className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">error</span>
-                              Gecikme
-                            </span>
-                          );
+                        // TRACKING Status - Dynamic warnings (animated)
+                        if (cargoItem.status === 'TRACKING') {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const diffInDays = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
+
+                          if (diffInDays === 0) {
+                            // Today - "Varış Günü"
+                            return (
+                              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                                <span className="material-symbols-outlined text-xs">check_circle</span>
+                                Varış Günü
+                              </span>
+                            );
+                          } else if (diffInDays === 1) {
+                            // Tomorrow - "Yaklaşıyor"
+                            return (
+                              <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                                <span className="material-symbols-outlined text-xs">schedule</span>
+                                Yaklaşıyor
+                              </span>
+                            );
+                          } else if (diffInDays < 0) {
+                            // Past - "Gecikme"
+                            return (
+                              <span className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
+                                <span className="material-symbols-outlined text-xs">error</span>
+                                Gecikme
+                              </span>
+                            );
+                          }
                         }
+
+                        // ARRIVED Status - Static badges based on delivery date
+                        if (cargoItem.status === 'ARRIVED' && cargoItem.documentDeliveryDate) {
+                          const deliveryDate = new Date(cargoItem.documentDeliveryDate);
+                          deliveryDate.setHours(0, 0, 0, 0);
+                          const diffInDays = Math.ceil((deliveryDate - eta) / (1000 * 60 * 60 * 24));
+
+                          if (diffInDays === 0) {
+                            // On time - "Zamanında"
+                            return (
+                              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 font-semibold">
+                                <span className="material-symbols-outlined text-xs">check_circle</span>
+                                Zamanında
+                              </span>
+                            );
+                          } else if (diffInDays < 0) {
+                            // Early - "Erken Varış" (delivery before ETA)
+                            return (
+                              <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 font-semibold">
+                                <span className="material-symbols-outlined text-xs">flight_land</span>
+                                Erken Varış
+                              </span>
+                            );
+                          } else if (diffInDays > 0) {
+                            // Late - "Gecikmeli" (delivery after ETA)
+                            return (
+                              <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1 font-semibold">
+                                <span className="material-symbols-outlined text-xs">schedule</span>
+                                Gecikmeli
+                              </span>
+                            );
+                          }
+                        }
+
+                        // COMPLETED Status - No warnings (status badge is enough)
                         return null;
                       })()}
                     </td>
