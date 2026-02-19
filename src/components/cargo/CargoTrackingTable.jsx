@@ -311,8 +311,8 @@ export default function CargoTrackingTable({
                           }
                         }
 
-                        // ARRIVED Status - Static badges based on delivery date
-                        if (cargoItem.status === 'ARRIVED' && cargoItem.documentDeliveryDate) {
+                        // ARRIVED & COMPLETED Status - Static badges based on delivery date
+                        if ((cargoItem.status === 'ARRIVED' || cargoItem.status === 'COMPLETED') && cargoItem.documentDeliveryDate) {
                           const deliveryDate = new Date(cargoItem.documentDeliveryDate);
                           deliveryDate.setHours(0, 0, 0, 0);
                           const diffInDays = Math.ceil((deliveryDate - eta) / (1000 * 60 * 60 * 24));
@@ -344,7 +344,7 @@ export default function CargoTrackingTable({
                           }
                         }
 
-                        // COMPLETED Status - No warnings (status badge is enough)
+                        // No badge if no document delivery date
                         return null;
                       })()}
                     </td>
