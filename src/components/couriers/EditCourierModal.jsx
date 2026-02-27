@@ -4,9 +4,11 @@ import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { DAY_OPTIONS, getDayName } from '../../utils/constants';
+import BatchAddScheduleModal from './BatchAddScheduleModal';
 
 export default function EditCourierModal({ onClose, courier, onSuccess }) {
   const [activeTab, setActiveTab] = useState('info'); // 'info' or 'schedules'
+  const [showBatchModal, setShowBatchModal] = useState(false);
 
   // Courier Info Form
   const [formData, setFormData] = useState({
@@ -384,7 +386,16 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
             <div className="space-y-6">
               {/* Add New Schedule Form */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4">
-                <h3 className="text-sm font-semibold text-text-main mb-3">Yeni Kalkış Saati Ekle</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-text-main">Yeni Kalkış Saati Ekle</h3>
+                  <button
+                    onClick={() => setShowBatchModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">playlist_add</span>
+                    Toplu Ekle
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {/* Day of Week */}
@@ -513,6 +524,18 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
           </div>
         )}
       </div>
+
+      {/* Batch Add Schedule Modal */}
+      {showBatchModal && (
+        <BatchAddScheduleModal
+          courier={courier}
+          onClose={() => setShowBatchModal(false)}
+          onSuccess={() => {
+            loadSchedules(); // Refresh schedules list
+            setSchedulesModified(true); // Mark as modified
+          }}
+        />
+      )}
     </div>
   );
 }
