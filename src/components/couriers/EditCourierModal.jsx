@@ -214,7 +214,13 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     }
   };
 
-  // Group schedules by day
+  // Format time to HH:mm (remove seconds)
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    return timeString.substring(0, 5); // HH:mm:ss -> HH:mm
+  };
+
+  // Group schedules by day and sort (time first, then customs name)
   const schedulesByDay = schedules.reduce((acc, schedule) => {
     if (!acc[schedule.dayOfWeek]) {
       acc[schedule.dayOfWeek] = [];
@@ -222,6 +228,18 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     acc[schedule.dayOfWeek].push(schedule);
     return acc;
   }, {});
+
+  // Sort schedules within each day: time first, then customs name alphabetically
+  Object.keys(schedulesByDay).forEach(day => {
+    schedulesByDay[day].sort((a, b) => {
+      // Primary sort: departure time
+      const timeCompare = a.departureTime.localeCompare(b.departureTime);
+      if (timeCompare !== 0) return timeCompare;
+
+      // Secondary sort: customs name (alphabetically)
+      return a.customs.customsShortName.localeCompare(b.customs.customsShortName, 'tr');
+    });
+  });
 
   return (
     <div
@@ -479,7 +497,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
                                 <span className="material-symbols-outlined text-primary text-sm">schedule</span>
                                 <div>
                                   <p className="text-sm font-medium text-text-main">
-                                    {schedule.departureTime} - {schedule.customs?.customsShortName || 'N/A'}
+                                    {formatTime(schedule.departureTime)} - {schedule.customs?.customsShortName || 'N/A'}
                                   </p>
                                   {schedule.notes && (
                                     <p className="text-xs text-text-secondary">{schedule.notes}</p>
