@@ -182,21 +182,33 @@ export default function CourierTrackingCard() {
 
   // Helper: Get day name based on seconds until departure
   const getDayName = (secondsUntil) => {
-    const hours = secondsUntil / 3600;
+    const now = new Date();
+    const targetDate = new Date(now.getTime() + secondsUntil * 1000);
 
-    if (hours < 24) {
+    // Bugün mü kontrol et (aynı takvim günü)
+    const isSameDay = now.getDate() === targetDate.getDate() &&
+                      now.getMonth() === targetDate.getMonth() &&
+                      now.getFullYear() === targetDate.getFullYear();
+
+    if (isSameDay) {
       return 'Bugün';
-    } else if (hours < 48) {
-      return 'Yarın';
-    } else {
-      // Gelecekteki gün adını hesapla
-      const daysAhead = Math.floor(hours / 24);
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + daysAhead);
-
-      const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-      return dayNames[targetDate.getDay()];
     }
+
+    // Yarın mı kontrol et
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isTomorrow = tomorrow.getDate() === targetDate.getDate() &&
+                       tomorrow.getMonth() === targetDate.getMonth() &&
+                       tomorrow.getFullYear() === targetDate.getFullYear();
+
+    if (isTomorrow) {
+      return 'Yarın';
+    }
+
+    // Diğer günler için gün adını döndür
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    return dayNames[targetDate.getDay()];
   };
 
   // Helper: Format departure time with day
