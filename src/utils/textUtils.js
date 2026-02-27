@@ -142,6 +142,14 @@ export const CARGO_UPPERCASE_FIELDS = [
   'transportInfo',
 ];
 
+/**
+ * Kurye formu için büyük harfe çevrilecek alanlar
+ */
+export const COURIER_UPPERCASE_FIELDS = [
+  'name',
+  'shortName',
+];
+
 export default {
   toUpperCase,
   toLowerCase,
@@ -152,4 +160,5 @@ export default {
   COMPANY_UPPERCASE_FIELDS,
   USER_UPPERCASE_FIELDS,
   CARGO_UPPERCASE_FIELDS,
+  COURIER_UPPERCASE_FIELDS,
 };

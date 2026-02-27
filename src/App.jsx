@@ -7,6 +7,7 @@ import CargoTrackingPage from "./components/cargo/CargoTrackingPage";  // ✅ Y�
 import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
 import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
 import EmployeesPage from "./pages/management/EmployeesPage";  // ✅ YÖNETİM
+import CouriersManagementPage from "./pages/management/CouriersManagementPage";  // ✅ KURYE YÖNETİMİ
 import NewsPage from "./pages/NewsPage";  // ✅ HABERLER
 import WarehousePage from "./pages/WarehousePage";
 import ShippingPage from "./pages/ShippingPage";
@@ -114,6 +115,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <EmployeesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Kurye Yönetimi */}
+      <Route
+        path="/management/couriers"
+        element={
+          <ProtectedRoute>
+            <CouriersManagementPage />
           </ProtectedRoute>
         }
       />

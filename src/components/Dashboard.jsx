@@ -3,6 +3,7 @@ import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
 import TransactionsTable from "./dashboard/TransactionsTable";
 import Announcements from "./dashboard/Announcements";
+import CourierTrackingCard from "./dashboard/CourierTrackingCard";
 import { useAuth } from "../hooks/useAuth";
 import { transactionService } from "../api/transactionService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
@@ -105,6 +106,11 @@ export default function Dashboard() {
 
         {/* Stats - Tüm işlemlerden istatistik */}
         <Stats transactions={allTransactions} loading={loading} />
+
+        {/* Kurye Takip Kartı - SADECE broker tarafı için (CLIENT_USER görmez) */}
+        <div className="mb-6">
+          <CourierTrackingCard />
+        </div>
 
         {/* Recent Transactions and Announcements */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">

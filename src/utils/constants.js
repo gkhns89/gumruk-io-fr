@@ -339,6 +339,38 @@ export const formatCurrency = (amount, currencyCode = "TRY") => {
   return `${symbol}${formatted}`;
 };
 
+/**
+ * Gün Seçenekleri (Kurye Takip için)
+ * dayOfWeek: 1=Pazartesi, 7=Pazar
+ */
+export const DAY_OPTIONS = [
+  { value: 1, label: 'Pazartesi', shortLabel: 'Pzt' },
+  { value: 2, label: 'Salı', shortLabel: 'Sal' },
+  { value: 3, label: 'Çarşamba', shortLabel: 'Çar' },
+  { value: 4, label: 'Perşembe', shortLabel: 'Per' },
+  { value: 5, label: 'Cuma', shortLabel: 'Cum' },
+  { value: 6, label: 'Cumartesi', shortLabel: 'Cmt' },
+  { value: 7, label: 'Pazar', shortLabel: 'Paz' }
+];
+
+/**
+ * Gün adını döndürür
+ * @param {number} dayOfWeek - Gün değeri (1-7)
+ * @returns {string} Gün adı
+ */
+export const getDayName = (dayOfWeek) => {
+  return DAY_OPTIONS.find(d => d.value === dayOfWeek)?.label || '';
+};
+
+/**
+ * Kısa gün adını döndürür
+ * @param {number} dayOfWeek - Gün değeri (1-7)
+ * @returns {string} Kısa gün adı
+ */
+export const getShortDayName = (dayOfWeek) => {
+  return DAY_OPTIONS.find(d => d.value === dayOfWeek)?.shortLabel || '';
+};
+
 export default {
   GATE_OPTIONS,
   TRANSACTION_STATUS,
@@ -349,6 +381,7 @@ export default {
   PAYMENT_STATUS_OPTIONS,
   VEHICLE_TYPES,
   CURRENCY_OPTIONS,
+  DAY_OPTIONS,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
@@ -357,4 +390,6 @@ export default {
   getCurrency,
   getCargoStatusRowClasses,
   formatCurrency,
+  getDayName,
+  getShortDayName,
 };

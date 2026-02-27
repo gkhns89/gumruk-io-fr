@@ -76,6 +76,13 @@ export default function Sidebar() {
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
+      icon: "local_shipping",
+      label: "Kurye Yönetimi",
+      path: "/management/couriers",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
       icon: "assessment",
       label: "Raporlar",
       path: "/management/reports",
