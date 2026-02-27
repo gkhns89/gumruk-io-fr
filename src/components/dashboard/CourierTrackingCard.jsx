@@ -180,8 +180,8 @@ export default function CourierTrackingCard() {
     return timeString.substring(0, 5);
   };
 
-  // Helper: Get day info based on seconds
-  const getDayInfo = (secondsUntil) => {
+  // Helper: Get day name based on seconds until departure
+  const getDayName = (secondsUntil) => {
     const hours = secondsUntil / 3600;
 
     if (hours < 24) {
@@ -189,13 +189,22 @@ export default function CourierTrackingCard() {
     } else if (hours < 48) {
       return 'Yarın';
     } else {
-      const days = Math.floor(hours / 24);
-      return `${days} gün sonra`;
+      // Gelecekteki gün adını hesapla
+      const daysAhead = Math.floor(hours / 24);
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + daysAhead);
+
+      const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+      return dayNames[targetDate.getDay()];
     }
   };
 
-  const dayInfo = getDayInfo(primaryDeparture.secondsUntilDeparture);
-  const showDayInfo = primaryDeparture.secondsUntilDeparture >= 3600 * 24; // 24 saatten fazlaysa göster
+  // Helper: Format departure time with day
+  const formatDepartureTime = (departure) => {
+    const dayName = getDayName(departure.secondsUntilDeparture);
+    const time = formatTime(departure.departureTime);
+    return `${dayName} ${time}`;
+  };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-700 shadow-md hover:shadow-lg transition-all">
@@ -242,12 +251,7 @@ export default function CourierTrackingCard() {
               schedule
             </span>
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              Kalkış Saati: <span className="font-semibold">{formatTime(primaryDeparture.departureTime)}</span>
-              {showDayInfo && (
-                <span className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium rounded">
-                  {dayInfo}
-                </span>
-              )}
+              Kalkış Zamanı: <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
             </p>
           </div>
         </div>
@@ -261,7 +265,7 @@ export default function CourierTrackingCard() {
                 schedule
               </span>
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatTime(courierData.upcomingDeparture.departureTime)}
+                {formatDepartureTime(courierData.upcomingDeparture)}
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm">
@@ -279,45 +283,46 @@ export default function CourierTrackingCard() {
         )}
       </div>
 
-      {/* Courier Cards - Her kurye için ayrı kart */}
+      {/* Courier Cards - Kurye firmasına göre gruplanmış */}
       <div className="space-y-3">
-        {courierData.nextDepartures.map((departure, idx) => (
-          <div
-            key={idx}
-            className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-blue-200 dark:border-blue-600/30 hover:border-blue-300 dark:hover:border-blue-500/50 transition-all"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                {/* Kurye Firması */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">
-                    local_shipping
-                  </span>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {departure.courierCompanyName}
-                  </p>
-                </div>
+        {(() => {
+          // Kurye firmasına göre grupla
+          const groupedByCourier = courierData.nextDepartures.reduce((acc, departure) => {
+            const key = departure.courierCompanyName;
+            if (!acc[key]) {
+              acc[key] = [];
+            }
+            acc[key].push(departure);
+            return acc;
+          }, {});
 
-                {/* Gümrük Konumu */}
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-lg">
-                    location_on
-                  </span>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {departure.customsName}
-                  </p>
-                </div>
+          return Object.entries(groupedByCourier).map(([courierName, departures], idx) => (
+            <div
+              key={idx}
+              className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-blue-200 dark:border-blue-600/30 hover:border-blue-300 dark:hover:border-blue-500/50 transition-all"
+            >
+              {/* Kurye Firması Başlığı */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">
+                  local_shipping
+                </span>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                  {courierName}
+                </p>
               </div>
 
-              {/* Badge - İlk kurye için "Ana" göster */}
-              {idx === 0 && hasMultipleCouriers && (
-                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-medium rounded whitespace-nowrap">
-                  Ana
+              {/* Gümrükler - Tek satırda | ile ayrılmış */}
+              <div className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-lg mt-0.5">
+                  location_on
                 </span>
-              )}
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {departures.map(d => d.customsName).join(' | ')}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
     </div>
   );
