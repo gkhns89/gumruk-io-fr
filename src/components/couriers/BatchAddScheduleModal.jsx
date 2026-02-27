@@ -16,7 +16,25 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
   // Form state
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedCustoms, setSelectedCustoms] = useState([]);
-  const [departureTime, setDepartureTime] = useState('');
+  const [selectedTimes, setSelectedTimes] = useState([]);
+
+  // Hazır saat şablonları (15 dakikalık aralıklarla)
+  const timeTemplates = [
+    '07:00', '07:15', '07:30', '07:45',
+    '08:00', '08:15', '08:30', '08:45',
+    '09:00', '09:15', '09:30', '09:45',
+    '10:00', '10:15', '10:30', '10:45',
+    '11:00', '11:15', '11:30', '11:45',
+    '12:00', '12:15', '12:30', '12:45',
+    '13:00', '13:15', '13:30', '13:45',
+    '14:00', '14:15', '14:30', '14:45',
+    '15:00', '15:15', '15:30', '15:45',
+    '16:00', '16:15', '16:30', '16:45',
+    '17:00', '17:15', '17:30', '17:45',
+    '18:00', '18:15', '18:30', '18:45',
+    '19:00', '19:15', '19:30', '19:45',
+    '20:00'
+  ];
 
   // Load active customs
   useEffect(() => {
@@ -58,6 +76,15 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     );
   };
 
+  // Toggle time selection
+  const toggleTime = (time) => {
+    setSelectedTimes(prev =>
+      prev.includes(time)
+        ? prev.filter(t => t !== time)
+        : [...prev, time]
+    );
+  };
+
   // Select all weekdays (Mon-Fri)
   const selectWeekdays = () => {
     setSelectedDays([1, 2, 3, 4, 5]);
@@ -83,6 +110,32 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     setSelectedCustoms([]);
   };
 
+  // Select all times
+  const selectAllTimes = () => {
+    setSelectedTimes([...timeTemplates]);
+  };
+
+  // Select morning times (07:00-12:00)
+  const selectMorningTimes = () => {
+    setSelectedTimes(timeTemplates.filter(t => {
+      const hour = parseInt(t.split(':')[0]);
+      return hour >= 7 && hour < 12;
+    }));
+  };
+
+  // Select afternoon times (12:00-18:00)
+  const selectAfternoonTimes = () => {
+    setSelectedTimes(timeTemplates.filter(t => {
+      const hour = parseInt(t.split(':')[0]);
+      return hour >= 12 && hour < 18;
+    }));
+  };
+
+  // Clear times selection
+  const clearTimes = () => {
+    setSelectedTimes([]);
+  };
+
   // Validate and submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,8 +151,8 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
       return;
     }
 
-    if (!departureTime) {
-      showError('Kalkış saati girmelisiniz');
+    if (selectedTimes.length === 0) {
+      showError('En az bir kalkış saati seçmelisiniz');
       return;
     }
 
@@ -107,30 +160,32 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
 
     try {
       // Create all combinations
-      const totalCombinations = selectedDays.length * selectedCustoms.length;
+      const totalCombinations = selectedDays.length * selectedCustoms.length * selectedTimes.length;
       let successCount = 0;
       let failCount = 0;
       const errors = [];
 
       for (const dayOfWeek of selectedDays) {
         for (const customsId of selectedCustoms) {
-          try {
-            const result = await courierService.addSchedule(courier.id, {
-              customsId,
-              dayOfWeek,
-              departureTime,
-              active: true,
-            });
+          for (const departureTime of selectedTimes) {
+            try {
+              const result = await courierService.addSchedule(courier.id, {
+                customsId,
+                dayOfWeek,
+                departureTime,
+                active: true,
+              });
 
-            if (result.success) {
-              successCount++;
-            } else {
+              if (result.success) {
+                successCount++;
+              } else {
+                failCount++;
+                errors.push(result.error);
+              }
+            } catch (err) {
               failCount++;
-              errors.push(result.error);
+              errors.push(`Beklenmeyen hata: ${err.message}`);
             }
-          } catch (err) {
-            failCount++;
-            errors.push(`Beklenmeyen hata: ${err.message}`);
           }
         }
       }
@@ -157,7 +212,7 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     }
   };
 
-  const totalSchedules = selectedDays.length * selectedCustoms.length;
+  const totalSchedules = selectedDays.length * selectedCustoms.length * selectedTimes.length;
 
   return (
     <div
@@ -304,18 +359,66 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
             )}
           </div>
 
-          {/* Time Input */}
+          {/* Time Templates Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Kalkış Saati
-            </label>
-            <input
-              type="time"
-              value={departureTime}
-              onChange={(e) => setDepartureTime(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              required
-            />
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Kalkış Saatleri (15dk aralıklarla)
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={selectMorningTimes}
+                  className="text-xs px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                >
+                  Sabah
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAfternoonTimes}
+                  className="text-xs px-2 py-1 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded hover:bg-orange-100 dark:hover:bg-orange-900/50"
+                >
+                  Öğleden Sonra
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAllTimes}
+                  className="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                >
+                  Tümü
+                </button>
+                <button
+                  type="button"
+                  onClick={clearTimes}
+                  className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  Temizle
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+              {timeTemplates.map(time => (
+                <button
+                  key={time}
+                  type="button"
+                  onClick={() => toggleTime(time)}
+                  className={`px-2 py-2 text-xs font-medium rounded transition-all ${
+                    selectedTimes.includes(time)
+                      ? 'bg-purple-500 text-white shadow-sm'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+
+            {selectedTimes.length > 0 && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                {selectedTimes.length} saat seçildi
+              </p>
+            )}
           </div>
 
           {/* Summary */}
@@ -332,7 +435,7 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <span className="font-bold">{totalSchedules} adet</span> kalkış saati eklenecek
                 <br />
-                ({selectedDays.length} gün × {selectedCustoms.length} gümrük)
+                ({selectedDays.length} gün × {selectedCustoms.length} gümrük × {selectedTimes.length} saat)
               </p>
             </div>
           )}
