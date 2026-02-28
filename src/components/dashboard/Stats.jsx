@@ -1,45 +1,54 @@
 import { useState, useEffect, useRef } from "react";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
 
-// Custom hook for counting animation
-const useCountUp = (end, duration = 1000, shouldStart = true) => {
+// Custom hook for counting animation with delay
+const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   const [count, setCount] = useState(0);
-  const countRef = useRef(0);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     if (!shouldStart) {
       setCount(0);
+      hasStartedRef.current = false;
       return;
     }
 
-    let startTime;
+    // Prevent double triggering in strict mode
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    let timeoutId;
     let animationFrame;
 
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-      const percentage = Math.min(progress / duration, 1);
+    // Wait for delay before starting animation
+    timeoutId = setTimeout(() => {
+      let startTime;
 
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - percentage, 4);
-      const currentCount = Math.floor(easeOutQuart * end);
+      const animate = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const percentage = Math.min(progress / duration, 1);
 
-      countRef.current = currentCount;
-      setCount(currentCount);
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - percentage, 4);
+        const currentCount = Math.floor(easeOutQuart * end);
 
-      if (percentage < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    };
+        setCount(currentCount);
 
-    animationFrame = requestAnimationFrame(animate);
+        if (percentage < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(animate);
+    }, delay);
 
     return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      hasStartedRef.current = false;
     };
-  }, [end, duration, shouldStart]);
+  }, [end, duration, delay, shouldStart]);
 
   return count;
 };
@@ -195,8 +204,24 @@ export default function Stats({ transactions, loading }) {
 
   // Animated stat card component
   const StatCard = ({ stat, index, colors }) => {
-    const animatedValue = useCountUp(stat.value, 1200, !loading);
+    // Calculate delay: wait for slide-up animation to complete (0.7s + index delay)
+    const countDelay = (index * 100) + 700;
+    const animatedValue = useCountUp(stat.value, 1200, countDelay, !loading);
     const [isHovered, setIsHovered] = useState(false);
+    const hasAnimatedRef = useRef(false);
+
+    // Prevent re-animation on re-renders
+    const animationStyle = hasAnimatedRef.current
+      ? {}
+      : {
+          animation: `slideUpBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+          animationDelay: `${index * 100}ms`,
+          animationFillMode: 'backwards',
+        };
+
+    useEffect(() => {
+      hasAnimatedRef.current = true;
+    }, []);
 
     return (
       <div
@@ -209,11 +234,7 @@ export default function Stats({ transactions, loading }) {
           }
           transform transition-all duration-300 ease-out cursor-default group
         `}
-        style={{
-          animation: `slideUpBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)`,
-          animationDelay: `${index * 100}ms`,
-          animationFillMode: 'backwards',
-        }}
+        style={animationStyle}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -231,11 +252,12 @@ export default function Stats({ transactions, loading }) {
 
         {/* Shimmer effect on initial load */}
         <div
-          className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl opacity-70"
+          className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl"
           style={{
             background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
             backgroundSize: '200% 100%',
-            animation: `shimmer 2s ease-in-out ${index * 100}ms forwards`,
+            animation: `shimmer 1.5s ease-in-out ${index * 100}ms forwards`,
+            opacity: 0.7,
           }}
         />
 
@@ -330,7 +352,6 @@ export default function Stats({ transactions, loading }) {
         @keyframes shimmer {
           0% {
             background-position: -200% 0;
-            opacity: 1;
           }
           100% {
             background-position: 200% 0;
@@ -351,7 +372,7 @@ export default function Stats({ transactions, loading }) {
           const colors = getColorClasses(stat.color);
           return (
             <StatCard
-              key={index}
+              key={stat.label}
               stat={stat}
               index={index}
               colors={colors}
