@@ -228,6 +228,37 @@ html {
   }
 }
 
+/* Stats Card Animations - Dynamic delays based on index */
+@layer utilities {
+  .stat-card[data-index="0"] { animation-delay: 0ms; }
+  .stat-card[data-index="1"] { animation-delay: 100ms; }
+  .stat-card[data-index="2"] { animation-delay: 200ms; }
+  .stat-card[data-index="3"] { animation-delay: 300ms; }
+  .stat-card[data-index="4"] { animation-delay: 400ms; }
+  .stat-card[data-index="5"] { animation-delay: 500ms; }
+  .stat-card[data-index="6"] { animation-delay: 600ms; }
+  .stat-card[data-index="7"] { animation-delay: 700ms; }
+
+  .stat-shimmer[data-index="0"] { animation-delay: 0ms; }
+  .stat-shimmer[data-index="1"] { animation-delay: 100ms; }
+  .stat-shimmer[data-index="2"] { animation-delay: 200ms; }
+  .stat-shimmer[data-index="3"] { animation-delay: 300ms; }
+  .stat-shimmer[data-index="4"] { animation-delay: 400ms; }
+  .stat-shimmer[data-index="5"] { animation-delay: 500ms; }
+  .stat-shimmer[data-index="6"] { animation-delay: 600ms; }
+  .stat-shimmer[data-index="7"] { animation-delay: 700ms; }
+
+  .stat-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    background-size: 200% 100%;
+  }
+
+  /* Sparkle delay variations */
+  .sparkle-1 { animation-delay: 0s; }
+  .sparkle-2 { animation-delay: 0.2s; }
+  .sparkle-3 { animation-delay: 0.4s; }
+}
+
 /* Dark Theme Toggle Component */
 .theme-toggle {
   width: 55px;

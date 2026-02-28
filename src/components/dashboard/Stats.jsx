@@ -54,6 +54,18 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
 };
 
 export default function Stats({ transactions, loading }) {
+  // Track if initial animations have been played
+  const hasPlayedInitialAnimationsRef = useRef(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  // Play animations only once when data is first loaded
+  useEffect(() => {
+    if (!loading && transactions?.length > 0 && !hasPlayedInitialAnimationsRef.current) {
+      hasPlayedInitialAnimationsRef.current = true;
+      setShouldAnimate(true);
+    }
+  }, [loading, transactions]);
+
   const stats = {
     total: transactions?.length || 0,
     withdrawn:
@@ -203,38 +215,36 @@ export default function Stats({ transactions, loading }) {
   };
 
   // Animated stat card component
-  const StatCard = ({ stat, index, colors }) => {
+  const StatCard = ({ stat, index, colors, shouldPlayAnimation }) => {
     // Calculate delay: wait for slide-up animation to complete (0.7s + index delay)
     const countDelay = (index * 100) + 700;
-    const animatedValue = useCountUp(stat.value, 1200, countDelay, !loading);
+    const animatedValue = useCountUp(stat.value, 1200, countDelay, shouldPlayAnimation);
     const [isHovered, setIsHovered] = useState(false);
-    const hasAnimatedRef = useRef(false);
+    const [showNumberPulse, setShowNumberPulse] = useState(false);
 
-    // Prevent re-animation on re-renders
-    const animationStyle = hasAnimatedRef.current
-      ? {}
-      : {
-          animation: `slideUpBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)`,
-          animationDelay: `${index * 100}ms`,
-          animationFillMode: 'backwards',
-        };
-
+    // Trigger number pulse when counting completes
     useEffect(() => {
-      hasAnimatedRef.current = true;
-    }, []);
+      if (shouldPlayAnimation && animatedValue === stat.value && stat.value > 0) {
+        setShowNumberPulse(true);
+        const timer = setTimeout(() => setShowNumberPulse(false), 600);
+        return () => clearTimeout(timer);
+      }
+    }, [animatedValue, stat.value, shouldPlayAnimation]);
 
     return (
       <div
+        data-index={index}
         className={`
+          stat-card
           relative overflow-hidden flex flex-col gap-1 md:gap-2 rounded-2xl p-4 md:p-6
           ${colors.bg} border-2
           ${isHovered
             ? 'border-gray-400 dark:border-gray-500 scale-105 -translate-y-1 shadow-2xl shadow-black/10 dark:shadow-black/30'
             : 'border-gray-300/50 dark:border-gray-600/50 scale-100 translate-y-0 shadow-md'
           }
+          ${shouldPlayAnimation ? 'animate-slide-up-bounce' : ''}
           transform transition-all duration-300 ease-out cursor-default group
         `}
-        style={animationStyle}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -251,15 +261,12 @@ export default function Stats({ transactions, loading }) {
         />
 
         {/* Shimmer effect on initial load */}
-        <div
-          className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl"
-          style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
-            backgroundSize: '200% 100%',
-            animation: `shimmer 1.5s ease-in-out ${index * 100}ms forwards`,
-            opacity: 0.7,
-          }}
-        />
+        {shouldPlayAnimation && (
+          <div
+            data-index={index}
+            className="stat-shimmer absolute inset-0 pointer-events-none overflow-hidden rounded-2xl opacity-70 animate-shimmer"
+          />
+        )}
 
         {/* Content */}
         <div className="relative z-10">
@@ -289,10 +296,8 @@ export default function Stats({ transactions, loading }) {
                   tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}
                   transition-all duration-300 transform origin-left
                   ${isHovered ? 'scale-110' : 'scale-100'}
+                  ${showNumberPulse ? 'animate-number-pulse' : ''}
                 `}
-                style={{
-                  animation: 'numberPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                }}
               >
                 {animatedValue}
               </p>
@@ -316,15 +321,9 @@ export default function Stats({ transactions, loading }) {
         {/* Sparkle effects on hover */}
         {isHovered && (
           <>
-            <div className="absolute top-4 right-4 w-1 h-1 bg-white rounded-full animate-ping opacity-75" />
-            <div
-              className="absolute top-6 right-8 w-1 h-1 bg-white rounded-full animate-ping opacity-50"
-              style={{ animationDelay: '0.2s' }}
-            />
-            <div
-              className="absolute top-8 right-6 w-1 h-1 bg-white rounded-full animate-ping opacity-60"
-              style={{ animationDelay: '0.4s' }}
-            />
+            <div className="sparkle-1 absolute top-4 right-4 w-1 h-1 bg-white rounded-full animate-ping opacity-75" />
+            <div className="sparkle-2 absolute top-6 right-8 w-1 h-1 bg-white rounded-full animate-ping opacity-50" />
+            <div className="sparkle-3 absolute top-8 right-6 w-1 h-1 bg-white rounded-full animate-ping opacity-60" />
           </>
         )}
       </div>
@@ -332,54 +331,19 @@ export default function Stats({ transactions, loading }) {
   };
 
   return (
-    <>
-      {/* Global animation keyframes */}
-      <style>{`
-        @keyframes slideUpBounce {
-          0% {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-          }
-          60% {
-            transform: translateY(-5px) scale(1.01);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-            opacity: 0;
-          }
-        }
-
-        @keyframes numberPulse {
-          0% { transform: scale(1); }
-          40% { transform: scale(1.08); }
-          60% { transform: scale(1.02); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
-        {statsData.map((stat, index) => {
-          const colors = getColorClasses(stat.color);
-          return (
-            <StatCard
-              key={stat.label}
-              stat={stat}
-              index={index}
-              colors={colors}
-            />
-          );
-        })}
-      </div>
-    </>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
+      {statsData.map((stat, index) => {
+        const colors = getColorClasses(stat.color);
+        return (
+          <StatCard
+            key={stat.label}
+            stat={stat}
+            index={index}
+            colors={colors}
+            shouldPlayAnimation={shouldAnimate}
+          />
+        );
+      })}
+    </div>
   );
 }
