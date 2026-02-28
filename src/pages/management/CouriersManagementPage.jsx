@@ -96,7 +96,7 @@ export default function CouriersManagementPage() {
         ) : couriers.length === 0 ? (
           <div className="text-center py-12">
             <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4">
-              local_shipping
+              two_wheeler
             </span>
             <p className="text-gray-500 dark:text-gray-400">
               Henüz kurye firması eklenmemiş

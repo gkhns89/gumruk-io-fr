@@ -45,7 +45,7 @@ export default function Sidebar() {
   const otherMenuItems = [
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
-    { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
+    { icon: "two_wheeler", label: "Yük Takip", path: "/cargo" },
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
     { icon: "person", label: "Hesabım", path: "/profile" },
@@ -76,7 +76,7 @@ export default function Sidebar() {
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
-      icon: "local_shipping",
+      icon: "two_wheeler",
       label: "Kurye Yönetimi",
       path: "/management/couriers",
       active: true,

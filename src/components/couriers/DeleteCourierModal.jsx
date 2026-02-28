@@ -62,7 +62,7 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             <div className="flex items-center gap-3 mb-3">
               <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center transition-colors">
                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
-                  local_shipping
+                  two_wheeler
                 </span>
               </div>
               <div>

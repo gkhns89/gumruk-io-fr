@@ -161,7 +161,7 @@ export default function CourierTrackingCard() {
     return (
       <div className="bg-white dark:bg-background-dark rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
-          <span className="material-symbols-outlined text-3xl">local_shipping</span>
+          <span className="material-symbols-outlined text-3xl">two_wheeler</span>
           <div>
             <p className="text-sm font-medium">Kurye Takip</p>
             <p className="text-xs mt-1">Yakında planlanmış kurye bulunmuyor</p>
@@ -224,7 +224,7 @@ export default function CourierTrackingCard() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">
-            local_shipping
+            two_wheeler
           </span>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Kurye Takip
@@ -251,48 +251,19 @@ export default function CourierTrackingCard() {
         </div>
       )}
 
-      {/* Ana İçerik: Countdown ve Upcoming Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 pb-4 border-b border-blue-200 dark:border-blue-700">
-        {/* Sol: Şu Anki Kurye - Countdown */}
-        <div>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-            {countdown || 'Hesaplanıyor...'}
+      {/* Ana İçerik: Countdown */}
+      <div className="mb-4 pb-4 border-b border-blue-200 dark:border-blue-700">
+        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+          {countdown || 'Hesaplanıyor...'}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm text-gray-600 dark:text-gray-400">
+            schedule
+          </span>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Kalkış Zamanı: <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
           </p>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-gray-600 dark:text-gray-400">
-              schedule
-            </span>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Kalkış Zamanı: <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
-            </p>
-          </div>
         </div>
-
-        {/* Sağ: Bir Sonraki Kurye Preview */}
-        {courierData.upcomingDeparture && (
-          <div className="bg-white dark:bg-gray-800/30 rounded-lg p-4 border border-blue-200 dark:border-blue-600/30">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Sonraki Kurye:</p>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-blue-500 dark:text-blue-400 text-lg">
-                schedule
-              </span>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatDepartureTime(courierData.upcomingDeparture)}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="material-symbols-outlined text-gray-500 text-sm">
-                location_on
-              </span>
-              <p className="text-gray-700 dark:text-gray-300">
-                {courierData.upcomingDeparture.customsName}
-              </p>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              {courierData.upcomingDeparture.courierCompanyName}
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Courier Cards - Kurye firmasına göre gruplanmış */}
@@ -316,7 +287,7 @@ export default function CourierTrackingCard() {
               {/* Kurye Firması Başlığı */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">
-                  local_shipping
+                  two_wheeler
                 </span>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
                   {courierName}
@@ -336,6 +307,39 @@ export default function CourierTrackingCard() {
           ));
         })()}
       </div>
+
+      {/* Sonraki Kurye Preview - En Altta (Mobil için) */}
+      {courierData.upcomingDeparture && (
+        <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 font-medium">Sonraki Kurye:</p>
+          <div className="bg-white dark:bg-gray-800/30 rounded-lg p-4 border border-blue-200 dark:border-blue-600/30">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-blue-500 dark:text-blue-400 text-lg">
+                schedule
+              </span>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {formatDepartureTime(courierData.upcomingDeparture)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm mb-2">
+              <span className="material-symbols-outlined text-gray-500 text-sm">
+                location_on
+              </span>
+              <p className="text-gray-700 dark:text-gray-300">
+                {courierData.upcomingDeparture.customsName}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">
+                two_wheeler
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {courierData.upcomingDeparture.courierCompanyName}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
