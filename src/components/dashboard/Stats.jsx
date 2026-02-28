@@ -1,5 +1,48 @@
-import React from "react";
+import { useState, useEffect, useRef } from "react";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
+
+// Custom hook for counting animation
+const useCountUp = (end, duration = 1000, shouldStart = true) => {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+
+  useEffect(() => {
+    if (!shouldStart) {
+      setCount(0);
+      return;
+    }
+
+    let startTime;
+    let animationFrame;
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      const percentage = Math.min(progress / duration, 1);
+
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - percentage, 4);
+      const currentCount = Math.floor(easeOutQuart * end);
+
+      countRef.current = currentCount;
+      setCount(currentCount);
+
+      if (percentage < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [end, duration, shouldStart]);
+
+  return count;
+};
 
 export default function Stats({ transactions, loading }) {
   const stats = {
@@ -150,44 +193,172 @@ export default function Stats({ transactions, loading }) {
     );
   };
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
-      {statsData.map((stat, index) => {
-        const colors = getColorClasses(stat.color);
-        return (
-          <div
-            key={index}
-            className={`flex flex-col gap-1 md:gap-2 rounded-xl p-4 md:p-6 ${colors.bg} border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all`}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs md:text-sm lg:text-base font-medium leading-normal truncate opacity-90 text-text-main">
-                {stat.label}
-              </p>
-              <span
-                className={`material-symbols-outlined text-lg md:text-xl ${colors.icon}`}
-              >
-                {stat.icon}
-              </span>
-            </div>
-            {loading ? (
-              <div className="h-8 md:h-12 flex items-center">
-                <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
-              </div>
-            ) : (
-              <>
-                <p
-                  className={`tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}`}
-                >
-                  {stat.value}
-                </p>
-                {stat.showGateBreakdown && stat.gateBreakdown && (
-                  renderGateBreakdown(stat.gateBreakdown)
-                )}
-              </>
-            )}
+  // Animated stat card component
+  const StatCard = ({ stat, index, colors }) => {
+    const animatedValue = useCountUp(stat.value, 1200, !loading);
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <div
+        className={`
+          relative overflow-hidden flex flex-col gap-1 md:gap-2 rounded-2xl p-4 md:p-6
+          ${colors.bg} border-2
+          ${isHovered
+            ? 'border-gray-400 dark:border-gray-500 scale-105 -translate-y-1 shadow-2xl shadow-black/10 dark:shadow-black/30'
+            : 'border-gray-300/50 dark:border-gray-600/50 scale-100 translate-y-0 shadow-md'
+          }
+          transform transition-all duration-300 ease-out cursor-default group
+        `}
+        style={{
+          animation: `slideUpBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+          animationDelay: `${index * 100}ms`,
+          animationFillMode: 'backwards',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Animated background gradient overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
+
+        {/* Glow effect on hover */}
+        <div
+          className={`
+            absolute -inset-1 rounded-2xl transition-all duration-500 blur-xl pointer-events-none -z-10
+            ${isHovered ? 'opacity-40 animate-pulse' : 'opacity-0'}
+            ${colors.bg}
+          `}
+        />
+
+        {/* Shimmer effect on initial load */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl opacity-70"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
+            backgroundSize: '200% 100%',
+            animation: `shimmer 2s ease-in-out ${index * 100}ms forwards`,
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs md:text-sm lg:text-base font-medium leading-normal truncate opacity-90 text-text-main">
+              {stat.label}
+            </p>
+            <span
+              className={`
+                material-symbols-outlined text-lg md:text-xl lg:text-2xl ${colors.icon}
+                transition-all duration-300 ease-out transform
+                ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
+              `}
+            >
+              {stat.icon}
+            </span>
           </div>
-        );
-      })}
-    </div>
+
+          {loading ? (
+            <div className="h-8 md:h-12 flex items-center">
+              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+            </div>
+          ) : (
+            <>
+              <p
+                className={`
+                  tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}
+                  transition-all duration-300 transform origin-left
+                  ${isHovered ? 'scale-110' : 'scale-100'}
+                `}
+                style={{
+                  animation: 'numberPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
+              >
+                {animatedValue}
+              </p>
+              {stat.showGateBreakdown && stat.gateBreakdown && (
+                renderGateBreakdown(stat.gateBreakdown)
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Corner accent */}
+        <div
+          className={`
+            absolute top-0 right-0 w-20 h-20
+            ${colors.bg}
+            rounded-bl-full transition-all duration-500 transform
+            ${isHovered ? 'scale-150 opacity-30' : 'scale-100 opacity-20'}
+          `}
+        />
+
+        {/* Sparkle effects on hover */}
+        {isHovered && (
+          <>
+            <div className="absolute top-4 right-4 w-1 h-1 bg-white rounded-full animate-ping opacity-75" />
+            <div
+              className="absolute top-6 right-8 w-1 h-1 bg-white rounded-full animate-ping opacity-50"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <div
+              className="absolute top-8 right-6 w-1 h-1 bg-white rounded-full animate-ping opacity-60"
+              style={{ animationDelay: '0.4s' }}
+            />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {/* Global animation keyframes */}
+      <style>{`
+        @keyframes slideUpBounce {
+          0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+          60% {
+            transform: translateY(-5px) scale(1.01);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+            opacity: 1;
+          }
+          100% {
+            background-position: 200% 0;
+            opacity: 0;
+          }
+        }
+
+        @keyframes numberPulse {
+          0% { transform: scale(1); }
+          40% { transform: scale(1.08); }
+          60% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
+        {statsData.map((stat, index) => {
+          const colors = getColorClasses(stat.color);
+          return (
+            <StatCard
+              key={index}
+              stat={stat}
+              index={index}
+              colors={colors}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
