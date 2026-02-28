@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
 import TransactionsTable from "./dashboard/TransactionsTable";
@@ -8,16 +8,41 @@ import { useAuth } from "../hooks/useAuth";
 import { transactionService } from "../api/transactionService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
 
+// Animated Section Component
+const AnimatedSection = ({ children, delay = 0, shouldAnimate = false }) => {
+  return (
+    <div
+      className={`${shouldAnimate ? 'animate-fade-slide-up' : 'opacity-0'}`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [allTransactions, setAllTransactions] = useState([]); // Stats için tüm işlemler
   const [recentTransactions, setRecentTransactions] = useState([]); // Son işlemler tablosu için
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const hasAnimatedRef = useRef(false);
+  const [shouldAnimateSections, setShouldAnimateSections] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  // Trigger section animations after data loads
+  useEffect(() => {
+    if (!loading && allTransactions.length > 0 && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      // Small delay to let Stats animate first
+      setTimeout(() => {
+        setShouldAnimateSections(true);
+      }, 300);
+    }
+  }, [loading, allTransactions]);
 
   const fetchTransactions = async () => {
     try {
@@ -93,39 +118,45 @@ export default function Dashboard() {
     <MainLayout>
       <div className="p-4 md:p-6 lg:p-8">
         {/* Page Heading */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <p className="text-text-main text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-[-0.033em]">
-              Hoş Geldiniz, {user?.username || 'Kullanıcı'}
-            </p>
-            <p className="text-text-secondary text-sm md:text-base mt-1 md:mt-2">
-              {user?.company?.name || 'Şirket bilgisi yok'}
-            </p>
+        <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <p className="text-text-main text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-[-0.033em]">
+                Hoş Geldiniz, {user?.username || 'Kullanıcı'}
+              </p>
+              <p className="text-text-secondary text-sm md:text-base mt-1 md:mt-2">
+                {user?.company?.name || 'Şirket bilgisi yok'}
+              </p>
+            </div>
           </div>
-        </div>
+        </AnimatedSection>
 
         {/* Stats - Tüm işlemlerden istatistik */}
         <Stats transactions={allTransactions} loading={loading} />
 
         {/* Kurye Takip Kartı - SADECE broker tarafı için (CLIENT_USER görmez) */}
-        <div className="mb-6">
-          <CourierTrackingCard />
-        </div>
+        <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
+          <div className="mb-6">
+            <CourierTrackingCard />
+          </div>
+        </AnimatedSection>
 
         {/* Recent Transactions and Announcements */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
-          <div className="xl:col-span-2">
-            <TransactionsTable
-              transactions={recentTransactions}
-              loading={loading}
-              error={error}
-              onRetry={fetchTransactions}
-            />
+        <AnimatedSection delay={400} shouldAnimate={shouldAnimateSections}>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+            <div className="xl:col-span-2">
+              <TransactionsTable
+                transactions={recentTransactions}
+                loading={loading}
+                error={error}
+                onRetry={fetchTransactions}
+              />
+            </div>
+            <div>
+              <Announcements />
+            </div>
           </div>
-          <div>
-            <Announcements />
-          </div>
-        </div>
+        </AnimatedSection>
       </div>
     </MainLayout>
   );
