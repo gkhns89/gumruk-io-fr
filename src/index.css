@@ -228,8 +228,54 @@ html {
   }
 }
 
-/* Stats Card Animations - Dynamic delays based on index */
+/* Stats Card Animations - Keyframes */
+@keyframes slideUpBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  60% {
+    transform: translateY(-5px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes numberPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Stats Card Utilities */
 @layer utilities {
+  /* Animation classes */
+  .animate-slide-up-bounce {
+    animation: slideUpBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s ease-in-out forwards;
+  }
+
+  .animate-number-pulse {
+    animation: numberPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Dynamic delays based on data-index */
   .stat-card[data-index="0"] { animation-delay: 0ms; }
   .stat-card[data-index="1"] { animation-delay: 100ms; }
   .stat-card[data-index="2"] { animation-delay: 200ms; }
