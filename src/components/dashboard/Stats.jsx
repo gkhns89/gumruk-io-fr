@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
 
 // Custom hook for counting animation with delay
@@ -53,7 +53,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-export default function Stats({ transactions, loading }) {
+const Stats = memo(function Stats({ transactions, loading }) {
   // Track if initial animations have been played
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
@@ -346,4 +346,6 @@ export default function Stats({ transactions, loading }) {
       })}
     </div>
   );
-}
+});
+
+export default Stats;
