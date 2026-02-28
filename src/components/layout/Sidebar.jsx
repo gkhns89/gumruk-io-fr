@@ -45,7 +45,7 @@ export default function Sidebar() {
   const otherMenuItems = [
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
-    { icon: "two_wheeler", label: "Yük Takip", path: "/cargo" },
+    { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
     { icon: "person", label: "Hesabım", path: "/profile" },
