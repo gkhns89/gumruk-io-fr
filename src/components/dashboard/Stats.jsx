@@ -242,7 +242,7 @@ export default function Stats({ transactions, loading }) {
             ? 'border-gray-400 dark:border-gray-500 scale-105 -translate-y-1 shadow-2xl shadow-black/10 dark:shadow-black/30'
             : 'border-gray-300/50 dark:border-gray-600/50 scale-100 translate-y-0 shadow-md'
           }
-          ${shouldPlayAnimation ? 'animate-slide-up-bounce' : ''}
+          ${shouldPlayAnimation ? 'animate-slide-up-bounce' : 'opacity-0'}
           transform transition-all duration-300 ease-out cursor-default group
         `}
         onMouseEnter={() => setIsHovered(true)}
