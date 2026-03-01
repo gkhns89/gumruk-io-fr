@@ -26,21 +26,31 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState([]); // Son işlemler tablosu için
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const hasAnimatedRef = useRef(false);
+  const hasAnimatedHeadingRef = useRef(false);
+  const hasAnimatedSectionsRef = useRef(false);
+  const [shouldAnimateHeading, setShouldAnimateHeading] = useState(false);
   const [shouldAnimateSections, setShouldAnimateSections] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
-  // Trigger section animations after data loads
+  // Trigger heading animation first
   useEffect(() => {
-    if (!loading && allTransactions.length > 0 && !hasAnimatedRef.current) {
-      hasAnimatedRef.current = true;
-      // Small delay to let Stats animate first
+    if (!loading && allTransactions.length > 0 && !hasAnimatedHeadingRef.current) {
+      hasAnimatedHeadingRef.current = true;
+      setShouldAnimateHeading(true);
+    }
+  }, [loading, allTransactions]);
+
+  // Trigger other sections after stats cards finish
+  useEffect(() => {
+    if (!loading && allTransactions.length > 0 && !hasAnimatedSectionsRef.current) {
+      hasAnimatedSectionsRef.current = true;
+      // Heading (600ms) + Last stats card delay (700ms) + animation (700ms) + buffer (200ms) = 2200ms
       setTimeout(() => {
         setShouldAnimateSections(true);
-      }, 300);
+      }, 2200);
     }
   }, [loading, allTransactions]);
 
@@ -117,8 +127,8 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="p-4 md:p-6 lg:p-8">
-        {/* Page Heading */}
-        <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections}>
+        {/* Page Heading - Animates first */}
+        <AnimatedSection delay={0} shouldAnimate={shouldAnimateHeading}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <p className="text-text-main text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-[-0.033em]">
@@ -131,18 +141,18 @@ export default function Dashboard() {
           </div>
         </AnimatedSection>
 
-        {/* Stats - Tüm işlemlerden istatistik */}
+        {/* Stats - Animates after heading */}
         <Stats transactions={allTransactions} loading={loading} />
 
-        {/* Kurye Takip Kartı - SADECE broker tarafı için (CLIENT_USER görmez) */}
-        <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
+        {/* Kurye Takip Kartı - Animates after stats */}
+        <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections}>
           <div className="mb-6">
             <CourierTrackingCard />
           </div>
         </AnimatedSection>
 
-        {/* Recent Transactions and Announcements */}
-        <AnimatedSection delay={400} shouldAnimate={shouldAnimateSections}>
+        {/* Recent Transactions and Announcements - Animates last */}
+        <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             <div className="xl:col-span-2">
               <TransactionsTable
