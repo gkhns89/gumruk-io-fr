@@ -89,6 +89,13 @@ export default function Sidebar() {
       active: true,
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
+    {
+      icon: "manage_accounts",
+      label: "Session Yönetimi",
+      path: "/session-management",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
   ];
 
   // Kullanıcının yönetim menüsüne erişimi var mı?

@@ -65,10 +65,18 @@ export const authService = {
   },
 
   // Logout işlemi
-  logout: () => {
-    console.log("👋 Kullanıcı çıkış yapıyor");
-    tokenManager.clear();
-    window.location.href = '/login';
+  logout: async () => {
+    try {
+      console.log("👋 Kullanıcı çıkış yapıyor");
+      // Backend'e logout bildirimi gönder (session invalidate için)
+      await axiosInstance.post('/auth/logout');
+    } catch (error) {
+      console.warn('Logout request failed:', error);
+      // Hata olsa bile client-side temizlik yap
+    } finally {
+      tokenManager.clear();
+      window.location.href = '/login';
+    }
   },
 
   // ✅ GÜNCELLENDİ: Token kontrolü - artık süre de kontrol ediliyor

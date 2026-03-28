@@ -17,12 +17,13 @@ import SettingsPage from "./pages/SettingsPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import ReportsPage from "./pages/management/ReportsPage";
+import SessionManagement from "./pages/SessionManagement";  // ✅ SESSION YÖNETİMİ
 import { useAuth } from "./hooks/useAuth";
 
-// Protected Route Component
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
-  
+// Protected Route Component with Role Support
+function ProtectedRoute({ children, requiredRole }) {
+  const { isAuthenticated, loading, user } = useAuth();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -30,8 +31,18 @@ function ProtectedRoute({ children }) {
       </div>
     );
   }
-  
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Role kontrolü - eğer belirli bir rol gerekiyorsa ve kullanıcının rolü uyuşmuyorsa
+  if (requiredRole && user?.globalRole !== requiredRole) {
+    console.warn(`Yetkisiz erişim: ${user?.globalRole} kullanıcısı ${requiredRole} gerekli sayfaya erişmeye çalıştı`);
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 }
 
 // Public Route Component
@@ -215,6 +226,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ SESSION YÖNETİMİ: SUPER_ADMIN Only */}
+      <Route
+        path="/session-management"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <SessionManagement />
           </ProtectedRoute>
         }
       />
