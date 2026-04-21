@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, isFilterOpen, onOpen }) {
+export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, isFilterOpen, onOpen, isScrolled = false }) {
   // ===== STATE MANAGEMENT =====
   // UI State
   const [isOpen, setIsOpen] = useState(false);
@@ -201,20 +201,15 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             onOpen();
           }
         }}
-        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold relative"
+        className={`flex items-center justify-center bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold relative transition-all duration-300 ${
+          isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
+        }`}
         title="Otomatik Yenileme"
       >
-        {/* Refresh Icon with Spinning Animation */}
-        <span
-          className={`material-symbols-outlined text-primary transition-transform ${(loading || isRefreshing) ? 'animate-spin' : ''
-            }`}
-        >
+        <span className={`material-symbols-outlined text-primary text-[20px] transition-transform ${(loading || isRefreshing) ? 'animate-spin' : ''}`}>
           refresh
         </span>
-
-        <span className="whitespace-nowrap text-text-main hidden md:inline">Oto-Yenileme</span>
-
-        {/* Active Badge */}
+        {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">Oto-Yenileme</span>}
         {isEnabled && (
           <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
         )}

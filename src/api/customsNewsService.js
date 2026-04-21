@@ -54,7 +54,7 @@ export const customsNewsService = {
     try {
       console.log("🔄 Haberler manuel olarak yenileniyor...");
 
-      const response = await axiosInstance.post('/customs-news/refresh');
+      const response = await axiosInstance.patch('/customs-news/refresh');
 
       console.log("✅ Haberler başarıyla yenilendi");
 

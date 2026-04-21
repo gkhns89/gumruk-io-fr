@@ -267,7 +267,7 @@ export default function TransactionsPage() {
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById("main-scroll-area")?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleFilterChange = (key, value) => {
@@ -379,32 +379,85 @@ export default function TransactionsPage() {
     return buttons;
   };
 
+  const [isScrolled, setIsScrolled] = useState(false);
+  const pageHeaderRef = useRef(null);
+  const [pageHeaderHeight, setPageHeaderHeight] = useState(80);
+  const [tableScrollHeight, setTableScrollHeight] = useState(() => window.innerHeight - 200);
+  const FOOTER_H = 56; // fixed pagination footer height
+
+  // İlk yükleme + pencere boyutu değişince yüksekliği hesapla
+  useEffect(() => {
+    const calculate = () => {
+      const el = document.getElementById("main-scroll-area");
+      if (!el || !pageHeaderRef.current) return;
+      setPageHeaderHeight(pageHeaderRef.current.offsetHeight);
+      setTableScrollHeight(Math.max(200, el.clientHeight - pageHeaderRef.current.offsetHeight - FOOTER_H));
+    };
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => window.removeEventListener("resize", calculate);
+  }, []);
+
+  // Page header animasyonu bitince yüksekliği yeniden ölç → tablo yüksekliğini güncelle
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const el = document.getElementById("main-scroll-area");
+      if (!el || !pageHeaderRef.current) return;
+      const ph = pageHeaderRef.current.offsetHeight;
+      setPageHeaderHeight(ph);
+      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [isScrolled]);
+
+  // isScrolled artık tablo container'ının scroll'una göre güncellenir
+  const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);
+
   return (
     <MainLayout hasFooter={true}>
       <div className="flex flex-col pb-24">
-        {/* Page Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors duration-300">
+        {/* Page Header — sticky, scroll edince minimal/ikon hale gelir */}
+        <div
+          ref={pageHeaderRef}
+          className={`
+            sticky top-0 z-20
+            px-4 md:px-6 border-b border-gray-200 dark:border-gray-700
+            bg-white dark:bg-background-dark flex-shrink-0
+            transition-all duration-300 ease-in-out
+            ${isScrolled ? "py-2 shadow-md" : "py-4 shadow-none"}
+          `}
+        >
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-text-main">İşlem Takip</h1>
-              <p className="text-text-secondary text-sm mt-1">
-                {isClientUser ? "Gümrük işlemlerinizi görüntüleyin" : "Gümrük işlemlerinizi yönetin"}
-              </p>
+              <h1 className={`font-bold text-text-main transition-all duration-300 ${isScrolled ? "text-base md:text-lg" : "text-2xl md:text-3xl"}`}>
+                İşlem Takip
+              </h1>
+              <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
+                <p className="text-text-secondary text-sm mt-1 overflow-hidden">
+                  {isClientUser ? "Gümrük işlemlerinizi görüntüleyin" : "Gümrük işlemlerinizi yönetin"}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Filter Toggle Button */}
               <button
                 ref={filterButtonRef}
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-semibold"
+                className={`flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${
+                  isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
+                }`}
                 title="Filtreler"
               >
-                <span className="material-symbols-outlined text-primary">tune</span>
-                <span className="whitespace-nowrap text-text-main hidden md:inline">Filtreler</span>
+                <span className="material-symbols-outlined text-primary text-[20px]">tune</span>
+                {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">Filtreler</span>}
                 {hasActiveFilters && (
-                  <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">
+                  <span className={`bg-primary text-white font-medium transition-all duration-300 ${
+                    isScrolled
+                      ? "absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] rounded-full"
+                      : "px-2 py-0.5 text-xs rounded-full"
+                  }`}>
                     {getActiveFiltersCount()}
                   </span>
                 )}
@@ -417,16 +470,19 @@ export default function TransactionsPage() {
                 isModalOpen={showAddModal || showEditModal || showDetailModal}
                 isFilterOpen={showFilters}
                 onOpen={() => setShowFilters(false)}
+                isScrolled={isScrolled}
               />
 
               {canCreate && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold shadow-sm"
+                  className={`flex items-center justify-center bg-primary text-white rounded-lg hover:bg-primary/90 font-semibold shadow-sm transition-all duration-300 ${
+                    isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
+                  }`}
                   title="Yeni İşlem Ekle"
                 >
-                  <span className="material-symbols-outlined">add</span>
-                  <span className="whitespace-nowrap hidden md:inline">Yeni İşlem</span>
+                  <span className="material-symbols-outlined text-[20px]">add</span>
+                  {!isScrolled && <span className="whitespace-nowrap text-sm hidden md:inline">Yeni İşlem</span>}
                 </button>
               )}
             </div>
@@ -759,7 +815,7 @@ export default function TransactionsPage() {
 
         {/* Table Container */}
         <div className="p-4 md:p-6">
-          <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+          <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             <TransactionsFullTable
               transactions={currentItems}
               loading={loading}
@@ -769,6 +825,8 @@ export default function TransactionsPage() {
               canDelete={canDelete}
               isReadOnly={isClientUser}
               onRowClick={handleRowClick}
+              scrollHeight={tableScrollHeight}
+              onScroll={handleTableScroll}
             />
           </div>
         </div>

@@ -4,17 +4,46 @@ import { Link } from "react-router-dom";
 import MobileMenu from "./MobileMenu";
 import { transactionService } from "../../api/transactionService";
 import TransactionDetailModal from "../common/TransactionDetailModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
 import NotificationCenter from "./NotificationCenter";
+import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
+
+  useEffect(() => {
+    // Scroll window üzerinde değil, MainLayout'taki iç container'da gerçekleşiyor
+    const el = document.getElementById("main-scroll-area");
+    if (!el) return;
+    const handleScroll = () => setIsAtTop(el.scrollTop === 0);
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // İşlem Takip / Yük Takip sayfalarında scroll tablo body'sinde olur,
+    // main-scroll-area hiç scroll etmez — custom event ile haberdar ol
+    const handleInnerTableScroll = (e) => {
+      setIsAtTop(e.detail.scrollTop === 0);
+    };
+    window.addEventListener("innerTableScroll", handleInnerTableScroll, { passive: true });
+    return () => window.removeEventListener("innerTableScroll", handleInnerTableScroll);
+  }, []);
+
+  // Sayfa değişince (route değişimi) slider'ı geri göster
+  useEffect(() => {
+    setIsAtTop(true);
+    // main-scroll-area da sıfırla
+    document.getElementById("main-scroll-area")?.scrollTo({ top: 0 });
+  }, [location.pathname]);
 
   // Arama state'leri
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,6 +277,9 @@ export default function Header() {
             <ThemeToggle />
           </div>
 
+          {/* Duyurular */}
+          <AnnouncementsDrawer />
+
           {/* Notifications */}
           <NotificationCenter />
 
@@ -269,9 +301,13 @@ export default function Header() {
         </div>
         </div>
 
-        {/* Alt Satır - Gümrük Haberleri Slider */}
-        <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 border-t border-gray-100 dark:border-gray-700 transition-colors duration-300">
-          <NewsSlider />
+        {/* Alt Satır - Gümrük Haberleri Slider (sadece en tepede görünür) */}
+        <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isAtTop ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+          <div className="overflow-hidden">
+            <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 border-t border-gray-100 dark:border-gray-700 transition-colors duration-300">
+              <NewsSlider />
+            </div>
+          </div>
         </div>
       </header>
 

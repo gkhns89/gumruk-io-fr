@@ -5,6 +5,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import ThemeProvider from './context/ThemeProvider'
 import AuthProvider from './context/AuthProvider'
+import PaymentRestrictionProvider from './context/PaymentRestrictionProvider'
 import './index.css'
 import App from './App.jsx'
 
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
+          <PaymentRestrictionProvider>
           <App />
           <ToastContainer
             position="top-right"
@@ -24,6 +26,7 @@ createRoot(document.getElementById('root')).render(
             draggable
             limit={3}
           />
+          </PaymentRestrictionProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

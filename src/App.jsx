@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
@@ -18,6 +18,12 @@ import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import ReportsPage from "./pages/management/ReportsPage";
 import SessionManagement from "./pages/SessionManagement";  // ✅ SESSION YÖNETİMİ
+import PaymentSubmitPage from "./pages/payment/PaymentSubmitPage";
+import PaymentManagementPage from "./pages/management/PaymentManagementPage";
+import BrokerSubscriptionsPage from "./pages/management/BrokerSubscriptionsPage";
+import AddonCatalogPage from "./pages/management/AddonCatalogPage";
+import PaymentWarningModal from "./components/payment/PaymentWarningModal";
+import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
 
 // Protected Route Component with Role Support
@@ -60,8 +66,34 @@ function PublicRoute({ children }) {
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 }
 
+function PaymentRestrictionModalController() {
+  const { restrictionLevel, daysOverdue, isWarning, isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
+  const [modal, setModal] = useState(null);
+
+  // 403 PAYMENT_RESTRICTION hatası geldiğinde modal aç
+  useEffect(() => {
+    const handler = (e) => {
+      setModal({ level: e.detail.level, daysOverdue: e.detail.daysOverdue });
+    };
+    window.addEventListener('paymentRestrictionDetected', handler);
+    return () => window.removeEventListener('paymentRestrictionDetected', handler);
+  }, []);
+
+  if (!modal) return null;
+
+  return (
+    <PaymentWarningModal
+      level={modal.level}
+      daysOverdue={modal.daysOverdue}
+      onClose={() => setModal(null)}
+    />
+  );
+}
+
 export default function App() {
   return (
+    <>
+    <PaymentRestrictionModalController />
     <Routes>
       <Route 
         path="/login" 
@@ -240,8 +272,49 @@ export default function App() {
         }
       />
 
+      {/* ✅ ÖDEME: Ödeme Bildir */}
+      <Route
+        path="/payment/submit"
+        element={
+          <ProtectedRoute>
+            <PaymentSubmitPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Ödeme Yönetimi (SUPER_ADMIN) */}
+      <Route
+        path="/management/payments"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <PaymentManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Abonelik Yönetimi (SUPER_ADMIN) */}
+      <Route
+        path="/management/broker-subscriptions"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <BrokerSubscriptionsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Hizmet Kataloğu (SUPER_ADMIN) */}
+      <Route
+        path="/management/addon-catalog"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <AddonCatalogPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </>
   );
 }

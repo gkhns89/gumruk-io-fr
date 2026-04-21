@@ -12,9 +12,10 @@ export const courierService = {
    * Tüm kurye firmalarını getir
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  getCourierCompanies: async () => {
+  getCourierCompanies: async (brokerCompanyId = null) => {
     try {
-      const response = await axiosInstance.get('/couriers');
+      const url = brokerCompanyId ? `/couriers?brokerCompanyId=${brokerCompanyId}` : '/couriers';
+      const response = await axiosInstance.get(url);
       return { success: true, data: response.data.data || [] };
     } catch (error) {
       logError('CourierService - getCourierCompanies', error);
@@ -54,9 +55,10 @@ export const courierService = {
    * @param {string} data.notes - Notlar (opsiyonel)
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  createCourierCompany: async (data) => {
+  createCourierCompany: async (data, brokerCompanyId = null) => {
     try {
-      const response = await axiosInstance.post('/couriers', data);
+      const payload = brokerCompanyId ? { ...data, brokerCompanyId } : data;
+      const response = await axiosInstance.post('/couriers', payload);
       return { success: true, data: response.data.data };
     } catch (error) {
       logError('CourierService - createCourierCompany', error);

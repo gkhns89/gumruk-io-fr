@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { employeeService } from '../../api/employeeService';
+import { paymentService } from '../../api/paymentService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
@@ -11,7 +12,8 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
     username: '',
     email: '',
     globalRole: 'BROKER_USER',
-    isActive: true
+    isActive: true,
+    isPaymentResponsible: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,13 +26,15 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
         username: employee.username || '',
         email: employee.email || '',
         globalRole: employee.globalRole || 'BROKER_USER',
-        isActive: employee.isActive !== undefined ? employee.isActive : true
+        isActive: employee.isActive !== undefined ? employee.isActive : true,
+        isPaymentResponsible: employee.isPaymentResponsible ?? false,
       });
     }
   }, [employee]);
 
   // Check if editing self
   const isEditingSelf = currentUser?.id === employee.id;
+  const isBrokerStaffRole = (role) => role === 'BROKER_ADMIN' || role === 'BROKER_USER';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +62,11 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
       }
 
       const result = await employeeService.updateEmployee(employee.id, updateData);
+
+      // Ödeme sorumlusu değiştiyse güncelle
+      if (!isEditingSelf && isBrokerStaffRole(formData.globalRole)) {
+        await paymentService.setPaymentResponsible(employee.id, formData.isPaymentResponsible);
+      }
 
       if (result.success) {
         showSuccess('Çalışan bilgileri başarıyla güncellendi!');
@@ -217,6 +226,28 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 </p>
               )}
             </div>
+
+
+            {/* Ödeme Sorumlusu - Sadece BROKER_ADMIN veya BROKER_USER için */}
+            {!isEditingSelf && isBrokerStaffRole(formData.globalRole) && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
+                <div>
+                  <p className="text-sm font-medium text-text-main">Ödeme Sorumlusu</p>
+                  <p className="text-xs text-text-secondary mt-0.5">Bu kullanıcı ödeme bildirimlerini gönderebilir</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, isPaymentResponsible: !prev.isPaymentResponsible }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    formData.isPaymentResponsible ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow ${
+                    formData.isPaymentResponsible ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Modal Footer */}

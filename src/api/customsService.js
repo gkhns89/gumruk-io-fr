@@ -75,7 +75,7 @@ export const customsService = {
     try {
       console.log("🔄 Triggering manual customs refresh...");
 
-      const response = await axiosInstance.post('/customs/refresh');
+      const response = await axiosInstance.patch('/customs/refresh');
 
       console.log("✅ Customs refresh completed:", response.data);
 
@@ -98,7 +98,7 @@ export const customsService = {
     try {
       console.log("🧪 Testing scheduled job (15-day update)...");
 
-      const response = await axiosInstance.post('/customs/test-scheduled-update');
+      const response = await axiosInstance.patch('/customs/test-scheduled-update');
 
       console.log("✅ Scheduled job test completed:", response.data);
 

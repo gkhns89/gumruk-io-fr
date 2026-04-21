@@ -205,7 +205,8 @@ const Stats = memo(function Stats({ transactions, loading }) {
             >
               <span className="text-sm">{config.emoji}</span>
               <span className={`text-xs font-semibold ${config.textClass}`}>
-                {config.label}: {count}
+                <span className="hidden sm:inline">{config.label}: </span>
+                {count}
               </span>
             </div>
           );

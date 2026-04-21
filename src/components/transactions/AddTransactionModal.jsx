@@ -761,6 +761,13 @@ export default function AddTransactionModal({
       setError("");
     }
 
+    // Tarih alanlarında yıl henüz tam girilmemişse (browser ara değer: 0002, 0020 vb.) state güncelleme
+    const DATE_FIELDS = ['warehouseArrivalDate', 'registrationDate', 'lineClosureDate', 'withdrawalDate'];
+    if (value && DATE_FIELDS.includes(name)) {
+      const year = parseInt(value.substring(0, 4), 10);
+      if (year < 1900) return; // kullanıcı yılı yazmaya devam ediyor
+    }
+
     // Tarih boşsa validasyon yapma
     if (!value) {
       setFormData(prev => ({ ...prev, [name]: value }));

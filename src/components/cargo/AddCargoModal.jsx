@@ -39,6 +39,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     documentReceiver: "",
     documentDeliveryDate: "",
     estimatedArrivalDate: "",
+    cargoArrivalDate: "",
   });
 
   const [availableClients, setAvailableClients] = useState([]);
@@ -80,12 +81,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   const [pendingVehicleType, setPendingVehicleType] = useState(null);
   const [showVehicleTypeConfirmModal, setShowVehicleTypeConfirmModal] = useState(false);
 
-  // Document warning modal and delay warnings
-  const [showDocumentWarningModal, setShowDocumentWarningModal] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
-  const [delayWarnings, setDelayWarnings] = useState({
-    hasEtaDelay: false
-  });
 
   // Load brokers (SUPER_ADMIN only)
   useEffect(() => {
@@ -177,16 +173,6 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   }, [carrierSearchTerm, availableCarriers]);
 
   // Calculate ETA delay warnings
-  useEffect(() => {
-    if (formData.estimatedArrivalDate && formData.documentDeliveryDate) {
-      const eta = new Date(formData.estimatedArrivalDate);
-      const actual = new Date(formData.documentDeliveryDate);
-      const daysDiff = Math.floor((actual - eta) / (1000 * 60 * 60 * 24));
-      setDelayWarnings({ hasEtaDelay: daysDiff > 0 });
-    } else {
-      setDelayWarnings({ hasEtaDelay: false });
-    }
-  }, [formData.estimatedArrivalDate, formData.documentDeliveryDate]);
 
   const loadBrokers = async () => {
     setLoadingBrokers(true);
@@ -506,15 +492,6 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     if (!validateForm()) {
       showError('Lütfen tüm zorunlu alanları doldurun');
       return;
-    }
-
-    // Check for auto-complete due to document fields
-    const hasReceiver = formData.documentReceiver && formData.documentReceiver.trim();
-    const hasDate = formData.documentDeliveryDate;
-
-    if (hasReceiver && hasDate) {
-      setShowDocumentWarningModal(true);
-      return; // Wait for user confirmation
     }
 
     await submitCargo();
@@ -1450,10 +1427,27 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   onChange={handleChange}
                   className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                 />
-                {delayWarnings.hasEtaDelay && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-orange-600 dark:text-orange-400">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    <span>Gerçek tarih ETA'dan sonra!</span>
+              </div>
+
+              {/* Varış Tarihi */}
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">
+                  Varış Tarihi
+                  <span className="ml-2 text-xs font-normal text-text-secondary">
+                    (girilince durum TAMAMLANDI olur)
+                  </span>
+                </label>
+                <input
+                  type="date"
+                  name="cargoArrivalDate"
+                  value={formData.cargoArrivalDate}
+                  onChange={handleChange}
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                />
+                {formData.cargoArrivalDate && (
+                  <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Kaydedildiğinde yük TAMAMLANDI olarak işaretlenecek</span>
                   </div>
                 )}
               </div>
@@ -1598,51 +1592,6 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 type="button"
                 onClick={() => confirmVehicleTypeChange(pendingVehicleType)}
                 className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <span className="material-symbols-outlined text-lg">check</span>
-                <span>Devam Et</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Document Warning Modal */}
-      {showDocumentWarningModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[60] p-4 animate-fade-in">
-          <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-500/10 to-blue-500/5">
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-blue-600 text-3xl">info</span>
-                <div>
-                  <h3 className="text-xl font-bold text-text-main">Otomatik Tamamlama</h3>
-                  <p className="text-text-secondary text-sm mt-1">
-                    Durum TAMAMLANDI olarak işaretlenecek
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              <p className="text-text-main text-sm">
-                Evrak teslim bilgileri eksiksiz girildi. Yük durumu otomatik olarak
-                <strong> TAMAMLANDI</strong> olarak işaretlenecek ve listenin altına taşınacaktır.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={() => setShowDocumentWarningModal(false)}
-                className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDocumentWarningModal(false);
-                  submitCargo();
-                }}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg">check</span>
                 <span>Devam Et</span>

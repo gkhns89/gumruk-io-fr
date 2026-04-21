@@ -85,7 +85,7 @@ export const agencyAgreementService = {
       const formData = new FormData();
       formData.append('document', file);
 
-      const response = await axiosInstance.post(
+      const response = await axiosInstance.patch(
         `/agreements/${agreementId}/upload-document`,
         formData,
         {
@@ -108,7 +108,7 @@ export const agencyAgreementService = {
   // Anlaşmayı aktifleştir (PENDING → ACTIVE)
   activateAgreement: async (agreementId, activationData) => {
     try {
-      const response = await axiosInstance.post(
+      const response = await axiosInstance.patch(
         `/agreements/${agreementId}/activate`,
         activationData
       );

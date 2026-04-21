@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { cargoService } from '../../api/cargoService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
@@ -149,9 +149,41 @@ export default function CargoTrackingPage() {
   const currentCargo = sortedCargo.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(sortedCargo.length / itemsPerPage);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+  const pageHeaderRef = useRef(null);
+  const [pageHeaderHeight, setPageHeaderHeight] = useState(80);
+  const [tableScrollHeight, setTableScrollHeight] = useState(() => window.innerHeight - 200);
+  const FOOTER_H = 56;
+
+  useEffect(() => {
+    const calculate = () => {
+      const el = document.getElementById("main-scroll-area");
+      if (!el || !pageHeaderRef.current) return;
+      const ph = pageHeaderRef.current.offsetHeight;
+      setPageHeaderHeight(ph);
+      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
+    };
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => window.removeEventListener("resize", calculate);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const el = document.getElementById("main-scroll-area");
+      if (!el || !pageHeaderRef.current) return;
+      const ph = pageHeaderRef.current.offsetHeight;
+      setPageHeaderHeight(ph);
+      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [isScrolled]);
+
+  const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);
+
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById("main-scroll-area")?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -245,92 +277,122 @@ export default function CargoTrackingPage() {
   return (
     <MainLayout hasFooter={true}>
       <div className="flex flex-col pb-24">
-        <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-text-main dark:text-gray-100">Yük Takip</h1>
-            <p className="text-text-secondary dark:text-gray-400 mt-1">
-              {isClientUser
-                ? 'Firmanıza ait yük kayıtlarını görüntüleyin'
-                : 'Yük kayıtlarını görüntüleyin ve yönetin'
-              }
-            </p>
-          </div>
+        {/* Page Header — sticky, scroll edince minimal/ikon hale gelir */}
+        <div
+          ref={pageHeaderRef}
+          className={`
+            sticky top-0 z-20
+            px-4 md:px-6 border-b border-gray-200 dark:border-gray-700
+            bg-white dark:bg-background-dark flex-shrink-0
+            transition-all duration-300 ease-in-out
+            ${isScrolled ? "py-2 shadow-md" : "py-4 shadow-none"}
+          `}
+        >
+          {/* Başlık + Butonlar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div>
+              <h1 className={`font-bold text-text-main dark:text-gray-100 transition-all duration-300 ${isScrolled ? "text-base md:text-lg" : "text-2xl md:text-3xl"}`}>
+                Yük Takip
+              </h1>
+              <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
+                <p className="text-text-secondary dark:text-gray-400 text-sm mt-1 overflow-hidden">
+                  {isClientUser ? 'Firmanıza ait yük kayıtlarını görüntüleyin' : 'Yük kayıtlarını görüntüleyin ve yönetin'}
+                </p>
+              </div>
+            </div>
 
-          <div className="flex items-center gap-3">
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-text-main dark:text-gray-300"
-            >
-              <span className="material-symbols-outlined text-gray-600 dark:text-gray-400">filter_list</span>
-              <span>Filtrele</span>
-              {activeFilterCount > 0 && (
-                <span className="px-2 py-0.5 text-xs font-bold bg-primary text-white rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
-            {/* Refresh */}
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-              <span className={`material-symbols-outlined text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`}>
-                refresh
-              </span>
-            </button>
-
-            {/* Add Button */}
-            {canCreate && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Filter Toggle */}
               <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-sm hover:shadow-md"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`relative flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${
+                  isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
+                }`}
+                title="Filtrele"
               >
-                <span className="material-symbols-outlined text-lg">add</span>
-                <span>Yeni Yük Ekle</span>
+                <span className="material-symbols-outlined text-primary text-[20px]">filter_list</span>
+                {!isScrolled && <span className="text-sm text-text-main dark:text-gray-300 hidden md:inline">Filtrele</span>}
+                {activeFilterCount > 0 && (
+                  <span className={`bg-primary text-white font-medium transition-all duration-300 ${
+                    isScrolled
+                      ? "absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] rounded-full"
+                      : "px-2 py-0.5 text-xs rounded-full"
+                  }`}>
+                    {activeFilterCount}
+                  </span>
+                )}
               </button>
-            )}
+
+              {/* Refresh */}
+              <button
+                onClick={loadData}
+                disabled={loading}
+                className={`flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 disabled:opacity-50 ${
+                  isScrolled ? "p-2" : "px-3 sm:px-4 py-2.5"
+                }`}
+                title="Yenile"
+              >
+                <span className={`material-symbols-outlined text-primary text-[20px] ${loading ? 'animate-spin' : ''}`}>
+                  refresh
+                </span>
+              </button>
+
+              {/* Add Button */}
+              {canCreate && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className={`flex items-center justify-center bg-primary text-white rounded-lg hover:bg-primary/90 font-semibold shadow-sm transition-all duration-300 ${
+                    isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
+                  }`}
+                  title="Yeni Yük Ekle"
+                >
+                  <span className="material-symbols-outlined text-[20px]">add</span>
+                  {!isScrolled && <span className="text-sm hidden md:inline">Yeni Yük Ekle</span>}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Araç Tipi Hızlı Filtreleri — scroll'da kaybolur */}
+          <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
+            <div className="overflow-hidden">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 pt-3">
+                <button
+                  onClick={() => setSelectedVehicleType("")}
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    selectedVehicleType === ""
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Tümü
+                </button>
+                {VEHICLE_TYPES.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => setSelectedVehicleType(type.value)}
+                    className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      selectedVehicleType === type.value
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-base ${selectedVehicleType === type.value ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {type.icon}
+                    </span>
+                    {type.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Vehicle Type Quick Filters */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSelectedVehicleType("")}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              selectedVehicleType === ""
-                ? "bg-primary text-white"
-                : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-text-main dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-            }`}
-          >
-            Tümü
-          </button>
-
-          {VEHICLE_TYPES.map((type) => (
-            <button
-              key={type.value}
-              onClick={() => setSelectedVehicleType(type.value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                selectedVehicleType === type.value
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-text-main dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
-            >
-              <span className={`material-symbols-outlined text-lg ${
-                selectedVehicleType === type.value ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-              }`}>{type.icon}</span>
-              {type.displayName}
-            </button>
-          ))}
-        </div>
+        <div className="p-4 md:p-6 space-y-4">
 
         {/* Filter Drawer */}
         {showFilters && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 space-y-4 animate-slide-in-top border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 space-y-4 animate-slide-in-top border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text-main dark:text-gray-100">Filtreler</h3>
               {activeFilterCount > 0 && (
@@ -343,7 +405,7 @@ export default function CargoTrackingPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
@@ -397,19 +459,23 @@ export default function CargoTrackingPage() {
         )}
 
         {/* Table */}
-        <CargoTrackingTable
-          cargo={currentCargo}
-          loading={loading}
-          error={error}
-          onRetry={loadData}
-          onRefresh={loadData}
-          canDelete={canDelete}
-          isReadOnly={isClientUser}
-          onRowClick={handleRowClick}
-          onEdit={handleEditClick}
-          onDelete={handleDeleteClick}
-          selectedVehicleType={selectedVehicleType}
-        />
+        <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+          <CargoTrackingTable
+            cargo={currentCargo}
+            loading={loading}
+            error={error}
+            onRetry={loadData}
+            onRefresh={loadData}
+            canDelete={canDelete}
+            isReadOnly={isClientUser}
+            onRowClick={handleRowClick}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+            selectedVehicleType={selectedVehicleType}
+            scrollHeight={tableScrollHeight}
+            onScroll={handleTableScroll}
+          />
+        </div>
         </div>
 
         {/* Fixed Footer with Statistics and Pagination */}

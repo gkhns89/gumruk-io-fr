@@ -16,8 +16,39 @@ export const companyService = {
     }
   },
 
+  // SUPER_ADMIN: tüm gümrük (broker) firmalarını getir
+  getAllBrokerCompanies: async () => {
+    try {
+      const response = await axiosInstance.get('/companies/brokers');
+      return { success: true, data: response.data.brokers || [] };
+    } catch (error) {
+      logError('CompanyService - getAllBrokerCompanies', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Gümrük firmaları alınamadı',
+      };
+    }
+  },
+
+  // SUPER_ADMIN: tüm broker'lardaki client firmaları
+  getAllClientCompanies: async () => {
+    try {
+      const response = await axiosInstance.get('/companies/clients/all');
+      return { success: true, data: response.data.clients || [] };
+    } catch (error) {
+      logError('CompanyService - getAllClientCompanies', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Müşteri firmaları alınamadı',
+      };
+    }
+  },
+
   // Broker firmasının client'larını getir
   getClientCompanies: async (brokerId) => {
+    if (!brokerId) {
+      return { success: true, data: [] };
+    }
     try {
       console.log(`📡 Client companies API çağrısı: /companies/${brokerId}/clients`);
       const response = await axiosInstance.get(`/companies/${brokerId}/clients`);

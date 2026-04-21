@@ -42,6 +42,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     documentReceiver: cargo.documentReceiver || "",
     documentDeliveryDate: cargo.documentDeliveryDate || "",
     estimatedArrivalDate: cargo.estimatedArrivalDate || "",
+    cargoArrivalDate: cargo.cargoArrivalDate || "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -762,6 +763,11 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             <div>
               <label className="block text-sm font-medium text-text-main pb-2">
                 Dosya Teslim Tarihi
+                {cargo.status === 'TRACKING' && !cargo.documentDeliveryDate && (
+                  <span className="ml-2 text-xs font-normal text-text-secondary">
+                    (girilince durum VARIŞ YAPTI olur)
+                  </span>
+                )}
               </label>
               <input
                 type="date"
@@ -771,6 +777,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 disabled={isReadOnly}
                 className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
+              {formData.documentDeliveryDate && !cargo.documentDeliveryDate && cargo.status === 'TRACKING' && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <span>Kaydedildiğinde yük VARIŞ YAPTI olarak işaretlenecek</span>
+                </div>
+              )}
             </div>
 
             {/* ETA Field */}
@@ -786,10 +798,45 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 disabled={isReadOnly}
                 className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
-              {formData.estimatedArrivalDate && formData.documentDeliveryDate && new Date(formData.documentDeliveryDate) > new Date(formData.estimatedArrivalDate) && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-orange-600 dark:text-orange-400">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  <span>Gerçek tarih ETA'dan sonra!</span>
+              {/* İlk ETA bilgisi — gecikme bu tarihe göre hesaplanır */}
+              {cargo.initialEstimatedArrivalDate && cargo.initialEstimatedArrivalDate !== formData.estimatedArrivalDate && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-blue-600 dark:text-blue-400">
+                  <span className="material-symbols-outlined text-sm">info</span>
+                  <span>
+                    İlk ETA: {new Date(cargo.initialEstimatedArrivalDate).toLocaleDateString('tr-TR')} — gecikme bu tarihe göre hesaplanır
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Varış Tarihi */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm font-medium text-text-main pb-2">
+                Varış Tarihi
+                {!formData.cargoArrivalDate && (
+                  <span className="ml-2 text-xs font-normal text-text-secondary">
+                    (girilince durum TAMAMLANDI olur)
+                  </span>
+                )}
+              </label>
+              <input
+                type="date"
+                name="cargoArrivalDate"
+                value={formData.cargoArrivalDate}
+                onChange={handleChange}
+                disabled={isReadOnly || !!cargo.cargoArrivalDate}
+                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+              />
+              {formData.cargoArrivalDate && !cargo.cargoArrivalDate && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <span>Kaydedildiğinde yük TAMAMLANDI olarak işaretlenecek</span>
+                </div>
+              )}
+              {cargo.cargoArrivalDate && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-text-secondary">
+                  <span className="material-symbols-outlined text-sm">lock</span>
+                  <span>Varış tarihi girilmiş, değiştirilemez</span>
                 </div>
               )}
             </div>

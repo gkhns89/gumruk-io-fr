@@ -21,7 +21,7 @@ export default function Sidebar() {
   const [isOtherCollapsed, setIsOtherCollapsed] = useState(true);
 
   // Dinamik görünür öğe sayısı
-  const [visibleOtherCount, setVisibleOtherCount] = useState(6); // Varsayılan: tümü görünür
+  const [visibleOtherCount, setVisibleOtherCount] = useState(8); // Varsayılan: tümü görünür
   const [visibleManagementCount, setVisibleManagementCount] = useState(4); // Varsayılan: tümü görünür
 
   // Sidebar is expanded when pinned-expanded OR (auto mode AND hovered)
@@ -42,12 +42,16 @@ export default function Sidebar() {
   ];
 
   // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler
+  const canSubmitPayment = (user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'BROKER_USER') &&
+    user?.isPaymentResponsible;
+
   const otherMenuItems = [
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
     { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
+    ...(canSubmitPayment ? [{ icon: "account_balance", label: "Abonelik & Ödeme", path: "/payment/submit" }] : []),
     { icon: "person", label: "Hesabım", path: "/profile" },
     { icon: "settings", label: "Ayarlar", path: "/settings" },
   ];
@@ -96,6 +100,27 @@ export default function Sidebar() {
       active: true,
       roles: ['SUPER_ADMIN']
     },
+    {
+      icon: "payments",
+      label: "Ödeme Yönetimi",
+      path: "/management/payments",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
+    {
+      icon: "subscriptions",
+      label: "Abonelik Yönetimi",
+      path: "/management/broker-subscriptions",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
+    {
+      icon: "library_add",
+      label: "Hizmet Kataloğu",
+      path: "/management/addon-catalog",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
   ];
 
   // Kullanıcının yönetim menüsüne erişimi var mı?
@@ -126,11 +151,12 @@ export default function Sidebar() {
       const availableHeight = windowHeight - userProfileHeight - controlButtonsHeight - bottomMenuHeight - padding - mainItemsHeight;
 
       let remainingHeight = availableHeight;
-      let visibleOther = 7; // Varsayılan: tüm diğer menü öğeleri görünür (İşlem Takip dahil)
+      const totalOtherCount = otherMenuItems.length;
+      let visibleOther = totalOtherCount; // Varsayılan: tüm diğer menü öğeleri görünür
       let visibleMgmt = visibleManagementItems.length; // Varsayılan: tüm yönetim öğeleri görünür
 
       // Önce tüm üst menü ve yönetim öğeleri için gereken toplam yüksekliği hesapla
-      const allOtherItemsHeight = 7 * (itemHeight + gap);
+      const allOtherItemsHeight = totalOtherCount * (itemHeight + gap);
 
       let totalNeededHeight = allOtherItemsHeight;
 
@@ -144,7 +170,7 @@ export default function Sidebar() {
       // Tümü sığıyor mu?
       if (remainingHeight >= totalNeededHeight) {
         // Tümü sığıyor, hiçbir çekmece yok
-        visibleOther = 7;
+        visibleOther = totalOtherCount;
         visibleMgmt = visibleManagementItems.length;
       } else {
         // Sığmıyor, önce yönetimi sondan başa doğru tek tek gizle
@@ -161,7 +187,7 @@ export default function Sidebar() {
             if (remainingHeight >= totalWithMgmt) {
               // Bu kadar yönetim öğesi sığıyor
               visibleMgmt = currentVisibleMgmt;
-              visibleOther = 7;
+              visibleOther = totalOtherCount;
               foundFit = true;
               break;
             }

@@ -131,6 +131,11 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // 403 - Payment Restriction
+    if (error.response?.status === 403 && error.response?.data?.error === 'PAYMENT_RESTRICTION') {
+      window.dispatchEvent(new CustomEvent('paymentRestrictionDetected', { detail: error.response.data }));
+    }
+
     // 404 - Not Found
     if (error.response?.status === 404) {
       console.warn('⚠️ Kaynak bulunamadı');

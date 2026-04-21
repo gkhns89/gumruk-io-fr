@@ -69,7 +69,7 @@ export const authService = {
     try {
       console.log("👋 Kullanıcı çıkış yapıyor");
       // Backend'e logout bildirimi gönder (session invalidate için)
-      await axiosInstance.post('/auth/logout');
+      await axiosInstance.delete('/auth/logout');
     } catch (error) {
       console.warn('Logout request failed:', error);
       // Hata olsa bile client-side temizlik yap

@@ -1,4 +1,6 @@
-import React from "react";
+import { useRef, useState } from "react";
+import { toPng } from "html-to-image";
+import { toast } from "react-toastify";
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -11,7 +13,36 @@ const getGateBadge = (gate) => {
 };
 
 export default function TransactionDetailModal({ transaction, onClose, onEdit }) {
+  const contentRef = useRef(null);
+  const [copying, setCopying] = useState(false);
+
   if (!transaction) return null;
+
+  const copyToClipboard = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${label} kopyalandı`, {
+        position: 'bottom-center',
+        autoClose: 2000,
+        hideProgressBar: true,
+        icon: '📋',
+      });
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('tr-TR');
+  };
+
+  const statusDateMap = {
+    PENDING:     { label: 'Antrepo Varış Tarihi', value: formatDate(transaction.warehouseArrivalDate) },
+    REGISTERED:  { label: 'Tescil Tarihi',        value: formatDate(transaction.registrationDate) },
+    INSPECTION:  { label: 'Tescil Tarihi',        value: formatDate(transaction.registrationDate) },
+    CP_COMPLETED:{ label: 'Hat Kapanma Tarihi',   value: formatDate(transaction.lineClosureDate) },
+    WITHDRAWN:   { label: 'Çekilme Tarihi',       value: formatDate(transaction.withdrawalDate) },
+  };
+  const statusDate = statusDateMap[transaction.status] ?? { label: 'Tarih', value: '-' };
 
   // Parse delay reasons from JSON
   const delayReasons = (() => {
@@ -50,10 +81,66 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
     };
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR');
+  const handleCopySnapshot = async () => {
+    if (!contentRef.current || copying) return;
+    setCopying(true);
+
+    try {
+      const el = contentRef.current;
+      const computedBg = window.getComputedStyle(el).backgroundColor;
+      // Eğer transparent / rgba(0,0,0,0) gelirse fallback kullan
+      const isTransparent = !computedBg || computedBg === 'rgba(0, 0, 0, 0)' || computedBg === 'transparent';
+      const bgColor = isTransparent ? '#ffffff' : computedBg;
+
+      const dataUrl = await toPng(el, {
+        backgroundColor: bgColor,
+        pixelRatio: 3,
+        cacheBust: true,
+        style: {
+          overflow: 'visible',
+        },
+      });
+
+      // Clipboard API desteği kontrolü
+      const canUseClipboard =
+        navigator.clipboard &&
+        typeof ClipboardItem !== 'undefined' &&
+        typeof navigator.clipboard.write === 'function';
+
+      if (canUseClipboard) {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob }),
+        ]);
+        toast.success('İşlem detayları panoya kaydedildi!', {
+          position: 'bottom-center',
+          autoClose: 3000,
+          hideProgressBar: false,
+          icon: '📋',
+        });
+      } else {
+        // Mobil / desteklemeyen tarayıcılar: PNG olarak indir
+        const link = document.createElement('a');
+        link.download = `islem-${transaction.fileNo || 'detay'}.png`;
+        link.href = dataUrl;
+        link.click();
+        toast.success('Görsel indirildi — e-postanıza ek olarak ekleyebilirsiniz.', {
+          position: 'bottom-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          icon: '📥',
+        });
+      }
+    } catch (err) {
+      console.error('[Snapshot] Hata:', err);
+      toast.error('Görsel oluşturulamadı, lütfen tekrar deneyin.', {
+        position: 'bottom-center',
+        autoClose: 3000,
+      });
+    } finally {
+      setCopying(false);
+    }
   };
 
   const statusInfo = getStatusBadgeClass(transaction.status);
@@ -65,66 +152,114 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-zoom-in transition-colors duration-300"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white">
-                <span className="material-symbols-outlined text-2xl">description</span>
+              <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white">
+                <span className="material-symbols-outlined text-xl">description</span>
               </div>
-              <div>
-                <h2 className="text-text-main text-xl font-bold">
-                  İşlem Detayları
-                </h2>
-                <p className="text-text-secondary text-sm">
-                  Dosya No: {transaction.fileNo}
-                </p>
-              </div>
+              <h2 className="text-text-main text-lg font-bold">İşlem Detayları</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-text-secondary">close</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleCopySnapshot}
+                disabled={copying}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                title="İşlem detaylarını görüntü olarak kopyala"
+              >
+                {copying ? (
+                  <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-lg">screenshot</span>
+                )}
+                <span className="hidden sm:inline">
+                  {copying ? 'Kopyalanıyor...' : 'Kopyala'}
+                </span>
+              </button>
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <span className="material-symbols-outlined text-text-secondary">close</span>
+              </button>
+            </div>
           </div>
 
-          {/* Body */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-            {/* Status Badge */}
-            <div className="mb-6 flex justify-center gap-3">
-              <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${statusInfo.className}`}>
-                {statusInfo.label}
-              </span>
-              {transaction.gate && (
-                <span className={`px-6 py-2 inline-flex text-sm font-semibold rounded-full ${gateBadgeClass}`}>
-                  {transaction.gate}
-                </span>
-              )}
+          {/* Body - bu alan ekran görüntüsüne dahil edilir */}
+          <div ref={contentRef} className="overflow-y-auto max-h-[calc(90vh-160px)] bg-white dark:bg-background-dark">
+
+            {/* Özet Alan */}
+            {/* Özet Alan */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              {/* Dosya No satırı */}
+              <div className="flex items-center justify-between px-6 py-3 bg-primary/5 dark:bg-primary/10 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => copyToClipboard(transaction.fileNo, 'Dosya No')}
+                  className="flex items-center gap-2 group"
+                  title="Kopyala"
+                >
+                  <span className="material-symbols-outlined text-primary text-base">tag</span>
+                  <span className="text-xs text-text-secondary">Dosya No</span>
+                  <span className="text-sm font-bold text-text-main">{transaction.fileNo}</span>
+                  <span className="material-symbols-outlined text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-0.5 text-xs font-semibold rounded-full ${statusInfo.className}`}>
+                    {statusInfo.label}
+                  </span>
+                  {transaction.gate && (
+                    <span className={`px-3 py-0.5 text-xs font-semibold rounded-full ${gateBadgeClass}`}>
+                      {transaction.gate}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Key info */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700 bg-gray-50 dark:bg-gray-800/40">
+                <div className="px-6 py-3">
+                  <p className="text-xs text-text-secondary mb-0.5">Alıcı Firma</p>
+                  <p className="text-sm font-semibold text-text-main truncate">
+                    {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(transaction.declarationNumber, 'Beyanname No')}
+                  className="px-6 py-3 text-left group w-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                  title="Kopyala"
+                >
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs text-text-secondary mb-0.5">Beyanname No</p>
+                    <span className="material-symbols-outlined text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity mb-0.5">content_copy</span>
+                  </div>
+                  <p className="text-sm font-semibold text-text-main">
+                    {transaction.declarationNumber || '-'}
+                  </p>
+                </button>
+                <div className="px-6 py-3">
+                  <p className="text-xs text-text-secondary mb-0.5">{statusDate.label}</p>
+                  <p className="text-sm font-semibold text-text-main">{statusDate.value}</p>
+                </div>
+              </div>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-6">
+
+            {/* Info Grid — 6 kart, 2 satır */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Alıcı Firma</p>
+                <p className="text-text-secondary text-sm mb-1">Gönderici Firma</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                  {transaction.senderName || '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Beyanname No</p>
+                <p className="text-text-secondary text-sm mb-1">Gümrük</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.declarationNumber || '-'}
-                </p>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Antrepo Varış Tarihi</p>
-                <p className="text-text-main font-semibold">
-                  {formatDate(transaction.warehouseArrivalDate)}
+                  {transaction.customs?.customsName || '-'}
                 </p>
               </div>
 
@@ -132,6 +267,13 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                 <p className="text-text-secondary text-sm mb-1">Gümrük Antrepo</p>
                 <p className="text-text-main font-semibold">
                   {transaction.customsWarehouse || '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
+                <p className="text-text-secondary text-sm mb-1">Vergi Tutarı</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.tax ? `${Number(transaction.tax).toLocaleString('tr-TR')} ₺` : '-'}
                 </p>
               </div>
 
@@ -150,7 +292,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               </div>
 
               {transaction.description && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 md:col-span-2 transition-colors">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 col-span-full transition-colors">
                   <p className="text-text-secondary text-sm mb-1">Açıklama</p>
                   <p className="text-text-main">
                     {transaction.description}
@@ -207,7 +349,8 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                 )}
               </div>
             )}
-          </div>
+            </div>{/* /p-6 */}
+          </div>{/* /contentRef */}
 
           {/* Footer */}
           <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-between gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">

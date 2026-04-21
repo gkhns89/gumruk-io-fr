@@ -2,17 +2,17 @@ import { useEffect, useState, useRef } from "react";
 import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
 import TransactionsTable from "./dashboard/TransactionsTable";
-import Announcements from "./dashboard/Announcements";
 import CourierTrackingCard from "./dashboard/CourierTrackingCard";
 import { useAuth } from "../hooks/useAuth";
 import { transactionService } from "../api/transactionService";
+import { cargoService } from "../api/cargoService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
 
 // Animated Section Component
 const AnimatedSection = ({ children, delay = 0, shouldAnimate = false }) => {
   return (
     <div
-      className={`${shouldAnimate ? 'animate-fade-slide-up' : 'opacity-0'}`}
+      className={`${shouldAnimate ? "animate-fade-slide-up" : "opacity-0"}`}
       style={{ animationDelay: `${delay}ms` }}
     >
       {children}
@@ -22,10 +22,13 @@ const AnimatedSection = ({ children, delay = 0, shouldAnimate = false }) => {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [allTransactions, setAllTransactions] = useState([]); // Stats için tüm işlemler
-  const [recentTransactions, setRecentTransactions] = useState([]); // Son işlemler tablosu için
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [recentCargo, setRecentCargo] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cargoLoading, setCargoLoading] = useState(true);
   const [error, setError] = useState("");
+
   const hasAnimatedHeadingRef = useRef(false);
   const hasAnimatedSectionsRef = useRef(false);
   const [shouldAnimateHeading, setShouldAnimateHeading] = useState(false);
@@ -33,9 +36,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTransactions();
+    fetchCargo();
   }, []);
 
-  // Trigger heading animation first
+  // Heading animasyonu — veriler gelince
   useEffect(() => {
     if (!loading && allTransactions.length > 0 && !hasAnimatedHeadingRef.current) {
       hasAnimatedHeadingRef.current = true;
@@ -43,11 +47,10 @@ export default function Dashboard() {
     }
   }, [loading, allTransactions]);
 
-  // Trigger other sections after stats cards finish
+  // Diğer bölümler — stat kartları bittikten sonra
   useEffect(() => {
     if (!loading && allTransactions.length > 0 && !hasAnimatedSectionsRef.current) {
       hasAnimatedSectionsRef.current = true;
-      // Heading (600ms) + Last stats card delay (700ms) + animation (700ms) + buffer (200ms) = 2200ms
       setTimeout(() => {
         setShouldAnimateSections(true);
       }, 2200);
@@ -59,7 +62,6 @@ export default function Dashboard() {
       setLoading(true);
       setError("");
 
-      // Tüm işlemleri getir (kullanıcının yetkisine göre filtrelenmiş)
       const result = await transactionService.getAllTransactions();
 
       if (result.success) {
@@ -67,56 +69,45 @@ export default function Dashboard() {
 
         if (Array.isArray(result.data)) {
           dataArray = result.data;
-        } else if (result.data && typeof result.data === 'object') {
-          const possibleArrayFields = ['transactions', 'data', 'items', 'content', 'results', 'list'];
-
+        } else if (result.data && typeof result.data === "object") {
+          const possibleArrayFields = ["transactions", "data", "items", "content", "results", "list"];
           for (const field of possibleArrayFields) {
             if (Array.isArray(result.data[field])) {
               dataArray = result.data[field];
               break;
             }
           }
-
           if (dataArray.length === 0 && result.data) {
             dataArray = [result.data];
           }
         }
 
-        // Tüm işlemleri Stats için sakla
         setAllTransactions(dataArray);
 
-        // İşlemleri sırala: 3 seviye - Aktif, Kapanan, Çekilen
         const sortedTransactions = [...dataArray].sort((a, b) => {
-          // Öncelik seviyelerini belirle
           const getPriority = (status) => {
-            if (status === 'WITHDRAWN') return 3; // En son: Çekilenler
-            if (status === 'CP_COMPLETED' || status === 'CANCELLED') return 2; // Ortada: Kapananlar
-            return 1; // En üstte: Aktif işlemler (PENDING, REGISTERED, INSPECTION)
+            if (status === "WITHDRAWN") return 3;
+            if (status === "CP_COMPLETED" || status === "CANCELLED") return 2;
+            return 1;
           };
 
           const priorityA = getPriority(a.status);
           const priorityB = getPriority(b.status);
+          if (priorityA !== priorityB) return priorityA - priorityB;
 
-          // Önce önceliğe göre sırala
-          if (priorityA !== priorityB) {
-            return priorityA - priorityB;
-          }
-
-          // Aynı öncelik seviyesindeyse, tarihe göre sırala (yeni en üstte)
           const dateA = new Date(a.createdAt || a.warehouseArrivalDate || 0);
           const dateB = new Date(b.createdAt || b.warehouseArrivalDate || 0);
-          return dateB - dateA; // Azalan sıralama (yeni önce)
+          return dateB - dateA;
         });
 
-        // Son 10 işlemi TransactionsTable için sakla
         setRecentTransactions(sortedTransactions.slice(0, 10));
       } else {
-        handleApiResponse(result, null, setError, 'Dashboard - İşlemler yüklenirken');
+        handleApiResponse(result, null, setError, "Dashboard - İşlemler yüklenirken");
         setAllTransactions([]);
         setRecentTransactions([]);
       }
     } catch (err) {
-      handleError(err, setError, 'Dashboard - İşlemler yüklenirken', 'İşlemler yüklenirken bir hata oluştu.');
+      handleError(err, setError, "Dashboard - İşlemler yüklenirken", "İşlemler yüklenirken bir hata oluştu.");
       setAllTransactions([]);
       setRecentTransactions([]);
     } finally {
@@ -124,48 +115,76 @@ export default function Dashboard() {
     }
   };
 
+  const fetchCargo = async () => {
+    try {
+      setCargoLoading(true);
+      const result = await cargoService.getAllCargo();
+
+      if (result.success) {
+        const STATUS_PRIORITY = { ARRIVED: 1, TRACKING: 2, COMPLETED: 3 };
+
+        const sorted = [...result.data].sort((a, b) => {
+          const pA = STATUS_PRIORITY[a.status] || 999;
+          const pB = STATUS_PRIORITY[b.status] || 999;
+          if (pA !== pB) return pA - pB;
+
+          const etaA = a.estimatedArrivalDate
+            ? new Date(a.estimatedArrivalDate).getTime()
+            : Infinity;
+          const etaB = b.estimatedArrivalDate
+            ? new Date(b.estimatedArrivalDate).getTime()
+            : Infinity;
+          return etaA - etaB;
+        });
+
+        setRecentCargo(sorted.slice(0, 10));
+      } else {
+        setRecentCargo([]);
+      }
+    } catch {
+      setRecentCargo([]);
+    } finally {
+      setCargoLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="p-4 md:p-6 lg:p-8">
-        {/* Page Heading - Animates first */}
+        {/* Başlık */}
         <AnimatedSection delay={0} shouldAnimate={shouldAnimateHeading}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <p className="text-text-main text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-[-0.033em]">
-                Hoş Geldiniz, {user?.username || 'Kullanıcı'}
+                Hoş Geldiniz, {user?.username || "Kullanıcı"}
               </p>
               <p className="text-text-secondary text-sm md:text-base mt-1 md:mt-2">
-                {user?.company?.name || 'Şirket bilgisi yok'}
+                {user?.company?.name || "Şirket bilgisi yok"}
               </p>
             </div>
           </div>
         </AnimatedSection>
 
-        {/* Stats - Animates after heading */}
+        {/* İstatistik Kartları */}
         <Stats transactions={allTransactions} loading={loading} />
 
-        {/* Kurye Takip Kartı - Animates after stats */}
+        {/* Kurye Takip Kartı */}
         <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections}>
           <div className="mb-6">
             <CourierTrackingCard />
           </div>
         </AnimatedSection>
 
-        {/* Recent Transactions and Announcements - Animates last */}
+        {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik */}
         <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
-            <div className="xl:col-span-2">
-              <TransactionsTable
-                transactions={recentTransactions}
-                loading={loading}
-                error={error}
-                onRetry={fetchTransactions}
-              />
-            </div>
-            <div>
-              <Announcements />
-            </div>
-          </div>
+          <TransactionsTable
+            transactions={recentTransactions}
+            loading={loading}
+            error={error}
+            onRetry={fetchTransactions}
+            recentCargo={recentCargo}
+            cargoLoading={cargoLoading}
+          />
         </AnimatedSection>
       </div>
     </MainLayout>

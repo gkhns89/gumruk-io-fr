@@ -33,6 +33,7 @@ export default function MainLayout({ children, hasFooter = false }) {
       <main className={mainClassName}>
         <Header />
         <div
+          id="main-scroll-area"
           className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-4' : 'pb-2'}`}
           style={hasFooter ? { maxHeight: 'calc(100vh - 130px)' } : {}}
         >

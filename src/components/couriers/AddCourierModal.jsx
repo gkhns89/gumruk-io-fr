@@ -3,7 +3,7 @@ import { courierService } from '../../api/courierService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
-export default function AddCourierModal({ onClose, onSuccess }) {
+export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = null }) {
   const [formData, setFormData] = useState({
     name: '',
     shortName: '',
@@ -65,7 +65,7 @@ export default function AddCourierModal({ onClose, onSuccess }) {
         contactEmail: formData.contactEmail.trim() || null,
         notes: formData.notes.trim() || null,
         active: true
-      });
+      }, brokerCompanyId);
 
       if (result.success) {
         showSuccess(`${formData.name} başarıyla eklendi!`);

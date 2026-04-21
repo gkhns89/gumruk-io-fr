@@ -296,7 +296,7 @@ export const transactionService = {
     try {
       console.log(`✅ İşlem ${id} tamamlanıyor...`);
       
-      const response = await axiosInstance.post(`/transactions/${id}/withdraw`);
+      const response = await axiosInstance.patch(`/transactions/${id}/withdraw`);
       
       console.log("✅ İşlem tamamlandı:", response.data);
       
@@ -320,7 +320,7 @@ export const transactionService = {
     try {
       console.log(`❌ İşlem ${id} iptal ediliyor...`);
 
-      const response = await axiosInstance.post(`/transactions/${id}/cancel`, null, {
+      const response = await axiosInstance.patch(`/transactions/${id}/cancel`, null, {
         params: { reason }
       });
 
