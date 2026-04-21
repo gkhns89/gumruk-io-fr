@@ -1,12 +1,15 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export function useEdgeScroll({
   edgeZoneWidth = 10,
   scrollSpeed = 5,
 } = {}) {
-  const containerRef = useRef(null);
+  // Callback ref ile element değişince effect yeniden bağlanır
+  const [container, setContainer] = useState(null);
+  const containerRef = useCallback((el) => setContainer(el), []);
+
   const animFrameRef = useRef(null);
-  const dirRef       = useRef(null); // track direction without state
+  const dirRef       = useRef(null);
 
   const [scrollDirection, setScrollDirection] = useState(null);
 
@@ -20,10 +23,9 @@ export function useEdgeScroll({
   }, []);
 
   const scrollStep = useCallback(() => {
-    const container = containerRef.current;
     if (!container || !dirRef.current) { stopScrolling(); return; }
 
-    const dir = dirRef.current;
+    const dir   = dirRef.current;
     const atEnd =
       dir === "left"
         ? container.scrollLeft <= 0
@@ -33,16 +35,12 @@ export function useEdgeScroll({
 
     container.scrollLeft += dir === "left" ? -scrollSpeed : scrollSpeed;
     animFrameRef.current = requestAnimationFrame(scrollStep);
-  }, [scrollSpeed, stopScrolling]);
+  }, [container, scrollSpeed, stopScrolling]);
 
   const startScrolling = useCallback(
     (direction) => {
-      const container = containerRef.current;
       if (!container) return;
-
-      const alreadyScrollable = container.scrollWidth > container.clientWidth;
-      if (!alreadyScrollable) return;
-
+      if (container.scrollWidth <= container.clientWidth) return;
       if (dirRef.current === direction && animFrameRef.current) return;
 
       stopScrolling();
@@ -50,12 +48,11 @@ export function useEdgeScroll({
       setScrollDirection(direction);
       animFrameRef.current = requestAnimationFrame(scrollStep);
     },
-    [stopScrolling, scrollStep]
+    [container, stopScrolling, scrollStep]
   );
 
   const handleMouseMove = useCallback(
     (e) => {
-      const container = containerRef.current;
       if (!container || container.scrollWidth <= container.clientWidth) return;
 
       const rect   = container.getBoundingClientRect();
@@ -69,24 +66,23 @@ export function useEdgeScroll({
         stopScrolling();
       }
     },
-    [edgeZoneWidth, startScrolling, stopScrolling]
+    [container, edgeZoneWidth, startScrolling, stopScrolling]
   );
 
   const handleMouseLeave = useCallback(() => stopScrolling(), [stopScrolling]);
 
   const handleScroll = useCallback(() => {
-    const container = containerRef.current;
     if (!container || !dirRef.current) return;
-    const dir = dirRef.current;
+    const dir   = dirRef.current;
     const atEnd =
       dir === "left"
         ? container.scrollLeft <= 0
         : container.scrollLeft + container.clientWidth >= container.scrollWidth;
     if (atEnd) stopScrolling();
-  }, [stopScrolling]);
+  }, [container, stopScrolling]);
 
+  // container değişince (element DOM'a eklenince/çıkınca) listener'ları yeniden bağla
   useEffect(() => {
-    const container = containerRef.current;
     if (!container) return;
 
     container.addEventListener("mousemove",  handleMouseMove,  { passive: true });
@@ -99,7 +95,7 @@ export function useEdgeScroll({
       container.removeEventListener("mouseleave", handleMouseLeave);
       container.removeEventListener("scroll",     handleScroll);
     };
-  }, [handleMouseMove, handleMouseLeave, handleScroll]);
+  }, [container, handleMouseMove, handleMouseLeave, handleScroll]);
 
   return { containerRef, scrollDirection };
 }

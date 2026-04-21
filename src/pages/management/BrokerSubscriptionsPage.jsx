@@ -99,6 +99,7 @@ export default function BrokerSubscriptionsPage() {
         addonType: form.addonType,
         amount: form.amount ? parseFloat(form.amount) : null,
         notes: form.notes || null,
+        dueDate: form.addonType === 'ONE_TIME' && form.dueDate ? form.dueDate : null,
       });
       showSuccess('Ek ücret eklendi');
       setAddonForms(prev => ({ ...prev, [brokerId]: {} }));
@@ -540,6 +541,15 @@ export default function BrokerSubscriptionsPage() {
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-text-main truncate">{addon.name}</p>
                                     {addon.description && <p className="text-xs text-text-secondary truncate">{addon.description}</p>}
+                                    {addon.addonType === 'ONE_TIME' && addon.dueDate && (
+                                      <p className={`text-xs font-medium mt-0.5 ${
+                                        new Date(addon.dueDate) < new Date()
+                                          ? 'text-red-600 dark:text-red-400'
+                                          : 'text-orange-600 dark:text-orange-400'
+                                      }`}>
+                                        Son ödeme: {new Date(addon.dueDate).toLocaleDateString('tr-TR')}
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3 flex-shrink-0">
@@ -616,6 +626,17 @@ export default function BrokerSubscriptionsPage() {
                                 className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                               />
                             </label>
+                            {(addonForms[broker.brokerId]?.addonType === 'ONE_TIME') && (
+                              <label className="flex flex-col gap-1 sm:col-span-2">
+                                <span className="text-xs font-medium text-text-secondary">Son Ödeme Tarihi</span>
+                                <input
+                                  type="date"
+                                  value={addonForms[broker.brokerId]?.dueDate ?? ''}
+                                  onChange={e => handleAddonFormChange(broker.brokerId, 'dueDate', e.target.value)}
+                                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                                />
+                              </label>
+                            )}
                           </div>
                           <div className="flex justify-end">
                             <button

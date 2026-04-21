@@ -110,10 +110,21 @@ export default function AuthProvider({ children }) {
     if (tokenCheckIntervalRef.current) {
       clearInterval(tokenCheckIntervalRef.current);
     }
-    
+
     authService.logout();
     setUser(null);
     setIsAuthenticated(false);
+  };
+
+  const refreshUser = async () => {
+    try {
+      const result = await userService.getProfile();
+      if (result.success) {
+        setUser((prev) => ({ ...prev, ...result.data }));
+      }
+    } catch (error) {
+      logError('Profil yenilenemedi', error);
+    }
   };
 
   return (
@@ -124,6 +135,7 @@ export default function AuthProvider({ children }) {
         isAuthenticated,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}

@@ -453,15 +453,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       }
     }
 
-    // Document fields validation (both required together)
-    const hasReceiver = formData.documentReceiver && formData.documentReceiver.trim();
-    const hasDate = formData.documentDeliveryDate;
-    if (hasReceiver && !hasDate) {
-      errors.documentDeliveryDate = "Evrak alan girildiğinde tarih de girilmelidir";
-    }
-    if (hasDate && !hasReceiver) {
-      errors.documentReceiver = "Teslim tarihi girildiğinde evrak alan da girilmelidir";
-    }
+    // Document fields validation removed - now handled by status-based workflow
 
     // Numeric field validations
     if (formData.containerCount && parseInt(formData.containerCount) < 0) {
@@ -1434,7 +1426,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 <label className="block text-sm font-medium text-text-main pb-2">
                   Varış Tarihi
                   <span className="ml-2 text-xs font-normal text-text-secondary">
-                    (girilince durum TAMAMLANDI olur)
+                    (girilince durum VARIŞ YAPTI olur)
                   </span>
                 </label>
                 <input
@@ -1447,7 +1439,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 {formData.cargoArrivalDate && (
                   <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    <span>Kaydedildiğinde yük TAMAMLANDI olarak işaretlenecek</span>
+                    <span>Kaydedildiğinde yük VARIŞ YAPTI olarak işaretlenecek</span>
                   </div>
                 )}
               </div>
