@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { cargoService } from '../../api/cargoService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
 import { handleError } from '../../utils/errorUtils';
@@ -48,6 +49,9 @@ export default function CargoTrackingPage() {
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
+  const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
+  const isCreateBlocked = canCreate && (isWriteBlocked || isFullReadOnly);
+  const isTableReadOnly = isClientUser || isFullReadOnly;
 
   // Sidebar değişikliklerini dinle
   useEffect(() => {
@@ -340,13 +344,14 @@ export default function CargoTrackingPage() {
               {/* Add Button */}
               {canCreate && (
                 <button
-                  onClick={() => setShowAddModal(true)}
-                  className={`flex items-center justify-center bg-primary text-white rounded-lg hover:bg-primary/90 font-semibold shadow-sm transition-all duration-300 ${
-                    isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
-                  }`}
-                  title="Yeni Yük Ekle"
+                  onClick={() => !isCreateBlocked && setShowAddModal(true)}
+                  disabled={isCreateBlocked}
+                  className={`flex items-center justify-center bg-primary text-white rounded-lg font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isCreateBlocked ? '' : 'hover:bg-primary/90'
+                  } ${isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"}`}
+                  title={isCreateBlocked ? "Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor" : "Yeni Yük Ekle"}
                 >
-                  <span className="material-symbols-outlined text-[20px]">add</span>
+                  <span className="material-symbols-outlined text-[20px]">{isCreateBlocked ? 'lock' : 'add'}</span>
                   {!isScrolled && <span className="text-sm hidden md:inline">Yeni Yük Ekle</span>}
                 </button>
               )}
@@ -467,7 +472,7 @@ export default function CargoTrackingPage() {
             onRetry={loadData}
             onRefresh={loadData}
             canDelete={canDelete}
-            isReadOnly={isClientUser}
+            isReadOnly={isTableReadOnly}
             onRowClick={handleRowClick}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
@@ -590,7 +595,7 @@ export default function CargoTrackingPage() {
             setSelectedCargo(null);
           }}
           onSuccess={handleModalSuccess}
-          isReadOnly={isClientUser}
+          isReadOnly={isTableReadOnly}
           currentUser={user}
         />
       )}

@@ -34,6 +34,9 @@ export default function BrokerSubscriptionsPage() {
   const [addonForms, setAddonForms] = useState({}); // { brokerId: formData }
   const [addonLoading, setAddonLoading] = useState({});
   const [savingAddon, setSavingAddon] = useState({});
+  const [editingAddonId, setEditingAddonId] = useState(null); // null | addonId
+  const [addonEditForm, setAddonEditForm] = useState({}); // { amount, dueDate }
+  const [savingAddonEdit, setSavingAddonEdit] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +123,41 @@ export default function BrokerSubscriptionsPage() {
       await load();
     } catch {
       showError('İşlem başarısız');
+    }
+  };
+
+  const handleEditAddon = (addon) => {
+    setEditingAddonId(addon.id);
+    setAddonEditForm({
+      amount: String(addon.amount),
+      dueDate: addon.dueDate || '',
+    });
+  };
+
+  const handleCancelAddonEdit = () => {
+    setEditingAddonId(null);
+    setAddonEditForm({});
+  };
+
+  const handleSaveAddonEdit = async (brokerId, addonId) => {
+    if (!addonEditForm.amount) {
+      showError('Tutar gereklidir');
+      return;
+    }
+    setSavingAddonEdit(true);
+    try {
+      await addonService.updateAddon(addonId, {
+        amount: parseFloat(addonEditForm.amount),
+        dueDate: addonEditForm.dueDate || null,
+      });
+      showSuccess('Ek ücret güncellendi');
+      handleCancelAddonEdit();
+      await loadBrokerAddons(brokerId);
+      await load();
+    } catch {
+      showError('Güncelleme başarısız');
+    } finally {
+      setSavingAddonEdit(false);
     }
   };
 

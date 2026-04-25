@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { companyService } from '../../api/companyService';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
@@ -10,6 +11,8 @@ import { handleError, handleApiResponse } from '../../utils/errorUtils';
 const AgreementsPage = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+  const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
+  const isAddBlocked = !isSuperAdmin && (isWriteBlocked || isFullReadOnly);
 
   // SUPER_ADMIN: broker seçim state'leri
   const [brokers, setBrokers] = useState([]);
@@ -111,10 +114,12 @@ const AgreementsPage = () => {
             </div>
             {(!isSuperAdmin || selectedBroker) && (
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md"
+                onClick={() => !isAddBlocked && setShowCreateModal(true)}
+                disabled={isAddBlocked}
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : 'Yeni vekalet ekle'}
               >
-                <span className="material-symbols-outlined">add</span>
+                <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'add'}</span>
                 Yeni Vekalet Ekle
               </button>
             )}
@@ -250,7 +255,7 @@ const AgreementsPage = () => {
                         ? 'Farklı filtreler deneyerek arama yapabilirsiniz'
                         : 'Müşterileriniz ile vekalet anlaşması oluşturmak için "Yeni Vekalet Ekle" butonuna tıklayın'}
                     </p>
-                    {!searchTerm && statusFilter === 'ALL' && (
+                    {!searchTerm && statusFilter === 'ALL' && !isAddBlocked && (
                       <button
                         onClick={() => setShowCreateModal(true)}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"

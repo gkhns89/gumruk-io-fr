@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { employeeService } from '../../api/employeeService';
 import { companyService } from '../../api/companyService';
 import MainLayout from '../../components/layout/MainLayout';
@@ -146,6 +147,8 @@ const EmployeesPage = () => {
   });
 
   const canAddEmployee = limits && (limits.canAddUser !== false) && (limits.remainingUserQuota > 0);
+  const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
+  const isAddBlocked = !isSuperAdmin && (isWriteBlocked || isFullReadOnly);
 
   return (
     <MainLayout>
@@ -179,11 +182,11 @@ const EmployeesPage = () => {
             {(!isSuperAdmin || selectedBroker) && (
               <button
                 onClick={() => setShowAddModal(true)}
-                disabled={!canAddEmployee}
+                disabled={!canAddEmployee || isAddBlocked}
                 className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!canAddEmployee ? 'Çalışan limiti doldu' : 'Yeni çalışan ekle'}
+                title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : !canAddEmployee ? 'Çalışan limiti doldu' : 'Yeni çalışan ekle'}
               >
-                <span className="material-symbols-outlined">person_add</span>
+                <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'person_add'}</span>
                 Yeni Çalışan Ekle
               </button>
             )}
@@ -334,7 +337,7 @@ const EmployeesPage = () => {
                         ? 'Farklı filtreler deneyerek arama yapabilirsiniz'
                         : 'Yeni çalışan eklemek için "Yeni Çalışan Ekle" butonuna tıklayın'}
                     </p>
-                    {!searchTerm && roleFilter === 'ALL' && statusFilter === 'ALL' && canAddEmployee && (
+                    {!searchTerm && roleFilter === 'ALL' && statusFilter === 'ALL' && canAddEmployee && !isAddBlocked && (
                       <button
                         onClick={() => setShowAddModal(true)}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -394,9 +397,20 @@ const EmployeesPage = () => {
                                   <div className="text-sm text-text-secondary">{employee.email}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${roleBadge.bg} ${roleBadge.text} ${roleBadge.border}`}>
-                                    {roleBadge.label}
-                                  </span>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${roleBadge.bg} ${roleBadge.text} ${roleBadge.border}`}>
+                                      {roleBadge.label}
+                                    </span>
+                                    {employee.isPaymentResponsible && (
+                                      <span
+                                        className="inline-flex items-center gap-0.5 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
+                                        title="Ödeme sorumlusu"
+                                      >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>account_balance</span>
+                                        Ödeme Sorumlusu
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>
