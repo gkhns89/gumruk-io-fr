@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { paymentService } from '../../api/paymentService';
 import MainLayout from '../../components/layout/MainLayout';
+import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
 const STATUS_BADGE = {
@@ -37,6 +38,7 @@ export default function PaymentSubmitPage() {
   const [tab, setTab] = useState('form');
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [addons, setAddons] = useState([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [copiedIban, setCopiedIban] = useState(null);
@@ -53,24 +55,29 @@ export default function PaymentSubmitPage() {
   const [billingPeriodEnd, setBillingPeriodEnd] = useState('');
   const [notes, setNotes] = useState('');
   const [receipt, setReceipt] = useState(null);
+  const [balanceHistory, setBalanceHistory] = useState([]);
 
   const load = useCallback(async () => {
     setDataLoading(true);
     try {
-      const [methods, history, status] = await Promise.all([
+      const [methods, history, status, addonList, balanceTxs] = await Promise.all([
         paymentService.getActivePaymentMethods(),
         paymentService.getMyCompanyPayments(),
         paymentService.getRestrictionStatus(),
+        canSubmit ? paymentService.getMyCompanyAddons() : Promise.resolve([]),
+        paymentService.getMyCompanyBalanceHistory().catch(() => []),
       ]);
       setPaymentMethods(methods);
       setPayments(history);
       setSubscriptionStatus(status);
+      setAddons(addonList.filter(a => !a.isPaid && a.isActive) || []);
+      setBalanceHistory(balanceTxs);
     } catch {
       showError('Veriler yüklenirken hata oluştu');
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [canSubmit]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -101,6 +108,16 @@ export default function PaymentSubmitPage() {
       showError('Ödeme bildirimi gönderilemedi');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleMarkAddonPaid = async (addonId, useBalance) => {
+    try {
+      await paymentService.markAddonAsPaid(addonId, { useBalance });
+      showSuccess(useBalance ? 'Addon bakiye ile ödenmiştir' : 'Addon ödenmiş olarak işaretlendi');
+      load();
+    } catch (err) {
+      throw new Error(err.response?.data?.error || 'İşlem başarısız');
     }
   };
 
@@ -255,6 +272,17 @@ export default function PaymentSubmitPage() {
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={() => setTab('balance')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors ${
+                    tab === 'balance'
+                      ? 'text-primary border-b-2 border-primary bg-primary/5'
+                      : 'text-text-secondary hover:text-text-main hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
+                  Bakiye Hareketleri
+                </button>
               </div>
 
               {/* ── TAB: Ödeme Yap ────────────────────────────── */}
@@ -300,6 +328,26 @@ export default function PaymentSubmitPage() {
                   {paymentMethods.length === 0 && !dataLoading && (
                     <div className="text-center py-4 text-text-secondary text-sm">
                       Şu an tanımlı banka hesabı bulunmuyor. Yönetici ile iletişime geçin.
+                    </div>
+                  )}
+
+                  {/* Ek Ödemeler */}
+                  {addons.length > 0 && (
+                    <div>
+                      <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-lg">receipt</span>
+                        Ek Ödemeler
+                      </h2>
+                      <div className="grid gap-3">
+                        {addons.map(addon => (
+                          <AddonPaymentCard
+                            key={addon.id}
+                            addon={addon}
+                            balance={subscriptionStatus?.balance ?? 0}
+                            onPay={handleMarkAddonPaid}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -522,6 +570,56 @@ export default function PaymentSubmitPage() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── TAB: Bakiye Hareketleri ───────────────────── */}
+              {tab === 'balance' && (
+                <div className="p-6">
+                  <h2 className="text-sm font-semibold text-text-main mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base text-purple-500">history</span>
+                    Bakiye Hareket Geçmişi
+                  </h2>
+                  {balanceHistory.length === 0 ? (
+                    <div className="text-center py-10">
+                      <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-3 block">account_balance_wallet</span>
+                      <p className="text-text-secondary text-sm">Henüz bakiye hareketi bulunmuyor</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800 text-text-secondary text-xs">
+                          <tr>
+                            <th className="px-4 py-2.5 text-left font-medium">Tarih</th>
+                            <th className="px-4 py-2.5 text-left font-medium">Tür</th>
+                            <th className="px-4 py-2.5 text-left font-medium">Açıklama</th>
+                            <th className="px-4 py-2.5 text-right font-medium">Tutar</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
+                          {balanceHistory.map(tx => {
+                            const isCredit = tx.transactionType === 'CREDIT';
+                            const typeLabel = tx.transactionType === 'CREDIT' ? 'Kredi' : tx.transactionType === 'ADDON_DEBIT' ? 'Ek Ödeme' : 'Dönem Ödemesi';
+                            const amountColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+                            return (
+                              <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <td className="px-4 py-3 text-text-secondary text-xs whitespace-nowrap">
+                                  {new Date(tx.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`font-medium text-xs ${amountColor}`}>{typeLabel}</span>
+                                </td>
+                                <td className="px-4 py-3 text-text-secondary text-xs max-w-xs truncate">{tx.description ?? '—'}</td>
+                                <td className={`px-4 py-3 text-right font-semibold ${amountColor}`}>
+                                  {isCredit ? '+' : ''}{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>

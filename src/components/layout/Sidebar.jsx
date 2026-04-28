@@ -42,16 +42,12 @@ export default function Sidebar() {
   ];
 
   // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler
-  const canSubmitPayment = (user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'BROKER_USER') &&
-    user?.isPaymentResponsible;
-
   const otherMenuItems = [
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
     { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
-    ...(canSubmitPayment ? [{ icon: "account_balance", label: "Abonelik & Ödeme", path: "/payment/submit" }] : []),
     { icon: "person", label: "Hesabım", path: "/profile" },
     { icon: "settings", label: "Ayarlar", path: "/settings" },
   ];
@@ -85,6 +81,14 @@ export default function Sidebar() {
       path: "/management/couriers",
       active: true,
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "account_balance",
+      label: "Abonelik & Ödeme",
+      path: "/payment/submit",
+      active: true,
+      roles: ['BROKER_ADMIN', 'BROKER_USER'],
+      condition: (user) => user?.isPaymentResponsible === true
     },
     {
       icon: "assessment",
@@ -121,15 +125,33 @@ export default function Sidebar() {
       active: true,
       roles: ['SUPER_ADMIN']
     },
+    {
+      icon: "workspace_premium",
+      label: "Plan Yönetimi",
+      path: "/management/plans",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
   ];
 
   // Kullanıcının yönetim menüsüne erişimi var mı?
-  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
+  // Not: isPaymentResponsible BROKER_USER da yönetim altındaki "Abonelik & Ödeme"ye erişebilir
+  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN'
+    || user?.globalRole === 'SUPER_ADMIN'
+    || (user?.globalRole === 'BROKER_USER' && user?.isPaymentResponsible === true);
 
   // Aktif yönetim menü öğelerini filtrele
-  const visibleManagementItems = managementItems.filter(item =>
-    item.roles.includes(user?.globalRole)
-  );
+  const visibleManagementItems = managementItems.filter(item => {
+    // Rol kontrolü
+    if (!item.roles.includes(user?.globalRole)) {
+      return false;
+    }
+    // Ek koşul kontrolü (varsa)
+    if (item.condition && !item.condition(user)) {
+      return false;
+    }
+    return true;
+  });
 
   // Dinamik buton görünürlüğü hesaplama
   useEffect(() => {

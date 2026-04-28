@@ -1,6 +1,7 @@
-import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, formatCurrency } from '../../utils/constants';
+import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType, formatCurrency } from '../../utils/constants';
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
 import { getCostBreakdown, formatCostsDisplay, calculateTotalCosts } from '../../utils/costsUtils';
+import { getCurrentLanguage } from '../../locales';
 
 export default function CargoTrackingTable({
   cargo,
@@ -275,7 +276,12 @@ export default function CargoTrackingTable({
                         </div>
                       )}
                       {(() => {
-                        if (cargoItem.status === 'TRACKING' && cargoItem.estimatedArrivalDate) {
+                        if (cargoItem.status === 'TRACKING') {
+                          if (!cargoItem.estimatedArrivalDate) return (
+                            <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
+                              <span className="material-symbols-outlined text-xs">info</span>ETA Bilgisi Yok
+                            </span>
+                          );
                           const eta = new Date(cargoItem.estimatedArrivalDate);
                           eta.setHours(0, 0, 0, 0);
                           const today = new Date();
@@ -299,7 +305,13 @@ export default function CargoTrackingTable({
                           return null;
                         }
                         if ((cargoItem.status === 'ARRIVED' || cargoItem.status === 'COMPLETED') && cargoItem.cargoArrivalDate) {
-                          const baseEta = new Date(cargoItem.initialEstimatedArrivalDate || cargoItem.estimatedArrivalDate);
+                          const baseEtaStr = cargoItem.initialEstimatedArrivalDate || cargoItem.estimatedArrivalDate;
+                          if (!baseEtaStr) return (
+                            <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
+                              <span className="material-symbols-outlined text-xs">info</span>ETA Bilgisi Yok
+                            </span>
+                          );
+                          const baseEta = new Date(baseEtaStr);
                           baseEta.setHours(0, 0, 0, 0);
                           const arrivalDate = new Date(cargoItem.cargoArrivalDate);
                           arrivalDate.setHours(0, 0, 0, 0);
@@ -421,7 +433,31 @@ export default function CargoTrackingTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">{cargoItem.consignmentNumber || "-"}</td>
                   )}
                   {visibleColumns.includes("documentReceiver") && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">{cargoItem.documentReceiver || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
+                      {(() => {
+                        const dt = getDocumentDeliveryType(cargoItem.documentDeliveryType);
+                        if (!dt) return cargoItem.documentReceiver || "-";
+                        const label = getCurrentLanguage() === 'tr' ? dt.label : dt.labelEn;
+                        if (dt.requiresPersonName && cargoItem.documentReceiver) {
+                          return (
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${dt.badgeClass}`}>
+                                <span className="material-symbols-outlined text-xs">{dt.icon}</span>
+                                {label}
+                              </span>
+                              <span className="text-xs text-text-main dark:text-gray-300 font-medium pl-0.5">{cargoItem.documentReceiver}</span>
+                            </div>
+                          );
+                        }
+                        if (dt.value === 'PERSON') return cargoItem.documentReceiver || "-";
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${dt.badgeClass}`}>
+                            <span className="material-symbols-outlined text-xs">{dt.icon}</span>
+                            {label}
+                          </span>
+                        );
+                      })()}
+                    </td>
                   )}
                   {visibleColumns.includes("documentDeliveryDate") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">

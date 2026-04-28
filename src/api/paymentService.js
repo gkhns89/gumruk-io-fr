@@ -85,4 +85,28 @@ export const paymentService = {
     const response = await axiosInstance.put(`/users/${userId}/payment-responsible`, { isPaymentResponsible });
     return response.data;
   },
+
+  // ===== EK ÖDEMELER (ADDON'LAR) =====
+
+  getMyCompanyAddons: async () => {
+    const response = await axiosInstance.get('/addons/my-company');
+    return response.data;
+  },
+
+  markAddonAsPaid: async (addonId, { useBalance }) => {
+    const response = await axiosInstance.post(`/addons/${addonId}/mark-paid`, { useBalance });
+    return response.data;
+  },
+
+  // ===== BAKİYE HAREKETLERİ =====
+
+  getBalanceHistory: async (brokerId) => {
+    const response = await axiosInstance.get(`/subscriptions/broker/${brokerId}/balance-history`);
+    return response.data.transactions ?? [];
+  },
+
+  getMyCompanyBalanceHistory: async () => {
+    const response = await axiosInstance.get('/subscriptions/my-company/balance-history');
+    return response.data.transactions ?? [];
+  },
 };

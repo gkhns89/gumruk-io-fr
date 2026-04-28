@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS } from '../../utils/constants';
+import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
@@ -36,6 +36,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     consignmentNumber: "",
     containerNumbers: [],
     transportInfo: "",
+    documentDeliveryType: null,
     documentReceiver: "",
     documentDeliveryDate: "",
     estimatedArrivalDate: "",
@@ -997,6 +998,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
               </div>
             )}
 
+            {/* Sender & Carrier - 2 column */}
+            <div className="lg:col-span-3 grid grid-cols-2 gap-4">
+
             {/* Sender - Searchable Dropdown */}
             <div className="flex flex-col w-full">
               <div className="flex items-center justify-between pb-2">
@@ -1228,45 +1232,46 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 )}
               </div>
             </div>
+            </div>{/* end sender & carrier grid */}
 
-            {/* Container Count */}
-            <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Kap Sayısı</p>
-              <input
-                type="number"
-                name="containerCount"
-                value={formData.containerCount}
-                onChange={handleChange}
-                min="0"
-                placeholder={toUpperCase(t("placeholders.enterContainerCount"))}
-                className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
-                  fieldErrors.containerCount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
-                }`}
-              />
-              {fieldErrors.containerCount && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.containerCount}</p>
-              )}
-            </label>
-
-            {/* Weight */}
-            <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Ağırlık (kg)</p>
-              <input
-                type="number"
-                name="weightKg"
-                value={formData.weightKg}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                placeholder={toUpperCase(t("placeholders.enterWeight"))}
-                className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
-                  fieldErrors.weightKg ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
-                }`}
-              />
-              {fieldErrors.weightKg && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.weightKg}</p>
-              )}
-            </label>
+            {/* Container Count & Weight */}
+            <div className="lg:col-span-3 grid grid-cols-2 gap-4">
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">Kap Sayısı</p>
+                <input
+                  type="number"
+                  name="containerCount"
+                  value={formData.containerCount}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder={toUpperCase(t("placeholders.enterContainerCount"))}
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
+                    fieldErrors.containerCount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
+                  }`}
+                />
+                {fieldErrors.containerCount && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.containerCount}</p>
+                )}
+              </label>
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">Ağırlık (kg)</p>
+                <input
+                  type="number"
+                  name="weightKg"
+                  value={formData.weightKg}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder={toUpperCase(t("placeholders.enterWeight"))}
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
+                    fieldErrors.weightKg ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
+                  }`}
+                />
+                {fieldErrors.weightKg && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.weightKg}</p>
+                )}
+              </label>
+            </div>
 
             {/* Costs Section - Lokal, Depozito, Ordino */}
             <div className="lg:col-span-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
@@ -1371,120 +1376,187 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
               </div>
             </div>
 
-            {/* Document Fields */}
-            <div className="lg:col-span-3 grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-text-main pb-2">
-                  Evrakları Teslim Alan
-                </label>
-                <input
-                  type="text"
-                  name="documentReceiver"
-                  value={formData.documentReceiver}
-                  onChange={handleChange}
-                  placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
-                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
-                  style={{ textTransform: "uppercase" }}
-                />
-                {fieldErrors.documentReceiver && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.documentReceiver}</p>
-                )}
+            {/* === TAKVİM & TAKİP === */}
+            <div className="lg:col-span-3 border border-blue-200 dark:border-blue-800/60 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800/60">
+                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">calendar_month</span>
+                <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Takvim & Takip</h3>
+                <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">ETA ve nakliye notları</span>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-main pb-2">
-                  Dosya Teslim Tarihi
-                </label>
-                <input
-                  type="date"
-                  name="documentDeliveryDate"
-                  value={formData.documentDeliveryDate}
-                  onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
-                />
-                {fieldErrors.documentDeliveryDate && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.documentDeliveryDate}</p>
-                )}
+              <div className="p-4 grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-text-main pb-2">
+                    Tahmini Varış Tarihi (ETA)
+                  </label>
+                  <input
+                    type="date"
+                    name="estimatedArrivalDate"
+                    value={formData.estimatedArrivalDate}
+                    onChange={handleChange}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-text-main pb-2">
+                    Taşıma Bilgileri
+                  </label>
+                  <textarea
+                    name="transportInfo"
+                    value={formData.transportInfo}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
+                    className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                  />
+                </div>
               </div>
+            </div>
 
-              {/* ETA Field */}
-              <div>
-                <label className="block text-sm font-medium text-text-main pb-2">
-                  Tahmini Varış Tarihi (ETA)
-                </label>
-                <input
-                  type="date"
-                  name="estimatedArrivalDate"
-                  value={formData.estimatedArrivalDate}
-                  onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
-                />
+            {/* === ÖDEME DURUMU === */}
+            <div className="lg:col-span-3 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-lg">payments</span>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ödeme Durumu</h3>
               </div>
+              <div className="p-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {PAYMENT_STATUS_OPTIONS.map(option => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.paymentStatus === option.value
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentStatus"
+                        value={option.value}
+                        checked={formData.paymentStatus === option.value}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          paymentStatus: e.target.value
+                        }))}
+                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300 dark:border-gray-600"
+                      />
+                      <span className="text-sm font-medium text-text-main">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-              {/* Varış Tarihi */}
-              <div>
+            {/* === VARIŞ İŞLEMLERİ === */}
+            <div className="lg:col-span-3 border border-amber-200 dark:border-amber-700/60 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/60">
+                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">directions_boat</span>
+                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Varış İşlemleri</h3>
+                <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Varış tarihi → VARIŞ YAPTI</span>
+              </div>
+              <div className="p-4">
                 <label className="block text-sm font-medium text-text-main pb-2">
                   Varış Tarihi
-                  <span className="ml-2 text-xs font-normal text-text-secondary">
-                    (girilince durum VARIŞ YAPTI olur)
-                  </span>
                 </label>
                 <input
                   type="date"
                   name="cargoArrivalDate"
                   value={formData.cargoArrivalDate}
                   onChange={handleChange}
-                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-amber-500 border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                 />
                 {formData.cargoArrivalDate && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                    <span>Kaydedildiğinde yük VARIŞ YAPTI olarak işaretlenecek</span>
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    <span>Kaydedildiğinde yük <strong>VARIŞ YAPTI</strong> olarak işaretlenecek</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Transport Info */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Taşıma Bilgileri
-              </label>
-              <textarea
-                name="transportInfo"
-                value={formData.transportInfo}
-                onChange={handleChange}
-                rows="3"
-                placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
-                className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors"
-              />
-            </div>
+            {/* === YÜK İŞLEMİNİ TAMAMLAMA === */}
+            <div className="lg:col-span-3 border border-emerald-200 dark:border-emerald-700/60 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700/60">
+                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">task_alt</span>
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Yük İşlemini Tamamlama</h3>
+                <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Evrak tipi + tarih → TAMAMLANDI</span>
+              </div>
+              <div className="p-4 space-y-4">
 
-            {/* Payment Status Radio Buttons */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Ödeme Durumu
-              </label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                {PAYMENT_STATUS_OPTIONS.map(option => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  >
+                {/* Evrak Teslim Tipi Seçimi */}
+                <div>
+                  <label className="block text-sm font-medium text-text-main pb-2">Evrak Teslim Tipi</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {DOCUMENT_DELIVERY_TYPES.map(type => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          documentDeliveryType: prev.documentDeliveryType === type.value ? null : type.value,
+                          documentReceiver: !type.requiresPersonName ? "" : prev.documentReceiver,
+                        }))}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-center ${
+                          formData.documentDeliveryType === type.value
+                            ? `border-2 ${type.cardClass}`
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <span className={`material-symbols-outlined text-lg ${formData.documentDeliveryType === type.value ? type.iconClass : 'text-gray-400 dark:text-gray-500'}`}>
+                          {type.icon}
+                        </span>
+                        <span className={`text-xs font-medium leading-tight ${formData.documentDeliveryType === type.value ? type.iconClass : 'text-text-secondary'}`}>
+                          {type.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Şahıs Adı - yalnızca requiresPersonName=true tiplerinde */}
+                {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(t => t.value === formData.documentDeliveryType)?.requiresPersonName && (
+                  <div>
+                    <label className="block text-sm font-medium text-text-main pb-2">
+                      Evrakları Teslim Alan
+                    </label>
                     <input
-                      type="radio"
-                      name="paymentStatus"
-                      value={option.value}
-                      checked={formData.paymentStatus === option.value}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        paymentStatus: e.target.value
-                      }))}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300 dark:border-gray-600"
+                      type="text"
+                      name="documentReceiver"
+                      value={formData.documentReceiver}
+                      onChange={handleChange}
+                      placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
+                      className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                      style={{ textTransform: "uppercase" }}
                     />
-                    <span className="text-sm text-text-main">{option.label}</span>
+                    {fieldErrors.documentReceiver && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.documentReceiver}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Dosya Teslim Tarihi */}
+                <div>
+                  <label className="block text-sm font-medium text-text-main pb-2">
+                    Dosya Teslim Tarihi
                   </label>
-                ))}
+                  <input
+                    type="date"
+                    name="documentDeliveryDate"
+                    value={formData.documentDeliveryDate}
+                    onChange={handleChange}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
+                  />
+                  {fieldErrors.documentDeliveryDate && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.documentDeliveryDate}</p>
+                  )}
+                </div>
+
+                {formData.documentDeliveryType && formData.documentDeliveryDate && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg px-3 py-2">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Kaydedildiğinde yük <strong>TAMAMLANDI</strong> olarak işaretlenecek</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

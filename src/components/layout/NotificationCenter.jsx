@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../api/notificationService';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
@@ -17,18 +18,20 @@ import { showSuccess } from '../../utils/toastUtils';
  * - Real-time güncelleme (her 30 saniye)
  */
 export default function NotificationCenter() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Bildirimleri yükle
+  // Bildirimleri yükle — unreadCount'u da yüklenen veriden senkronize et
   const loadNotifications = async () => {
     try {
       const result = await notificationService.getAll();
       if (result.success) {
         setNotifications(result.data);
+        setUnreadCount(result.data.filter(n => !n.isRead).length);
       }
     } catch (error) {
       handleError(error, null, 'Bildirim yükleme', 'Bildirimler yüklenemedi');
@@ -96,12 +99,13 @@ export default function NotificationCenter() {
     try {
       const result = await notificationService.markAsRead(notificationId);
       if (result.success) {
-        // Listeyi güncelle
-        setNotifications(notifications.map(n =>
-          n.id === notificationId ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
-        ));
-        // Badge'i güncelle
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setNotifications(prev => {
+          const wasUnread = prev.find(n => n.id === notificationId)?.isRead === false;
+          if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
+          return prev.map(n =>
+            n.id === notificationId ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
+          );
+        });
       }
     } catch (error) {
       handleError(error, null, 'Bildirim işaretleme', 'Bildirim işaretlenemedi');
@@ -153,18 +157,39 @@ export default function NotificationCenter() {
     try {
       const result = await notificationService.delete(notificationId);
       if (result.success) {
-        // Listeyi güncelle
-        const notification = notifications.find(n => n.id === notificationId);
-        setNotifications(notifications.filter(n => n.id !== notificationId));
-
-        // Okunmamışsa badge'i güncelle
-        if (notification && !notification.isRead) {
-          setUnreadCount(prev => Math.max(0, prev - 1));
-        }
+        setNotifications(prev => {
+          const notification = prev.find(n => n.id === notificationId);
+          if (notification && !notification.isRead) {
+            setUnreadCount(c => Math.max(0, c - 1));
+          }
+          return prev.filter(n => n.id !== notificationId);
+        });
       }
     } catch (error) {
       handleError(error, null, 'Bildirim silme', 'Bildirim silinemedi');
     }
+  };
+
+  // Bildirimi tıkla — navigate + auto-read
+  const handleNotificationClick = async (notification) => {
+    // 1. Navigation: entityType'a göre yönlendir
+    if (notification.entityType === 'SUBSCRIPTION' || notification.entityType === 'ADDON') {
+      navigate('/payment/submit');
+    } else if (notification.entityType === 'TRANSACTION') {
+      navigate('/transactions');
+    } else if (notification.entityType === 'AGREEMENT') {
+      navigate('/management/agreements');
+    } else if (notification.entityType === 'CARGO') {
+      navigate('/cargo');
+    }
+
+    // 2. Auto-read: okunmamışsa işaretle
+    if (!notification.isRead) {
+      await handleMarkAsRead(notification.id);
+    }
+
+    // 3. Paneli kapat
+    setIsOpen(false);
   };
 
   // Bildirim tipine göre icon
@@ -292,7 +317,7 @@ export default function NotificationCenter() {
                       className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group ${
                         !notification.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                       }`}
-                      onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start gap-3">
                         {/* Icon */}

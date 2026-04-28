@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { addonService } from '../../api/addonService';
+import { paymentService } from '../../api/paymentService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
 const RESTRICTION_CONFIG = {
@@ -27,6 +28,10 @@ export default function BrokerSubscriptionsPage() {
   const [saving, setSaving] = useState({});
   const [creditForms, setCreditForms] = useState({}); // { brokerId: {amount, note} }
   const [addingCredit, setAddingCredit] = useState({});
+
+  // Balance history state
+  const [balanceHistory, setBalanceHistory] = useState({}); // { brokerId: [] }
+  const [historyLoading, setHistoryLoading] = useState({});
 
   // Addon state
   const [templates, setTemplates] = useState([]);
@@ -188,6 +193,11 @@ export default function BrokerSubscriptionsPage() {
       loadBrokerAddons(id);
     }
 
+    // Bakiye geçmişini yükle
+    if (!balanceHistory[id]) {
+      loadBalanceHistory(id);
+    }
+
     // Kullanıcıları yükle
     if (!users[id]) {
       setUsersLoading(prev => ({ ...prev, [id]: true }));
@@ -232,6 +242,18 @@ export default function BrokerSubscriptionsPage() {
     setCreditForms(prev => ({ ...prev, [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value } }));
   };
 
+  const loadBalanceHistory = useCallback(async (brokerId) => {
+    setHistoryLoading(prev => ({ ...prev, [brokerId]: true }));
+    try {
+      const history = await paymentService.getBalanceHistory(brokerId);
+      setBalanceHistory(prev => ({ ...prev, [brokerId]: history }));
+    } catch {
+      setBalanceHistory(prev => ({ ...prev, [brokerId]: [] }));
+    } finally {
+      setHistoryLoading(prev => ({ ...prev, [brokerId]: false }));
+    }
+  }, []);
+
   const handleAddCredit = async (brokerId) => {
     const form = creditForms[brokerId] ?? {};
     const amount = parseFloat(form.amount);
@@ -247,7 +269,7 @@ export default function BrokerSubscriptionsPage() {
       });
       showSuccess(`₺${amount.toLocaleString('tr-TR')} eklendi. Yeni bakiye: ₺${Number(result.newBalance).toLocaleString('tr-TR')}`);
       setCreditForms(prev => ({ ...prev, [brokerId]: { amount: '', note: '' } }));
-      await load();
+      await Promise.all([load(), loadBalanceHistory(brokerId)]);
     } catch {
       showError('Kredi eklenemedi');
     } finally {
@@ -440,6 +462,51 @@ export default function BrokerSubscriptionsPage() {
                             )}
                           </div>
 
+                          {/* Bakiye Hareket Geçmişi */}
+                          <div>
+                            <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-base text-purple-500">history</span>
+                              Bakiye Hareket Geçmişi
+                            </h3>
+                            {historyLoading[broker.brokerId] ? (
+                              <p className="text-xs text-text-secondary py-2">Yükleniyor...</p>
+                            ) : !balanceHistory[broker.brokerId]?.length ? (
+                              <p className="text-xs text-text-secondary py-2">Henüz işlem yok.</p>
+                            ) : (
+                              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                                <table className="w-full text-xs">
+                                  <thead className="bg-gray-50 dark:bg-gray-800 text-text-secondary">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left font-medium">Tarih</th>
+                                      <th className="px-3 py-2 text-left font-medium">Tür</th>
+                                      <th className="px-3 py-2 text-left font-medium">Açıklama</th>
+                                      <th className="px-3 py-2 text-left font-medium">İşlemi Yapan</th>
+                                      <th className="px-3 py-2 text-right font-medium">Tutar</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
+                                    {balanceHistory[broker.brokerId].map(tx => {
+                                      const isCredit = tx.transactionType === 'CREDIT';
+                                      const typeLabel = tx.transactionType === 'CREDIT' ? 'Kredi' : tx.transactionType === 'ADDON_DEBIT' ? 'Ek Ödeme' : 'Dönem';
+                                      const typeColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+                                      return (
+                                        <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                          <td className="px-3 py-2 text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                                          <td className="px-3 py-2"><span className={`font-medium ${typeColor}`}>{typeLabel}</span></td>
+                                          <td className="px-3 py-2 text-text-secondary max-w-xs truncate">{tx.description ?? '—'}</td>
+                                          <td className="px-3 py-2 text-text-secondary">{tx.createdBy}</td>
+                                          <td className={`px-3 py-2 text-right font-semibold ${typeColor}`}>
+                                            {isCredit ? '+' : ''}{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+
                           {/* Düzenleme Formu */}
                           <div>
                             <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
@@ -591,14 +658,61 @@ export default function BrokerSubscriptionsPage() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3 flex-shrink-0">
-                                  <p className="text-sm font-semibold text-text-main">₺{Number(addon.amount).toLocaleString('tr-TR')}</p>
-                                  <button
-                                    onClick={() => handleRemoveAddon(broker.brokerId, addon.id)}
-                                    className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                                    title="Kaldır"
-                                  >
-                                    <span className="material-symbols-outlined text-base">delete</span>
-                                  </button>
+                                  {editingAddonId === addon.id ? (
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={addonEditForm.amount}
+                                        onChange={e => setAddonEditForm(prev => ({ ...prev, amount: e.target.value }))}
+                                        className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                                        placeholder="₺"
+                                      />
+                                      {addon.addonType === 'ONE_TIME' && (
+                                        <input
+                                          type="date"
+                                          value={addonEditForm.dueDate}
+                                          onChange={e => setAddonEditForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                                          className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                                        />
+                                      )}
+                                      <button
+                                        onClick={() => handleSaveAddonEdit(broker.brokerId, addon.id)}
+                                        disabled={savingAddonEdit}
+                                        className="text-green-600 hover:text-green-700 dark:hover:text-green-400 transition-colors disabled:opacity-50"
+                                        title="Kaydet"
+                                      >
+                                        <span className="material-symbols-outlined text-base">check</span>
+                                      </button>
+                                      <button
+                                        onClick={handleCancelAddonEdit}
+                                        disabled={savingAddonEdit}
+                                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors disabled:opacity-50"
+                                        title="İptal"
+                                      >
+                                        <span className="material-symbols-outlined text-base">close</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <p className="text-sm font-semibold text-text-main">₺{Number(addon.amount).toLocaleString('tr-TR')}</p>
+                                      <button
+                                        onClick={() => handleEditAddon(addon)}
+                                        className="text-blue-600 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                                        title="Düzenle"
+                                      >
+                                        <span className="material-symbols-outlined text-base">edit</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleRemoveAddon(broker.brokerId, addon.id)}
+                                        className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                                        title="Kaldır"
+                                      >
+                                        <span className="material-symbols-outlined text-base">delete</span>
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             ))}

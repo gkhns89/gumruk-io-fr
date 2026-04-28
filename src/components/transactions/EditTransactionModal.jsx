@@ -264,24 +264,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   }, [clientSearchTerm, availableClients]);
 
-  // Gönderici listesini yükle
+  // Gönderici, gümrük ve antrepo listelerini yükle
   useEffect(() => {
     if (!isReadOnly) {
-      loadSenders();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Gümrük listesini yükle
-  useEffect(() => {
-    if (!isReadOnly) {
+      loadSendersAndWarehouses();
       loadCustoms();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Antrepo listesini yükle
-  useEffect(() => {
-    if (!isReadOnly) {
-      loadWarehouses();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -446,10 +433,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   }, [fieldErrors]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mevcut işlemlerden unique gönderici isimlerini yükle
-  const loadSenders = async () => {
+  // Mevcut işlemlerden unique gönderici ve antrepo isimlerini tek API çağrısında yükle
+  const loadSendersAndWarehouses = async () => {
     try {
       setLoadingSenders(true);
+      setLoadingWarehouses(true);
       const result = await transactionService.getAllTransactions();
 
       if (result.success) {
@@ -459,18 +447,31 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
             .filter((name) => name && name.trim() !== "")
         )].sort((a, b) => a.localeCompare(b, 'tr'));
 
+        const uniqueWarehouses = [...new Set(
+          result.data
+            .map((t) => t.customsWarehouse)
+            .filter((name) => name && name.trim() !== "")
+        )].sort((a, b) => a.localeCompare(b, 'tr'));
+
         setAvailableSenders(uniqueSenders);
         setFilteredSenders(uniqueSenders.slice(0, 50));
+        setAvailableWarehouses(uniqueWarehouses);
+        setFilteredWarehouses(uniqueWarehouses.slice(0, 50));
       } else {
         setAvailableSenders([]);
         setFilteredSenders([]);
+        setAvailableWarehouses([]);
+        setFilteredWarehouses([]);
       }
     } catch (err) {
-      logError("Gönderici listesi yükleme", err);
+      logError("Gönderici ve antrepo listesi yükleme", err);
       setAvailableSenders([]);
       setFilteredSenders([]);
+      setAvailableWarehouses([]);
+      setFilteredWarehouses([]);
     } finally {
       setLoadingSenders(false);
+      setLoadingWarehouses(false);
     }
   };
 
@@ -493,34 +494,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       setFilteredCustoms([]);
     } finally {
       setLoadingCustoms(false);
-    }
-  };
-
-  // Mevcut işlemlerden unique antrepo isimlerini yükle
-  const loadWarehouses = async () => {
-    try {
-      setLoadingWarehouses(true);
-      const result = await transactionService.getAllTransactions();
-
-      if (result.success) {
-        const uniqueWarehouses = [...new Set(
-          result.data
-            .map((t) => t.customsWarehouse)
-            .filter((name) => name && name.trim() !== "")
-        )].sort((a, b) => a.localeCompare(b, 'tr'));
-
-        setAvailableWarehouses(uniqueWarehouses);
-        setFilteredWarehouses(uniqueWarehouses.slice(0, 50));
-      } else {
-        setAvailableWarehouses([]);
-        setFilteredWarehouses([]);
-      }
-    } catch (err) {
-      logError("Antrepo listesi yükleme", err);
-      setAvailableWarehouses([]);
-      setFilteredWarehouses([]);
-    } finally {
-      setLoadingWarehouses(false);
     }
   };
 

@@ -22,6 +22,7 @@ import PaymentSubmitPage from "./pages/payment/PaymentSubmitPage";
 import PaymentManagementPage from "./pages/management/PaymentManagementPage";
 import BrokerSubscriptionsPage from "./pages/management/BrokerSubscriptionsPage";
 import AddonCatalogPage from "./pages/management/AddonCatalogPage";
+import PlanManagementPage from "./pages/management/PlanManagementPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
@@ -308,6 +309,16 @@ export default function App() {
         element={
           <ProtectedRoute requiredRole="SUPER_ADMIN">
             <AddonCatalogPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Plan Yönetimi (SUPER_ADMIN) */}
+      <Route
+        path="/management/plans"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <PlanManagementPage />
           </ProtectedRoute>
         }
       />

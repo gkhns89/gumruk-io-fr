@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, getVehicleType } from '../../utils/constants';
+import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
@@ -39,6 +39,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     consignmentNumber: cargo.consignmentNumber || "",
     containerNumbers: cargo.containerNumbers || [],
     transportInfo: cargo.transportInfo || "",
+    documentDeliveryType: cargo.documentDeliveryType || null,
     documentReceiver: cargo.documentReceiver || "",
     documentDeliveryDate: cargo.documentDeliveryDate || "",
     estimatedArrivalDate: cargo.estimatedArrivalDate || "",
@@ -742,82 +743,96 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             </div>
           </div>
 
-          {/* Additional Fields */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Evrakları Teslim Alan
-                {cargo.status === 'ARRIVED' && !cargo.documentReceiver && (
-                  <span className="ml-2 text-xs font-normal text-text-secondary">
-                    (zorunlu)
-                  </span>
+          {/* === TAKVİM & TAKİP === */}
+          <div className="mb-5 border border-blue-200 dark:border-blue-800/60 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800/60">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">calendar_month</span>
+              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Takvim & Takip</h3>
+              <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">ETA ve nakliye notları</span>
+            </div>
+            <div className="p-4 grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">
+                  Tahmini Varış Tarihi (ETA)
+                </label>
+                <input
+                  type="date"
+                  name="estimatedArrivalDate"
+                  value={formData.estimatedArrivalDate}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                />
+                {cargo.initialEstimatedArrivalDate && cargo.initialEstimatedArrivalDate !== formData.estimatedArrivalDate && (
+                  <div className="flex items-center gap-1 mt-1.5 text-xs text-blue-600 dark:text-blue-400">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    <span>İlk ETA: {new Date(cargo.initialEstimatedArrivalDate).toLocaleDateString('tr-TR')} — gecikme hesabı bu tarihe göre yapılır</span>
+                  </div>
                 )}
-              </label>
-              <input
-                type="text"
-                name="documentReceiver"
-                value={formData.documentReceiver}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-                style={{ textTransform: "uppercase" }}
-              />
-              {cargo.status === 'ARRIVED' && formData.documentReceiver && formData.documentDeliveryDate && !cargo.documentReceiver && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span>Kaydedildiğinde yük TAMAMLANDI olarak işaretlenecek</span>
-                </div>
-              )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">
+                  Taşıma Bilgileri
+                </label>
+                <textarea
+                  name="transportInfo"
+                  value={formData.transportInfo}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  rows="3"
+                  placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
+                  className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Dosya Teslim Tarihi
-              </label>
-              <input
-                type="date"
-                name="documentDeliveryDate"
-                value={formData.documentDeliveryDate}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-              />
+          {/* === ÖDEME DURUMU === */}
+          <div className="mb-5 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-lg">payments</span>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ödeme Durumu</h3>
             </div>
-
-            {/* ETA Field */}
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Tahmini Varış Tarihi (ETA)
-              </label>
-              <input
-                type="date"
-                name="estimatedArrivalDate"
-                value={formData.estimatedArrivalDate}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-              />
-              {/* İlk ETA bilgisi — gecikme bu tarihe göre hesaplanır */}
-              {cargo.initialEstimatedArrivalDate && cargo.initialEstimatedArrivalDate !== formData.estimatedArrivalDate && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-blue-600 dark:text-blue-400">
-                  <span className="material-symbols-outlined text-sm">info</span>
-                  <span>
-                    İlk ETA: {new Date(cargo.initialEstimatedArrivalDate).toLocaleDateString('tr-TR')} — gecikme bu tarihe göre hesaplanır
-                  </span>
-                </div>
-              )}
+            <div className="p-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                {PAYMENT_STATUS_OPTIONS.map(option => (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      formData.paymentStatus === option.value
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    } ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentStatus"
+                      value={option.value}
+                      checked={formData.paymentStatus === option.value}
+                      onChange={(e) => !isReadOnly && setFormData(prev => ({
+                        ...prev,
+                        paymentStatus: e.target.value
+                      }))}
+                      disabled={isReadOnly}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-text-main">{option.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
+          </div>
 
-            {/* Varış Tarihi */}
-            <div className="col-span-2 sm:col-span-1">
+          {/* === VARIŞ İŞLEMLERİ === */}
+          <div className="mb-5 border border-amber-200 dark:border-amber-700/60 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/60">
+              <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">directions_boat</span>
+              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Varış İşlemleri</h3>
+              <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Varış tarihi → VARIŞ YAPTI</span>
+            </div>
+            <div className="p-4">
               <label className="block text-sm font-medium text-text-main pb-2">
                 Varış Tarihi
-                {cargo.status === 'TRACKING' && !cargo.cargoArrivalDate && (
-                  <span className="ml-2 text-xs font-normal text-text-secondary">
-                    (girilince durum VARIŞ YAPTI olur)
-                  </span>
-                )}
               </label>
               <input
                 type="date"
@@ -825,68 +840,103 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 value={formData.cargoArrivalDate}
                 onChange={handleChange}
                 disabled={isReadOnly || !!cargo.cargoArrivalDate}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-amber-500 border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
               {formData.cargoArrivalDate && !cargo.cargoArrivalDate && cargo.status === 'TRACKING' && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span>Kaydedildiğinde yük VARIŞ YAPTI olarak işaretlenecek</span>
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
+                  <span className="material-symbols-outlined text-sm">info</span>
+                  <span>Kaydedildiğinde yük <strong>VARIŞ YAPTI</strong> olarak işaretlenecek</span>
                 </div>
               )}
               {cargo.cargoArrivalDate && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-text-secondary">
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
                   <span className="material-symbols-outlined text-sm">lock</span>
-                  <span>Varış tarihi girilmiş, değiştirilemez</span>
+                  <span>Varış tarihi kaydedilmiş, değiştirilemez</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-text-main pb-2">
-              Taşıma Bilgileri
-            </label>
-            <textarea
-              name="transportInfo"
-              value={formData.transportInfo}
-              onChange={handleChange}
-              disabled={isReadOnly}
-              rows="3"
-              placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
-              className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-            />
-          </div>
+          {/* === YÜK İŞLEMİNİ TAMAMLAMA === */}
+          <div className="mb-5 border border-emerald-200 dark:border-emerald-700/60 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700/60">
+              <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">task_alt</span>
+              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Yük İşlemini Tamamlama</h3>
+              <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Evrak tipi + tarih → TAMAMLANDI</span>
+            </div>
+            <div className="p-4 space-y-4">
 
-          {/* Payment Status Radio Buttons */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-text-main pb-2">
-              Ödeme Durumu
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {PAYMENT_STATUS_OPTIONS.map(option => (
-                <label
-                  key={option.value}
-                  className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all ${
-                    formData.paymentStatus === option.value
-                      ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  } ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
+              {/* Evrak Teslim Tipi Seçimi */}
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">Evrak Teslim Tipi</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {DOCUMENT_DELIVERY_TYPES.map(type => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      disabled={isReadOnly}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        documentDeliveryType: prev.documentDeliveryType === type.value ? null : type.value,
+                        documentReceiver: !type.requiresPersonName ? "" : prev.documentReceiver,
+                      }))}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-center ${
+                        formData.documentDeliveryType === type.value
+                          ? `border-2 ${type.cardClass}`
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <span className={`material-symbols-outlined text-lg ${formData.documentDeliveryType === type.value ? type.iconClass : 'text-gray-400 dark:text-gray-500'}`}>
+                        {type.icon}
+                      </span>
+                      <span className={`text-xs font-medium leading-tight ${formData.documentDeliveryType === type.value ? type.iconClass : 'text-text-secondary'}`}>
+                        {type.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Şahıs Adı - yalnızca requiresPersonName=true tiplerinde */}
+              {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(t => t.value === formData.documentDeliveryType)?.requiresPersonName && (
+                <div>
+                  <label className="block text-sm font-medium text-text-main pb-2">
+                    Evrakları Teslim Alan
+                  </label>
                   <input
-                    type="radio"
-                    name="paymentStatus"
-                    value={option.value}
-                    checked={formData.paymentStatus === option.value}
-                    onChange={(e) => !isReadOnly && setFormData(prev => ({
-                      ...prev,
-                      paymentStatus: e.target.value
-                    }))}
+                    type="text"
+                    name="documentReceiver"
+                    value={formData.documentReceiver}
+                    onChange={handleChange}
                     disabled={isReadOnly}
-                    className="w-4 h-4 text-primary focus:ring-primary"
+                    placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
+                    className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                    style={{ textTransform: "uppercase" }}
                   />
-                  <span className="text-sm font-medium text-text-main">{option.label}</span>
+                </div>
+              )}
+
+              {/* Dosya Teslim Tarihi */}
+              <div>
+                <label className="block text-sm font-medium text-text-main pb-2">
+                  Dosya Teslim Tarihi
                 </label>
-              ))}
+                <input
+                  type="date"
+                  name="documentDeliveryDate"
+                  value={formData.documentDeliveryDate}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              {cargo.status === 'ARRIVED' && formData.documentDeliveryType && formData.documentDeliveryDate && !cargo.documentDeliveryDate && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg px-3 py-2">
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <span>Kaydedildiğinde yük <strong>TAMAMLANDI</strong> olarak işaretlenecek</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

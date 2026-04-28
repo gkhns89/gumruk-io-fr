@@ -66,6 +66,14 @@ export default function MobileMenu({ isOpen, onClose }) {
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
+      icon: "account_balance",
+      label: "Abonelik & Ödeme",
+      path: "/payment/submit",
+      active: true,
+      roles: ['BROKER_ADMIN', 'BROKER_USER'],
+      condition: (u) => u?.isPaymentResponsible === true
+    },
+    {
       icon: "assessment",
       label: "Raporlar",
       path: "/management/reports",
@@ -79,13 +87,15 @@ export default function MobileMenu({ isOpen, onClose }) {
     { icon: "help_center", label: "Yardım", path: "/help" },
   ];
 
-  // Kullanıcının yönetim menüsüne erişimi var mı?
-  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
+  // Aktif yönetim menü öğelerini filtrele (condition desteği dahil)
+  const visibleManagementItems = managementItems.filter(item => {
+    if (!item.roles.includes(user?.globalRole)) return false;
+    if (item.condition && !item.condition(user)) return false;
+    return true;
+  });
 
-  // Aktif yönetim menü öğelerini filtrele
-  const visibleManagementItems = managementItems.filter(item =>
-    item.roles.includes(user?.globalRole)
-  );
+  // isPaymentResponsible BROKER_USER da yönetim bölümüne erişebilir
+  const hasManagementAccess = visibleManagementItems.length > 0;
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');

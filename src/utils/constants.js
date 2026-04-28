@@ -239,6 +239,83 @@ export const VEHICLE_TYPES = [
 ];
 
 /**
+ * Evrak Teslim Tipleri
+ * Document delivery types with display info
+ */
+export const DOCUMENT_DELIVERY_TYPES = [
+  {
+    value: 'PERSON',
+    label: 'Şahıs',
+    labelEn: 'Person',
+    description: 'Evraklar kişi adına teslim',
+    icon: 'person',
+    requiresPersonName: true,
+    badgeClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+    cardClass: 'border-blue-400 bg-blue-50 dark:bg-blue-900/20',
+    iconClass: 'text-blue-600 dark:text-blue-400',
+  },
+  {
+    value: 'E_ORDINO',
+    label: 'E-Ordino',
+    labelEn: 'E-Release',
+    description: 'Sanal teslim, şahıs adı gerekmez',
+    icon: 'computer',
+    requiresPersonName: false,
+    badgeClass: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
+    cardClass: 'border-violet-400 bg-violet-50 dark:bg-violet-900/20',
+    iconClass: 'text-violet-600 dark:text-violet-400',
+  },
+  {
+    value: 'E_ORDINO_PERSON',
+    label: 'E-Ordino + Şahıs',
+    labelEn: 'E-Release + Person',
+    description: 'Sanal teslim ve şahıs bilgisi',
+    icon: 'computer',
+    requiresPersonName: true,
+    badgeClass: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
+    cardClass: 'border-violet-400 bg-violet-50 dark:bg-violet-900/20',
+    iconClass: 'text-violet-600 dark:text-violet-400',
+  },
+  {
+    value: 'SENT_TO_CUSTOMS',
+    label: 'Gümrüğe Gönderildi',
+    labelEn: 'Sent to Customs',
+    description: 'Evraklar gümrüğe iletildi',
+    icon: 'send',
+    requiresPersonName: false,
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+    cardClass: 'border-amber-400 bg-amber-50 dark:bg-amber-900/20',
+    iconClass: 'text-amber-600 dark:text-amber-400',
+  },
+  {
+    value: 'RECEIVED_BY_US',
+    label: 'Tarafımıza Geldi',
+    labelEn: 'Received by Us',
+    description: 'Evraklar firmamıza ulaştı',
+    icon: 'download',
+    requiresPersonName: false,
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+    cardClass: 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
+    iconClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  {
+    value: 'NO_ORIGINAL',
+    label: 'Orijinal Evrak Yok',
+    labelEn: 'No Original Doc',
+    description: 'Sadece tarih yeterli',
+    icon: 'cancel',
+    requiresPersonName: false,
+    badgeClass: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+    cardClass: 'border-red-400 bg-red-50 dark:bg-red-900/20',
+    iconClass: 'text-red-600 dark:text-red-400',
+  },
+];
+
+export const getDocumentDeliveryType = (value) => {
+  return DOCUMENT_DELIVERY_TYPES.find((t) => t.value === value) || null;
+};
+
+/**
  * Para Birimleri
  * Currency options for costs
  */
@@ -380,6 +457,7 @@ export default {
   CARGO_STATUS,
   PAYMENT_STATUS_OPTIONS,
   VEHICLE_TYPES,
+  DOCUMENT_DELIVERY_TYPES,
   CURRENCY_OPTIONS,
   DAY_OPTIONS,
   getGateOption,
@@ -387,6 +465,7 @@ export default {
   getGateBadgeClasses,
   getCargoStatus,
   getVehicleType,
+  getDocumentDeliveryType,
   getCurrency,
   getCargoStatusRowClasses,
   formatCurrency,
