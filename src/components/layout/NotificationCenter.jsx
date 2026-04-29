@@ -97,15 +97,14 @@ export default function NotificationCenter() {
   // Bildirimi okundu işaretle
   const handleMarkAsRead = async (notificationId) => {
     try {
+      // API çağrısından önce okunmamış mı tespit et (closure'daki güncel değer)
+      const wasUnread = notifications.find(n => n.id === notificationId)?.isRead === false;
       const result = await notificationService.markAsRead(notificationId);
       if (result.success) {
-        setNotifications(prev => {
-          const wasUnread = prev.find(n => n.id === notificationId)?.isRead === false;
-          if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
-          return prev.map(n =>
-            n.id === notificationId ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
-          );
-        });
+        setNotifications(prev =>
+          prev.map(n => n.id === notificationId ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)
+        );
+        if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
       }
     } catch (error) {
       handleError(error, null, 'Bildirim işaretleme', 'Bildirim işaretlenemedi');
@@ -155,15 +154,11 @@ export default function NotificationCenter() {
   // Bildirimi sil
   const handleDeleteNotification = async (notificationId) => {
     try {
+      const wasUnread = notifications.find(n => n.id === notificationId)?.isRead === false;
       const result = await notificationService.delete(notificationId);
       if (result.success) {
-        setNotifications(prev => {
-          const notification = prev.find(n => n.id === notificationId);
-          if (notification && !notification.isRead) {
-            setUnreadCount(c => Math.max(0, c - 1));
-          }
-          return prev.filter(n => n.id !== notificationId);
-        });
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
       }
     } catch (error) {
       handleError(error, null, 'Bildirim silme', 'Bildirim silinemedi');
@@ -173,7 +168,9 @@ export default function NotificationCenter() {
   // Bildirimi tıkla — navigate + auto-read
   const handleNotificationClick = async (notification) => {
     // 1. Navigation: entityType'a göre yönlendir
-    if (notification.entityType === 'SUBSCRIPTION' || notification.entityType === 'ADDON') {
+    if (notification.entityType === 'ADDON') {
+      navigate('/payment/submit', { state: { scrollTo: 'addons' } });
+    } else if (notification.entityType === 'SUBSCRIPTION') {
       navigate('/payment/submit');
     } else if (notification.entityType === 'TRANSACTION') {
       navigate('/transactions');

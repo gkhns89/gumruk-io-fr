@@ -40,4 +40,9 @@ export const addonService = {
     const res = await axiosInstance.delete(`/addons/${addonId}`);
     return res.data;
   },
+
+  updatePayPreference: async (addonId, payFromBalance) => {
+    const res = await axiosInstance.patch(`/addons/${addonId}/pay-preference`, { payFromBalance });
+    return res.data;
+  },
 };

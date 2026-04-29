@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 import { paymentService } from '../../api/paymentService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
@@ -33,6 +34,7 @@ const fmtMoney = (v) => v != null ? `₺${Number(v).toLocaleString('tr-TR', { mi
 
 export default function PaymentSubmitPage() {
   const { user } = useAuth();
+  const location = useLocation();
   const canSubmit = user?.globalRole === 'BROKER_ADMIN' || user?.isPaymentResponsible;
 
   const [tab, setTab] = useState('form');
@@ -56,6 +58,8 @@ export default function PaymentSubmitPage() {
   const [notes, setNotes] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [balanceHistory, setBalanceHistory] = useState([]);
+  const transferFormRef = useRef(null);
+  const addonsSectionRef = useRef(null);
 
   const load = useCallback(async () => {
     setDataLoading(true);
@@ -80,6 +84,15 @@ export default function PaymentSubmitPage() {
   }, [canSubmit]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Bildirimden yönlendirilince addon bölümüne scroll yap
+  useEffect(() => {
+    if (location.state?.scrollTo === 'addons' && !dataLoading) {
+      setTimeout(() => {
+        addonsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [location.state, dataLoading]);
 
   const selectedMethod = paymentMethods.find(m => String(m.id) === String(selectedMethodId));
 
@@ -111,14 +124,20 @@ export default function PaymentSubmitPage() {
     }
   };
 
+  const handleScrollToTransfer = useCallback(() => {
+    setTab('form');
+    setTimeout(() => {
+      transferFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, []);
+
   const handleMarkAddonPaid = async (addonId, useBalance) => {
-    try {
-      await paymentService.markAddonAsPaid(addonId, { useBalance });
-      showSuccess(useBalance ? 'Addon bakiye ile ödenmiştir' : 'Addon ödenmiş olarak işaretlendi');
+    const result = await paymentService.markAddonAsPaid(addonId, { useBalance });
+    if (result?.status === 'PAID_WITH_BALANCE') {
+      showSuccess('Ek ödeme bakiyenizden başarıyla düşüldü');
       load();
-    } catch (err) {
-      throw new Error(err.response?.data?.error || 'İşlem başarısız');
     }
+    return result;
   };
 
   const filteredPayments = historyFilter === 'ALL'
@@ -179,15 +198,13 @@ export default function PaymentSubmitPage() {
               )}
             </div>
 
-            {Number(subscriptionStatus.balance ?? 0) > 0 && (
-              <div className="text-right">
+            <div className="text-right">
                 <p className="text-xs text-text-secondary">Mevcut Bakiye</p>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                  {fmtMoney(subscriptionStatus.balance)}
+                <p className={`text-sm font-semibold ${Number(subscriptionStatus.balance ?? 0) > 0 ? 'text-green-600 dark:text-green-400' : 'text-text-secondary'}`}>
+                  {fmtMoney(subscriptionStatus.balance ?? 0)}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400">Dönem kredisi</p>
+                <p className="text-xs text-text-secondary">Dönem kredisi</p>
               </div>
-            )}
 
             {subscriptionStatus.subscriptionEndDate && (
               <div className="text-right">
@@ -333,7 +350,7 @@ export default function PaymentSubmitPage() {
 
                   {/* Ek Ödemeler */}
                   {addons.length > 0 && (
-                    <div>
+                    <div ref={addonsSectionRef}>
                       <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">receipt</span>
                         Ek Ödemeler
@@ -345,6 +362,7 @@ export default function PaymentSubmitPage() {
                             addon={addon}
                             balance={subscriptionStatus?.balance ?? 0}
                             onPay={handleMarkAddonPaid}
+                            onScrollToTransfer={handleScrollToTransfer}
                           />
                         ))}
                       </div>
@@ -353,7 +371,7 @@ export default function PaymentSubmitPage() {
 
                   {/* Ödeme Formu */}
                   {canSubmit ? (
-                    <div>
+                    <div ref={transferFormRef}>
                       <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">send</span>
                         Ödeme Bildir
