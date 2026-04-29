@@ -100,8 +100,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   // Load senders and carriers on mount
   useEffect(() => {
-    loadSenders();
-    loadCarriers();
+    loadSendersAndCarriers();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update selected client info and agreement when clientCompanyId changes
@@ -227,9 +226,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     }
   };
 
-  const loadSenders = async () => {
+  const loadSendersAndCarriers = async () => {
     try {
       setLoadingSenders(true);
+      setLoadingCarriers(true);
       const result = await cargoService.getAllCargo();
 
       if (result.success) {
@@ -241,22 +241,6 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
           ),
         ].sort((a, b) => a.localeCompare(b, "tr"));
 
-        setAvailableSenders(uniqueSenders);
-        setFilteredSenders(uniqueSenders.slice(0, 50));
-      }
-    } catch (err) {
-      console.error("Error loading senders:", err);
-    } finally {
-      setLoadingSenders(false);
-    }
-  };
-
-  const loadCarriers = async () => {
-    try {
-      setLoadingCarriers(true);
-      const result = await cargoService.getAllCargo();
-
-      if (result.success) {
         const uniqueCarriers = [
           ...new Set(
             result.data
@@ -265,12 +249,24 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
           ),
         ].sort((a, b) => a.localeCompare(b, "tr"));
 
+        setAvailableSenders(uniqueSenders);
+        setFilteredSenders(uniqueSenders.slice(0, 50));
         setAvailableCarriers(uniqueCarriers);
         setFilteredCarriers(uniqueCarriers.slice(0, 50));
+      } else {
+        setAvailableSenders([]);
+        setFilteredSenders([]);
+        setAvailableCarriers([]);
+        setFilteredCarriers([]);
       }
     } catch (err) {
-      console.error("Error loading carriers:", err);
+      console.error("Error loading senders and carriers:", err);
+      setAvailableSenders([]);
+      setFilteredSenders([]);
+      setAvailableCarriers([]);
+      setFilteredCarriers([]);
     } finally {
+      setLoadingSenders(false);
       setLoadingCarriers(false);
     }
   };

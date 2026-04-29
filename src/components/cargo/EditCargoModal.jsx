@@ -60,6 +60,20 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const [agreementInfo, setAgreementInfo] = useState(null);
   const [clientAgreements, setClientAgreements] = useState({});
 
+  // Sender company autocomplete states
+  const [availableSenders, setAvailableSenders] = useState([]);
+  const [filteredSenders, setFilteredSenders] = useState([]);
+  const [senderSearchTerm, setSenderSearchTerm] = useState(cargo.senderCompany || "");
+  const [showSenderDropdown, setShowSenderDropdown] = useState(false);
+  const [loadingSenders, setLoadingSenders] = useState(false);
+
+  // Carrier name autocomplete states
+  const [availableCarriers, setAvailableCarriers] = useState([]);
+  const [filteredCarriers, setFilteredCarriers] = useState([]);
+  const [carrierSearchTerm, setCarrierSearchTerm] = useState(cargo.carrierName || "");
+  const [showCarrierDropdown, setShowCarrierDropdown] = useState(false);
+  const [loadingCarriers, setLoadingCarriers] = useState(false);
+
   // Vehicle type change confirmation
   const [pendingVehicleType, setPendingVehicleType] = useState(null);
   const [showVehicleTypeConfirmModal, setShowVehicleTypeConfirmModal] = useState(false);
@@ -70,6 +84,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       loadClients(cargo.brokerCompany.id);
     }
   }, [canEditClientCompany, cargo.brokerCompany?.id]);
+
+  // Load senders and carriers on mount
+  useEffect(() => {
+    if (!isReadOnly) {
+      loadSendersAndCarriers();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Extract agreement info
   useEffect(() => {
@@ -107,6 +128,30 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     }
   }, [clientSearchTerm, availableClients]);
 
+  // Filter senders
+  useEffect(() => {
+    if (!senderSearchTerm) {
+      setFilteredSenders(availableSenders.slice(0, 50));
+    } else {
+      const filtered = availableSenders.filter(sender =>
+        sender.toLowerCase().includes(senderSearchTerm.toLowerCase())
+      );
+      setFilteredSenders(filtered.slice(0, 50));
+    }
+  }, [senderSearchTerm, availableSenders]);
+
+  // Filter carriers
+  useEffect(() => {
+    if (!carrierSearchTerm) {
+      setFilteredCarriers(availableCarriers.slice(0, 50));
+    } else {
+      const filtered = availableCarriers.filter(carrier =>
+        carrier.toLowerCase().includes(carrierSearchTerm.toLowerCase())
+      );
+      setFilteredCarriers(filtered.slice(0, 50));
+    }
+  }, [carrierSearchTerm, availableCarriers]);
+
   const loadClients = async (brokerId) => {
     setLoadingClients(true);
     setAvailableClients([]);
@@ -138,6 +183,51 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     }
   };
 
+  const loadSendersAndCarriers = async () => {
+    try {
+      setLoadingSenders(true);
+      setLoadingCarriers(true);
+      const result = await cargoService.getAllCargo();
+
+      if (result.success) {
+        const uniqueSenders = [
+          ...new Set(
+            result.data
+              .map((c) => c.senderCompany)
+              .filter((name) => name && name.trim() !== "")
+          ),
+        ].sort((a, b) => a.localeCompare(b, "tr"));
+
+        const uniqueCarriers = [
+          ...new Set(
+            result.data
+              .map((c) => c.carrierName)
+              .filter((name) => name && name.trim() !== "")
+          ),
+        ].sort((a, b) => a.localeCompare(b, "tr"));
+
+        setAvailableSenders(uniqueSenders);
+        setFilteredSenders(uniqueSenders.slice(0, 50));
+        setAvailableCarriers(uniqueCarriers);
+        setFilteredCarriers(uniqueCarriers.slice(0, 50));
+      } else {
+        setAvailableSenders([]);
+        setFilteredSenders([]);
+        setAvailableCarriers([]);
+        setFilteredCarriers([]);
+      }
+    } catch (err) {
+      console.error("Error loading senders and carriers:", err);
+      setAvailableSenders([]);
+      setFilteredSenders([]);
+      setAvailableCarriers([]);
+      setFilteredCarriers([]);
+    } finally {
+      setLoadingSenders(false);
+      setLoadingCarriers(false);
+    }
+  };
+
   // Keyboard navigation for client dropdown
   const clientKeyboard = useDropdownKeyboard(
     showClientDropdown,
@@ -150,6 +240,30 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     },
     () => setShowClientDropdown(false),
     'client-dropdown'
+  );
+
+  const senderKeyboard = useDropdownKeyboard(
+    showSenderDropdown,
+    filteredSenders,
+    (sender) => {
+      setSenderSearchTerm(sender);
+      setFormData(prev => ({ ...prev, senderCompany: sender }));
+      setShowSenderDropdown(false);
+    },
+    () => setShowSenderDropdown(false),
+    'sender-dropdown'
+  );
+
+  const carrierKeyboard = useDropdownKeyboard(
+    showCarrierDropdown,
+    filteredCarriers,
+    (carrier) => {
+      setCarrierSearchTerm(carrier);
+      setFormData(prev => ({ ...prev, carrierName: carrier }));
+      setShowCarrierDropdown(false);
+    },
+    () => setShowCarrierDropdown(false),
+    'carrier-dropdown'
   );
 
   const vehicleTypeInfo = getVehicleType(formData.vehicleType);
@@ -262,7 +376,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-zoom-in transition-colors duration-300"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -499,36 +613,174 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
           {/* Common Fields */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Gönderici Firma
-              </label>
-              <input
-                type="text"
-                name="senderCompany"
-                value={formData.senderCompany}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                placeholder={toUpperCase(t("placeholders.selectOrType"))}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-                style={{ textTransform: "uppercase" }}
-              />
+            {/* Sender - Searchable Dropdown */}
+            <div className="flex flex-col w-full">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-text-main text-sm font-medium">
+                  Gönderici Firma
+                  {loadingSenders && (
+                    <span className="text-xs text-blue-600 ml-2 animate-pulse">Yükleniyor...</span>
+                  )}
+                  {!loadingSenders && availableSenders.length > 0 && (
+                    <span className="text-xs text-gray-500 ml-2">({availableSenders.length} kayıtlı)</span>
+                  )}
+                </p>
+              </div>
+              {isReadOnly ? (
+                <input
+                  type="text"
+                  value={formData.senderCompany}
+                  disabled
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 bg-gray-100 dark:bg-gray-700 border border-neutral/30 dark:border-gray-600 h-12 p-3 text-base font-normal cursor-not-allowed transition-colors"
+                />
+              ) : (
+                <div className="relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={senderSearchTerm}
+                      onChange={(e) => {
+                        const upperValue = toUpperCase(e.target.value);
+                        setSenderSearchTerm(upperValue);
+                        setFormData(prev => ({ ...prev, senderCompany: upperValue }));
+                        setShowSenderDropdown(true);
+                      }}
+                      onFocus={() => setShowSenderDropdown(true)}
+                      onBlur={() => { setTimeout(() => setShowSenderDropdown(false), 200); }}
+                      onKeyDown={senderKeyboard.handleKeyDown}
+                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
+                      style={{ textTransform: "uppercase" }}
+                    />
+                    {senderSearchTerm && (
+                      <button type="button" tabIndex={-1}
+                        onClick={() => { setSenderSearchTerm(""); setFormData(prev => ({ ...prev, senderCompany: "" })); setShowSenderDropdown(true); }}
+                        className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+                    <button type="button" tabIndex={-1}
+                      onClick={() => setShowSenderDropdown(!showSenderDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
+                      <span className="material-symbols-outlined text-lg">{showSenderDropdown ? "expand_less" : "expand_more"}</span>
+                    </button>
+                  </div>
+                  {showSenderDropdown && !loadingSenders && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
+                      {filteredSenders.length > 0 ? (
+                        filteredSenders.map((sender, index) => (
+                          <button key={sender} type="button"
+                            data-dropdown-id="sender-dropdown" data-dropdown-index={index}
+                            onClick={() => { setSenderSearchTerm(sender); setFormData(prev => ({ ...prev, senderCompany: sender })); setShowSenderDropdown(false); }}
+                            className={`w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${formData.senderCompany === sender ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium" : index === senderKeyboard.highlightedIndex ? "bg-gray-100 dark:bg-gray-700" : ""}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-lg">local_shipping</span>
+                                <p className="font-medium text-sm text-text-main">{sender}</p>
+                              </div>
+                              {formData.senderCompany === sender && (
+                                <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-text-secondary text-sm">
+                          {senderSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı gönderici yok'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Nakliyeci
-              </label>
-              <input
-                type="text"
-                name="carrierName"
-                value={formData.carrierName}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                placeholder={toUpperCase(t("placeholders.selectOrType"))}
-                className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-                style={{ textTransform: "uppercase" }}
-              />
+            {/* Carrier - Searchable Dropdown */}
+            <div className="flex flex-col w-full">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-text-main text-sm font-medium">
+                  Nakliyeci
+                  {loadingCarriers && (
+                    <span className="text-xs text-blue-600 ml-2 animate-pulse">Yükleniyor...</span>
+                  )}
+                  {!loadingCarriers && availableCarriers.length > 0 && (
+                    <span className="text-xs text-gray-500 ml-2">({availableCarriers.length} kayıtlı)</span>
+                  )}
+                </p>
+              </div>
+              {isReadOnly ? (
+                <input
+                  type="text"
+                  value={formData.carrierName}
+                  disabled
+                  className="form-input w-full rounded-lg text-text-main dark:text-gray-100 bg-gray-100 dark:bg-gray-700 border border-neutral/30 dark:border-gray-600 h-12 p-3 text-base font-normal cursor-not-allowed transition-colors"
+                />
+              ) : (
+                <div className="relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={carrierSearchTerm}
+                      onChange={(e) => {
+                        const upperValue = toUpperCase(e.target.value);
+                        setCarrierSearchTerm(upperValue);
+                        setFormData(prev => ({ ...prev, carrierName: upperValue }));
+                        setShowCarrierDropdown(true);
+                      }}
+                      onFocus={() => setShowCarrierDropdown(true)}
+                      onBlur={() => { setTimeout(() => setShowCarrierDropdown(false), 200); }}
+                      onKeyDown={carrierKeyboard.handleKeyDown}
+                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
+                      style={{ textTransform: "uppercase" }}
+                    />
+                    {carrierSearchTerm && (
+                      <button type="button" tabIndex={-1}
+                        onClick={() => { setCarrierSearchTerm(""); setFormData(prev => ({ ...prev, carrierName: "" })); setShowCarrierDropdown(true); }}
+                        className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+                    <button type="button" tabIndex={-1}
+                      onClick={() => setShowCarrierDropdown(!showCarrierDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
+                      <span className="material-symbols-outlined text-lg">{showCarrierDropdown ? "expand_less" : "expand_more"}</span>
+                    </button>
+                  </div>
+                  {showCarrierDropdown && !loadingCarriers && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto transition-colors">
+                      {filteredCarriers.length > 0 ? (
+                        filteredCarriers.map((carrier, index) => (
+                          <button key={carrier} type="button"
+                            data-dropdown-id="carrier-dropdown" data-dropdown-index={index}
+                            onClick={() => { setCarrierSearchTerm(carrier); setFormData(prev => ({ ...prev, carrierName: carrier })); setShowCarrierDropdown(false); }}
+                            className={`w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${formData.carrierName === carrier ? "bg-blue-50 dark:bg-blue-900/20 text-primary font-medium" : index === carrierKeyboard.highlightedIndex ? "bg-gray-100 dark:bg-gray-700" : ""}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-lg">local_shipping</span>
+                                <p className="font-medium text-sm text-text-main">{carrier}</p>
+                              </div>
+                              {formData.carrierName === carrier && (
+                                <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-text-secondary text-sm">
+                          {carrierSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı nakliyeci yok'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
