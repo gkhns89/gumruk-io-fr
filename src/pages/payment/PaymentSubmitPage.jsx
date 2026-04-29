@@ -53,8 +53,7 @@ export default function PaymentSubmitPage() {
   const [selectedMethodId, setSelectedMethodId] = useState('');
   const [amount, setAmount] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
-  const [billingPeriodStart, setBillingPeriodStart] = useState('');
-  const [billingPeriodEnd, setBillingPeriodEnd] = useState('');
+  const [selectedPeriods, setSelectedPeriods] = useState([]);
   const [notes, setNotes] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [balanceHistory, setBalanceHistory] = useState([]);
@@ -96,6 +95,52 @@ export default function PaymentSubmitPage() {
 
   const selectedMethod = paymentMethods.find(m => String(m.id) === String(selectedMethodId));
 
+  // Seçilebilir ödeme dönemlerini hesapla (vadesi geçmiş + yaklaşan)
+  const availablePeriods = (() => {
+    const npd = subscriptionStatus?.nextPaymentDue;
+    const cycle = subscriptionStatus?.billingCycle;
+    if (!npd) return [];
+
+    const periods = [];
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const toStr = (d) => d.toISOString().split('T')[0];
+    const advance = (d) => {
+      const n = new Date(d);
+      cycle === 'YEARLY' ? n.setFullYear(n.getFullYear() + 1) : n.setMonth(n.getMonth() + 1);
+      return n;
+    };
+
+    let cur = new Date(npd + 'T00:00:00');
+    // Vadesi geçmiş dönemler
+    while (cur <= today) {
+      const start = new Date(cur);
+      const next = advance(cur);
+      const end = new Date(next); end.setDate(end.getDate() - 1);
+      const label = cycle === 'YEARLY'
+        ? `${start.getFullYear()} Yıllık`
+        : start.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+      periods.push({ startDate: toStr(start), endDate: toStr(end), label, isOverdue: true });
+      cur = next;
+    }
+    // Yaklaşan dönem
+    const start = new Date(cur);
+    const next = advance(cur);
+    const end = new Date(next); end.setDate(end.getDate() - 1);
+    const label = (cycle === 'YEARLY'
+      ? `${start.getFullYear()} Yıllık`
+      : start.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })) + ' (Yaklaşan)';
+    periods.push({ startDate: toStr(start), endDate: toStr(end), label, isOverdue: false });
+    return periods;
+  })();
+
+  const togglePeriod = (period) => {
+    setSelectedPeriods(prev => {
+      const exists = prev.some(p => p.startDate === period.startDate);
+      return exists ? prev.filter(p => p.startDate !== period.startDate) : [...prev, period];
+    });
+  };
+
   const handleCopyIban = (iban) => {
     navigator.clipboard.writeText(iban).then(() => {
       setCopiedIban(iban);
@@ -105,16 +150,21 @@ export default function PaymentSubmitPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedMethodId || !amount || !billingPeriodStart || !billingPeriodEnd) {
+    if (!selectedMethodId || !amount) {
       showError('Lütfen zorunlu alanları doldurun');
       return;
     }
+    // Seçili dönemlerden start/end türet
+    const sorted = [...selectedPeriods].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const billingPeriodStart = sorted.length > 0 ? sorted[0].startDate : undefined;
+    const billingPeriodEnd   = sorted.length > 0 ? sorted[sorted.length - 1].endDate : undefined;
+
     setSubmitting(true);
     try {
       await paymentService.submitPayment({ paymentMethodId: selectedMethodId, amount, referenceNumber, billingPeriodStart, billingPeriodEnd, notes, receipt });
       showSuccess('Ödeme bildirimi gönderildi');
-      setAmount(''); setReferenceNumber(''); setBillingPeriodStart('');
-      setBillingPeriodEnd(''); setNotes(''); setReceipt(null); setSelectedMethodId('');
+      setAmount(''); setReferenceNumber(''); setSelectedPeriods([]);
+      setNotes(''); setReceipt(null); setSelectedMethodId('');
       load();
       setTab('history');
     } catch {
@@ -403,22 +453,6 @@ export default function PaymentSubmitPage() {
                             />
                           </label>
                           <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Dönem Başlangıç *</span>
-                            <input
-                              type="date" value={billingPeriodStart} onChange={e => setBillingPeriodStart(e.target.value)}
-                              required
-                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Dönem Bitiş *</span>
-                            <input
-                              type="date" value={billingPeriodEnd} onChange={e => setBillingPeriodEnd(e.target.value)}
-                              required
-                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1">
                             <span className="text-sm font-medium text-text-main">Referans No</span>
                             <input
                               type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
@@ -435,6 +469,43 @@ export default function PaymentSubmitPage() {
                             />
                           </label>
                         </div>
+
+                        {/* Dönem Seçici */}
+                        {availablePeriods.length > 0 && (
+                          <div className="flex flex-col gap-2">
+                            <span className="text-sm font-medium text-text-main">
+                              Hangi Dönem(ler) İçin?
+                              <span className="ml-1 text-text-secondary font-normal">(isteğe bağlı)</span>
+                            </span>
+                            <div className="flex flex-col gap-1.5 bg-gray-50 dark:bg-gray-800/60 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700">
+                              {availablePeriods.map(period => {
+                                const checked = selectedPeriods.some(p => p.startDate === period.startDate);
+                                return (
+                                  <label key={period.startDate} className="flex items-center gap-2.5 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => togglePeriod(period)}
+                                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 cursor-pointer"
+                                    />
+                                    <span className={`text-sm ${period.isOverdue ? 'font-medium text-red-600 dark:text-red-400' : 'text-text-secondary'}`}>
+                                      {period.label}
+                                      {period.isOverdue && (
+                                        <span className="ml-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full">Gecikmiş</span>
+                                      )}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            {selectedPeriods.length > 0 && (
+                              <p className="text-xs text-text-secondary">
+                                Seçilen: <span className="font-medium text-primary">{selectedPeriods.length} dönem</span>
+                                {' '}({[...selectedPeriods].sort((a,b) => a.startDate.localeCompare(b.startDate))[0].startDate} — {[...selectedPeriods].sort((a,b) => b.endDate.localeCompare(a.endDate))[0].endDate})
+                              </p>
+                            )}
+                          </div>
+                        )}
                         <label className="flex flex-col gap-1">
                           <span className="text-sm font-medium text-text-main">Notlar</span>
                           <textarea

@@ -28,8 +28,8 @@ export const paymentService = {
     const formData = new FormData();
     formData.append('paymentMethodId', paymentMethodId);
     formData.append('amount', amount);
-    formData.append('billingPeriodStart', billingPeriodStart);
-    formData.append('billingPeriodEnd', billingPeriodEnd);
+    if (billingPeriodStart) formData.append('billingPeriodStart', billingPeriodStart);
+    if (billingPeriodEnd)   formData.append('billingPeriodEnd', billingPeriodEnd);
     if (referenceNumber) formData.append('referenceNumber', referenceNumber);
     if (notes) formData.append('notes', notes);
     if (receipt) formData.append('receipt', receipt);
