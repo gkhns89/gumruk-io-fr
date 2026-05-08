@@ -132,6 +132,13 @@ export default function Sidebar() {
       active: true,
       roles: ['SUPER_ADMIN']
     },
+    {
+      icon: "task_alt",
+      label: "Feedback Taskları",
+      path: "/management/feedback-tasks",
+      active: true,
+      roles: ['SUPER_ADMIN']
+    },
   ];
 
   // Kullanıcının yönetim menüsüne erişimi var mı?

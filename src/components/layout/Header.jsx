@@ -10,6 +10,8 @@ import NotificationCenter from "./NotificationCenter";
 import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
+import FeedbackModal from "../common/FeedbackModal";
+import { feedbackService } from "../../api/feedbackService";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -18,6 +20,10 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
+  const [clickUpActive, setClickUpActive] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
 
   useEffect(() => {
     // Scroll window üzerinde değil, MainLayout'taki iç container'da gerçekleşiyor
@@ -37,6 +43,14 @@ export default function Header() {
     window.addEventListener("innerTableScroll", handleInnerTableScroll, { passive: true });
     return () => window.removeEventListener("innerTableScroll", handleInnerTableScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      feedbackService.getClickUpStatus()
+        .then(res => setClickUpActive(res.data?.configured && res.data?.enabled))
+        .catch(() => setClickUpActive(false));
+    }
+  }, [isSuperAdmin]);
 
   // Sayfa değişince (route değişimi) slider'ı geri göster
   useEffect(() => {
@@ -283,6 +297,18 @@ export default function Header() {
           {/* Notifications */}
           <NotificationCenter />
 
+          {/* Feedback Butonu - SUPER_ADMIN görmez */}
+          {clickUpActive && !isSuperAdmin && (
+            <button
+              onClick={() => setFeedbackModalOpen(true)}
+              className="hidden sm:flex items-center justify-center h-10 w-10 rounded-lg
+                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-text-main"
+              title="Sorun Bildir / Öneri"
+            >
+              <span className="material-symbols-outlined text-xl">feedback</span>
+            </button>
+          )}
+
           {/* Logout Button - Desktop */}
           <button 
             onClick={logout}
@@ -387,6 +413,11 @@ export default function Header() {
             )}
           </div>
       </div>
+
+      {/* Feedback Modal */}
+      {feedbackModalOpen && (
+        <FeedbackModal onClose={() => setFeedbackModalOpen(false)} />
+      )}
 
       {/* Mobile Menu */}
       <MobileMenu

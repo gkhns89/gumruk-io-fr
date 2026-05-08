@@ -4,24 +4,17 @@ import Sidebar from "./Sidebar";
 
 export default function MainLayout({ children, hasFooter = false }) {
   const [sidebarWide, setSidebarWide] = useState(() => {
-    // Initialize from localStorage
     return localStorage.getItem('sidebarMode') === 'pinned-expanded';
   });
 
   useEffect(() => {
-    // Listen for custom event from Sidebar
     const handleStateChange = (event) => {
       setSidebarWide(event.detail.isWide);
     };
-
     window.addEventListener('sidebarStateChanged', handleStateChange);
-
-    return () => {
-      window.removeEventListener('sidebarStateChanged', handleStateChange);
-    };
+    return () => window.removeEventListener('sidebarStateChanged', handleStateChange);
   }, []);
 
-  // Memoize the main className to prevent unnecessary re-renders
   const mainClassName = useMemo(() =>
     `flex-1 flex flex-col min-w-0 overflow-hidden transition-[margin] duration-300 ease-in-out ${sidebarWide ? 'lg:ml-64' : 'lg:ml-20'}`,
     [sidebarWide]
@@ -35,7 +28,7 @@ export default function MainLayout({ children, hasFooter = false }) {
         <div
           id="main-scroll-area"
           className={`flex-1 overflow-y-auto bg-background ${hasFooter ? 'pb-4' : 'pb-2'}`}
-          style={hasFooter ? { maxHeight: 'calc(100vh - 130px)' } : {}}
+          style={hasFooter ? { Height: 'calc(100vh - 130px)' } : {}}
         >
           <div className="animate-slide-in-left-small">
             {children}

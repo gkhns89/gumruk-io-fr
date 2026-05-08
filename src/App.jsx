@@ -23,6 +23,7 @@ import PaymentManagementPage from "./pages/management/PaymentManagementPage";
 import BrokerSubscriptionsPage from "./pages/management/BrokerSubscriptionsPage";
 import AddonCatalogPage from "./pages/management/AddonCatalogPage";
 import PlanManagementPage from "./pages/management/PlanManagementPage";
+import FeedbackTasksPage from "./pages/management/FeedbackTasksPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
@@ -319,6 +320,16 @@ export default function App() {
         element={
           <ProtectedRoute requiredRole="SUPER_ADMIN">
             <PlanManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Feedback Taskları (SUPER_ADMIN) */}
+      <Route
+        path="/management/feedback-tasks"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <FeedbackTasksPage />
           </ProtectedRoute>
         }
       />
