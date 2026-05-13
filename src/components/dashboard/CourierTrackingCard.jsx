@@ -230,8 +230,8 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700 shadow-md overflow-hidden h-full flex flex-col lg:flex-row">
 
-      {/* Sol panel — her zaman görünür */}
-      <div className="flex flex-col p-4 lg:p-5 flex-1 lg:flex-none min-w-0">
+      {/* Sol panel — her zaman görünür, tüm kartı kapsar */}
+      <div className="flex flex-col p-4 lg:p-5 flex-1 min-w-0">
         {/* Başlık */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -260,17 +260,17 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         )}
 
         {/* Geri sayım */}
-        <div className="flex-1 flex flex-col justify-center py-1">
+        <div className="flex-1 flex flex-col justify-start pt-1">
           {countdownDisplay.refreshing ? (
             <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
           ) : countdownDisplay.seconds !== null ? (
             <>
               {countdownDisplay.main && (
-                <p className="text-base font-bold text-blue-600 dark:text-blue-400 leading-tight">
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 leading-tight">
                   {countdownDisplay.main}
                 </p>
               )}
-              <p className={`font-bold text-blue-500 dark:text-blue-400 leading-tight ${countdownDisplay.main ? 'text-xs mt-0.5' : 'text-xl'}`}>
+              <p className={`font-semibold text-blue-500 dark:text-blue-400/80 leading-tight ${countdownDisplay.main ? 'text-sm mt-0.5' : 'text-2xl font-bold'}`}>
                 {countdownDisplay.seconds} saniye
               </p>
             </>

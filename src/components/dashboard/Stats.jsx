@@ -262,15 +262,16 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         </div>
 
         {/* Content */}
-        <div className="relative z-10 p-4 md:p-5 flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <p className={`text-xs font-medium leading-normal truncate text-text-main transition-opacity duration-300 ${courierExpanded ? 'opacity-0' : 'opacity-90'}`}>
+        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col transition-all duration-300 ${courierExpanded ? 'items-center justify-center' : 'items-start justify-start'}`}>
+          <div className={`flex items-center w-full mb-1 transition-all duration-300 ${courierExpanded ? 'justify-center' : 'justify-between'}`}>
+            <p className={`font-medium leading-normal truncate text-text-main transition-all duration-300 ${courierExpanded ? 'opacity-0 w-0 overflow-hidden text-xs' : 'opacity-90 text-sm'}`}>
               {stat.label}
             </p>
             <span
               className={`
-                material-symbols-outlined text-lg md:text-xl ${colors.icon}
-                transition-all duration-300 ease-out transform flex-shrink-0
+                material-symbols-outlined flex-shrink-0 ${colors.icon}
+                transition-all duration-300 ease-out transform
+                ${courierExpanded ? 'text-2xl' : 'text-lg md:text-xl'}
                 ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
               `}
             >
@@ -279,14 +280,15 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
           </div>
 
           {loading ? (
-            <div className="h-8 md:h-10 flex items-center">
+            <div className={`h-8 md:h-10 flex items-center ${courierExpanded ? 'justify-center' : ''}`}>
               <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
             </div>
           ) : (
             <p
               className={`
-                tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
-                transition-all duration-300 transform origin-left
+                tracking-light font-bold leading-tight ${colors.text}
+                transition-all duration-300 transform
+                ${courierExpanded ? 'text-2xl md:text-3xl text-center origin-center' : 'text-2xl md:text-3xl text-left origin-left'}
                 ${isHovered ? 'scale-110' : 'scale-100'}
                 ${showNumberPulse ? 'animate-number-pulse' : ''}
               `}
