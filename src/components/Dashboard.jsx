@@ -185,7 +185,7 @@ export default function Dashboard() {
             transition: 'grid-template-columns 400ms ease-in-out',
           } : {}}
         >
-          <Stats transactions={allTransactions} loading={loading} />
+          <Stats transactions={allTransactions} loading={loading} courierExpanded={courierExpanded} />
           <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
             <CourierTrackingCard
               expanded={courierExpanded}

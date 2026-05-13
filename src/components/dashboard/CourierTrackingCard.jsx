@@ -13,7 +13,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
   const { user } = useAuth();
   const [courierData, setCourierData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [countdown, setCountdown] = useState('');
+  const [countdownDisplay, setCountdownDisplay] = useState({ main: '', seconds: null, refreshing: false });
   const isRefreshingRef = useRef(false);
   const retryCountRef = useRef(0);
 
@@ -83,7 +83,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         if (!isRefreshingRef.current && retryCountRef.current < 2) {
           isRefreshingRef.current = true;
           retryCountRef.current += 1;
-          setCountdown('Güncelleniyor...');
+          setCountdownDisplay({ main: '', seconds: null, refreshing: true });
 
           const brokerIdParam = isSuperAdmin ? Number(selectedBrokerId) : null;
 
@@ -113,24 +113,12 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       const minutes = Math.floor((remainingTotalSeconds % 3600) / 60);
       const seconds = remainingTotalSeconds % 60;
 
-      let countdownText = '';
-      if (days > 0) {
-        countdownText = `${days} gün`;
-        if (hours > 0) countdownText += ` ${hours} saat`;
-        if (minutes > 0) countdownText += ` ${minutes} dakika`;
-        if (seconds > 0) countdownText += ` ${seconds} saniye`;
-      } else if (hours > 0) {
-        countdownText = `${hours} saat`;
-        if (minutes > 0) countdownText += ` ${minutes} dakika`;
-        if (seconds > 0) countdownText += ` ${seconds} saniye`;
-      } else if (minutes > 0) {
-        countdownText = `${minutes} dakika`;
-        if (seconds > 0) countdownText += ` ${seconds} saniye`;
-      } else {
-        countdownText = `${seconds} saniye`;
-      }
+      const mainParts = [];
+      if (days > 0) mainParts.push(`${days} gün`);
+      if (hours > 0) mainParts.push(`${hours} saat`);
+      if (minutes > 0) mainParts.push(`${minutes} dk`);
 
-      setCountdown(countdownText);
+      setCountdownDisplay({ main: mainParts.join(' '), seconds, refreshing: false });
     };
 
     updateCountdown();
@@ -272,15 +260,39 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         )}
 
         {/* Geri sayım */}
-        <div className="flex-1 flex flex-col justify-center py-2">
-          <p className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1 leading-tight">
-            {countdown || 'Hesaplanıyor...'}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-sm text-gray-500 dark:text-gray-400">schedule</span>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Kalkış: <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
+        <div className="flex-1 flex flex-col justify-center py-1">
+          {countdownDisplay.refreshing ? (
+            <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
+          ) : countdownDisplay.seconds !== null ? (
+            <>
+              {countdownDisplay.main && (
+                <p className="text-base font-bold text-blue-600 dark:text-blue-400 leading-tight">
+                  {countdownDisplay.main}
+                </p>
+              )}
+              <p className={`font-bold text-blue-500 dark:text-blue-400 leading-tight ${countdownDisplay.main ? 'text-xs mt-0.5' : 'text-xl'}`}>
+                {countdownDisplay.seconds} saniye
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Hesaplanıyor...</p>
+          )}
+
+          <div className="flex items-center gap-1 mt-1.5">
+            <span className="material-symbols-outlined text-xs text-gray-500 dark:text-gray-400">schedule</span>
+            <p className="text-xs text-gray-700 dark:text-gray-300">
+              <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
             </p>
+          </div>
+
+          {/* Gidilecek konumlar */}
+          <div className="mt-2 space-y-0.5">
+            {courierData.nextDepartures.map((d, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }}>location_on</span>
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{d.customsName}</p>
+              </div>
+            ))}
           </div>
         </div>
 

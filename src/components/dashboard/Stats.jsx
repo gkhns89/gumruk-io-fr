@@ -53,7 +53,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ transactions, loading }) {
+const Stats = memo(function Stats({ transactions, loading, courierExpanded = false }) {
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const gridRef = useRef(null);
@@ -81,6 +81,12 @@ const Stats = memo(function Stats({ transactions, loading }) {
     window.addEventListener('resize', equalizeCardHeights);
     return () => window.removeEventListener('resize', equalizeCardHeights);
   }, [equalizeCardHeights]);
+
+  // Kurye paneli genişleyince/kapanınca geçiş bittikten sonra yükseklikleri yeniden eşitle
+  useEffect(() => {
+    const timer = setTimeout(equalizeCardHeights, 450);
+    return () => clearTimeout(timer);
+  }, [courierExpanded, equalizeCardHeights]);
 
   const stats = {
     total: transactions?.length || 0,
@@ -242,10 +248,23 @@ const Stats = memo(function Stats({ transactions, loading }) {
           />
         )}
 
+        {/* Label hover overlay — kurye genişleyince görünür */}
+        <div
+          className={`
+            absolute top-0 inset-x-0 flex justify-center pt-2.5 z-30 pointer-events-none
+            transition-all duration-200
+            ${courierExpanded && isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}
+          `}
+        >
+          <div className="bg-gray-900/85 dark:bg-gray-800/95 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg backdrop-blur-sm whitespace-nowrap">
+            {stat.label}
+          </div>
+        </div>
+
         {/* Content */}
         <div className="relative z-10 p-4 md:p-5 flex-1">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
+            <p className={`text-xs font-medium leading-normal truncate text-text-main transition-opacity duration-300 ${courierExpanded ? 'opacity-0' : 'opacity-90'}`}>
               {stat.label}
             </p>
             <span
