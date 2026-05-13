@@ -389,30 +389,22 @@ export default function TransactionsPage() {
   const [tableScrollHeight, setTableScrollHeight] = useState(() => window.innerHeight - 200);
   const FOOTER_H = 56; // fixed pagination footer height
 
-  // İlk yükleme + pencere boyutu değişince yüksekliği hesapla
   useEffect(() => {
     const calculate = () => {
       const el = document.getElementById("main-scroll-area");
       if (!el || !pageHeaderRef.current) return;
-      setPageHeaderHeight(pageHeaderRef.current.offsetHeight);
-      setTableScrollHeight(Math.max(200, el.clientHeight - pageHeaderRef.current.offsetHeight - FOOTER_H));
-    };
-    calculate();
-    window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
-
-  // Page header animasyonu bitince yüksekliği yeniden ölç → tablo yüksekliğini güncelle
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const el = document.getElementById("main-scroll-area");
-      if (!el || !pageHeaderRef.current) return;
       const ph = pageHeaderRef.current.offsetHeight;
       setPageHeaderHeight(ph);
-      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [isScrolled]);
+      // 88 = p-6 top (24) + p-6 bottom (24) + pb-24 excess over footer (96-56=40)
+      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H - 88));
+    };
+    if (!pageHeaderRef.current) return;
+    const ro = new ResizeObserver(calculate);
+    ro.observe(pageHeaderRef.current);
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => { ro.disconnect(); window.removeEventListener("resize", calculate); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // isScrolled artık tablo container'ının scroll'una göre güncellenir
   const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);

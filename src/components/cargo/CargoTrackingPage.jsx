@@ -165,23 +165,15 @@ export default function CargoTrackingPage() {
       if (!el || !pageHeaderRef.current) return;
       const ph = pageHeaderRef.current.offsetHeight;
       setPageHeaderHeight(ph);
-      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
+      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H - 88));
     };
+    if (!pageHeaderRef.current) return;
+    const ro = new ResizeObserver(calculate);
+    ro.observe(pageHeaderRef.current);
     calculate();
     window.addEventListener("resize", calculate);
-    return () => window.removeEventListener("resize", calculate);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const el = document.getElementById("main-scroll-area");
-      if (!el || !pageHeaderRef.current) return;
-      const ph = pageHeaderRef.current.offsetHeight;
-      setPageHeaderHeight(ph);
-      setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H));
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [isScrolled]);
+    return () => { ro.disconnect(); window.removeEventListener("resize", calculate); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);
 

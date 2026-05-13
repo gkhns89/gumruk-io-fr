@@ -146,12 +146,11 @@ export default function CargoTrackingTable({
   // ── Success state ──────────────────────────────────────────────
   return (
     <div
-      className="bg-white dark:bg-background-dark transition-colors duration-300 relative flex flex-col"
-      style={scrollHeight != null ? { height: scrollHeight } : undefined}
+      className="bg-white dark:bg-background-dark transition-colors duration-300 relative"
     >
       {/* Ok göstergesi */}
       {scrollDirection && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 pointer-events-none z-50">
           <div className="bg-black/10 dark:bg-white/10 backdrop-blur-sm rounded-full p-2 shadow-2xl">
             <div className="bg-white dark:bg-gray-800 rounded-full p-6 shadow-lg animate-pulse w-20 h-20 flex items-center justify-center">
               <span className="material-symbols-outlined text-6xl text-primary font-bold">
@@ -165,7 +164,8 @@ export default function CargoTrackingTable({
       {/* ── Tek kaydırmalı container, thead sticky ───────────────── */}
       <div
         ref={edgeScrollRef}
-        className="overflow-auto flex-1 relative"
+        className="overflow-auto relative"
+        style={scrollHeight != null ? { maxHeight: scrollHeight } : undefined}
         onScroll={handleBodyScroll}
       >
         {scrollDirection && (

@@ -22,6 +22,7 @@ export default function Login() {
     const result = await login(email, password);
 
     if (result.success) {
+      sessionStorage.setItem('justLoggedIn', '1');
       navigate("/dashboard");
     } else {
       setError(result.error);
