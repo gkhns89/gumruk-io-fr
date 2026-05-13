@@ -45,6 +45,26 @@ export const feedbackService = {
     }
   },
 
+  registerWebhook: async () => {
+    try {
+      const response = await axiosInstance.post('/clickup/webhook/register');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('feedbackService - registerWebhook', error);
+      return { success: false, error: error.response?.data?.message || 'Webhook kaydı başarısız' };
+    }
+  },
+
+  deleteWebhook: async () => {
+    try {
+      await axiosInstance.delete('/clickup/webhook');
+      return { success: true };
+    } catch (error) {
+      logError('feedbackService - deleteWebhook', error);
+      return { success: false, error: 'Webhook silinemedi' };
+    }
+  },
+
   getFeedbackTasks: async () => {
     try {
       const response = await axiosInstance.get('/feedback');

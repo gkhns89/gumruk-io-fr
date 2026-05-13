@@ -22,11 +22,12 @@ const SettingsPage = () => {
 
   const [status, setStatus] = useState(null);
   const [settings, setSettings] = useState(null);
-  const [form, setForm] = useState({ apiToken: '', folderId: '', isEnabled: true });
+  const [form, setForm] = useState({ apiToken: '', folderId: '', isEnabled: true, webhookBaseUrl: '' });
   const [hasExistingToken, setHasExistingToken] = useState(false);
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [registeringWebhook, setRegisteringWebhook] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
@@ -46,6 +47,7 @@ const SettingsPage = () => {
         ...prev,
         folderId: settingsRes.data.folderId || '',
         isEnabled: settingsRes.data.isEnabled ?? true,
+        webhookBaseUrl: settingsRes.data.webhookBaseUrl || '',
       }));
       setHasExistingToken(true);
     }
@@ -66,6 +68,7 @@ const SettingsPage = () => {
     const payload = {
       folderId: form.folderId,
       isEnabled: form.isEnabled,
+      webhookBaseUrl: form.webhookBaseUrl.trim() || undefined,
       ...(form.apiToken.trim() ? { apiToken: form.apiToken } : {}),
     };
     const result = await feedbackService.saveClickUpSettings(payload);
@@ -78,6 +81,29 @@ const SettingsPage = () => {
       loadData();
     } else {
       showError(result.error || 'Kayıt başarısız');
+    }
+  };
+
+  const handleRegisterWebhook = async () => {
+    setRegisteringWebhook(true);
+    const result = await feedbackService.registerWebhook();
+    setRegisteringWebhook(false);
+    if (result.success) {
+      showSuccess('Webhook başarıyla kaydedildi');
+      loadData();
+    } else {
+      showError(result.error || 'Webhook kaydı başarısız');
+    }
+  };
+
+  const handleDeleteWebhook = async () => {
+    if (!window.confirm('Webhook kaydını silmek istediğinizden emin misiniz?')) return;
+    const result = await feedbackService.deleteWebhook();
+    if (result.success) {
+      showSuccess('Webhook silindi');
+      loadData();
+    } else {
+      showError(result.error || 'Webhook silinemedi');
     }
   };
 
@@ -291,6 +317,29 @@ const SettingsPage = () => {
                       />
                     </div>
 
+                    {/* Webhook Base URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-text-main mb-1.5">
+                        Webhook Base URL
+                        <span className="ml-1.5 text-xs font-normal text-text-secondary">(opsiyonel)</span>
+                      </label>
+                      <input
+                        type="url"
+                        name="webhookBaseUrl"
+                        value={form.webhookBaseUrl}
+                        onChange={handleChange}
+                        placeholder="https://api.siteniz.com"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600
+                                   bg-white dark:bg-gray-800 text-text-main
+                                   placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50
+                                   focus:border-primary text-sm transition-colors"
+                      />
+                      <p className="text-xs text-text-secondary mt-1">
+                        Girilirse kayıt sırasında webhook otomatik kaydedilir →{' '}
+                        <span className="font-mono">{form.webhookBaseUrl || 'https://...'}/api/webhooks/clickup</span>
+                      </p>
+                    </div>
+
                     {/* Aktif toggle */}
                     <div className="flex items-center gap-3">
                       <input
@@ -335,6 +384,54 @@ const SettingsPage = () => {
                       </button>
                     </div>
                   </form>
+
+                  {/* Webhook Durumu */}
+                  {configured && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border
+                            ${settings?.webhookRegistered
+                              ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                              : 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'}`}
+                          >
+                            <span className="material-symbols-outlined text-[13px]">
+                              {settings?.webhookRegistered ? 'webhook' : 'webhook'}
+                            </span>
+                            Webhook: {settings?.webhookRegistered ? 'Aktif' : 'Kayıtlı değil'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!settings?.webhookRegistered ? (
+                            <button
+                              type="button"
+                              onClick={handleRegisterWebhook}
+                              disabled={registeringWebhook || !form.webhookBaseUrl.trim()}
+                              title={!form.webhookBaseUrl.trim() ? 'Önce Webhook Base URL girin ve kaydedin' : ''}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary text-primary text-xs font-medium
+                                         hover:bg-primary/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {registeringWebhook
+                                ? <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                : <span className="material-symbols-outlined text-[14px]">add_link</span>}
+                              {registeringWebhook ? 'Kaydediliyor...' : 'Webhook Kaydet'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleDeleteWebhook}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-300 dark:border-red-700
+                                         text-red-600 dark:text-red-400 text-xs font-medium
+                                         hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">link_off</span>
+                              Webhook Kaldır
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {settings?.updatedAt && (
                     <p className="text-xs text-text-secondary pt-1">

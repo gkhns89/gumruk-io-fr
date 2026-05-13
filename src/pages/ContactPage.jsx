@@ -26,6 +26,16 @@ const SYNC_CONFIG = {
   FAILED:  { label: 'Hata',      icon: 'error',          color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
 
+const getClickUpStatusStyle = (status) => {
+  if (!status) return null;
+  const s = status.toLowerCase();
+  if (s.includes('complete') || s.includes('done') || s.includes('closed') || s.includes('tamamla'))
+    return { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: 'task_alt' };
+  if (s.includes('progress') || s.includes('review') || s.includes('devam'))
+    return { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: 'autorenew' };
+  return { color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'pending' };
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   return new Intl.DateTimeFormat('tr-TR', {
@@ -199,10 +209,29 @@ const ContactPage = () => {
                             <p className="text-sm font-semibold text-text-main truncate">{fb.title}</p>
                           </div>
 
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${syncCfg.color}`}>
-                            <span className="material-symbols-outlined text-[13px]">{syncCfg.icon}</span>
-                            {syncCfg.label}
-                          </span>
+                          {/* ClickUp task durumu */}
+                          {fb.clickupDeleted ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
+                                             bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 line-through">
+                              <span className="material-symbols-outlined text-[13px]">link_off</span>
+                              Silindi
+                            </span>
+                          ) : fb.clickupStatus ? (
+                            (() => {
+                              const st = getClickUpStatusStyle(fb.clickupStatus);
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${st.color}`}>
+                                  <span className="material-symbols-outlined text-[13px]">{st.icon}</span>
+                                  {fb.clickupStatus}
+                                </span>
+                              );
+                            })()
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${syncCfg.color}`}>
+                              <span className="material-symbols-outlined text-[13px]">{syncCfg.icon}</span>
+                              {syncCfg.label}
+                            </span>
+                          )}
 
                           <span className="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
                             {formatDate(fb.createdAt)}
