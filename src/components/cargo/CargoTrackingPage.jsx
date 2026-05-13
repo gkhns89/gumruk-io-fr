@@ -132,7 +132,7 @@ export default function CargoTrackingPage() {
     setFilteredCargo(filtered);
   };
 
-  // Custom sorting: Status priority (TRACKING → ARRIVED → COMPLETED), then by date DESC
+  // Custom sorting: Status priority (TRACKING → ARRIVED → COMPLETED), then by ETA ASC
   const sortedCargo = useMemo(() => {
     return [...filteredCargo].sort((a, b) => {
       const statusA = CARGO_STATUS.find(s => s.value === a.status)?.sortOrder || 999;
@@ -142,8 +142,9 @@ export default function CargoTrackingPage() {
         return statusA - statusB;
       }
 
-      // Within same status, newest first
-      return new Date(b.createdAt) - new Date(a.createdAt);
+      const etaA = a.estimatedArrivalDate ? new Date(a.estimatedArrivalDate).getTime() : Infinity;
+      const etaB = b.estimatedArrivalDate ? new Date(b.estimatedArrivalDate).getTime() : Infinity;
+      return etaA - etaB;
     });
   }, [filteredCargo]);
 
