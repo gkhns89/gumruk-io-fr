@@ -79,11 +79,15 @@ axiosInstance.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    console.error(`❌ Response hatası: ${originalRequest?.url}`, {
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    });
+    const isSilent500 = originalRequest?.silentOn500 && error.response?.status === 500;
+
+    if (!isSilent500) {
+      console.error(`❌ Response hatası: ${originalRequest?.url}`, {
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data
+      });
+    }
 
     // 401 - Unauthorized (Token validation failed or session invalidated)
     if (error.response?.status === 401) {
@@ -142,7 +146,7 @@ axiosInstance.interceptors.response.use(
     }
 
     // 500 - Server Error
-    if (error.response?.status === 500) {
+    if (error.response?.status === 500 && !isSilent500) {
       console.error('💥 Sunucu hatası');
     }
 

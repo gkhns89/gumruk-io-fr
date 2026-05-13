@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { courierService } from '../../api/courierService';
+import { companyService } from '../../api/companyService';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -19,26 +20,59 @@ export default function CourierTrackingCard() {
 
   // CLIENT_USER kontrolü
   const canViewCourier = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
 
-  // API'den kurye verilerini çek - SADECE component mount olduğunda
+  // SUPER_ADMIN: broker seçimi
+  const [brokers, setBrokers] = useState([]);
+  const [brokersLoading, setBrokersLoading] = useState(false);
+  const [selectedBrokerId, setSelectedBrokerId] = useState('');
+
+  // SUPER_ADMIN için broker listesini yükle
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    setBrokersLoading(true);
+    companyService.getAllBrokerCompanies()
+      .then(result => {
+        if (result.success) setBrokers(result.data || []);
+      })
+      .finally(() => setBrokersLoading(false));
+  }, [isSuperAdmin]);
+
+  // Kurye verilerini çek
+  // - SUPER_ADMIN: sadece broker seçilince çek
+  // - Diğerleri: mount'ta otomatik çek
   useEffect(() => {
     if (!canViewCourier) return;
+    if (isSuperAdmin && !selectedBrokerId) {
+      setLoading(false);
+      setCourierData(null);
+      return;
+    }
+
+    const brokerIdParam = isSuperAdmin ? Number(selectedBrokerId) : null;
+
+    setLoading(true);
+    retryCountRef.current = 0;
+    isRefreshingRef.current = false;
 
     const fetchCourierData = async () => {
       try {
-        const result = await courierService.getNextDepartures();
+        const result = await courierService.getNextDepartures(brokerIdParam);
         if (result.success && result.data) {
           setCourierData(result.data);
+        } else {
+          setCourierData(null);
         }
       } catch (err) {
         console.error('Kurye verileri yüklenemedi:', err);
+        setCourierData(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourierData();
-  }, [canViewCourier]);
+  }, [canViewCourier, isSuperAdmin, selectedBrokerId]);
 
   // Countdown timer - her saniye client-side hesaplama
   useEffect(() => {
@@ -68,11 +102,12 @@ export default function CourierTrackingCard() {
           retryCountRef.current += 1;
           setCountdown('Güncelleniyor...');
 
+          const brokerIdParam = isSuperAdmin ? Number(selectedBrokerId) : null;
+
           setTimeout(async () => {
             try {
-              const result = await courierService.getNextDepartures();
+              const result = await courierService.getNextDepartures(brokerIdParam);
               if (result.success && result.data) {
-                // Yeni data varsa retry sayacını sıfırla
                 if (result.data.nextDepartures && result.data.nextDepartures.length > 0) {
                   retryCountRef.current = 0;
                 }
@@ -85,7 +120,6 @@ export default function CourierTrackingCard() {
             }
           }, 2000);
         } else if (retryCountRef.current >= 2) {
-          // Maksimum deneme sayısına ulaşıldı, kartı gizle
           setCourierData({ nextDepartures: [] });
         }
         return;
@@ -149,6 +183,26 @@ export default function CourierTrackingCard() {
     return null;
   }
 
+  // Broker seçim combobox'ı (sadece SUPER_ADMIN)
+  const BrokerSelector = () => (
+    <div className="mb-4">
+      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+        Gümrük Firması
+      </label>
+      <select
+        value={selectedBrokerId}
+        onChange={(e) => setSelectedBrokerId(e.target.value)}
+        className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        disabled={brokersLoading}
+      >
+        <option value="">-- Firma seçin --</option>
+        {brokers.map((b) => (
+          <option key={b.id} value={b.id}>{b.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   // Loading state
   if (loading) {
     return (
@@ -156,10 +210,25 @@ export default function CourierTrackingCard() {
     );
   }
 
+  // SUPER_ADMIN: henüz firma seçmedi
+  if (isSuperAdmin && !selectedBrokerId) {
+    return (
+      <div className="bg-white dark:bg-background-dark rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">two_wheeler</span>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
+        </div>
+        <BrokerSelector />
+        <p className="text-xs text-gray-400 dark:text-gray-500">Kurye bilgilerini görmek için gümrük firması seçin.</p>
+      </div>
+    );
+  }
+
   // Kurye yok
   if (!courierData?.nextDepartures?.length) {
     return (
       <div className="bg-white dark:bg-background-dark rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        {isSuperAdmin && <BrokerSelector />}
         <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
           <span className="material-symbols-outlined text-3xl">two_wheeler</span>
           <div>
@@ -236,6 +305,9 @@ export default function CourierTrackingCard() {
           </span>
         )}
       </div>
+
+      {/* SUPER_ADMIN: Firma seçici */}
+      {isSuperAdmin && <BrokerSelector />}
 
       {/* Çakışma Uyarısı */}
       {hasMultipleCouriers && (

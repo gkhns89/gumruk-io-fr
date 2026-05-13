@@ -287,7 +287,7 @@ export default function WarehousePage() {
         {/* Sticky Page Header */}
         <div
           ref={pageHeaderRef}
-          className={`sticky top-0 z-20 px-4 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-all duration-300 ease-in-out ${isScrolled ? "py-2 shadow-md" : "py-4 shadow-none"}`}
+          className={`sticky top-0 z-30 px-4 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-all duration-300 ease-in-out ${isScrolled ? "py-2 shadow-md" : "py-4 shadow-none"}`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>

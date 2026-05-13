@@ -9,6 +9,7 @@ import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
 import EditCargoModal from './EditCargoModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
+import AutoRefreshControl from '../transactions/AutoRefreshControl';
 
 export default function CargoTrackingPage() {
   const { user } = useAuth();
@@ -40,6 +41,7 @@ export default function CargoTrackingPage() {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const filterButtonRef = useRef(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -278,7 +280,7 @@ export default function CargoTrackingPage() {
         <div
           ref={pageHeaderRef}
           className={`
-            sticky top-0 z-20
+            sticky top-0 z-30
             px-4 md:px-6 border-b border-gray-200 dark:border-gray-700
             bg-white dark:bg-background-dark flex-shrink-0
             transition-all duration-300 ease-in-out
@@ -301,6 +303,7 @@ export default function CargoTrackingPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Filter Toggle */}
               <button
+                ref={filterButtonRef}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`relative flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${
                   isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
@@ -320,19 +323,15 @@ export default function CargoTrackingPage() {
                 )}
               </button>
 
-              {/* Refresh */}
-              <button
-                onClick={loadData}
-                disabled={loading}
-                className={`flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 disabled:opacity-50 ${
-                  isScrolled ? "p-2" : "px-3 sm:px-4 py-2.5"
-                }`}
-                title="Yenile"
-              >
-                <span className={`material-symbols-outlined text-primary text-[20px] ${loading ? 'animate-spin' : ''}`}>
-                  refresh
-                </span>
-              </button>
+              {/* Auto-Refresh */}
+              <AutoRefreshControl
+                onRefresh={loadData}
+                loading={loading}
+                isModalOpen={showAddModal || showEditModal || showDeleteModal}
+                isFilterOpen={showFilters}
+                onOpen={() => setShowFilters(false)}
+                isScrolled={isScrolled}
+              />
 
               {/* Add Button */}
               {canCreate && (

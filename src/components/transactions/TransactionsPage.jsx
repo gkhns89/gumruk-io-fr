@@ -416,7 +416,7 @@ export default function TransactionsPage() {
         <div
           ref={pageHeaderRef}
           className={`
-            sticky top-0 z-20
+            sticky top-0 z-30
             px-4 md:px-6 border-b border-gray-200 dark:border-gray-700
             bg-white dark:bg-background-dark flex-shrink-0
             transition-all duration-300 ease-in-out

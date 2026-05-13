@@ -205,11 +205,21 @@ export const courierService = {
    *   calculatedAt: string (ISO datetime)
    * }
    */
-  getNextDepartures: async () => {
+  getNextDepartures: async (brokerCompanyId = null) => {
     try {
-      const response = await axiosInstance.get('/couriers/next-departures');
+      const url = brokerCompanyId
+        ? `/couriers/next-departures?brokerCompanyId=${brokerCompanyId}`
+        : '/couriers/next-departures';
+      const response = await axiosInstance.get(url, { silentOn500: true });
       return { success: true, data: response.data.data };
     } catch (error) {
+      // 500: kurye tanımlı değil — boş sonuç olarak döndür, console'a hata yazma
+      if (error.response?.status === 500) {
+        return {
+          success: true,
+          data: { nextDepartures: [], totalActiveCouriers: 0, calculatedAt: new Date().toISOString() },
+        };
+      }
       logError('CourierService - getNextDepartures', error);
       return {
         success: false,
