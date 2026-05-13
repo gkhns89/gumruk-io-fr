@@ -58,17 +58,6 @@ export default function CargoTrackingTable({
 
   const visibleColumns = getVisibleColumns();
 
-  // Sort cargo by status: ARRIVED -> TRACKING -> COMPLETED
-  const STATUS_PRIORITY = { ARRIVED: 1, TRACKING: 2, COMPLETED: 3 };
-
-  const sortedCargo = [...cargo].sort((a, b) => {
-    const priorityA = STATUS_PRIORITY[a.status] || 999;
-    const priorityB = STATUS_PRIORITY[b.status] || 999;
-    if (priorityA !== priorityB) return priorityA - priorityB;
-    const etaA = a.estimatedArrivalDate ? new Date(a.estimatedArrivalDate).getTime() : Infinity;
-    const etaB = b.estimatedArrivalDate ? new Date(b.estimatedArrivalDate).getTime() : Infinity;
-    return etaA - etaB;
-  });
 
   const handleBodyScroll = (e) => {
     const { scrollTop } = e.currentTarget;
@@ -235,7 +224,7 @@ export default function CargoTrackingTable({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
-            {sortedCargo.map((cargoItem) => {
+            {cargo.map((cargoItem) => {
               const statusInfo  = getCargoStatus(cargoItem.status);
               const vehicleType = VEHICLE_TYPES.find(v => v.value === cargoItem.vehicleType);
 
