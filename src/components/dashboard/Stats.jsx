@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useCallback, memo } from "react";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
 
 // Custom hook for counting animation with delay
@@ -54,17 +54,33 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
 };
 
 const Stats = memo(function Stats({ transactions, loading }) {
-  // Track if initial animations have been played
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const gridRef = useRef(null);
 
-  // Play animations only once when data is first loaded
   useEffect(() => {
     if (!loading && transactions?.length > 0 && !hasPlayedInitialAnimationsRef.current) {
       hasPlayedInitialAnimationsRef.current = true;
       setShouldAnimate(true);
     }
   }, [loading, transactions]);
+
+  const equalizeCardHeights = useCallback(() => {
+    const cards = gridRef.current?.querySelectorAll('.stat-card');
+    if (!cards?.length) return;
+    cards.forEach(c => { c.style.minHeight = ''; });
+    const maxH = Math.max(...Array.from(cards).map(c => c.offsetHeight));
+    if (maxH > 0) cards.forEach(c => { c.style.minHeight = `${maxH}px`; });
+  }, []);
+
+  useLayoutEffect(() => {
+    equalizeCardHeights();
+  }, [transactions, loading, equalizeCardHeights]);
+
+  useEffect(() => {
+    window.addEventListener('resize', equalizeCardHeights);
+    return () => window.removeEventListener('resize', equalizeCardHeights);
+  }, [equalizeCardHeights]);
 
   const stats = {
     total: transactions?.length || 0,
@@ -92,7 +108,7 @@ const Stats = memo(function Stats({ transactions, loading }) {
 
   const statsData = [
     {
-      label: "Toplam İşlem",
+      label: "İşlemler",
       value: stats.total,
       color: "gray",
       icon: "description",
@@ -104,19 +120,19 @@ const Stats = memo(function Stats({ transactions, loading }) {
       icon: "schedule",
     },
     {
-      label: "Tescil Edildi",
+      label: "Tescil Edilenler",
       value: stats.registered,
       color: "registered",
       icon: "assignment_turned_in",
     },
     {
-      label: "Muayene Sürecinde",
+      label: "Muayenedekiler",
       value: stats.inspection,
       color: "inspection",
       icon: "fact_check",
     },
     {
-      label: "Gümrük İşlemleri Tamam",
+      label: "Tamamlananlar",
       value: stats.completed,
       color: "completed",
       icon: "verified",
@@ -174,56 +190,13 @@ const Stats = memo(function Stats({ transactions, loading }) {
   };
 
   // Hat breakdown gösterim fonksiyonu
-  const renderGateBreakdown = (breakdown) => {
-    const gateConfig = {
-      SARI: {
-        label: "Sarı",
-        emoji: "🟡",
-        bgClass: "bg-yellow-100 dark:bg-yellow-900/30",
-        textClass: "text-yellow-800 dark:text-yellow-300",
-        borderClass: "border-yellow-300 dark:border-yellow-700",
-      },
-      KIRMIZI: {
-        label: "Kırmızı",
-        emoji: "🔴",
-        bgClass: "bg-red-100 dark:bg-red-900/30",
-        textClass: "text-red-800 dark:text-red-300",
-        borderClass: "border-red-300 dark:border-red-700",
-      },
-    };
-
-    return (
-      <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-        {Object.entries(breakdown).map(([gate, count]) => {
-          const config = gateConfig[gate];
-          if (!config) return null;
-
-          return (
-            <div
-              key={gate}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md border ${config.bgClass} ${config.borderClass} transition-transform hover:scale-105 cursor-default`}
-            >
-              <span className="text-sm">{config.emoji}</span>
-              <span className={`text-xs font-semibold ${config.textClass}`}>
-                <span className="hidden sm:inline">{config.label}: </span>
-                {count}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   // Animated stat card component
   const StatCard = ({ stat, index, colors, shouldPlayAnimation }) => {
-    // Calculate delay: wait for slide-up animation to complete (0.7s + index delay)
     const countDelay = (index * 100) + 700;
     const animatedValue = useCountUp(stat.value, 1200, countDelay, shouldPlayAnimation);
     const [isHovered, setIsHovered] = useState(false);
     const [showNumberPulse, setShowNumberPulse] = useState(false);
 
-    // Trigger number pulse when counting completes
     useEffect(() => {
       if (shouldPlayAnimation && animatedValue === stat.value && stat.value > 0) {
         setShowNumberPulse(true);
@@ -237,7 +210,7 @@ const Stats = memo(function Stats({ transactions, loading }) {
         data-index={index}
         className={`
           stat-card
-          relative overflow-hidden flex flex-col gap-1 md:gap-2 rounded-2xl p-4 md:p-6
+          relative overflow-hidden flex flex-col rounded-2xl
           ${colors.bg} border-2
           ${isHovered
             ? 'border-gray-400 dark:border-gray-500 scale-105 -translate-y-1 shadow-2xl shadow-black/10 dark:shadow-black/30'
@@ -270,15 +243,15 @@ const Stats = memo(function Stats({ transactions, loading }) {
         )}
 
         {/* Content */}
-        <div className="relative z-10">
+        <div className="relative z-10 p-4 md:p-5 flex-1">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs md:text-sm lg:text-base font-medium leading-normal truncate opacity-90 text-text-main">
+            <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
               {stat.label}
             </p>
             <span
               className={`
-                material-symbols-outlined text-lg md:text-xl lg:text-2xl ${colors.icon}
-                transition-all duration-300 ease-out transform
+                material-symbols-outlined text-lg md:text-xl ${colors.icon}
+                transition-all duration-300 ease-out transform flex-shrink-0
                 ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
               `}
             >
@@ -287,32 +260,42 @@ const Stats = memo(function Stats({ transactions, loading }) {
           </div>
 
           {loading ? (
-            <div className="h-8 md:h-12 flex items-center">
+            <div className="h-8 md:h-10 flex items-center">
               <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
             </div>
           ) : (
-            <>
-              <p
-                className={`
-                  tracking-light text-2xl md:text-3xl lg:text-4xl font-bold leading-tight ${colors.text}
-                  transition-all duration-300 transform origin-left
-                  ${isHovered ? 'scale-110' : 'scale-100'}
-                  ${showNumberPulse ? 'animate-number-pulse' : ''}
-                `}
-              >
-                {animatedValue}
-              </p>
-              {stat.showGateBreakdown && stat.gateBreakdown && (
-                renderGateBreakdown(stat.gateBreakdown)
-              )}
-            </>
+            <p
+              className={`
+                tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
+                transition-all duration-300 transform origin-left
+                ${isHovered ? 'scale-110' : 'scale-100'}
+                ${showNumberPulse ? 'animate-number-pulse' : ''}
+              `}
+            >
+              {animatedValue}
+            </p>
           )}
         </div>
+
+        {/* Gate breakdown — tam genişlik, kartın altında */}
+        {stat.showGateBreakdown && stat.gateBreakdown && !loading && (
+          <div className="relative z-10 flex border-t border-gray-300/60 dark:border-gray-600/60">
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-yellow-100/80 dark:bg-yellow-900/30">
+              <span className="text-sm leading-none">🟡</span>
+              <span className="text-xs font-bold text-yellow-800 dark:text-yellow-300">{stat.gateBreakdown.SARI}</span>
+            </div>
+            <div className="w-px bg-gray-300/60 dark:bg-gray-600/60" />
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-100/80 dark:bg-red-900/30">
+              <span className="text-sm leading-none">🔴</span>
+              <span className="text-xs font-bold text-red-800 dark:text-red-300">{stat.gateBreakdown.KIRMIZI}</span>
+            </div>
+          </div>
+        )}
 
         {/* Corner accent */}
         <div
           className={`
-            absolute top-0 right-0 w-20 h-20
+            absolute top-0 right-0 w-16 h-16
             ${colors.bg}
             rounded-bl-full transition-all duration-500 transform
             ${isHovered ? 'scale-150 opacity-30' : 'scale-100 opacity-20'}
@@ -332,7 +315,7 @@ const Stats = memo(function Stats({ transactions, loading }) {
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 lg:mb-8">
+    <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
       {statsData.map((stat, index) => {
         const colors = getColorClasses(stat.color);
         return (

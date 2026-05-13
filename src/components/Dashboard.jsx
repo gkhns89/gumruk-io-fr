@@ -9,10 +9,10 @@ import { cargoService } from "../api/cargoService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
 
 // Animated Section Component
-const AnimatedSection = ({ children, delay = 0, shouldAnimate = false }) => {
+const AnimatedSection = ({ children, delay = 0, shouldAnimate = false, className = "" }) => {
   return (
     <div
-      className={`${shouldAnimate ? "animate-fade-slide-up" : "opacity-0"}`}
+      className={`${shouldAnimate ? "animate-fade-slide-up" : "opacity-0"} ${className}`}
       style={{ animationDelay: `${delay}ms` }}
     >
       {children}
@@ -33,6 +33,18 @@ export default function Dashboard() {
   const hasAnimatedSectionsRef = useRef(false);
   const [shouldAnimateHeading, setShouldAnimateHeading] = useState(false);
   const [shouldAnimateSections, setShouldAnimateSections] = useState(false);
+
+  // Kurye kartı compact ↔ expanded geçişi (sadece desktop'ta)
+  const [courierExpanded, setCourierExpanded] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsLargeScreen(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
@@ -165,15 +177,23 @@ export default function Dashboard() {
           </div>
         </AnimatedSection>
 
-        {/* İstatistik Kartları */}
-        <Stats transactions={allTransactions} loading={loading} />
-
-        {/* Kurye Takip Kartı */}
-        <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections}>
-          <div className="mb-6">
-            <CourierTrackingCard />
-          </div>
-        </AnimatedSection>
+        {/* İstatistik Kartları + Kurye Takip Kartı */}
+        <div
+          className="grid grid-cols-1 gap-4 mb-6 items-stretch"
+          style={isLargeScreen ? {
+            gridTemplateColumns: courierExpanded ? '1fr 1fr' : '3fr 1fr',
+            transition: 'grid-template-columns 400ms ease-in-out',
+          } : {}}
+        >
+          <Stats transactions={allTransactions} loading={loading} />
+          <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
+            <CourierTrackingCard
+              expanded={courierExpanded}
+              onToggleExpand={() => setCourierExpanded(v => !v)}
+              isLargeScreen={isLargeScreen}
+            />
+          </AnimatedSection>
+        </div>
 
         {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik */}
         <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
