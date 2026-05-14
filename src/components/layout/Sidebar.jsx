@@ -259,7 +259,9 @@ export default function Sidebar() {
   // "Diğer" çekmecesi gerekli mi?
   const needsOtherDrawer = hiddenOtherItems.length > 0;
 
-  const bottomMenuItems = [
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+
+  const bottomMenuItems = isSuperAdmin ? [] : [
     { icon: "headset_mic", label: "İletişim", path: "/contact" },
     { icon: "help_center", label: "Yardım", path: "/help" },
   ];

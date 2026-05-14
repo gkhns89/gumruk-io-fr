@@ -244,6 +244,8 @@ export default function NotificationCenter() {
       navigate('/cargo');
     } else if (notification.entityType === 'WAREHOUSE') {
       navigate('/warehouse');
+    } else if (notification.entityType === 'FEEDBACK') {
+      navigate('/help', { state: { feedbackId: notification.entityId } });
     }
 
     if (!notification.isRead) await handleMarkAsRead(notification.id);
