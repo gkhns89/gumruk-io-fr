@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../api/notificationService';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function NotificationCenter() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -245,7 +248,11 @@ export default function NotificationCenter() {
     } else if (notification.entityType === 'WAREHOUSE') {
       navigate('/warehouse');
     } else if (notification.entityType === 'FEEDBACK') {
-      navigate('/help', { state: { feedbackId: notification.entityId } });
+      if (isSuperAdmin) {
+        navigate('/management/feedback-tasks');
+      } else {
+        navigate('/help', { state: { feedbackId: notification.entityId } });
+      }
     }
 
     if (!notification.isRead) await handleMarkAsRead(notification.id);
