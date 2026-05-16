@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { feedbackService } from '../../api/feedbackService';
+import FeedbackDetailModal from '../../components/common/FeedbackDetailModal';
 
 const CATEGORY_CONFIG = {
   BUG:      { label: 'Hata',    icon: 'bug_report',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800' },
@@ -15,12 +16,25 @@ const SYNC_CONFIG = {
   FAILED:  { label: 'Hata',    icon: 'error',            color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
 
+const PRIORITY_CONFIG = {
+  urgent: { label: 'Acil',   color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',         icon: 'priority_high' },
+  high:   { label: 'Yüksek', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'keyboard_double_arrow_up' },
+  normal: { label: 'Normal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',     icon: 'remove' },
+  low:    { label: 'Düşük',  color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',        icon: 'keyboard_double_arrow_down' },
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   return new Intl.DateTimeFormat('tr-TR', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   }).format(new Date(dateString));
+};
+
+const formatEpoch = (ms) => {
+  if (!ms) return null;
+  return new Intl.DateTimeFormat('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(new Date(Number(ms)));
 };
 
 const FeedbackTasksPage = () => {
@@ -30,7 +44,7 @@ const FeedbackTasksPage = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncFilter, setSyncFilter] = useState('ALL');
-  const [expanded, setExpanded] = useState(null);
+  const [detailTask, setDetailTask] = useState(null);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -163,7 +177,7 @@ const FeedbackTasksPage = () => {
               {filtered.map(task => {
                 const catCfg = CATEGORY_CONFIG[task.category] || CATEGORY_CONFIG.OTHER;
                 const syncCfg = SYNC_CONFIG[task.syncStatus] || SYNC_CONFIG.PENDING;
-                const isExpanded = expanded === task.id;
+                const priorityCfg = task.priority ? PRIORITY_CONFIG[task.priority.toLowerCase()] : null;
 
                 return (
                   <div
@@ -173,7 +187,7 @@ const FeedbackTasksPage = () => {
                     {/* Task satır */}
                     <div
                       className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                      onClick={() => setExpanded(isExpanded ? null : task.id)}
+                      onClick={() => setDetailTask(task)}
                     >
                       {/* Kategori badge */}
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border flex-shrink-0 ${catCfg.color}`}>
@@ -181,11 +195,24 @@ const FeedbackTasksPage = () => {
                         {catCfg.label}
                       </span>
 
+                      {/* Öncelik badge */}
+                      {priorityCfg && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${priorityCfg.color}`}>
+                          <span className="material-symbols-outlined text-[13px]">{priorityCfg.icon}</span>
+                          {priorityCfg.label}
+                        </span>
+                      )}
+
                       {/* Başlık + meta */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-text-main truncate">{task.title}</p>
                         <p className="text-xs text-text-secondary truncate">
                           {task.companyName} · {task.userEmail}
+                          {task.dueDate && (
+                            <span className="ml-2 text-orange-500">
+                              · Son: {formatEpoch(task.dueDate)}
+                            </span>
+                          )}
                         </p>
                       </div>
 
@@ -240,26 +267,11 @@ const FeedbackTasksPage = () => {
                         {formatDate(task.createdAt)}
                       </span>
 
-                      {/* Genişlet oku */}
-                      <span className={`material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                        expand_more
+                      {/* Detay oku */}
+                      <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">
+                        chevron_right
                       </span>
                     </div>
-
-                    {/* Açıklama */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                        <p className="text-sm text-text-secondary mt-3 whitespace-pre-wrap leading-relaxed">
-                          {task.description}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-3">
-                          {formatDate(task.createdAt)}
-                          {task.clickupTaskId && (
-                            <span className="ml-3">Task ID: <span className="font-mono">{task.clickupTaskId}</span></span>
-                          )}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -267,6 +279,14 @@ const FeedbackTasksPage = () => {
           )}
         </div>
       </div>
+
+      {detailTask && (
+        <FeedbackDetailModal
+          feedback={detailTask}
+          readOnly={true}
+          onClose={() => setDetailTask(null)}
+        />
+      )}
     </MainLayout>
   );
 };

@@ -85,6 +85,26 @@ export const feedbackService = {
     }
   },
 
+  getComments: async (feedbackId) => {
+    try {
+      const response = await axiosInstance.get(`/feedback/${feedbackId}/comments`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('feedbackService - getComments', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  addComment: async (feedbackId, content) => {
+    try {
+      const response = await axiosInstance.post(`/feedback/${feedbackId}/comments`, { content });
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('feedbackService - addComment', error);
+      return { success: false, error: error.response?.data?.message || 'Yorum gönderilemedi' };
+    }
+  },
+
   submitFeedback: async (data, screenshot) => {
     try {
       const formData = new FormData();

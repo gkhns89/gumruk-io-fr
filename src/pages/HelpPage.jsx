@@ -4,6 +4,7 @@ import MainLayout from '../components/layout/MainLayout';
 import { feedbackService } from '../api/feedbackService';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccess, showError } from '../utils/toastUtils';
+import FeedbackDetailModal from '../components/common/FeedbackDetailModal';
 
 const CATEGORIES = [
   { value: 'BUG',      label: 'Hata / Bug',        icon: 'bug_report' },
@@ -67,6 +68,7 @@ const HelpPage = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
   const [expandedFeedback, setExpandedFeedback] = useState(highlightedId);
+  const [detailFeedback, setDetailFeedback] = useState(null);
 
   const loadFeedbacks = useCallback(async () => {
     if (isSuperAdmin) { setLoadingFeedbacks(false); return; }
@@ -361,7 +363,7 @@ const HelpPage = () => {
                     >
                       <div
                         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                        onClick={() => setExpandedFeedback(isExpanded ? null : fb.id)}
+                        onClick={() => setDetailFeedback(fb)}
                       >
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border flex-shrink-0 ${catCfg.color}`}>
                           <span className="material-symbols-outlined text-[13px]">{catCfg.icon}</span>
@@ -399,24 +401,10 @@ const HelpPage = () => {
                           {formatDate(fb.createdAt)}
                         </span>
 
-                        <span className={`material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                          expand_more
+                        <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">
+                          chevron_right
                         </span>
                       </div>
-
-                      {isExpanded && (
-                        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                          <p className="text-sm text-text-secondary mt-3 whitespace-pre-wrap leading-relaxed">
-                            {fb.description}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-3">
-                            {formatDate(fb.createdAt)}
-                            {fb.clickupTaskId && (
-                              <span className="ml-3 font-mono">Task: {fb.clickupTaskId}</span>
-                            )}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -426,6 +414,14 @@ const HelpPage = () => {
 
         </div>
       </div>
+
+      {detailFeedback && (
+        <FeedbackDetailModal
+          feedback={detailFeedback}
+          readOnly={false}
+          onClose={() => setDetailFeedback(null)}
+        />
+      )}
     </MainLayout>
   );
 };
