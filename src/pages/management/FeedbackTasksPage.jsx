@@ -37,6 +37,15 @@ const formatEpoch = (ms) => {
     .format(new Date(Number(ms)));
 };
 
+const openClickUpTask = (taskId) => {
+  window.location.href = `clickup://t/${taskId}`;
+  setTimeout(() => {
+    if (!document.hidden) {
+      window.open(`https://app.clickup.com/t/${taskId}`, '_blank', 'noopener,noreferrer');
+    }
+  }, 1500);
+};
+
 const FeedbackTasksPage = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -247,19 +256,16 @@ const FeedbackTasksPage = () => {
                       ) : null}
 
                       {/* ClickUp linki */}
-                      {task.clickupTaskUrl && (
-                        <a
-                          href={task.clickupTaskUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
+                      {task.clickupTaskId && (
+                        <button
+                          onClick={e => { e.stopPropagation(); openClickUpTask(task.clickupTaskId); }}
                           className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg
                                      bg-primary/10 text-primary hover:bg-primary/20 transition text-xs font-medium"
-                          title="ClickUp'ta Aç"
+                          title="ClickUp uygulamasında aç (yoksa tarayıcıda açılır)"
                         >
                           <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                           ClickUp
-                        </a>
+                        </button>
                       )}
 
                       {/* Tarih */}

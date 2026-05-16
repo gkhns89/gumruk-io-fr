@@ -42,6 +42,15 @@ const formatEpoch = (ms) => {
   }).format(new Date(Number(ms)));
 };
 
+const openClickUpTask = (taskId) => {
+  window.location.href = `clickup://t/${taskId}`;
+  setTimeout(() => {
+    if (!document.hidden) {
+      window.open(`https://app.clickup.com/t/${taskId}`, '_blank', 'noopener,noreferrer');
+    }
+  }, 1500);
+};
+
 const FeedbackDetailModal = ({ feedback, readOnly = false, onClose }) => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
@@ -130,9 +139,22 @@ const FeedbackDetailModal = ({ feedback, readOnly = false, onClose }) => {
             <h2 className="text-base font-bold text-text-main leading-snug">{feedback.title}</h2>
             <p className="text-xs text-text-secondary mt-0.5">{formatDate(feedback.createdAt)}</p>
           </div>
-          <button onClick={onClose} className="flex-shrink-0 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <span className="material-symbols-outlined text-text-secondary text-[20px]">close</span>
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isSuperAdmin && feedback.clickupTaskId && (
+              <button
+                onClick={() => openClickUpTask(feedback.clickupTaskId)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium
+                           bg-primary/10 text-primary hover:bg-primary/20 transition"
+                title="ClickUp uygulamasında aç (yoksa tarayıcıda açılır)"
+              >
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                ClickUp'ta Aç
+              </button>
+            )}
+            <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+              <span className="material-symbols-outlined text-text-secondary text-[20px]">close</span>
+            </button>
+          </div>
         </div>
 
         {/* Date chips */}
