@@ -48,6 +48,12 @@ const MAX_SCREENSHOT_SIZE = 5 * 1024 * 1024;
 
 const INITIAL_FORM = { category: 'BUG', title: '', description: '' };
 
+const VIEWED_KEY = 'feedback_viewed_map';
+const loadViewedMap = () => {
+  try { return JSON.parse(localStorage.getItem(VIEWED_KEY) || '{}'); }
+  catch { return {}; }
+};
+
 const HelpPage = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
@@ -69,6 +75,22 @@ const HelpPage = () => {
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
   const [expandedFeedback, setExpandedFeedback] = useState(highlightedId);
   const [detailFeedback, setDetailFeedback] = useState(null);
+
+  // Okunmamış takibi
+  const [viewedAt, setViewedAt] = useState(loadViewedMap);
+
+  const hasUnread = (fb) => {
+    if (!fb.lastCommentAt) return false;
+    const viewed = viewedAt[fb.id];
+    if (!viewed) return true;
+    return new Date(fb.lastCommentAt) > new Date(viewed);
+  };
+
+  const markViewed = (feedbackId) => {
+    const updated = { ...viewedAt, [feedbackId]: new Date().toISOString() };
+    setViewedAt(updated);
+    localStorage.setItem(VIEWED_KEY, JSON.stringify(updated));
+  };
 
   const loadFeedbacks = useCallback(async () => {
     if (isSuperAdmin) { setLoadingFeedbacks(false); return; }
@@ -363,7 +385,7 @@ const HelpPage = () => {
                     >
                       <div
                         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                        onClick={() => setDetailFeedback(fb)}
+                        onClick={() => { setDetailFeedback(fb); markViewed(fb.id); }}
                       >
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border flex-shrink-0 ${catCfg.color}`}>
                           <span className="material-symbols-outlined text-[13px]">{catCfg.icon}</span>
@@ -394,6 +416,18 @@ const HelpPage = () => {
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${syncCfg.color}`}>
                             <span className="material-symbols-outlined text-[13px]">{syncCfg.icon}</span>
                             {syncCfg.label}
+                          </span>
+                        )}
+
+                        {/* Yorum sayısı / okunmamış */}
+                        {fb.commentCount > 0 && (
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
+                            ${hasUnread(fb)
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                            <span className="material-symbols-outlined text-[13px]">chat</span>
+                            {fb.commentCount}
+                            {hasUnread(fb) && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
                           </span>
                         )}
 

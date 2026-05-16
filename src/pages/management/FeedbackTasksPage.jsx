@@ -46,6 +46,13 @@ const openClickUpTask = (taskId) => {
   }, 1500);
 };
 
+const VIEWED_KEY = 'feedback_viewed_map';
+
+const loadViewedMap = () => {
+  try { return JSON.parse(localStorage.getItem(VIEWED_KEY) || '{}'); }
+  catch { return {}; }
+};
+
 const FeedbackTasksPage = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +61,20 @@ const FeedbackTasksPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncFilter, setSyncFilter] = useState('ALL');
   const [detailTask, setDetailTask] = useState(null);
+  const [viewedAt, setViewedAt] = useState(loadViewedMap);
+
+  const hasUnread = (task) => {
+    if (!task.lastCommentAt) return false;
+    const viewed = viewedAt[task.id];
+    if (!viewed) return true;
+    return new Date(task.lastCommentAt) > new Date(viewed);
+  };
+
+  const markViewed = (taskId) => {
+    const updated = { ...viewedAt, [taskId]: new Date().toISOString() };
+    setViewedAt(updated);
+    localStorage.setItem(VIEWED_KEY, JSON.stringify(updated));
+  };
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -196,7 +217,7 @@ const FeedbackTasksPage = () => {
                     {/* Task satır */}
                     <div
                       className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                      onClick={() => setDetailTask(task)}
+                      onClick={() => { setDetailTask(task); markViewed(task.id); }}
                     >
                       {/* Kategori badge */}
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border flex-shrink-0 ${catCfg.color}`}>
@@ -254,6 +275,18 @@ const FeedbackTasksPage = () => {
                           );
                         })()
                       ) : null}
+
+                      {/* Yorum sayısı / okunmamış */}
+                      {task.commentCount > 0 && (
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
+                          ${hasUnread(task)
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                          <span className="material-symbols-outlined text-[13px]">chat</span>
+                          {task.commentCount}
+                          {hasUnread(task) && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
+                        </span>
+                      )}
 
                       {/* ClickUp linki */}
                       {task.clickupTaskId && (
