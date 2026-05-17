@@ -29,10 +29,11 @@ const getClickUpStatusStyle = (status) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return null;
+  const utc = dateString.includes('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
   return new Intl.DateTimeFormat('tr-TR', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
-  }).format(new Date(dateString));
+  }).format(new Date(utc));
 };
 
 const formatEpoch = (ms) => {
