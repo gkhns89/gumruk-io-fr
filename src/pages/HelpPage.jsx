@@ -73,14 +73,6 @@ const getStatusConfig = (fb) => {
   return { label: 'Alındı', color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400', icon: 'inbox' };
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  const utc = dateString.includes('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
-  return new Intl.DateTimeFormat('tr-TR', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(utc));
-};
 
 const MAX_SCREENSHOT_SIZE = 5 * 1024 * 1024;
 
@@ -434,16 +426,11 @@ const HelpPage = () => {
                           <p className="text-sm font-semibold text-text-main truncate">{fb.title}</p>
                         </div>
 
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${statusCfg.color}`}>
-                          <span className="material-symbols-outlined text-[13px]">{statusCfg.icon}</span>
-                          {statusCfg.label}
-                        </span>
-
                         {/* Yorum sayısı / okunmamış */}
                         {fb.commentCount > 0 && (
                           <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
                             ${hasUnread(fb)
-                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              ? 'bg-primary/10 text-primary'
                               : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
                             <span className="material-symbols-outlined text-[13px]">chat</span>
                             {fb.commentCount}
@@ -451,8 +438,9 @@ const HelpPage = () => {
                           </span>
                         )}
 
-                        <span className="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
-                          {formatDate(fb.createdAt)}
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${statusCfg.color}`}>
+                          <span className="material-symbols-outlined text-[13px]">{statusCfg.icon}</span>
+                          {statusCfg.label}
                         </span>
 
                         <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">
