@@ -17,19 +17,42 @@ const SYNC_CONFIG = {
 };
 
 const CLICKUP_STATUS_MAP = {
-  'to do':       { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'todo':        { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'open':        { label: 'Açık',       color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'in progress': { label: 'İşlemde',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
-  'in review':   { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'review':      { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'complete':    { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'completed':   { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'done':        { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'closed':      { label: 'Kapatıldı',  color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'check_circle' },
-  'on hold':     { label: 'Beklemede',  color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
-  'cancelled':   { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
-  'canceled':    { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+  // Başlangıç / planlama
+  'new':           { label: 'Yeni',                 color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',             icon: 'fiber_new' },
+  'open':          { label: 'Açık',                 color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'to do':         { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'todo':          { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'planning':      { label: 'Planlandı',             color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: 'event_note' },
+  'backlog':       { label: 'Biriktirici',           color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'inbox' },
+  'pending':       { label: 'Bekliyor',              color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'hourglass_empty' },
+  'needs info':    { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
+  'need info':     { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
+  // Aktif süreç
+  'active':        { label: 'Aktif',                 color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'play_circle' },
+  'in progress':   { label: 'İşlemde',               color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
+  'blocked':       { label: 'Engellendi',            color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             icon: 'block' },
+  'on hold':       { label: 'Beklemede',             color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
+  // İnceleme / test
+  'review':        { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'in review':     { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'testing':       { label: 'Test Ediliyor',         color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'science' },
+  'qa':            { label: 'Kalite Kontrolde',      color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'fact_check' },
+  // Yayın / kapanış
+  'staged':        { label: 'Hazırlandı',            color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',         icon: 'cloud_upload' },
+  'deployed':      { label: 'Yayınlandı',            color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', icon: 'rocket_launch' },
+  'complete':      { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'completed':     { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'done':          { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'resolved':      { label: 'Çözüldü',               color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'check_circle' },
+  'closed':        { label: 'Kapatıldı',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'lock' },
+  'archived':      { label: 'Arşivlendi',            color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'archive' },
+  // Olumsuz kapanış
+  'cancelled':     { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+  'canceled':      { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+  'wont fix':      { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
+  "won't fix":     { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
+  'duplicate':     { label: 'Yinelenen',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'content_copy' },
+  'invalid':       { label: 'Geçersiz',              color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'not_interested' },
 };
 
 const getClickUpStatusConfig = (status) => {
