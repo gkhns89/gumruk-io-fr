@@ -17,14 +17,31 @@ const CATEGORY_CONFIG = {
   OTHER:    { label: 'Diğer',   icon: 'more_horiz',  color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
 };
 
-const getClickUpStatusStyle = (status) => {
+const CLICKUP_STATUS_MAP = {
+  'to do':       { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'todo':        { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'open':        { label: 'Açık',       color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'in progress': { label: 'İşlemde',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
+  'in review':   { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'review':      { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'complete':    { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'completed':   { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'done':        { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'closed':      { label: 'Kapatıldı',  color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'check_circle' },
+  'on hold':     { label: 'Beklemede',  color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
+  'cancelled':   { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+  'canceled':    { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+};
+
+const getClickUpStatusConfig = (status) => {
   if (!status) return null;
-  const s = status.toLowerCase();
-  if (s.includes('complete') || s.includes('done') || s.includes('closed') || s.includes('tamamla'))
-    return { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: 'task_alt' };
-  if (s.includes('progress') || s.includes('review') || s.includes('devam'))
-    return { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: 'autorenew' };
-  return { color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'pending' };
+  const key = status.toLowerCase().trim();
+  if (CLICKUP_STATUS_MAP[key]) return CLICKUP_STATUS_MAP[key];
+  if (key.includes('tamamla') || key.includes('complete') || key.includes('done') || key.includes('closed'))
+    return { label: status, color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: 'task_alt' };
+  if (key.includes('progress') || key.includes('devam') || key.includes('işlem'))
+    return { label: status, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: 'autorenew' };
+  return { label: status, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'pending' };
 };
 
 const formatDate = (dateString) => {
@@ -102,7 +119,7 @@ const FeedbackDetailModal = ({ feedback, readOnly = false, onClose }) => {
 
   const catCfg = CATEGORY_CONFIG[feedback.category] || CATEGORY_CONFIG.OTHER;
   const priorityCfg = feedback.priority ? PRIORITY_CONFIG[feedback.priority.toLowerCase()] : null;
-  const statusStyle = feedback.clickupStatus ? getClickUpStatusStyle(feedback.clickupStatus) : null;
+  const statusCfg = feedback.clickupStatus ? getClickUpStatusConfig(feedback.clickupStatus) : null;
 
   return (
     <div
@@ -128,12 +145,12 @@ const FeedbackDetailModal = ({ feedback, readOnly = false, onClose }) => {
               {feedback.clickupDeleted ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 line-through">
                   <span className="material-symbols-outlined text-[12px]">link_off</span>
-                  Silindi
+                  Kaldırıldı
                 </span>
-              ) : statusStyle && (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${statusStyle.color}`}>
-                  <span className="material-symbols-outlined text-[12px]">{statusStyle.icon}</span>
-                  {feedback.clickupStatus}
+              ) : statusCfg && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${statusCfg.color}`}>
+                  <span className="material-symbols-outlined text-[12px]">{statusCfg.icon}</span>
+                  {statusCfg.label}
                 </span>
               )}
             </div>

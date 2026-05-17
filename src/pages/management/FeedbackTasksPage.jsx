@@ -11,16 +11,48 @@ const CATEGORY_CONFIG = {
 };
 
 const SYNC_CONFIG = {
-  PENDING: { label: 'Bekliyor', icon: 'schedule',       color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  SYNCED:  { label: 'Senkronize', icon: 'check_circle', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  FAILED:  { label: 'Hata',    icon: 'error',            color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  PENDING: { label: 'Kuyruğa Alındı', icon: 'schedule',     color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  SYNCED:  { label: 'Aktarıldı',      icon: 'check_circle', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  FAILED:  { label: 'Aktarım Hatası', icon: 'error',        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
 
-const PRIORITY_CONFIG = {
-  urgent: { label: 'Acil',   color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',         icon: 'priority_high' },
-  high:   { label: 'Yüksek', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'keyboard_double_arrow_up' },
-  normal: { label: 'Normal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',     icon: 'remove' },
-  low:    { label: 'Düşük',  color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',        icon: 'keyboard_double_arrow_down' },
+const CLICKUP_STATUS_MAP = {
+  'to do':       { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'todo':        { label: 'Yapılacak',  color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'open':        { label: 'Açık',       color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
+  'in progress': { label: 'İşlemde',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
+  'in review':   { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'review':      { label: 'İncelemede', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
+  'complete':    { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'completed':   { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'done':        { label: 'Tamamlandı', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
+  'closed':      { label: 'Kapatıldı',  color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'check_circle' },
+  'on hold':     { label: 'Beklemede',  color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
+  'cancelled':   { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+  'canceled':    { label: 'İptal',      color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
+};
+
+const getClickUpStatusConfig = (status) => {
+  if (!status) return null;
+  const key = status.toLowerCase().trim();
+  if (CLICKUP_STATUS_MAP[key]) return CLICKUP_STATUS_MAP[key];
+  if (key.includes('tamamla') || key.includes('complete') || key.includes('done') || key.includes('closed'))
+    return { label: status, color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: 'task_alt' };
+  if (key.includes('progress') || key.includes('devam') || key.includes('işlem'))
+    return { label: status, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: 'autorenew' };
+  return { label: status, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'pending' };
+};
+
+const getStatusConfig = (task) => {
+  if (task.clickupDeleted)
+    return { label: 'Kaldırıldı',     color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',           icon: 'link_off' };
+  if (task.clickupStatus)
+    return getClickUpStatusConfig(task.clickupStatus);
+  if (task.syncStatus === 'FAILED')
+    return { label: 'Aktarım Hatası', color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',            icon: 'error' };
+  if (task.syncStatus === 'PENDING')
+    return { label: 'Kuyruğa Alındı', color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', icon: 'schedule' };
+  return { label: 'Aktarıldı',        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',    icon: 'check_circle' };
 };
 
 const formatDate = (dateString) => {
@@ -207,85 +239,56 @@ const FeedbackTasksPage = () => {
             <div className="space-y-3">
               {filtered.map(task => {
                 const catCfg = CATEGORY_CONFIG[task.category] || CATEGORY_CONFIG.OTHER;
-                const syncCfg = SYNC_CONFIG[task.syncStatus] || SYNC_CONFIG.PENDING;
-                const priorityCfg = task.priority ? PRIORITY_CONFIG[task.priority.toLowerCase()] : null;
+                const statusCfg = getStatusConfig(task);
+                const priority = task.priority?.toLowerCase();
 
                 return (
                   <div
                     key={task.id}
                     className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all"
                   >
-                    {/* Task satır */}
                     <div
                       className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                       onClick={() => { setDetailTask(task); markViewed(task.id); }}
                     >
-                      {/* Kategori badge */}
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border flex-shrink-0 ${catCfg.color}`}>
-                        <span className="material-symbols-outlined text-[13px]">{catCfg.icon}</span>
-                        {catCfg.label}
+                      {/* Kategori ikon */}
+                      <span className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${catCfg.color.split(' ').slice(0, 4).join(' ')}`}
+                            title={catCfg.label}>
+                        <span className="material-symbols-outlined text-[16px]">{catCfg.icon}</span>
                       </span>
-
-                      {/* Öncelik badge */}
-                      {priorityCfg && (
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${priorityCfg.color}`}>
-                          <span className="material-symbols-outlined text-[13px]">{priorityCfg.icon}</span>
-                          {priorityCfg.label}
-                        </span>
-                      )}
 
                       {/* Başlık + meta */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-text-main truncate">{task.title}</p>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          {priority === 'urgent' && (
+                            <span className="material-symbols-outlined text-[14px] text-red-500 flex-shrink-0" title="Acil">priority_high</span>
+                          )}
+                          {priority === 'high' && (
+                            <span className="material-symbols-outlined text-[14px] text-orange-500 flex-shrink-0" title="Yüksek">keyboard_double_arrow_up</span>
+                          )}
+                          <p className="text-sm font-semibold text-text-main truncate">{task.title}</p>
+                        </div>
                         <p className="text-xs text-text-secondary truncate">
                           {task.companyName} · {task.userEmail}
-                          {task.dueDate && (
-                            <span className="ml-2 text-orange-500">
-                              · Son: {formatEpoch(task.dueDate)}
-                            </span>
-                          )}
+                          {task.dueDate && <span className="text-orange-500 ml-1">· Son: {formatEpoch(task.dueDate)}</span>}
                         </p>
                       </div>
 
-                      {/* Sync durumu */}
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${syncCfg.color}`}>
-                        <span className="material-symbols-outlined text-[13px]">{syncCfg.icon}</span>
-                        {syncCfg.label}
+                      {/* Durum badge */}
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${statusCfg.color}`}>
+                        <span className="material-symbols-outlined text-[13px]">{statusCfg.icon}</span>
+                        <span className="hidden sm:inline">{statusCfg.label}</span>
                       </span>
-
-                      {/* ClickUp task durumu */}
-                      {task.clickupDeleted ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
-                                         bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                          <span className="material-symbols-outlined text-[13px]">link_off</span>
-                          CU Silindi
-                        </span>
-                      ) : task.clickupStatus ? (
-                        (() => {
-                          const s = task.clickupStatus.toLowerCase();
-                          const color = s.includes('complete') || s.includes('done') || s.includes('closed')
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : s.includes('progress') || s.includes('review')
-                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                              : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
-                          return (
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${color}`}>
-                              <span className="material-symbols-outlined text-[13px]">adjust</span>
-                              {task.clickupStatus}
-                            </span>
-                          );
-                        })()
-                      ) : null}
 
                       {/* Yorum sayısı / okunmamış */}
                       {task.commentCount > 0 && (
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
                           ${hasUnread(task)
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            ? 'bg-primary/10 text-primary'
                             : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
                           <span className="material-symbols-outlined text-[13px]">chat</span>
                           {task.commentCount}
-                          {hasUnread(task) && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
+                          {hasUnread(task) && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                         </span>
                       )}
 
@@ -293,12 +296,10 @@ const FeedbackTasksPage = () => {
                       {task.clickupTaskId && (
                         <button
                           onClick={e => { e.stopPropagation(); openClickUpTask(task.clickupTaskId); }}
-                          className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg
-                                     bg-primary/10 text-primary hover:bg-primary/20 transition text-xs font-medium"
-                          title="ClickUp uygulamasında aç (yoksa tarayıcıda açılır)"
+                          className="flex-shrink-0 p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition"
+                          title="ClickUp'ta aç"
                         >
-                          <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                          ClickUp
+                          <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                         </button>
                       )}
 
@@ -307,10 +308,7 @@ const FeedbackTasksPage = () => {
                         {formatDate(task.createdAt)}
                       </span>
 
-                      {/* Detay oku */}
-                      <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">
-                        chevron_right
-                      </span>
+                      <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">chevron_right</span>
                     </div>
                   </div>
                 );
