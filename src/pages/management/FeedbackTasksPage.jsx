@@ -294,16 +294,11 @@ const FeedbackTasksPage = () => {
                         <p className="text-xs text-text-secondary truncate">
                           {task.companyName} · {task.userEmail}
                           {task.dueDate && <span className="text-orange-500 ml-1">· Son: {formatEpoch(task.dueDate)}</span>}
+                          <span className="hidden md:inline ml-1">· {formatDate(task.createdAt)}</span>
                         </p>
                       </div>
 
-                      {/* Durum badge */}
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${statusCfg.color}`}>
-                        <span className="material-symbols-outlined text-[13px]">{statusCfg.icon}</span>
-                        <span className="hidden sm:inline">{statusCfg.label}</span>
-                      </span>
-
-                      {/* Yorum sayısı / okunmamış */}
+                      {/* Yorum sayısı / okunmamış — sola yakın */}
                       {task.commentCount > 0 && (
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0
                           ${hasUnread(task)
@@ -315,6 +310,12 @@ const FeedbackTasksPage = () => {
                         </span>
                       )}
 
+                      {/* Durum badge — her zaman sağda */}
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium flex-shrink-0 ${statusCfg.color}`}>
+                        <span className="material-symbols-outlined text-[13px]">{statusCfg.icon}</span>
+                        <span className="hidden sm:inline">{statusCfg.label}</span>
+                      </span>
+
                       {/* ClickUp linki */}
                       {task.clickupTaskId && (
                         <button
@@ -325,11 +326,6 @@ const FeedbackTasksPage = () => {
                           <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                         </button>
                       )}
-
-                      {/* Tarih */}
-                      <span className="text-xs text-text-secondary flex-shrink-0 hidden md:block">
-                        {formatDate(task.createdAt)}
-                      </span>
 
                       <span className="material-symbols-outlined text-[18px] text-text-secondary flex-shrink-0">chevron_right</span>
                     </div>
