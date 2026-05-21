@@ -251,7 +251,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         {/* Content */}
         <div className="relative z-10 p-4 md:p-5 flex-1 flex flex-col">
           {/* Başlık satırı: yazı sol, simge sağ üst */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
               {stat.label}
             </p>
@@ -266,12 +266,12 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
             </span>
           </div>
 
-          {/* Sayı — kartın kalan alanında ortalanmış */}
+          {/* Sayı — kurye genişliyse ortalanmış ve büyük, değilse sol hizalı normal */}
           {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-8 w-14 rounded"></div>
+            <div className={`h-8 md:h-10 flex items-center ${courierExpanded ? 'flex-1 justify-center' : ''}`}>
+              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
             </div>
-          ) : (
+          ) : courierExpanded ? (
             <div className="flex-1 flex items-center justify-center">
               <p
                 className={`
@@ -284,6 +284,17 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
                 {animatedValue}
               </p>
             </div>
+          ) : (
+            <p
+              className={`
+                tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
+                transition-all duration-300 transform origin-left
+                ${isHovered ? 'scale-110' : 'scale-100'}
+                ${showNumberPulse ? 'animate-number-pulse' : ''}
+              `}
+            >
+              {animatedValue}
+            </p>
           )}
         </div>
 
