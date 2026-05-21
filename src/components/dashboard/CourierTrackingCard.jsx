@@ -128,64 +128,8 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
 
   if (!canViewCourier) return null;
 
-  const BrokerSelector = () => (
-    <div className="mb-3">
-      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-        Gümrük Firması
-      </label>
-      <select
-        value={selectedBrokerId}
-        onChange={(e) => setSelectedBrokerId(e.target.value)}
-        className="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={brokersLoading}
-      >
-        <option value="">-- Firma seçin --</option>
-        {brokers.map((b) => (
-          <option key={b.id} value={b.id}>{b.name}</option>
-        ))}
-      </select>
-    </div>
-  );
 
-  if (loading) {
-    return (
-      <div className="animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl h-full min-h-32 border border-gray-200 dark:border-gray-700" />
-    );
-  }
-
-  if (isSuperAdmin && !selectedBrokerId) {
-    return (
-      <div className="bg-white dark:bg-background-dark rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">two_wheeler</span>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
-        </div>
-        <BrokerSelector />
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-auto">
-          Kurye bilgilerini görmek için gümrük firması seçin.
-        </p>
-      </div>
-    );
-  }
-
-  if (!courierData?.nextDepartures?.length) {
-    return (
-      <div className="bg-white dark:bg-background-dark rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
-        {isSuperAdmin && <BrokerSelector />}
-        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 flex-1">
-          <span className="material-symbols-outlined text-3xl">two_wheeler</span>
-          <div>
-            <p className="text-sm font-medium">Kurye Takip</p>
-            <p className="text-xs mt-1">Yakında planlanmış kurye bulunmuyor</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const primaryDeparture = courierData.nextDepartures[0];
-  const hasMultipleCouriers = courierData.nextDepartures.length > 1;
-
+  // Yardımcı fonksiyonlar — her zaman tanımlanır (erken return yok)
   const formatTime = (timeString) => {
     if (!timeString) return '';
     return timeString.substring(0, 5);
@@ -216,42 +160,60 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
     return `${dayName} ${time}`;
   };
 
-  const groupedByCourier = courierData.nextDepartures.reduce((acc, departure) => {
-    const key = departure.courierCompanyName;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(departure);
-    return acc;
-  }, {});
+  const hasDepartures = !loading && courierData?.nextDepartures?.length > 0;
+  const primaryDeparture = hasDepartures ? courierData.nextDepartures[0] : null;
+  const hasMultipleCouriers = hasDepartures && courierData.nextDepartures.length > 1;
+
+  const groupedByCourier = hasDepartures
+    ? courierData.nextDepartures.reduce((acc, departure) => {
+        const key = departure.courierCompanyName;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(departure);
+        return acc;
+      }, {})
+    : {};
 
   const expandIcon = expanded
     ? (isLargeScreen ? 'chevron_right' : 'expand_less')
     : (isLargeScreen ? 'chevron_left' : 'expand_more');
 
-  return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700 shadow-md overflow-hidden h-full flex flex-col lg:flex-row">
-
-      {/* Sol panel — her zaman görünür, tüm kartı kapsar */}
-      <div className="flex flex-col p-4 lg:p-5 flex-1 min-w-0">
-        {/* Başlık */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">two_wheeler</span>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
-          </div>
-          {courierData.totalActiveCouriers > 0 && (
-            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
-              {courierData.totalActiveCouriers} Kayıtlı
-            </span>
-          )}
+  // Sol panel içerik bölgesi
+  const renderLeftContent = () => {
+    if (loading) {
+      return (
+        <div className="space-y-2 animate-pulse">
+          <div className="h-5 bg-blue-200/60 dark:bg-blue-700/40 rounded w-3/4" />
+          <div className="h-3 bg-blue-200/40 dark:bg-blue-700/30 rounded w-1/2" />
+          <div className="h-3 bg-blue-200/40 dark:bg-blue-700/30 rounded w-2/3 mt-1" />
         </div>
+      );
+    }
 
-        {isSuperAdmin && <BrokerSelector />}
+    if (isSuperAdmin && !selectedBrokerId) {
+      return (
+        <div className="flex items-center gap-2 text-blue-500 dark:text-blue-400">
+          <span className="material-symbols-outlined text-base">info</span>
+          <p className="text-xs">Detaylar bölümünden firma seçin</p>
+        </div>
+      );
+    }
 
+    if (!hasDepartures) {
+      return (
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+          <span className="material-symbols-outlined text-base">two_wheeler</span>
+          <p className="text-xs">Planlanmış kurye bulunmuyor</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
         {/* Çakışma uyarısı */}
         {hasMultipleCouriers && (
           <div className="mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 rounded-r-lg">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-lg">warning</span>
+              <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-base">warning</span>
               <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
                 {courierData.nextDepartures.length} kurye aynı saatte!
               </p>
@@ -260,47 +222,72 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         )}
 
         {/* Geri sayım */}
-        <div className="flex-1 flex flex-col justify-start pt-1">
-          {countdownDisplay.refreshing ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
-          ) : countdownDisplay.seconds !== null ? (
-            <>
-              {countdownDisplay.main && (
-                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 leading-tight">
-                  {countdownDisplay.main}
-                </p>
-              )}
-              <p className={`font-semibold text-blue-500 dark:text-blue-400/80 leading-tight ${countdownDisplay.main ? 'text-sm mt-0.5' : 'text-2xl font-bold'}`}>
-                {countdownDisplay.seconds} saniye
+        {countdownDisplay.refreshing ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
+        ) : countdownDisplay.seconds !== null ? (
+          <>
+            {countdownDisplay.main && (
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400 leading-tight">
+                {countdownDisplay.main}
               </p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Hesaplanıyor...</p>
-          )}
-
-          <div className="flex items-center gap-1 mt-1.5">
-            <span className="material-symbols-outlined text-xs text-gray-500 dark:text-gray-400">schedule</span>
-            <p className="text-xs text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">{formatDepartureTime(primaryDeparture)}</span>
+            )}
+            <p className={`font-semibold text-blue-500 dark:text-blue-400/80 leading-tight ${countdownDisplay.main ? 'text-sm mt-0.5' : 'text-2xl font-bold'}`}>
+              {countdownDisplay.seconds} saniye
             </p>
-          </div>
+          </>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">Hesaplanıyor...</p>
+        )}
 
-          {/* Gidilecek konumlar */}
-          <div className="mt-2 space-y-0.5">
-            {courierData.nextDepartures.map((d, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }}>location_on</span>
-                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{d.customsName}</p>
-              </div>
-            ))}
+        {/* Kalkış zamanı */}
+        <div className="flex items-center gap-1 mt-1.5">
+          <span className="material-symbols-outlined text-xs text-gray-500 dark:text-gray-400">schedule</span>
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+            {formatDepartureTime(primaryDeparture)}
+          </p>
+        </div>
+
+        {/* Gidilecek konumlar */}
+        <div className="mt-2 space-y-0.5">
+          {courierData.nextDepartures.map((d, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }}>location_on</span>
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{d.customsName}</p>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700 shadow-md overflow-hidden h-full flex flex-col lg:flex-row">
+
+      {/* Sol panel — yapısı her zaman aynı, yükseklik değişmez */}
+      <div className="flex flex-col p-4 lg:p-5 flex-1 min-w-0">
+        {/* Başlık */}
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">two_wheeler</span>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
           </div>
+          {hasDepartures && courierData.totalActiveCouriers > 0 && (
+            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full flex-shrink-0">
+              {courierData.totalActiveCouriers} Kayıtlı
+            </span>
+          )}
+        </div>
+
+        {/* İçerik — koşula göre değişir ama flex-1 ile alana yayılır */}
+        <div className="flex-1 flex flex-col justify-start pt-1 min-h-0">
+          {renderLeftContent()}
         </div>
 
         {/* Genişlet / Kapat butonu */}
         {onToggleExpand && (
           <button
             onClick={onToggleExpand}
-            className="mt-3 self-start flex items-center gap-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+            className="mt-3 self-start flex items-center gap-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors flex-shrink-0"
           >
             <span className="material-symbols-outlined text-sm">{expandIcon}</span>
             {expanded ? 'Kapat' : 'Detaylar'}
@@ -319,34 +306,56 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       >
         <div className="p-4 min-w-[220px] space-y-3 overflow-y-auto h-full">
 
-          {/* Kurye firmaları */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-              Firmalar
-            </p>
-            <div className="space-y-2">
-              {Object.entries(groupedByCourier).map(([courierName, departures], idx) => (
-                <div
-                  key={idx}
-                  className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30"
-                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">two_wheeler</span>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{courierName}</p>
-                  </div>
-                  <div className="flex items-start gap-1.5">
-                    <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5">location_on</span>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {departures.map(d => d.customsName).join(' | ')}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          {/* SUPER_ADMIN: Broker seçici sağ panelde */}
+          {isSuperAdmin && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
+                Gümrük Firması
+              </p>
+              <select
+                value={selectedBrokerId}
+                onChange={(e) => setSelectedBrokerId(e.target.value)}
+                className="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={brokersLoading}
+              >
+                <option value="">-- Firma seçin --</option>
+                {brokers.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
             </div>
-          </div>
+          )}
+
+          {/* Kurye firmaları */}
+          {hasDepartures && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                Firmalar
+              </p>
+              <div className="space-y-2">
+                {Object.entries(groupedByCourier).map(([courierName, departures], idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">two_wheeler</span>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{courierName}</p>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5">location_on</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {departures.map(d => d.customsName).join(' | ')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Sonraki kurye */}
-          {courierData.upcomingDeparture && (
+          {hasDepartures && courierData.upcomingDeparture && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                 Sonraki Kurye
