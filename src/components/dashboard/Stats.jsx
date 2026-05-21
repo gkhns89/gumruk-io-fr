@@ -248,30 +248,17 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
           />
         )}
 
-        {/* Label hover overlay — kurye genişleyince görünür */}
-        <div
-          className={`
-            absolute top-0 inset-x-0 flex justify-center pt-2.5 z-30 pointer-events-none
-            transition-all duration-200
-            ${courierExpanded && isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}
-          `}
-        >
-          <div className="bg-gray-900/85 dark:bg-gray-800/95 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg backdrop-blur-sm whitespace-nowrap">
-            {stat.label}
-          </div>
-        </div>
-
         {/* Content */}
-        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col transition-all duration-300 ${courierExpanded ? 'items-center justify-center' : 'items-start justify-start'}`}>
-          <div className={`flex items-center w-full mb-1 transition-all duration-300 ${courierExpanded ? 'justify-center' : 'justify-between'}`}>
-            <p className={`font-medium leading-normal truncate text-text-main transition-all duration-300 ${courierExpanded ? 'opacity-0 w-0 overflow-hidden text-xs' : 'opacity-90 text-sm'}`}>
+        <div className="relative z-10 p-4 md:p-5 flex-1 flex flex-col">
+          {/* Başlık satırı: yazı sol, simge sağ üst */}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
               {stat.label}
             </p>
             <span
               className={`
-                material-symbols-outlined flex-shrink-0 ${colors.icon}
+                material-symbols-outlined text-lg md:text-xl ${colors.icon} flex-shrink-0
                 transition-all duration-300 ease-out transform
-                ${courierExpanded ? 'text-2xl' : 'text-lg md:text-xl'}
                 ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
               `}
             >
@@ -279,22 +266,24 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
             </span>
           </div>
 
+          {/* Sayı — kartın kalan alanında ortalanmış */}
           {loading ? (
-            <div className={`h-8 md:h-10 flex items-center ${courierExpanded ? 'justify-center' : ''}`}>
-              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-8 w-14 rounded"></div>
             </div>
           ) : (
-            <p
-              className={`
-                tracking-light font-bold leading-tight ${colors.text}
-                transition-all duration-300 transform
-                ${courierExpanded ? 'text-2xl md:text-3xl text-center origin-center' : 'text-2xl md:text-3xl text-left origin-left'}
-                ${isHovered ? 'scale-110' : 'scale-100'}
-                ${showNumberPulse ? 'animate-number-pulse' : ''}
-              `}
-            >
-              {animatedValue}
-            </p>
+            <div className="flex-1 flex items-center justify-center">
+              <p
+                className={`
+                  tracking-light text-3xl md:text-4xl font-bold leading-none ${colors.text}
+                  transition-all duration-300 transform origin-center
+                  ${isHovered ? 'scale-110' : 'scale-100'}
+                  ${showNumberPulse ? 'animate-number-pulse' : ''}
+                `}
+              >
+                {animatedValue}
+              </p>
+            </div>
           )}
         </div>
 
