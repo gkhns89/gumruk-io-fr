@@ -66,11 +66,20 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
   }, [loading, transactions]);
 
   const equalizeCardHeights = useCallback(() => {
-    const cards = gridRef.current?.querySelectorAll('.stat-card');
+    const el = gridRef.current;
+    if (!el) return;
+    const cards = el.querySelectorAll('.stat-card');
     if (!cards?.length) return;
+    // Grid yüksekliğini ve kart min-height'larını sıfırla
+    el.style.height = '';
     cards.forEach(c => { c.style.minHeight = ''; });
+    // En yüksek kartı ölç, tümüne uygula
     const maxH = Math.max(...Array.from(cards).map(c => c.offsetHeight));
-    if (maxH > 0) cards.forEach(c => { c.style.minHeight = `${maxH}px`; });
+    if (maxH > 0) {
+      cards.forEach(c => { c.style.minHeight = `${maxH}px`; });
+      // Grid yüksekliğini kilitle — kurye açılıp kapanınca değişmesin
+      el.style.height = `${el.offsetHeight}px`;
+    }
   }, []);
 
   useLayoutEffect(() => {
@@ -81,12 +90,6 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
     window.addEventListener('resize', equalizeCardHeights);
     return () => window.removeEventListener('resize', equalizeCardHeights);
   }, [equalizeCardHeights]);
-
-  // Kurye paneli genişleyince/kapanınca geçiş bittikten sonra yükseklikleri yeniden eşitle
-  useEffect(() => {
-    const timer = setTimeout(equalizeCardHeights, 450);
-    return () => clearTimeout(timer);
-  }, [courierExpanded, equalizeCardHeights]);
 
   const stats = {
     total: transactions?.length || 0,
@@ -249,52 +252,76 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         )}
 
         {/* Content */}
-        <div className="relative z-10 p-4 md:p-5 flex-1 flex flex-col">
-          {/* Başlık satırı: yazı sol, simge sağ üst */}
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
-              {stat.label}
-            </p>
-            <span
-              className={`
-                material-symbols-outlined text-lg md:text-xl ${colors.icon} flex-shrink-0
-                transition-all duration-300 ease-out transform
-                ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
-              `}
-            >
-              {stat.icon}
-            </span>
-          </div>
-
-          {/* Sayı — kurye genişliyse ortalanmış ve büyük, değilse sol hizalı normal */}
-          {loading ? (
-            <div className={`h-8 md:h-10 flex items-center ${courierExpanded ? 'flex-1 justify-center' : ''}`}>
-              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
-            </div>
-          ) : courierExpanded ? (
-            <div className="flex-1 flex items-center justify-center">
-              <p
+        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : ''}`}>
+          {courierExpanded ? (
+            <>
+              {/* İkon — absolute sağ üst, akıştan çıkar */}
+              <span
                 className={`
-                  tracking-light text-3xl md:text-4xl font-bold leading-none ${colors.text}
-                  transition-all duration-300 transform origin-center
-                  ${isHovered ? 'scale-110' : 'scale-100'}
-                  ${showNumberPulse ? 'animate-number-pulse' : ''}
+                  absolute top-4 right-4 md:top-5 md:right-5
+                  material-symbols-outlined text-lg md:text-xl ${colors.icon}
+                  transition-all duration-300 ease-out transform
+                  ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
                 `}
               >
-                {animatedValue}
-              </p>
-            </div>
+                {stat.icon}
+              </span>
+
+              {/* Label + Sayı — kartın tam ortasında grup */}
+              <div className="flex flex-col items-center gap-1 text-center">
+                <p className="text-xs font-medium opacity-90 text-text-main leading-normal">
+                  {stat.label}
+                </p>
+                {loading ? (
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-8 w-12 rounded"></div>
+                ) : (
+                  <p
+                    className={`
+                      tracking-light text-3xl md:text-4xl font-bold leading-none ${colors.text}
+                      transition-all duration-300 transform origin-center
+                      ${isHovered ? 'scale-110' : 'scale-100'}
+                      ${showNumberPulse ? 'animate-number-pulse' : ''}
+                    `}
+                  >
+                    {animatedValue}
+                  </p>
+                )}
+              </div>
+            </>
           ) : (
-            <p
-              className={`
-                tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
-                transition-all duration-300 transform origin-left
-                ${isHovered ? 'scale-110' : 'scale-100'}
-                ${showNumberPulse ? 'animate-number-pulse' : ''}
-              `}
-            >
-              {animatedValue}
-            </p>
+            <>
+              {/* Normal düzen: yazı sol, simge sağ üst */}
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
+                  {stat.label}
+                </p>
+                <span
+                  className={`
+                    material-symbols-outlined text-lg md:text-xl ${colors.icon} flex-shrink-0
+                    transition-all duration-300 ease-out transform
+                    ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
+                  `}
+                >
+                  {stat.icon}
+                </span>
+              </div>
+              {loading ? (
+                <div className="h-8 md:h-10 flex items-center">
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+                </div>
+              ) : (
+                <p
+                  className={`
+                    tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
+                    transition-all duration-300 transform origin-left
+                    ${isHovered ? 'scale-110' : 'scale-100'}
+                    ${showNumberPulse ? 'animate-number-pulse' : ''}
+                  `}
+                >
+                  {animatedValue}
+                </p>
+              )}
+            </>
           )}
         </div>
 
