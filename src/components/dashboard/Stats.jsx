@@ -253,7 +253,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         )}
 
         {/* Content */}
-        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : ''}`}>
+        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : stat.showGateBreakdown ? 'justify-center' : ''}`}>
           {courierExpanded ? (
             <>
               {/* İkon — absolute sağ üst, akıştan çıkar */}
@@ -269,7 +269,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
               </span>
 
               {/* Label + Sayı — kartın tam ortasında grup */}
-              <div className="flex flex-col items-center gap-1 text-center">
+              <div className={`flex flex-col items-center gap-1 text-center ${stat.showGateBreakdown ? 'mt-[37px]' : ''}`}>
                 <p className="text-xs font-medium opacity-90 text-text-main leading-normal">
                   {stat.label}
                 </p>
@@ -292,9 +292,6 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
           ) : (
             <>
               {/* Normal düzen: yazı sol, simge sağ üst */}
-              {stat.showGateBreakdown && !loading && (
-                <div className="h-[37px] flex-shrink-0" />
-              )}
               <div className="flex items-center justify-between mb-1">
                 <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
                   {stat.label}
