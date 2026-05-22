@@ -305,7 +305,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             : { maxHeight: expanded ? '500px' : '0px', transition: 'max-height 400ms ease-in-out' }
         }
       >
-        <div className="p-4 space-y-3 overflow-hidden">
+        <div className="p-4 space-y-3 overflow-y-auto h-full">
 
           {/* SUPER_ADMIN: Broker seçici sağ panelde */}
           {isSuperAdmin && (

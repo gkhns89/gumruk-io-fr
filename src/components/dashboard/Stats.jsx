@@ -322,8 +322,8 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         </div>
 
         {/* Gate breakdown — tam genişlik, kartın altında */}
-        {stat.showGateBreakdown && stat.gateBreakdown && !loading && (
-          <div className="relative z-10 flex border-t border-gray-300/60 dark:border-gray-600/60">
+        {stat.showGateBreakdown && stat.gateBreakdown && (
+          <div className={`relative z-10 flex border-t border-gray-300/60 dark:border-gray-600/60 ${loading ? 'invisible' : ''}`}>
             <div className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-yellow-100/80 dark:bg-yellow-900/30">
               <span className="text-sm leading-none">🟡</span>
               <span className="text-xs font-bold text-yellow-800 dark:text-yellow-300">{stat.gateBreakdown.SARI}</span>
