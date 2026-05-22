@@ -254,7 +254,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700 shadow-md overflow-hidden h-full flex flex-col lg:flex-row">
 
       {/* Sol panel — genişleme olmadığında flex-1, genişleme varsa sabit 200px */}
-      <div className={`flex flex-col p-4 lg:p-5 min-w-0 ${expanded && isLargeScreen ? 'flex-none w-[200px]' : 'flex-1'}`}>
+      <div className={`flex flex-col p-4 lg:p-5 min-w-0 ${expanded && isLargeScreen ? 'flex-none w-[260px]' : 'flex-1'}`}>
         {/* Başlık */}
         <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -263,16 +263,13 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {hasMultipleCouriers && (
-              <div className="relative group flex-shrink-0">
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500 text-orange-700 dark:text-orange-300 text-xs font-semibold cursor-help select-none">
-                  <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>warning</span>
-                  {courierData.nextDepartures.length}
-                </span>
-                <div className="absolute right-0 top-7 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg px-2.5 py-2 shadow-xl pointer-events-none whitespace-nowrap">
-                  Aynı saatte {courierData.nextDepartures.length} kurye kalkıyor
-                  <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45" />
-                </div>
-              </div>
+              <span
+                title={`Aynı saatte ${courierData.nextDepartures.length} kurye kalkıyor`}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500 text-orange-700 dark:text-orange-300 text-xs font-semibold cursor-help select-none flex-shrink-0"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>warning</span>
+                {courierData.nextDepartures.length}
+              </span>
             )}
             {hasDepartures && courierData.totalActiveCouriers > 0 && (
               <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
@@ -304,11 +301,11 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         className="overflow-hidden border-t lg:border-t-0 lg:border-l border-blue-200 dark:border-blue-700"
         style={
           isLargeScreen
-            ? { width: expanded ? 'calc(100% - 200px)' : '0px', transition: 'width 400ms ease-in-out', flexShrink: 0 }
+            ? { width: expanded ? 'calc(100% - 260px)' : '0px', transition: 'width 400ms ease-in-out', flexShrink: 0 }
             : { maxHeight: expanded ? '500px' : '0px', transition: 'max-height 400ms ease-in-out' }
         }
       >
-        <div className="p-4 space-y-3 overflow-y-auto h-full">
+        <div className="p-4 space-y-3 overflow-hidden">
 
           {/* SUPER_ADMIN: Broker seçici sağ panelde */}
           {isSuperAdmin && (

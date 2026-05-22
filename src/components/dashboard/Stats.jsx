@@ -253,7 +253,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
         )}
 
         {/* Content */}
-        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : stat.showGateBreakdown ? 'justify-center' : ''}`}>
+        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : ''}`}>
           {courierExpanded ? (
             <>
               {/* İkon — absolute sağ üst, akıştan çıkar */}

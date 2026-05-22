@@ -184,7 +184,7 @@ export default function Dashboard() {
           style={isLargeScreen ? {
             gridTemplateColumns: courierExpanded ? '1fr 1fr' : '3fr 1fr',
             transition: 'grid-template-columns 400ms ease-in-out',
-            ...(statsGridHeight ? { gridTemplateRows: `${statsGridHeight}px`, overflow: 'hidden' } : {}),
+            ...(statsGridHeight ? { gridTemplateRows: `${statsGridHeight}px` } : {}),
           } : {}}
         >
           <Stats transactions={allTransactions} loading={loading} courierExpanded={courierExpanded} onHeightLocked={setStatsGridHeight} />
