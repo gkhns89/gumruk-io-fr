@@ -209,18 +209,6 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
 
     return (
       <>
-        {/* Çakışma uyarısı */}
-        {hasMultipleCouriers && (
-          <div className="mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 rounded-r-lg">
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-base">warning</span>
-              <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                {courierData.nextDepartures.length} kurye aynı saatte!
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Geri sayım */}
         {countdownDisplay.refreshing ? (
           <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
@@ -271,11 +259,21 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">two_wheeler</span>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
           </div>
-          {hasDepartures && courierData.totalActiveCouriers > 0 && (
-            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full flex-shrink-0">
-              {courierData.totalActiveCouriers} Kayıtlı
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {hasMultipleCouriers && (
+              <span
+                className="material-symbols-outlined text-orange-500 dark:text-orange-400 text-lg"
+                title={`${courierData.nextDepartures.length} kurye aynı saatte!`}
+              >
+                warning
+              </span>
+            )}
+            {hasDepartures && courierData.totalActiveCouriers > 0 && (
+              <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
+                {courierData.totalActiveCouriers} Kayıtlı
+              </span>
+            )}
+          </div>
         </div>
 
         {/* İçerik — koşula göre değişir ama flex-1 ile alana yayılır */}

@@ -53,7 +53,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ transactions, loading, courierExpanded = false }) {
+const Stats = memo(function Stats({ transactions, loading, courierExpanded = false, onHeightLocked }) {
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const gridRef = useRef(null);
@@ -79,6 +79,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
       cards.forEach(c => { c.style.minHeight = `${maxH}px`; });
       // Grid yüksekliğini kilitle — kurye açılıp kapanınca değişmesin
       el.style.height = `${el.offsetHeight}px`;
+      onHeightLocked?.(el.offsetHeight);
     }
   }, []);
 
