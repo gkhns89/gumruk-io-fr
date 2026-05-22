@@ -292,6 +292,9 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
           ) : (
             <>
               {/* Normal düzen: yazı sol, simge sağ üst */}
+              {stat.showGateBreakdown && !loading && (
+                <div className="h-[37px] flex-shrink-0" />
+              )}
               <div className="flex items-center justify-between mb-1">
                 <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
                   {stat.label}

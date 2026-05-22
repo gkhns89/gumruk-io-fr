@@ -23,6 +23,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
   const [brokers, setBrokers] = useState([]);
   const [brokersLoading, setBrokersLoading] = useState(false);
   const [selectedBrokerId, setSelectedBrokerId] = useState('');
+  const [courierPage, setCourierPage] = useState(0);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -45,6 +46,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
     const brokerIdParam = isSuperAdmin ? Number(selectedBrokerId) : null;
 
     setLoading(true);
+    setCourierPage(0);
     retryCountRef.current = 0;
     isRefreshingRef.current = false;
 
@@ -215,11 +217,11 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         ) : countdownDisplay.seconds !== null ? (
           <>
             {countdownDisplay.main && (
-              <p className="text-xl font-bold text-blue-600 dark:text-blue-400 leading-tight">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 leading-tight">
                 {countdownDisplay.main}
               </p>
             )}
-            <p className={`font-semibold text-blue-500 dark:text-blue-400/80 leading-tight ${countdownDisplay.main ? 'text-sm mt-0.5' : 'text-2xl font-bold'}`}>
+            <p className={`font-bold text-blue-500 dark:text-blue-400/80 leading-tight mb-3 ${countdownDisplay.main ? 'text-base mt-0.5' : 'text-3xl'}`}>
               {countdownDisplay.seconds} saniye
             </p>
           </>
@@ -261,12 +263,18 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {hasMultipleCouriers && (
-              <span
-                className="material-symbols-outlined text-orange-500 dark:text-orange-400 text-lg"
-                title={`${courierData.nextDepartures.length} kurye aynı saatte!`}
-              >
-                warning
-              </span>
+              <div className="relative group">
+                <div className="flex items-center justify-center w-6 h-6 bg-orange-100 dark:bg-orange-900/50 rounded-full cursor-help ring-1 ring-orange-400 dark:ring-orange-500 animate-pulse">
+                  <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-sm leading-none">warning</span>
+                </div>
+                <div className="absolute right-0 top-8 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 w-48 bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg px-3 py-2 shadow-xl pointer-events-none">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-orange-400 dark:text-orange-600 text-sm">warning</span>
+                    <span className="font-medium">{courierData.nextDepartures.length} kurye aynı saatte kalkıyor!</span>
+                  </div>
+                  <div className="absolute -top-1 right-1.5 w-2 h-2 bg-gray-800 dark:bg-gray-100 rotate-45" />
+                </div>
+              </div>
             )}
             {hasDepartures && courierData.totalActiveCouriers > 0 && (
               <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
@@ -325,32 +333,56 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
           )}
 
           {/* Kurye firmaları */}
-          {hasDepartures && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                Firmalar
-              </p>
-              <div className="space-y-2">
-                {Object.entries(groupedByCourier).map(([courierName, departures], idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30"
-                  >
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">two_wheeler</span>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{courierName}</p>
+          {hasDepartures && (() => {
+            const courierEntries = Object.entries(groupedByCourier);
+            const totalPages = Math.ceil(courierEntries.length / 2);
+            const visibleEntries = courierEntries.slice(courierPage * 2, (courierPage + 1) * 2);
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Firmalar</p>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        onClick={() => setCourierPage(p => Math.max(0, p - 1))}
+                        disabled={courierPage === 0}
+                        className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm text-gray-600 dark:text-gray-400">chevron_left</span>
+                      </button>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 px-1 tabular-nums">{courierPage + 1}/{totalPages}</span>
+                      <button
+                        onClick={() => setCourierPage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={courierPage === totalPages - 1}
+                        className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm text-gray-600 dark:text-gray-400">chevron_right</span>
+                      </button>
                     </div>
-                    <div className="flex items-start gap-1.5">
-                      <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5">location_on</span>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {departures.map(d => d.customsName).join(' | ')}
-                      </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {visibleEntries.map(([courierName, departures], idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white dark:bg-gray-800/50 rounded-lg p-2 border border-blue-200 dark:border-blue-600/30"
+                    >
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">two_wheeler</span>
+                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{courierName}</p>
+                      </div>
+                      <div className="flex items-start gap-1">
+                        <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-sm mt-0.5">location_on</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                          {departures.map(d => d.customsName).join(' | ')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Sonraki kurye */}
           {hasDepartures && courierData.upcomingDeparture && (
