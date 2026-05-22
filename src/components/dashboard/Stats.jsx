@@ -53,7 +53,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ transactions, loading, courierExpanded = false, onHeightLocked }) {
+const Stats = memo(function Stats({ transactions, loading, courierExpanded = false }) {
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const gridRef = useRef(null);
@@ -70,16 +70,11 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
     if (!el) return;
     const cards = el.querySelectorAll('.stat-card');
     if (!cards?.length) return;
-    // Grid yüksekliğini ve kart min-height'larını sıfırla
-    el.style.height = '';
     cards.forEach(c => { c.style.minHeight = ''; });
     // En yüksek kartı ölç, tümüne uygula
     const maxH = Math.max(...Array.from(cards).map(c => c.offsetHeight));
     if (maxH > 0) {
       cards.forEach(c => { c.style.minHeight = `${maxH}px`; });
-      // Grid yüksekliğini kilitle — kurye açılıp kapanınca değişmesin
-      el.style.height = `${el.offsetHeight}px`;
-      onHeightLocked?.(el.offsetHeight);
     }
   }, []);
 
@@ -269,7 +264,7 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
               </span>
 
               {/* Label + Sayı — kartın tam ortasında grup */}
-              <div className={`flex flex-col items-center gap-1 text-center ${stat.showGateBreakdown ? 'mt-[37px]' : ''}`}>
+              <div className="flex flex-col items-center gap-1 text-center">
                 <p className="text-xs font-medium opacity-90 text-text-main leading-normal">
                   {stat.label}
                 </p>

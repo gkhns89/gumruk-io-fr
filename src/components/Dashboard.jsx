@@ -37,7 +37,6 @@ export default function Dashboard() {
   // Kurye kartı compact ↔ expanded geçişi (sadece desktop'ta)
   const [courierExpanded, setCourierExpanded] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const [statsGridHeight, setStatsGridHeight] = useState(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -184,10 +183,9 @@ export default function Dashboard() {
           style={isLargeScreen ? {
             gridTemplateColumns: courierExpanded ? '1fr 1fr' : '3fr 1fr',
             transition: 'grid-template-columns 400ms ease-in-out',
-            ...(statsGridHeight ? { gridTemplateRows: `${statsGridHeight}px` } : {}),
           } : {}}
         >
-          <Stats transactions={allTransactions} loading={loading} courierExpanded={courierExpanded} onHeightLocked={setStatsGridHeight} />
+          <Stats transactions={allTransactions} loading={loading} courierExpanded={courierExpanded} />
           <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
             <CourierTrackingCard
               expanded={courierExpanded}
