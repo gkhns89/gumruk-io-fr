@@ -3,6 +3,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { addonService } from '../../api/addonService';
 import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { confirmDialog } from '../../utils/confirmDialog';
 import { paymentService } from '../../api/paymentService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
@@ -281,13 +282,17 @@ export default function BrokerSubscriptionsPage() {
   const handleToggleShipsGoEnabled = async (brokerId, nextEnabled) => {
     // Disabling is destructive enough that we confirm; activating is one tap.
     if (!nextEnabled) {
-      const ok = window.confirm(
-        'ShipsGo entegrasyonunu kapatıyorsunuz.\n\n' +
-        '• Mevcut kredisi korunur\n' +
-        '• Yeni satın alma, sorgu ve talepler engellenir\n' +
-        '• Kullanıcıya WARNING bildirimi düşer\n\n' +
-        'Devam edilsin mi?'
-      );
+      const ok = await confirmDialog({
+        title: 'ShipsGo entegrasyonunu kapat',
+        message: 'Bu firma için ShipsGo entegrasyonunu kapatmak üzeresiniz.',
+        details: [
+          'Mevcut kredisi korunur',
+          'Yeni satın alma, sorgu ve talepler engellenir',
+          'Yöneticilere uyarı bildirimi düşer',
+        ],
+        intent: 'warning',
+        confirmText: 'Kapat',
+      });
       if (!ok) return;
     }
     setTogglingShipsGo(prev => ({ ...prev, [brokerId]: true }));

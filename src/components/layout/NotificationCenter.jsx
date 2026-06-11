@@ -4,6 +4,7 @@ import { notificationService } from '../../api/notificationService';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 import { useAuth } from '../../hooks/useAuth';
+import { confirmDialog } from '../../utils/confirmDialog';
 
 export default function NotificationCenter() {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ export default function NotificationCenter() {
                   showBubble(n.type, n.title || 'Yeni Bildirim', n.message);
                 });
               }
-            } catch (_) {}
+            } catch { /* ignore */ }
           }
 
           // Uzun süredir okunmamış bildirim hatırlatması — her 5 dakikada tekrarlar
@@ -118,7 +119,7 @@ export default function NotificationCenter() {
         setUnreadCount(newCount);
         prevUnreadRef.current = newCount;
       }
-    } catch (_) {}
+    } catch { /* ignore */ }
   };
 
   // ── Bell click ──────────────────────────────────────────────
@@ -205,7 +206,13 @@ export default function NotificationCenter() {
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm('Tüm bildirimler silinecek. Emin misiniz?')) return;
+    const ok = await confirmDialog({
+      title: 'Tüm bildirimleri temizle',
+      message: 'Tüm bildirimleriniz silinecek. Bu işlem geri alınamaz.',
+      intent: 'danger',
+      confirmText: 'Hepsini sil',
+    });
+    if (!ok) return;
     setLoading(true);
     try {
       const result = await notificationService.deleteAll();
@@ -330,7 +337,9 @@ export default function NotificationCenter() {
                 onClick={() => {
                   dismissBubble(bubble.id);
                   lastDropdownOpenRef.current = Date.now();
-                  reminderShownRef.current = false;
+                  // Reset the periodic reminder timer so reopening the bubble
+                  // count later doesn't immediately re-trigger another toast.
+                  lastReminderRef.current = 0;
                   setHasNewNotif(false);
                   clearAllBubbles();
                   setIsOpen(true);

@@ -3,6 +3,7 @@ import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { shipsGoService } from '../../api/shipsGoService';
 import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { confirmDialog } from '../../utils/confirmDialog';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -137,9 +138,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     const identifier = formData.vehicleType === 'AIRPLANE'
       ? formData.consignmentNumber
       : (formData.billOfLading || formData.containerNumbers[0]);
-    const ok = window.confirm(
-      `ShipsGo'dan ${identifier} için bilgi çekilecek.\n\n1 kredi kullanılacak. Devam edilsin mi?`
-    );
+    const ok = await confirmDialog({
+      title: 'ShipsGo bilgileri çekilecek',
+      message: `${identifier} için ShipsGo'dan tracking bilgileri çekilecek ve form alanlarına yansıtılacak.`,
+      details: ['Bu işlem 1 ShipsGo kredisi kullanır.'],
+      intent: 'primary',
+      icon: 'download',
+      confirmText: 'Çek (1 kredi)',
+    });
     if (!ok) return;
 
     setShipsGoPreviewing(true);

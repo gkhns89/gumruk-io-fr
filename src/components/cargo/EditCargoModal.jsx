@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { shipsGoService } from '../../api/shipsGoService';
+import { confirmDialog } from '../../utils/confirmDialog';
 import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
@@ -42,7 +43,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const latestRequest = requestHistory[0] || null;
 
   const handleCancelMyRequest = async (requestId) => {
-    if (!window.confirm('Bekleyen ShipsGo talebinizi iptal etmek istiyor musunuz?')) return;
+    const ok = await confirmDialog({
+      title: 'ShipsGo talebini iptal et',
+      message: 'Bekleyen ShipsGo entegrasyon talebinizi iptal etmek istiyor musunuz?',
+      intent: 'warning',
+      confirmText: 'Talebi iptal et',
+    });
+    if (!ok) return;
     const res = await shipsGoService.cancelRequest(requestId);
     if (res.success) {
       showSuccess('Talep iptal edildi');
@@ -67,13 +74,21 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   const handleResetOverride = async (fieldName) => {
     const labels = {
-      estimatedArrivalDate: 'tahmini varış tarihi',
-      cargoArrivalDate: 'gerçek varış tarihi',
+      estimatedArrivalDate: 'Tahmini Varış Tarihi',
+      cargoArrivalDate: 'Gerçek Varış Tarihi',
     };
-    const ok = window.confirm(
-      `${labels[fieldName] || fieldName} alanını ShipsGo kontrolüne geri vermek istiyor musunuz?\n\n` +
-      `Bir sonraki güncellemede bu alan ShipsGo'nun bildirdiği değerle değişecek.`
-    );
+    const label = labels[fieldName] || fieldName;
+    const ok = await confirmDialog({
+      title: `${label} alanını ShipsGo'ya bırak`,
+      message: `${label} alanını yeniden ShipsGo kontrolüne vermek istiyor musunuz?`,
+      details: [
+        'Bir sonraki güncellemede alan ShipsGo değeriyle değişir',
+        'Manuel kilit kaldırılır',
+      ],
+      intent: 'primary',
+      icon: 'restart_alt',
+      confirmText: 'ShipsGo\'ya bırak',
+    });
     if (!ok) return;
     const res = await shipsGoService.resetOverride(cargo.id, fieldName);
     if (res.success) {

@@ -5,6 +5,7 @@ import { feedbackService } from '../api/feedbackService';
 import { contactService } from '../api/contactService';
 import { shipsGoService } from '../api/shipsGoService';
 import { showSuccess, showError } from '../utils/toastUtils';
+import { confirmDialog } from '../utils/confirmDialog';
 
 const TYPE_OPTIONS = [
   { value: 'PHONE',    label: 'Telefon',    icon: 'phone' },
@@ -138,7 +139,13 @@ const SettingsPage = () => {
   };
 
   const handleDeleteWebhook = async () => {
-    if (!window.confirm('Webhook kaydını silmek istediğinizden emin misiniz?')) return;
+    const ok = await confirmDialog({
+      title: 'Webhook kaydını sil',
+      message: 'ClickUp webhook kaydı silinecek. Devam edilsin mi?',
+      intent: 'danger',
+      confirmText: 'Sil',
+    });
+    if (!ok) return;
     const result = await feedbackService.deleteWebhook();
     if (result.success) {
       showSuccess('Webhook silindi');
@@ -215,7 +222,13 @@ const SettingsPage = () => {
   };
 
   const handleContactDelete = async (id) => {
-    if (!window.confirm('Bu iletişim bilgisini silmek istediğinizden emin misiniz?')) return;
+    const ok = await confirmDialog({
+      title: 'İletişim bilgisini sil',
+      message: 'Bu iletişim bilgisi kalıcı olarak silinecek. Devam edilsin mi?',
+      intent: 'danger',
+      confirmText: 'Sil',
+    });
+    if (!ok) return;
     const result = await contactService.deleteContactInfo(id);
     if (result.success) {
       showSuccess('İletişim bilgisi silindi');

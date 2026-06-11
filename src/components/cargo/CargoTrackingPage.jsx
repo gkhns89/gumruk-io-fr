@@ -6,6 +6,7 @@ import { shipsGoService } from '../../api/shipsGoService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { confirmDialog } from '../../utils/confirmDialog';
 import MainLayout from '../layout/MainLayout';
 import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
@@ -64,9 +65,14 @@ export default function CargoTrackingPage() {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
-    const ok = window.confirm(
-      `${identifier || 'Bu yük'} için ShipsGo bilgileri çekilecek.\n\n1 kredi kullanılacak. Devam edilsin mi?`
-    );
+    const ok = await confirmDialog({
+      title: 'ShipsGo bilgileri çekilecek',
+      message: `${identifier || 'Bu yük'} için ShipsGo'dan tracking bilgileri çekilecek.`,
+      details: ['Bu işlem 1 ShipsGo kredisi kullanır.'],
+      intent: 'primary',
+      icon: 'download',
+      confirmText: 'Çek (1 kredi)',
+    });
     if (!ok) return;
     setFetchingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
     const res = await shipsGoService.fetch(cargoItem.id);
