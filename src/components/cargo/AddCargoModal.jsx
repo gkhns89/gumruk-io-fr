@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
+import { shipsGoService } from '../../api/shipsGoService';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -8,13 +9,12 @@ import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import AddClientModal from '../common/AddClientModal';
 import TagInput from '../common/TagInput';
-import { t, getCurrentLocale } from '../../locales';
+import { t } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 
 export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
   const modalRef = useRef(null);
-  const locale = getCurrentLocale();
 
   const [formData, setFormData] = useState({
     brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
@@ -84,6 +84,88 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
+  // ===== ShipsGo preview state =====
+  // BROKER_ADMIN (and SUPER_ADMIN) may flip the switch ON and pre-populate the
+  // form by spending 1 credit. The trackingId is held in state until either
+  // the cargo is saved (claimPreview) or the modal is dismissed (abandonPreview).
+  const isBrokerAdmin = currentUser?.globalRole === 'BROKER_ADMIN' || isSuperAdmin;
+  const [shipsGoEnabled, setShipsGoEnabled] = useState(false);
+  const [shipsGoTrackingId, setShipsGoTrackingId] = useState(null);
+  const [shipsGoPreviewing, setShipsGoPreviewing] = useState(false);
+  // Tracks whether the user changed any auto-populated field after a successful
+  // preview — those fields get pushed back to the server as manual overrides.
+  const [shipsGoPopulatedSnapshot, setShipsGoPopulatedSnapshot] = useState(null);
+
+  const isShipsGoCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
+
+  // Identifier ready = identifier(s) the upstream endpoint needs are filled out.
+  // For AIR this is the AWB and it must match ShipsGo's regex; for OCEAN at
+  // least one of container/BL must be filled. We re-check on every render so
+  // the "Bilgileri Getir" button enables / disables exactly when it should.
+  const awbValid = /^[0-9]{3}-?[0-9]{8}$/.test((formData.consignmentNumber || '').trim());
+  const identifierReady =
+    (formData.vehicleType === 'AIRPLANE' && awbValid) ||
+    (formData.vehicleType === 'SHIP' && (
+      (formData.billOfLading && formData.billOfLading.trim().length > 0)
+      || (formData.containerNumbers && formData.containerNumbers.length > 0)
+    ));
+
+  const handleShipsGoPreview = async () => {
+    if (!isShipsGoCompatible || !identifierReady) return;
+    const identifier = formData.vehicleType === 'AIRPLANE'
+      ? formData.consignmentNumber
+      : (formData.billOfLading || formData.containerNumbers[0]);
+    const ok = window.confirm(
+      `ShipsGo'dan ${identifier} için bilgi çekilecek.\n\n1 kredi kullanılacak. Devam edilsin mi?`
+    );
+    if (!ok) return;
+
+    setShipsGoPreviewing(true);
+    const res = await shipsGoService.preview({
+      vehicleType: formData.vehicleType,
+      awbNumber: formData.consignmentNumber || null,
+      containerNumber: formData.containerNumbers?.[0] || null,
+      billOfLading: formData.billOfLading || null,
+    });
+    setShipsGoPreviewing(false);
+
+    if (!res.success) {
+      showError(res.error || 'ShipsGo önizleme alınamadı');
+      return;
+    }
+
+    const trackingId = res.data?.shipsGoTrackingId;
+    const populated = res.data?.populatedFields || {};
+    setShipsGoTrackingId(trackingId);
+    setShipsGoPopulatedSnapshot(populated);
+
+    // Push the populated fields straight onto the form so the user sees them.
+    // Only the fields the modal actually renders (ETA today; vessel etc. live
+    // on the cargo row and become visible from the drawer later).
+    setFormData(prev => ({
+      ...prev,
+      estimatedArrivalDate: populated.estimatedArrivalDate
+        ? String(populated.estimatedArrivalDate).substring(0, 10)
+        : prev.estimatedArrivalDate,
+      carrierName: populated.shipsGoCarrier || prev.carrierName,
+    }));
+
+    showSuccess(
+      res.data?.alreadyExisted
+        ? 'ShipsGo: Bu yük zaten takipte (kredi düşülmedi). Form dolduruldu.'
+        : 'ShipsGo bilgileri form alanlarına yansıtıldı.'
+    );
+  };
+
+  // Releases the upstream shipment if the user closes the modal without saving
+  // (orphan protection from the plan). Best-effort: we don't block close on a
+  // network failure here.
+  const abandonShipsGoIfNeeded = () => {
+    if (shipsGoTrackingId && formData.vehicleType) {
+      shipsGoService.abandonPreview(shipsGoTrackingId, formData.vehicleType);
+    }
+  };
+
   // Load brokers (SUPER_ADMIN only)
   useEffect(() => {
     if (isSuperAdmin) {
@@ -101,7 +183,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   // Load senders and carriers on mount
   useEffect(() => {
     loadSendersAndCarriers();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update selected client info and agreement when clientCompanyId changes
   useEffect(() => {
@@ -502,12 +584,20 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         lokalAmount: transformedData.lokalAmount ? parseFloat(transformedData.lokalAmount) : null,
         depositoAmount: transformedData.depositoAmount ? parseFloat(transformedData.depositoAmount) : null,
         ordinoAmount: transformedData.ordinoAmount ? parseFloat(transformedData.ordinoAmount) : null,
+        // ShipsGo: if the user previewed, the trackingId is reused (no new
+        // credit). If they only flipped the switch on without previewing,
+        // backend goes the markEnabled path (Path B) where the broker can
+        // run "Bilgileri Getir" from the table afterwards.
+        shipsGoEnabled: shipsGoEnabled && isShipsGoCompatible,
+        shipsGoTrackingId: shipsGoTrackingId ? String(shipsGoTrackingId) : null,
       };
 
       const result = await cargoService.createCargo(dataToSend);
 
       if (result.success) {
         showSuccess('Yük kaydı başarıyla oluşturuldu!');
+        // Cargo committed — don't release the upstream shipment on the way out.
+        setShipsGoTrackingId(null);
         onSuccess();
       } else {
         handleApiResponse(result, null, setError, 'cargo creation');
@@ -527,21 +617,39 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   const visibleFields = getVisibleFields();
 
+  // Close wrapper that also releases an in-flight ShipsGo preview so we never
+  // leave an orphan tracking on the upstream account (plan: orphan protection).
+  const handleCloseWithCleanup = () => {
+    abandonShipsGoIfNeeded();
+    onClose();
+  };
+
   // ESC to close
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleCloseWithCleanup();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, shipsGoTrackingId]);
+
+  // Tab-close / page-leave: best-effort release via sendBeacon. The browser
+  // tears down React state before this fires, so use the value we already
+  // captured in the dependency closure above.
+  useEffect(() => {
+    const onUnload = () => abandonShipsGoIfNeeded();
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipsGoTrackingId, formData.vehicleType]);
 
   return (
     <div
       className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
-      onClick={onClose}
+      onClick={handleCloseWithCleanup}
     >
       <div
         ref={modalRef}
@@ -557,7 +665,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCloseWithCleanup}
             className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-secondary">close</span>
@@ -987,6 +1095,84 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       />
                       {fieldErrors.containerNumbers && (
                         <p className="text-red-500 text-xs mt-1">{fieldErrors.containerNumbers}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ShipsGo Entegrasyonu — sadece SHIP/AIRPLANE */}
+                  {isShipsGoCompatible && (
+                    <div className="md:col-span-2 mt-2 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={shipsGoEnabled}
+                          disabled={!isBrokerAdmin}
+                          onChange={(e) => {
+                            setShipsGoEnabled(e.target.checked);
+                            // Switch off → release the upstream shipment if we
+                            // already previewed one.
+                            if (!e.target.checked && shipsGoTrackingId) {
+                              abandonShipsGoIfNeeded();
+                              setShipsGoTrackingId(null);
+                              setShipsGoPopulatedSnapshot(null);
+                            }
+                          }}
+                          className="mt-1 rounded"
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-text-main flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-primary">travel_explore</span>
+                            ShipsGo ile otomatik takip et
+                          </span>
+                          {!isBrokerAdmin ? (
+                            <p className="text-xs text-text-secondary mt-1">
+                              Sadece broker yöneticileri ShipsGo entegrasyonunu açabilir.
+                              Talep oluşturmak için kaydettikten sonra detaydan isteyebilirsiniz.
+                            </p>
+                          ) : (
+                            <p className="text-xs text-text-secondary mt-1">
+                              Açık olduğunda yükün varış bilgileri, gemi/uçak konumu ve
+                              ETA değişiklikleri otomatik olarak güncellenir.
+                            </p>
+                          )}
+                        </div>
+                      </label>
+
+                      {shipsGoEnabled && isBrokerAdmin && (
+                        <div className="mt-3 flex items-center gap-3 flex-wrap">
+                          {!shipsGoTrackingId ? (
+                            <button
+                              type="button"
+                              onClick={handleShipsGoPreview}
+                              disabled={!identifierReady || shipsGoPreviewing}
+                              title={
+                                !identifierReady
+                                  ? formData.vehicleType === 'AIRPLANE'
+                                      ? 'Geçerli AWB girin (örn. 618-12345678)'
+                                      : 'Konteyner veya konşimento numarası girin'
+                                  : '1 kredi kullanarak ShipsGo\'dan bilgileri çek'
+                              }
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <span className="material-symbols-outlined text-base">download</span>
+                              {shipsGoPreviewing ? 'Bilgi çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                              Bilgiler getirildi {shipsGoPopulatedSnapshot?.shipsGoStatus
+                                ? `(${shipsGoPopulatedSnapshot.shipsGoStatus})`
+                                : ''}
+                            </span>
+                          )}
+                          {!identifierReady && (
+                            <span className="text-xs text-text-secondary">
+                              {formData.vehicleType === 'AIRPLANE'
+                                ? 'Geçerli AWB girin (örn. 618-12345678)'
+                                : 'Konteyner veya konşimento numarası girin'}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
