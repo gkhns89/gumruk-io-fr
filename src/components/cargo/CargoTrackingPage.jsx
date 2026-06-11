@@ -11,6 +11,7 @@ import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
 import EditCargoModal from './EditCargoModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
+import ShipsGoDetailsDrawer from './ShipsGoDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
 
 export default function CargoTrackingPage() {
@@ -57,6 +58,8 @@ export default function CargoTrackingPage() {
 
   // ShipsGo per-cargo actions
   const [fetchingShipsGo, setFetchingShipsGo] = useState({}); // { cargoId: bool }
+  const [shipsGoDrawerCargo, setShipsGoDrawerCargo] = useState(null);
+  const handleShipsGoDetails = (cargoItem) => setShipsGoDrawerCargo(cargoItem);
   const handleShipsGoFetch = async (cargoItem) => {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
@@ -497,6 +500,7 @@ export default function CargoTrackingPage() {
             onScroll={handleTableScroll}
             canManageShipsGo={canManageShipsGo}
             onShipsGoFetch={handleShipsGoFetch}
+            onShipsGoDetails={handleShipsGoDetails}
             fetchingShipsGo={fetchingShipsGo}
           />
         </div>
@@ -629,6 +633,12 @@ export default function CargoTrackingPage() {
           onSuccess={handleModalSuccess}
         />
       )}
+
+      <ShipsGoDetailsDrawer
+        cargo={shipsGoDrawerCargo}
+        onClose={() => setShipsGoDrawerCargo(null)}
+        canRefresh
+      />
     </MainLayout>
   );
 }

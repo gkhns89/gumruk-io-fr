@@ -18,6 +18,7 @@ export default function CargoTrackingTable({
   onScroll = null,
   canManageShipsGo = false,
   onShipsGoFetch,
+  onShipsGoDetails,
   fetchingShipsGo = {},
 }) {
   const { containerRef: edgeScrollRef, scrollDirection } = useEdgeScroll({
@@ -264,6 +265,7 @@ export default function CargoTrackingTable({
                         isReadOnly={isReadOnly}
                         fetching={!!fetchingShipsGo[cargoItem.id]}
                         onFetch={() => onShipsGoFetch?.(cargoItem)}
+                        onOpenDetails={() => onShipsGoDetails?.(cargoItem)}
                       />
                     </td>
                   )}
@@ -518,12 +520,24 @@ export default function CargoTrackingTable({
  * Click handlers stopPropagation so the row click (which opens the edit
  * modal) doesn't fire when the user is operating the cell.
  */
-function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch }) {
+function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch, onOpenDetails }) {
   const vt = cargoItem.vehicleType;
   if (vt !== 'SHIP' && vt !== 'AIRPLANE') {
     return <span className="text-sm text-text-secondary">—</span>;
   }
   if (cargoItem.status === 'COMPLETED') {
+    if (cargoItem.shipsGoTrackingId) {
+      return (
+        <button
+          type="button"
+          onClick={onOpenDetails}
+          className="text-xs text-text-secondary italic hover:text-text-main underline-offset-2 hover:underline"
+          title="Tamamlanan yüklerde ShipsGo durur. Geçmiş verileri görüntülemek için tıklayın."
+        >
+          Durdu — geçmişi göster
+        </button>
+      );
+    }
     return (
       <span className="text-xs text-text-secondary italic" title="Tamamlanan yüklerde ShipsGo durur">
         Durdu
@@ -558,17 +572,20 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
       </button>
     );
   }
-  // shipsGoEnabled + trackingId set → live
+  // shipsGoEnabled + trackingId set → live, clickable to open the drawer
   const tooltip = cargoItem.shipsGoLastSyncAt
-    ? `Son sync: ${new Date(cargoItem.shipsGoLastSyncAt).toLocaleString('tr-TR')}`
-    : 'ShipsGo aktif';
+    ? `Son sync: ${new Date(cargoItem.shipsGoLastSyncAt).toLocaleString('tr-TR')} — detay için tıkla`
+    : 'ShipsGo aktif — detay için tıkla';
   return (
-    <span
+    <button
+      type="button"
+      onClick={onOpenDetails}
       title={tooltip}
-      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs"
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
     >
       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
       Aktif
-    </span>
+      <span className="material-symbols-outlined text-sm">open_in_new</span>
+    </button>
   );
 }
