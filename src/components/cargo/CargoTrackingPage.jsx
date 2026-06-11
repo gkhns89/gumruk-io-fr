@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { cargoService } from '../../api/cargoService';
+import { shipsGoService } from '../../api/shipsGoService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
 import { handleError } from '../../utils/errorUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 import MainLayout from '../layout/MainLayout';
 import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
@@ -50,7 +52,29 @@ export default function CargoTrackingPage() {
   // Permissions
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
+  const canManageShipsGo = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
+
+  // ShipsGo per-cargo actions
+  const [fetchingShipsGo, setFetchingShipsGo] = useState({}); // { cargoId: bool }
+  const handleShipsGoFetch = async (cargoItem) => {
+    const identifier = cargoItem.vehicleType === 'AIRPLANE'
+      ? cargoItem.consignmentNumber
+      : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
+    const ok = window.confirm(
+      `${identifier || 'Bu yük'} için ShipsGo bilgileri çekilecek.\n\n1 kredi kullanılacak. Devam edilsin mi?`
+    );
+    if (!ok) return;
+    setFetchingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await shipsGoService.fetch(cargoItem.id);
+    setFetchingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    if (res.success) {
+      showSuccess('ShipsGo verileri yüke işlendi');
+      loadData();
+    } else {
+      showError(res.error || 'ShipsGo verileri çekilemedi');
+    }
+  };
   const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
   const isCreateBlocked = canCreate && (isWriteBlocked || isFullReadOnly);
   const isTableReadOnly = isClientUser || isFullReadOnly;
@@ -158,7 +182,7 @@ export default function CargoTrackingPage() {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const pageHeaderRef = useRef(null);
-  const [pageHeaderHeight, setPageHeaderHeight] = useState(80);
+  const [, setPageHeaderHeight] = useState(80);
   const [tableScrollHeight, setTableScrollHeight] = useState(() => window.innerHeight - 200);
   const FOOTER_H = 56;
 
@@ -176,7 +200,7 @@ export default function CargoTrackingPage() {
     calculate();
     window.addEventListener("resize", calculate);
     return () => { ro.disconnect(); window.removeEventListener("resize", calculate); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);
 
@@ -471,6 +495,9 @@ export default function CargoTrackingPage() {
             selectedVehicleType={selectedVehicleType}
             scrollHeight={tableScrollHeight}
             onScroll={handleTableScroll}
+            canManageShipsGo={canManageShipsGo}
+            onShipsGoFetch={handleShipsGoFetch}
+            fetchingShipsGo={fetchingShipsGo}
           />
         </div>
         </div>

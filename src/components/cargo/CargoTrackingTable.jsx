@@ -1,6 +1,6 @@
-import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType, formatCurrency } from '../../utils/constants';
+import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType } from '../../utils/constants';
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
-import { getCostBreakdown, formatCostsDisplay, calculateTotalCosts } from '../../utils/costsUtils';
+import { getCostBreakdown, calculateTotalCosts } from '../../utils/costsUtils';
 import { getCurrentLanguage } from '../../locales';
 
 export default function CargoTrackingTable({
@@ -8,7 +8,6 @@ export default function CargoTrackingTable({
   loading,
   error,
   onRetry,
-  onRefresh,
   canDelete,
   isReadOnly,
   onRowClick,
@@ -17,6 +16,9 @@ export default function CargoTrackingTable({
   selectedVehicleType = "",
   scrollHeight = null,
   onScroll = null,
+  canManageShipsGo = false,
+  onShipsGoFetch,
+  fetchingShipsGo = {},
 }) {
   const { containerRef: edgeScrollRef, scrollDirection } = useEdgeScroll({
     edgeZoneWidth: 25,
@@ -28,6 +30,7 @@ export default function CargoTrackingTable({
     const baseColumns = [
       "status",
       "vehicleType",
+      "shipsgo",
       "estimatedArrivalDate",
       "buyerCompany",
       "senderCompany",
@@ -173,6 +176,9 @@ export default function CargoTrackingTable({
               {visibleColumns.includes("vehicleType") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Araç Tipi</th>
               )}
+              {visibleColumns.includes("shipsgo") && (
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ShipsGo</th>
+              )}
               {visibleColumns.includes("estimatedArrivalDate") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ETA</th>
               )}
@@ -248,6 +254,17 @@ export default function CargoTrackingTable({
                         <span className="material-symbols-outlined text-gray-600 dark:text-gray-400">{vehicleType?.icon}</span>
                         <span className="text-sm text-text-main dark:text-gray-300">{vehicleType?.displayName}</span>
                       </div>
+                    </td>
+                  )}
+                  {visibleColumns.includes("shipsgo") && (
+                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <ShipsGoStatusCell
+                        cargoItem={cargoItem}
+                        canManage={canManageShipsGo}
+                        isReadOnly={isReadOnly}
+                        fetching={!!fetchingShipsGo[cargoItem.id]}
+                        onFetch={() => onShipsGoFetch?.(cargoItem)}
+                      />
                     </td>
                   )}
                   {visibleColumns.includes("estimatedArrivalDate") && (
@@ -485,5 +502,73 @@ export default function CargoTrackingTable({
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Per-row ShipsGo status display with the three states from the plan:
+ *  - TRUCK or COMPLETED cargo → dash (ShipsGo doesn't apply).
+ *  - shipsGoEnabled=false → muted "Kapalı" pill.
+ *  - shipsGoEnabled=true && shipsGoTrackingId=null → "Bilgileri Getir"
+ *    action button (only clickable by BROKER_ADMIN / SUPER_ADMIN; spent
+ *    1 credit per click, confirmed in the parent).
+ *  - shipsGoEnabled=true && shipsGoTrackingId set → green dot + last-sync
+ *    tooltip indicating live tracking.
+ *
+ * Click handlers stopPropagation so the row click (which opens the edit
+ * modal) doesn't fire when the user is operating the cell.
+ */
+function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch }) {
+  const vt = cargoItem.vehicleType;
+  if (vt !== 'SHIP' && vt !== 'AIRPLANE') {
+    return <span className="text-sm text-text-secondary">—</span>;
+  }
+  if (cargoItem.status === 'COMPLETED') {
+    return (
+      <span className="text-xs text-text-secondary italic" title="Tamamlanan yüklerde ShipsGo durur">
+        Durdu
+      </span>
+    );
+  }
+  if (!cargoItem.shipsGoEnabled) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
+        <span className="material-symbols-outlined text-sm">toggle_off</span>
+        Kapalı
+      </span>
+    );
+  }
+  if (!cargoItem.shipsGoTrackingId) {
+    if (!canManage || isReadOnly) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs">
+          Bilgi bekleniyor
+        </span>
+      );
+    }
+    return (
+      <button
+        onClick={onFetch}
+        disabled={fetching}
+        title="ShipsGo'dan bilgileri çek (1 kredi)"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors disabled:opacity-50"
+      >
+        <span className="material-symbols-outlined text-sm">download</span>
+        {fetching ? 'Çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
+      </button>
+    );
+  }
+  // shipsGoEnabled + trackingId set → live
+  const tooltip = cargoItem.shipsGoLastSyncAt
+    ? `Son sync: ${new Date(cargoItem.shipsGoLastSyncAt).toLocaleString('tr-TR')}`
+    : 'ShipsGo aktif';
+  return (
+    <span
+      title={tooltip}
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs"
+    >
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+      Aktif
+    </span>
   );
 }
