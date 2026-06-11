@@ -133,6 +133,27 @@ export const shipsGoCreditService = {
     }
   },
 
+  /**
+   * SuperAdmin per-broker ShipsGo toggle. Persists the new state, fires the
+   * matching notification on the backend and returns the fresh wallet so
+   * BrokerSubscriptionsPage can update without a separate reload.
+   */
+  setBrokerEnabled: async (brokerCompanyId, enabled) => {
+    try {
+      const res = await axiosInstance.patch(
+        `/shipsgo/brokers/${brokerCompanyId}/enabled`,
+        { enabled },
+      );
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoCreditService - setBrokerEnabled', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'ShipsGo durumu güncellenemedi',
+      };
+    }
+  },
+
   getBrokerWallet: async (brokerCompanyId) => {
     try {
       const res = await axiosInstance.get(`/shipsgo/wallets/${brokerCompanyId}`);

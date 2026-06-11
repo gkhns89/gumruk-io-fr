@@ -430,6 +430,10 @@ export default function ProfilePage() {
 function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
   const stats = wallet || {};
   const lots = stats.activeLots || [];
+  // Backend may omit the flag for back-compat — treat undefined as enabled so
+  // we don't accidentally show the empty state for older payloads. Only an
+  // explicit false locks the broker out.
+  const optedOut = stats.shipsgoEnabled === false;
 
   return (
     <div className="space-y-6">
@@ -452,15 +456,31 @@ function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
               <span className="material-symbols-outlined text-base">refresh</span>
               Yenile
             </button>
-            <button
-              onClick={onPurchase}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              <span className="material-symbols-outlined text-base">add_shopping_cart</span>
-              Kredi Satın Al
-            </button>
+            {!optedOut && (
+              <button
+                onClick={onPurchase}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+                Kredi Satın Al
+              </button>
+            )}
           </div>
         </div>
+
+        {optedOut && (
+          <div className="mt-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+            <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">info</span>
+              ShipsGo entegrasyonu hesabınıza tanımlanmamış
+            </p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+              Yöneticinizle iletişime geçerek bu firmaya ShipsGo entegrasyonunu
+              tanımlatabilirsiniz. Tanımlanırsa mevcut bakiyeniz kullanılabilir
+              olur.
+            </p>
+          </div>
+        )}
 
         {loading && !wallet ? (
           <div className="flex items-center justify-center py-12">

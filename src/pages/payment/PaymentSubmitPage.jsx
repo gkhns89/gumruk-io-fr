@@ -767,6 +767,25 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
   const [notes, setNotes] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
 
+  // Mount-time opt-in check so we can swap the whole tab for a friendly
+  // empty state when the SuperAdmin hasn't enabled ShipsGo for this broker.
+  // Without this the user would hit the "ShipsGo entegrasyonu bu firmaya
+  // tanımlanmamış" error only after first typing into the credit field.
+  const [optedOut, setOptedOut] = React.useState(false);
+  const [optInChecked, setOptInChecked] = React.useState(false);
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await shipsGoCreditService.getMyWallet();
+      if (!alive) return;
+      if (res.success) {
+        setOptedOut(res.data?.shipsgoEnabled === false);
+      }
+      setOptInChecked(true);
+    })();
+    return () => { alive = false; };
+  }, []);
+
   // Debounce the quote fetch so rapid typing does not spam the backend.
   React.useEffect(() => {
     if (!credits || credits < 1 || credits > 100) {
@@ -833,6 +852,26 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
       showError(res.error);
     }
   };
+
+  if (optInChecked && optedOut) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-6 text-center">
+          <span className="material-symbols-outlined text-4xl text-yellow-600 dark:text-yellow-400 mb-2 block">
+            lock
+          </span>
+          <h3 className="text-base font-semibold text-yellow-800 dark:text-yellow-300">
+            ShipsGo entegrasyonu hesabınıza tanımlanmamış
+          </h3>
+          <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-2">
+            Yöneticinizle iletişime geçerek bu firmaya ShipsGo entegrasyonunu
+            tanımlatabilirsiniz. Tanımlandıktan sonra buradan kredi satın
+            alabilirsiniz.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-5">

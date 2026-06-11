@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { shipsGoService } from '../../api/shipsGoService';
+import { shipsGoCreditService } from '../../api/shipsGoCreditService';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -104,6 +105,20 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   const [shipsGoRequestNotes, setShipsGoRequestNotes] = useState('');
 
   const isShipsGoCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
+
+  // Per-broker opt-in. Same default-true semantics as ProfilePage: only an
+  // explicit false locks the UX, missing/older payloads behave as before.
+  const [shipsGoOptedOut, setShipsGoOptedOut] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await shipsGoCreditService.getMyWallet();
+      if (alive && res.success) {
+        setShipsGoOptedOut(res.data?.shipsgoEnabled === false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   // Identifier ready = identifier(s) the upstream endpoint needs are filled out.
   // For AIR this is the AWB and it must match ShipsGo's regex; for OCEAN at
@@ -1112,7 +1127,20 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   )}
 
                   {/* ShipsGo Entegrasyonu — sadece SHIP/AIRPLANE */}
-                  {isShipsGoCompatible && (
+                  {isShipsGoCompatible && shipsGoOptedOut && (
+                    <div className="md:col-span-2 mt-2 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+                      <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base">lock</span>
+                        ShipsGo entegrasyonu firmanıza tanımlanmamış
+                      </p>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+                        Yöneticinizle iletişime geçerek bu firmaya ShipsGo
+                        entegrasyonunu tanımlatabilirsiniz. Yük kaydını yine
+                        de manuel doldurarak oluşturabilirsiniz.
+                      </p>
+                    </div>
+                  )}
+                  {isShipsGoCompatible && !shipsGoOptedOut && (
                     <div className="md:col-span-2 mt-2 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input

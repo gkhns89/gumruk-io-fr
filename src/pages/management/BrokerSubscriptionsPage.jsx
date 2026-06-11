@@ -30,6 +30,7 @@ export default function BrokerSubscriptionsPage() {
   const [creditForms, setCreditForms] = useState({}); // { brokerId: {amount, note} }
   const [shipsGoGrantForms, setShipsGoGrantForms] = useState({}); // { brokerId: {credits, notes} }
   const [grantingShipsGo, setGrantingShipsGo] = useState({}); // { brokerId: bool }
+  const [togglingShipsGo, setTogglingShipsGo] = useState({}); // { brokerId: bool }
   const [shipsGoWallets, setShipsGoWallets] = useState({}); // { brokerId: walletView }
   const [addingCredit, setAddingCredit] = useState({});
 
@@ -277,6 +278,33 @@ export default function BrokerSubscriptionsPage() {
     }
   }, []);
 
+  const handleToggleShipsGoEnabled = async (brokerId, nextEnabled) => {
+    // Disabling is destructive enough that we confirm; activating is one tap.
+    if (!nextEnabled) {
+      const ok = window.confirm(
+        'ShipsGo entegrasyonunu kapatıyorsunuz.\n\n' +
+        '• Mevcut kredisi korunur\n' +
+        '• Yeni satın alma, sorgu ve talepler engellenir\n' +
+        '• Kullanıcıya WARNING bildirimi düşer\n\n' +
+        'Devam edilsin mi?'
+      );
+      if (!ok) return;
+    }
+    setTogglingShipsGo(prev => ({ ...prev, [brokerId]: true }));
+    const res = await shipsGoCreditService.setBrokerEnabled(brokerId, nextEnabled);
+    setTogglingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    if (res.success) {
+      showSuccess(res.data?.message || (nextEnabled ? 'ShipsGo açıldı' : 'ShipsGo kapatıldı'));
+      if (res.data?.wallet) {
+        setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+      } else {
+        loadShipsGoWallet(brokerId);
+      }
+    } else {
+      showError(res.error);
+    }
+  };
+
   const handleGrantShipsGo = async (brokerId) => {
     const form = shipsGoGrantForms[brokerId] ?? {};
     const credits = parseInt(form.credits, 10);
@@ -511,10 +539,42 @@ export default function BrokerSubscriptionsPage() {
 
                           {/* ShipsGo Kredisi Tanımla (Admin Grant) */}
                           <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-4 transition-colors">
+                            {/* Master per-broker toggle — gates everything below it */}
+                            <div className="mb-3 pb-3 border-b border-purple-200/60 dark:border-purple-800/60">
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div>
+                                  <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">travel_explore</span>
+                                    ShipsGo Entegrasyonu
+                                  </h3>
+                                  <p className="text-xs text-text-secondary mt-0.5">
+                                    {shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                      ? 'Bu firma için aktif — kredi satın alma ve talepler açık.'
+                                      : 'Bu firma için kapalı — mevcut bakiye saklı, ancak yeni işlemler engellenmiş.'}
+                                  </p>
+                                </div>
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                  <span className={`text-xs font-medium ${
+                                    shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                      ? 'text-green-700 dark:text-green-400'
+                                      : 'text-gray-500 dark:text-gray-400'
+                                  }`}>
+                                    {shipsGoWallets[broker.brokerId]?.shipsgoEnabled ? 'Açık' : 'Kapalı'}
+                                  </span>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!shipsGoWallets[broker.brokerId]?.shipsgoEnabled}
+                                    disabled={togglingShipsGo[broker.brokerId] || !shipsGoWallets[broker.brokerId]}
+                                    onChange={(e) => handleToggleShipsGoEnabled(broker.brokerId, e.target.checked)}
+                                    className="h-5 w-9 rounded-full accent-purple-600 disabled:opacity-50"
+                                  />
+                                </label>
+                              </div>
+                            </div>
                             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                               <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
-                                <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">travel_explore</span>
-                                ShipsGo Kredisi Tanımla
+                                <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">payments</span>
+                                Kredi Tanımla
                                 <span className="text-xs font-normal text-text-secondary">(1-100 kredi, master havuzdan düşülür)</span>
                               </h3>
                               {shipsGoWallets[broker.brokerId] && (
@@ -550,7 +610,15 @@ export default function BrokerSubscriptionsPage() {
                               <div className="flex items-end">
                                 <button
                                   onClick={() => handleGrantShipsGo(broker.brokerId)}
-                                  disabled={grantingShipsGo[broker.brokerId]}
+                                  disabled={
+                                    grantingShipsGo[broker.brokerId]
+                                    || !shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                  }
+                                  title={
+                                    !shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                      ? 'Önce ShipsGo entegrasyonunu açın'
+                                      : undefined
+                                  }
                                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                 >
                                   <span className="material-symbols-outlined text-base">add</span>
