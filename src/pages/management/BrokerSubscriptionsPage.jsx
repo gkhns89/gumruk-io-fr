@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { addonService } from '../../api/addonService';
+import { shipsGoCreditService } from '../../api/shipsGoCreditService';
 import { paymentService } from '../../api/paymentService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
@@ -27,6 +28,9 @@ export default function BrokerSubscriptionsPage() {
   const [editForms, setEditForms] = useState({}); // { brokerId: formData }
   const [saving, setSaving] = useState({});
   const [creditForms, setCreditForms] = useState({}); // { brokerId: {amount, note} }
+  const [shipsGoGrantForms, setShipsGoGrantForms] = useState({}); // { brokerId: {credits, notes} }
+  const [grantingShipsGo, setGrantingShipsGo] = useState({}); // { brokerId: bool }
+  const [shipsGoWallets, setShipsGoWallets] = useState({}); // { brokerId: walletView }
   const [addingCredit, setAddingCredit] = useState({});
 
   // Balance history state
@@ -198,6 +202,11 @@ export default function BrokerSubscriptionsPage() {
       loadBalanceHistory(id);
     }
 
+    // ShipsGo cüzdanını yükle (plan ShipsGo'ya açık olmasa bile read endpoint çalışır)
+    if (!shipsGoWallets[id]) {
+      loadShipsGoWallet(id);
+    }
+
     // Kullanıcıları yükle
     if (!users[id]) {
       setUsersLoading(prev => ({ ...prev, [id]: true }));
@@ -253,6 +262,44 @@ export default function BrokerSubscriptionsPage() {
       setHistoryLoading(prev => ({ ...prev, [brokerId]: false }));
     }
   }, []);
+
+  const handleShipsGoGrantFormChange = (brokerId, field, value) => {
+    setShipsGoGrantForms(prev => ({
+      ...prev,
+      [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value },
+    }));
+  };
+
+  const loadShipsGoWallet = useCallback(async (brokerId) => {
+    const res = await shipsGoCreditService.getBrokerWallet(brokerId);
+    if (res.success) {
+      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data }));
+    }
+  }, []);
+
+  const handleGrantShipsGo = async (brokerId) => {
+    const form = shipsGoGrantForms[brokerId] ?? {};
+    const credits = parseInt(form.credits, 10);
+    if (!credits || credits < 1 || credits > 100) {
+      showError('Kredi miktarı 1-100 arası olmalıdır');
+      return;
+    }
+    setGrantingShipsGo(prev => ({ ...prev, [brokerId]: true }));
+    const res = await shipsGoCreditService.adminGrant(brokerId, {
+      credits,
+      notes: form.notes ?? '',
+    });
+    setGrantingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    if (res.success) {
+      showSuccess(`${credits} ShipsGo kredisi brokere tanımlandı`);
+      setShipsGoGrantForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
+      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+    } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
+      showError('Master havuzda yeterli kredi yok. Önce ShipsGo hesabınıza paket yükleyin.');
+    } else {
+      showError(res.error);
+    }
+  };
 
   const handleAddCredit = async (brokerId) => {
     const form = creditForms[brokerId] ?? {};
@@ -460,6 +507,57 @@ export default function BrokerSubscriptionsPage() {
                                 Dönem ücreti: {fmtPrice(sub.billingCycle === 'YEARLY' ? sub.plan.yearlyPrice : sub.plan.monthlyPrice)}
                               </p>
                             )}
+                          </div>
+
+                          {/* ShipsGo Kredisi Tanımla (Admin Grant) */}
+                          <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-4 transition-colors">
+                            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                              <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
+                                <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">travel_explore</span>
+                                ShipsGo Kredisi Tanımla
+                                <span className="text-xs font-normal text-text-secondary">(1-100 kredi, master havuzdan düşülür)</span>
+                              </h3>
+                              {shipsGoWallets[broker.brokerId] && (
+                                <div className="text-xs text-purple-700 dark:text-purple-400 font-medium">
+                                  Mevcut bakiye: {shipsGoWallets[broker.brokerId].currentCredits ?? 0} kredi
+                                  <span className="text-text-secondary ml-2">
+                                    (Toplam alınan: {shipsGoWallets[broker.brokerId].lifetimePurchased ?? 0}, kullanılan: {shipsGoWallets[broker.brokerId].lifetimeConsumed ?? 0})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <div className="flex flex-col gap-1 w-full sm:w-32">
+                                <span className="text-xs font-medium text-text-secondary">Kredi *</span>
+                                <input
+                                  type="number" min="1" max="100"
+                                  value={shipsGoGrantForms[broker.brokerId]?.credits ?? ''}
+                                  onChange={e => handleShipsGoGrantFormChange(broker.brokerId, 'credits', e.target.value)}
+                                  placeholder="örn. 50"
+                                  className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-xs font-medium text-text-secondary">Not</span>
+                                <input
+                                  type="text"
+                                  value={shipsGoGrantForms[broker.brokerId]?.notes ?? ''}
+                                  onChange={e => handleShipsGoGrantFormChange(broker.brokerId, 'notes', e.target.value)}
+                                  placeholder="örn. Sözleşme ile birlikte tanımlandı"
+                                  className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <button
+                                  onClick={() => handleGrantShipsGo(broker.brokerId)}
+                                  disabled={grantingShipsGo[broker.brokerId]}
+                                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  <span className="material-symbols-outlined text-base">add</span>
+                                  {grantingShipsGo[broker.brokerId] ? 'Tanımlanıyor...' : 'Kredi Tanımla'}
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Bakiye Hareket Geçmişi */}

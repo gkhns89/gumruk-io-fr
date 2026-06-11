@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { paymentService } from '../../api/paymentService';
+import { shipsGoCreditService } from '../../api/shipsGoCreditService';
 import MainLayout from '../../components/layout/MainLayout';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
@@ -122,6 +123,7 @@ export default function PaymentManagementPage() {
   const TABS = [
     { key: 'pending', label: 'Bekleyen Ödemeler', icon: 'pending' },
     { key: 'all', label: 'Tüm Ödemeler', icon: 'receipt_long' },
+    { key: 'shipsgo', label: 'ShipsGo Satın Almaları', icon: 'travel_explore' },
     { key: 'methods', label: 'Banka Hesapları', icon: 'account_balance' },
   ];
 
@@ -280,6 +282,9 @@ export default function PaymentManagementPage() {
                   <PaymentTable data={filteredAllPayments} />
                 </>
               )}
+              {activeTab === 'shipsgo' && (
+                <ShipsGoApprovalsPanel onChange={load} />
+              )}
               {activeTab === 'methods' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
@@ -349,5 +354,157 @@ export default function PaymentManagementPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+/**
+ * SuperAdmin approval queue for broker-submitted ShipsGo credit transfers.
+ * Shows pending purchases with the broker, credit count, computed TL price,
+ * the broker's bank-transfer reference and any note. Approve / reject buttons
+ * trigger the Phase-5 endpoints which re-run the master-pool guard and
+ * (on approval) write the new lot + ledger row in a single transaction.
+ */
+function ShipsGoApprovalsPanel({ onChange }) {
+  const [purchases, setPurchases] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await shipsGoCreditService.listPendingPurchases();
+    setLoading(false);
+    if (res.success) {
+      setPurchases(res.data?.purchases || []);
+    } else {
+      showError(res.error);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleApprove = async (id) => {
+    const res = await shipsGoCreditService.approvePurchase(id);
+    if (res.success) {
+      showSuccess('Satın alma onaylandı, krediler brokere eklendi');
+      load();
+      onChange?.();
+    } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
+      showError('Master ShipsGo havuzunda yeterli kredi yok. Önce ShipsGo tarafından paket yükleyin.');
+    } else {
+      showError(res.error);
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!rejectReason.trim()) {
+      showError('Red gerekçesi zorunludur');
+      return;
+    }
+    const res = await shipsGoCreditService.rejectPurchase(id, rejectReason.trim());
+    if (res.success) {
+      showSuccess('Satın alma reddedildi');
+      setRejectingId(null);
+      setRejectReason('');
+      load();
+      onChange?.();
+    } else {
+      showError(res.error);
+    }
+  };
+
+  if (loading) {
+    return <p className="text-text-secondary text-sm text-center py-8">Yükleniyor...</p>;
+  }
+
+  if (purchases.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-2 block">
+          inbox
+        </span>
+        <p className="text-text-secondary text-sm">Bekleyen ShipsGo satın alması yok</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-text-secondary mb-2">
+        Onayladığınızda krediler brokerin cüzdanına eklenir ve master havuzdan
+        düşülür. Master havuzda yeterli kredi yoksa onay reddedilir, broker
+        kullanıcıya destek talebi göstergesi düşer.
+      </p>
+      {purchases.map((p) => (
+        <div key={p.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-[260px]">
+              <p className="font-semibold text-text-main">{p.brokerCompanyName}</p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {p.requestedByEmail} • {new Date(p.requestedAt).toLocaleString('tr-TR')}
+              </p>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                <Info label="Kredi" value={`${p.creditAmount} adet`} />
+                <Info label="Birim USD" value={`$${Number(p.unitPriceUsd).toFixed(2)}`} />
+                <Info label="Kur" value={`₺${Number(p.exchangeRateUsed).toFixed(4)}`} />
+                <Info label="Toplam" value={`₺${Number(p.totalAmountTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`} highlight />
+                <Info label="Havale Ref" value={p.transferReference || '—'} />
+              </div>
+              {p.notes && (
+                <p className="text-xs text-text-secondary mt-2 italic">"{p.notes}"</p>
+              )}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleApprove(p.id)}
+                className="flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <span className="material-symbols-outlined text-base">check</span>
+                Onayla
+              </button>
+              <button
+                onClick={() => { setRejectingId(p.id); setRejectReason(''); }}
+                className="flex items-center gap-1 px-3 py-2 border border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+                Reddet
+              </button>
+            </div>
+          </div>
+          {rejectingId === p.id && (
+            <div className="mt-3 flex gap-2 items-stretch">
+              <input
+                type="text"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Red gerekçesi (zorunlu)"
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                onClick={() => handleReject(p.id)}
+                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+              >
+                Onayla Reddi
+              </button>
+              <button
+                onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                className="px-3 py-2 text-text-secondary hover:text-text-main text-sm transition-colors"
+              >
+                İptal
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Info({ label, value, highlight }) {
+  return (
+    <div>
+      <div className="text-text-secondary uppercase tracking-wide text-[10px]">{label}</div>
+      <div className={`text-text-main font-medium ${highlight ? 'text-primary' : ''}`}>{value}</div>
+    </div>
   );
 }

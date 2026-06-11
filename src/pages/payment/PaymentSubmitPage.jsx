@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from 'react-router-dom';
 import { paymentService } from '../../api/paymentService';
+import { shipsGoCreditService } from '../../api/shipsGoCreditService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -93,7 +94,13 @@ export default function PaymentSubmitPage() {
     }
   }, [location.state, dataLoading]);
 
-  const selectedMethod = paymentMethods.find(m => String(m.id) === String(selectedMethodId));
+  // Hesabım > ShipsGo Kredim "Satın Al" butonu /payment/submit?tab=shipsgo'ya
+  // yönlendirir; bu effect bu tabı otomatik açar.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const requestedTab = params.get('tab');
+    if (requestedTab === 'shipsgo') setTab('shipsgo');
+  }, [location.search]);
 
   // Seçilebilir ödeme dönemlerini hesapla (vadesi geçmiş + yaklaşan)
   const availablePeriods = (() => {
@@ -350,6 +357,19 @@ export default function PaymentSubmitPage() {
                   <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
                   Bakiye Hareketleri
                 </button>
+                {user?.globalRole === 'BROKER_ADMIN' && (
+                  <button
+                    onClick={() => setTab('shipsgo')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors ${
+                      tab === 'shipsgo'
+                        ? 'text-primary border-b-2 border-primary bg-primary/5'
+                        : 'text-text-secondary hover:text-text-main hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xl">travel_explore</span>
+                    ShipsGo Kredisi
+                  </button>
+                )}
               </div>
 
               {/* ── TAB: Ödeme Yap ────────────────────────────── */}
@@ -713,11 +733,242 @@ export default function PaymentSubmitPage() {
                   )}
                 </div>
               )}
+
+              {/* ── TAB: ShipsGo Kredisi (BROKER_ADMIN only) ───────────── */}
+              {tab === 'shipsgo' && user?.globalRole === 'BROKER_ADMIN' && (
+                <ShipsGoPurchaseTab
+                  currentBalanceTry={subscriptionStatus?.balance ?? 0}
+                />
+              )}
             </div>
 
           </div>
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+/**
+ * "ShipsGo Kredisi" tab body. Lets a BROKER_ADMIN choose a credit amount,
+ * see the live TL price (USD × TCMB rate), and either pay from their
+ * subscription balance immediately or submit a bank-transfer notification
+ * that SuperAdmin will approve.
+ *
+ * Master pool failures surface as a clear "destekle iletişime geçin" message —
+ * the broker never sees the upstream credit figure.
+ */
+function ShipsGoPurchaseTab({ currentBalanceTry }) {
+  const [credits, setCredits] = React.useState(10);
+  const [quote, setQuote] = React.useState(null);
+  const [quoteLoading, setQuoteLoading] = React.useState(false);
+  const [quoteError, setQuoteError] = React.useState(null);
+  const [referenceNumber, setReferenceNumber] = React.useState('');
+  const [notes, setNotes] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // Debounce the quote fetch so rapid typing does not spam the backend.
+  React.useEffect(() => {
+    if (!credits || credits < 1 || credits > 100) {
+      setQuote(null);
+      return;
+    }
+    let alive = true;
+    setQuoteLoading(true);
+    setQuoteError(null);
+    const handle = setTimeout(async () => {
+      const res = await shipsGoCreditService.getQuote(credits);
+      if (!alive) return;
+      setQuoteLoading(false);
+      if (res.success) {
+        setQuote(res.data);
+      } else {
+        setQuote(null);
+        setQuoteError(res.error);
+      }
+    }, 300);
+    return () => { alive = false; clearTimeout(handle); };
+  }, [credits]);
+
+  const balanceEnough = quote && Number(currentBalanceTry) >= Number(quote.totalTry);
+
+  const handlePayFromBalance = async () => {
+    if (!quote) return;
+    setSubmitting(true);
+    const res = await shipsGoCreditService.purchaseFromBalance({
+      creditAmount: credits, notes,
+    });
+    setSubmitting(false);
+    if (res.success) {
+      showSuccess(res.data?.message || 'Krediler hesabınıza eklendi');
+      setNotes('');
+      // Reload the surrounding subscription status so the balance figure refreshes.
+      window.location.reload();
+    } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
+      showError(
+        'ShipsGo kredisi şu anda satın alınamıyor. Lütfen yöneticiyle iletişime geçin. ' +
+        'Bakiyenizden hiçbir kesinti yapılmadı.'
+      );
+    } else {
+      showError(res.error);
+    }
+  };
+
+  const handleSubmitTransfer = async () => {
+    if (!quote) return;
+    if (!referenceNumber.trim()) {
+      showError('Havale referans numarası zorunludur');
+      return;
+    }
+    setSubmitting(true);
+    const res = await shipsGoCreditService.purchaseByTransfer({
+      creditAmount: credits, referenceNumber: referenceNumber.trim(), notes,
+    });
+    setSubmitting(false);
+    if (res.success) {
+      showSuccess(res.data?.message || 'Havale bildirimi gönderildi');
+      setReferenceNumber('');
+      setNotes('');
+    } else {
+      showError(res.error);
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-5">
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+        <h2 className="text-base font-semibold text-text-main flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">travel_explore</span>
+          ShipsGo Kredisi Satın Al
+        </h2>
+        <p className="text-xs text-text-secondary mt-1">
+          Her ShipsGo kredisi bir gemi veya uçak yükünün takibe alınmasında
+          kullanılır. Krediler 1 yıl geçerlidir ve en eski lot önce harcanır.
+        </p>
+      </div>
+
+      {/* Kredi seçimi */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-text-secondary">Kredi miktarı (1-100)</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={credits}
+            onChange={(e) => setCredits(Math.min(100, Math.max(1, Number(e.target.value) || 0)))}
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-text-secondary">Bakiyem</span>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-text-main">
+            ₺{Number(currentBalanceTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+          </div>
+        </label>
+      </div>
+
+      {/* Quote */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/40">
+        <h3 className="text-sm font-semibold text-text-main mb-2">Fiyat Önizleme</h3>
+        {quoteLoading ? (
+          <div className="text-xs text-text-secondary">Hesaplanıyor...</div>
+        ) : quoteError ? (
+          <div className="text-xs text-red-500">{quoteError}</div>
+        ) : quote ? (
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Plan</span>
+              <span className="text-text-main font-medium">{quote.planName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Birim Fiyat</span>
+              <span className="text-text-main">${Number(quote.unitPriceUsd).toFixed(2)} / kredi</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-secondary">{credits} kredi × ${Number(quote.unitPriceUsd).toFixed(2)}</span>
+              <span className="text-text-main">${Number(quote.totalUsd).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-secondary">TCMB Kuru</span>
+              <span className="text-text-main">1 USD = ₺{Number(quote.exchangeRateTry).toFixed(4)}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-2">
+              <span className="text-text-main font-semibold">Toplam</span>
+              <span className="text-primary font-bold text-lg">
+                ₺{Number(quote.totalTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-text-secondary">Kredi miktarını girin</div>
+        )}
+      </div>
+
+      {/* Notes */}
+      <label className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-text-secondary">Not (opsiyonel)</span>
+        <textarea
+          rows={2}
+          value={notes}
+          maxLength={500}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Yöneticinize iletmek istediğiniz açıklama"
+          className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </label>
+
+      {/* Ödeme yöntemi seçenekleri */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Bakiyeden öde */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
+          <h4 className="text-sm font-semibold text-text-main flex items-center gap-2">
+            <span className="material-symbols-outlined text-base text-green-600">account_balance_wallet</span>
+            Bakiyemden Öde
+          </h4>
+          <p className="text-xs text-text-secondary mt-1">
+            Anında işlem. Bakiyeden düşülür, krediler hemen kullanıma açılır.
+          </p>
+          {!balanceEnough && quote && (
+            <p className="text-xs text-red-500 mt-2">
+              Yetersiz bakiye (eksik: ₺{(Number(quote.totalTry) - Number(currentBalanceTry)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })})
+            </p>
+          )}
+          <button
+            disabled={!quote || !balanceEnough || submitting}
+            onClick={handlePayFromBalance}
+            className="mt-3 w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'İşleniyor...' : 'Bakiyemden Öde'}
+          </button>
+        </div>
+
+        {/* Havale bildirimi */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
+          <h4 className="text-sm font-semibold text-text-main flex items-center gap-2">
+            <span className="material-symbols-outlined text-base text-primary">payments</span>
+            Havale Bildirimi Gönder
+          </h4>
+          <p className="text-xs text-text-secondary mt-1">
+            Banka transferi yaptıktan sonra referans numaranızı bildirin.
+            Yönetici onayında krediler hesabınıza eklenir.
+          </p>
+          <input
+            type="text"
+            value={referenceNumber}
+            onChange={(e) => setReferenceNumber(e.target.value)}
+            placeholder="Havale referans numarası *"
+            className="mt-3 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            disabled={!quote || submitting || !referenceNumber.trim()}
+            onClick={handleSubmitTransfer}
+            className="mt-3 w-full px-4 py-2 bg-primary hover:opacity-90 text-white rounded-lg text-sm font-semibold transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Gönderiliyor...' : 'Havale Bildirimi Gönder'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../api/userService';
+import { shipsGoCreditService } from '../api/shipsGoCreditService';
 import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 
-const TABS = [
-  { id: 'profile', label: 'Profil', icon: 'person' },
-  { id: 'security', label: 'Güvenlik', icon: 'lock' },
-  // Step 6'da BROKER_ADMIN için 'ShipsGo Kredim' tab'ı eklenecek
-];
+const LOT_SOURCE_LABEL = {
+  PURCHASE_BALANCE: 'Bakiyeden satın alma',
+  PURCHASE_TRANSFER: 'Havale (onaylı)',
+  ADMIN_GRANT: 'Yönetici tanımı',
+};
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Sistem Yöneticisi',
@@ -72,6 +74,20 @@ function passwordStrength(pwd) {
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const isBrokerAdmin = user?.globalRole === 'BROKER_ADMIN';
+  const tabs = useMemo(() => {
+    const t = [
+      { id: 'profile', label: 'Profil', icon: 'person' },
+      { id: 'security', label: 'Güvenlik', icon: 'lock' },
+    ];
+    if (isBrokerAdmin) {
+      t.push({ id: 'shipsgo', label: 'ShipsGo Kredim', icon: 'travel_explore' });
+    }
+    return t;
+  }, [isBrokerAdmin]);
+
   const [activeTab, setActiveTab] = useState('profile');
 
   // Profil tab state
@@ -84,6 +100,24 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+
+  // ShipsGo Kredim state
+  const [wallet, setWallet] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  const loadWallet = useCallback(async () => {
+    if (!isBrokerAdmin) return;
+    setWalletLoading(true);
+    const res = await shipsGoCreditService.getMyWallet();
+    setWalletLoading(false);
+    if (res.success) {
+      setWallet(res.data);
+    }
+  }, [isBrokerAdmin]);
+
+  useEffect(() => {
+    if (activeTab === 'shipsgo') loadWallet();
+  }, [activeTab, loadWallet]);
 
   const strength = useMemo(() => passwordStrength(newPassword), [newPassword]);
 
@@ -163,7 +197,7 @@ export default function ProfilePage() {
           <div className="max-w-3xl mx-auto">
             {/* Tab buttons */}
             <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
@@ -370,9 +404,172 @@ export default function ProfilePage() {
                 </div>
               </form>
             )}
+
+            {/* ShipsGo Kredim tab — BROKER_ADMIN only */}
+            {activeTab === 'shipsgo' && isBrokerAdmin && (
+              <ShipsGoWalletTab
+                wallet={wallet}
+                loading={walletLoading}
+                onRefresh={loadWallet}
+                onPurchase={() => navigate('/payment/submit?tab=shipsgo')}
+              />
+            )}
           </div>
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+/**
+ * "Hesabım > ShipsGo Kredim" tab body.
+ * Surfaces current credits, lifetime stats and the FIFO-ordered active lots
+ * so the user can see which credits will expire first. Older lots are
+ * highlighted as their lifetime gets thinner.
+ */
+function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
+  const stats = wallet || {};
+  const lots = stats.activeLots || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Header card */}
+      <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-text-main">ShipsGo Kredisi</h2>
+            <p className="text-xs text-text-secondary mt-1">
+              Kredileriniz yüklendikleri tarihten itibaren 1 yıl geçerlidir
+              ve en eski (yakında dolacak) lot önce harcanır.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-text-main hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-base">refresh</span>
+              Yenile
+            </button>
+            <button
+              onClick={onPurchase}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+              Kredi Satın Al
+            </button>
+          </div>
+        </div>
+
+        {loading && !wallet ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+              <StatCard label="Mevcut Bakiye" value={stats.currentCredits ?? 0} highlight />
+              <StatCard label="Toplam Alınan" value={stats.lifetimePurchased ?? 0} />
+              <StatCard label="Kullanılan" value={stats.lifetimeConsumed ?? 0} />
+              <StatCard label="Süresi Dolan" value={stats.lifetimeExpired ?? 0} muted />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Active lots */}
+      <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-text-main">Aktif Kredi Lotları</h3>
+          <span className="text-xs text-text-secondary">
+            En yakın süresi dolacak olan en üstte (FIFO)
+          </span>
+        </div>
+
+        {lots.length === 0 ? (
+          <div className="text-center py-12">
+            <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-2 block">
+              inventory_2
+            </span>
+            <p className="text-text-secondary text-sm">Henüz kredi lotunuz yok.</p>
+            <button
+              onClick={onPurchase}
+              className="mt-3 text-sm font-medium text-primary hover:opacity-80 transition-opacity"
+            >
+              İlk paketinizi satın alın →
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-text-secondary">
+                  <th className="text-left px-3 py-2">Yükleme</th>
+                  <th className="text-left px-3 py-2">Kaynak</th>
+                  <th className="text-right px-3 py-2">Yüklenen</th>
+                  <th className="text-right px-3 py-2">Kalan</th>
+                  <th className="text-left px-3 py-2">Son Kullanma</th>
+                  <th className="text-right px-3 py-2">Kalan Gün</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {lots.map((lot) => {
+                  const days = lot.daysUntilExpiry ?? 0;
+                  let rowCls = '';
+                  if (days <= 7) rowCls = 'bg-red-50 dark:bg-red-900/10';
+                  else if (days <= 30) rowCls = 'bg-yellow-50 dark:bg-yellow-900/10';
+                  return (
+                    <tr key={lot.id} className={rowCls}>
+                      <td className="px-3 py-2 text-text-main">
+                        {new Date(lot.grantedAt).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="px-3 py-2 text-text-secondary text-xs">
+                        {LOT_SOURCE_LABEL[lot.source] || lot.source}
+                      </td>
+                      <td className="px-3 py-2 text-right text-text-secondary">
+                        {lot.creditsInitial}
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-text-main">
+                        {lot.creditsRemaining}
+                      </td>
+                      <td className="px-3 py-2 text-text-main">
+                        {new Date(lot.expiresAt).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className={`px-3 py-2 text-right font-medium ${
+                        days <= 7 ? 'text-red-600 dark:text-red-400'
+                          : days <= 30 ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-text-main'
+                      }`}>
+                        {days} gün
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, highlight, muted }) {
+  return (
+    <div className={`rounded-lg p-4 ${
+      highlight
+        ? 'bg-primary/10 border border-primary/30'
+        : muted
+          ? 'bg-gray-50 dark:bg-gray-800/40'
+          : 'bg-gray-50 dark:bg-gray-800/40'
+    }`}>
+      <div className="text-xs text-text-secondary">{label}</div>
+      <div className={`mt-1 text-2xl font-bold ${
+        highlight ? 'text-primary' : muted ? 'text-text-secondary' : 'text-text-main'
+      }`}>
+        {value}
+      </div>
+    </div>
   );
 }
