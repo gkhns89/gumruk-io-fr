@@ -17,6 +17,43 @@ const ROLE_LABELS = {
   CLIENT_USER: 'Müşteri Kullanıcısı',
 };
 
+/**
+ * Cryptographically secure random password.
+ * 16 chars, guaranteed to include uppercase, lowercase, digit and symbol.
+ * Compatible with Chrome's password manager when surfaced inside a form
+ * carrying autocomplete="new-password" on the input.
+ */
+function generateSecurePassword(length = 16) {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // O excluded for clarity
+  const lower = 'abcdefghijkmnpqrstuvwxyz';   // l, o excluded
+  const digit = '23456789';                    // 0, 1 excluded
+  const symbol = '!@#$%^&*-_=+';
+  const all = upper + lower + digit + symbol;
+
+  const buf = new Uint32Array(length);
+  crypto.getRandomValues(buf);
+
+  // Guarantee one char from each class up front
+  const chars = [
+    upper[buf[0] % upper.length],
+    lower[buf[1] % lower.length],
+    digit[buf[2] % digit.length],
+    symbol[buf[3] % symbol.length],
+  ];
+  for (let i = 4; i < length; i++) {
+    chars.push(all[buf[i] % all.length]);
+  }
+
+  // Fisher–Yates shuffle so the guaranteed positions are not always 0–3
+  const shuffleBuf = new Uint32Array(length);
+  crypto.getRandomValues(shuffleBuf);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = shuffleBuf[i] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
 function passwordStrength(pwd) {
   if (!pwd) return { score: 0, label: '', color: 'bg-gray-200' };
   let score = 0;
@@ -208,7 +245,29 @@ export default function ProfilePage() {
 
             {/* Security tab */}
             {activeTab === 'security' && (
-              <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+              <form
+                className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors"
+                onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }}
+                autoComplete="on"
+                name="change-password-form"
+              >
+                {/*
+                  Hidden username field anchors Chrome / 1Password / Bitwarden
+                  autofill to *this* form. Without it the browser scans the
+                  whole page for a matching field and ends up dumping the
+                  user's email into the header search input.
+                */}
+                <input
+                  type="text"
+                  name="username"
+                  value={user?.email || ''}
+                  autoComplete="username"
+                  readOnly
+                  hidden
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+
                 <h2 className="text-lg font-semibold text-text-main mb-4">Şifre Değiştir</h2>
                 <p className="text-xs text-text-secondary mb-4">
                   Şifrenizi değiştirdikten sonra tüm aktif oturumlarınız sonlandırılır
@@ -220,6 +279,7 @@ export default function ProfilePage() {
                     <span className="text-xs font-medium text-text-secondary">Mevcut Şifre</span>
                     <input
                       type={showPasswords ? 'text' : 'password'}
+                      name="current-password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       autoComplete="current-password"
@@ -228,9 +288,27 @@ export default function ProfilePage() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">Yeni Şifre</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-text-secondary">Yeni Şifre</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const pwd = generateSecurePassword(16);
+                          setNewPassword(pwd);
+                          setConfirmPassword(pwd);
+                          setShowPasswords(true);
+                          showSuccess('Güvenli şifre üretildi. Lütfen güvenli bir yere kaydedin.');
+                        }}
+                        className="flex items-center gap-1 text-[11px] font-medium text-primary hover:opacity-80 transition-opacity"
+                        title="16 karakterli, büyük/küçük harf, rakam ve sembol içeren güvenli şifre üretir"
+                      >
+                        <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                        Güvenli Şifre Üret
+                      </button>
+                    </div>
                     <input
                       type={showPasswords ? 'text' : 'password'}
+                      name="new-password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       autoComplete="new-password"
@@ -258,6 +336,7 @@ export default function ProfilePage() {
                     <span className="text-xs font-medium text-text-secondary">Yeni Şifre (Tekrar)</span>
                     <input
                       type={showPasswords ? 'text' : 'password'}
+                      name="confirm-password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       autoComplete="new-password"
@@ -281,7 +360,7 @@ export default function ProfilePage() {
 
                 <div className="flex justify-end mt-6">
                   <button
-                    onClick={handleChangePassword}
+                    type="submit"
                     disabled={changingPassword}
                     className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
@@ -289,7 +368,7 @@ export default function ProfilePage() {
                     {changingPassword ? 'Değiştiriliyor...' : 'Şifreyi Değiştir'}
                   </button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
         </div>
