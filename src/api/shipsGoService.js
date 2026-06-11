@@ -136,4 +136,73 @@ export const shipsGoService = {
       return { success: false, error: error.response?.data?.error };
     }
   },
+
+  // ---- Enable-request workflow (BROKER_USER ↔ BROKER_ADMIN) ----
+  requestEnable: async (cargoId, { notes } = {}) => {
+    try {
+      const res = await axiosInstance.post(`/shipsgo/cargo/${cargoId}/request-enable`, { notes });
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - requestEnable', error);
+      return { success: false, error: error.response?.data?.error || 'Talep gönderilemedi' };
+    }
+  },
+
+  cancelRequest: async (requestId) => {
+    try {
+      await axiosInstance.delete(`/shipsgo/requests/${requestId}`);
+      return { success: true };
+    } catch (error) {
+      logError('ShipsGoService - cancelRequest', error);
+      return { success: false, error: error.response?.data?.error || 'Talep iptal edilemedi' };
+    }
+  },
+
+  listPendingRequests: async (brokerCompanyId) => {
+    try {
+      const res = await axiosInstance.get('/shipsgo/pending-requests', {
+        params: brokerCompanyId ? { brokerCompanyId } : {},
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - listPendingRequests', error);
+      return { success: false, error: error.response?.data?.error || 'Talep listesi alınamadı' };
+    }
+  },
+
+  approveRequest: async (requestId, { fetchImmediately = false } = {}) => {
+    try {
+      const res = await axiosInstance.post(
+        `/shipsgo/requests/${requestId}/approve`,
+        { fetchImmediately },
+      );
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - approveRequest', error);
+      return { success: false, error: error.response?.data?.error || 'Onay başarısız' };
+    }
+  },
+
+  rejectRequest: async (requestId, reason) => {
+    try {
+      const res = await axiosInstance.post(
+        `/shipsgo/requests/${requestId}/reject`,
+        { reason },
+      );
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - rejectRequest', error);
+      return { success: false, error: error.response?.data?.error || 'Red başarısız' };
+    }
+  },
+
+  listCargoRequests: async (cargoId) => {
+    try {
+      const res = await axiosInstance.get(`/shipsgo/cargo/${cargoId}/requests`);
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - listCargoRequests', error);
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
 };

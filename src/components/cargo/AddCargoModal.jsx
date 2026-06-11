@@ -96,6 +96,13 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   // preview — those fields get pushed back to the server as manual overrides.
   const [shipsGoPopulatedSnapshot, setShipsGoPopulatedSnapshot] = useState(null);
 
+  // BROKER_USER request path: cannot flip the switch, but can file an
+  // enable request that a BROKER_ADMIN approves. The two states below
+  // travel to the backend in the same POST /cargo body as `requestShipsGoEnable`
+  // and `shipsGoRequestNotes`.
+  const [requestShipsGoEnable, setRequestShipsGoEnable] = useState(false);
+  const [shipsGoRequestNotes, setShipsGoRequestNotes] = useState('');
+
   const isShipsGoCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
 
   // Identifier ready = identifier(s) the upstream endpoint needs are filled out.
@@ -590,6 +597,11 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         // run "Bilgileri Getir" from the table afterwards.
         shipsGoEnabled: shipsGoEnabled && isShipsGoCompatible,
         shipsGoTrackingId: shipsGoTrackingId ? String(shipsGoTrackingId) : null,
+        // BROKER_USER path: ask a BROKER_ADMIN to enable later. Backend
+        // creates a PENDING ShipsGoEnableRequest and surfaces it in the
+        // admin's pending-requests popover.
+        requestShipsGoEnable: requestShipsGoEnable && isShipsGoCompatible && !isBrokerAdmin,
+        shipsGoRequestNotes: shipsGoRequestNotes?.trim() || null,
       };
 
       const result = await cargoService.createCargo(dataToSend);
@@ -1125,10 +1137,33 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                             ShipsGo ile otomatik takip et
                           </span>
                           {!isBrokerAdmin ? (
-                            <p className="text-xs text-text-secondary mt-1">
-                              Sadece broker yöneticileri ShipsGo entegrasyonunu açabilir.
-                              Talep oluşturmak için kaydettikten sonra detaydan isteyebilirsiniz.
-                            </p>
+                            <div className="mt-2 space-y-2">
+                              <p className="text-xs text-text-secondary">
+                                Sadece broker yöneticileri ShipsGo entegrasyonunu açabilir.
+                                Aşağıdaki kutuyu işaretlerseniz yöneticinize bir onay talebi gönderilir.
+                              </p>
+                              <label className="flex items-start gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={requestShipsGoEnable}
+                                  onChange={(e) => setRequestShipsGoEnable(e.target.checked)}
+                                  className="mt-0.5 rounded"
+                                />
+                                <span className="text-sm font-medium text-text-main">
+                                  🔔 Yöneticiden ShipsGo talep et
+                                </span>
+                              </label>
+                              {requestShipsGoEnable && (
+                                <textarea
+                                  rows={2}
+                                  maxLength={500}
+                                  value={shipsGoRequestNotes}
+                                  onChange={(e) => setShipsGoRequestNotes(e.target.value)}
+                                  placeholder="Yöneticinize iletmek istediğiniz not (opsiyonel) — örn. müşteri acil takip istiyor"
+                                  className="w-full rounded-lg border border-primary/30 dark:border-primary/40 bg-white dark:bg-gray-700 text-text-main text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                              )}
+                            </div>
                           ) : (
                             <p className="text-xs text-text-secondary mt-1">
                               Açık olduğunda yükün varış bilgileri, gemi/uçak konumu ve

@@ -7,6 +7,7 @@ import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
 import NotificationCenter from "./NotificationCenter";
+import ShipsGoRequestsBell from "../shipsgo/ShipsGoRequestsBell";
 import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
@@ -296,6 +297,9 @@ export default function Header() {
 
           {/* Notifications */}
           <NotificationCenter />
+
+          {/* ShipsGo enable requests (BROKER_ADMIN / SUPER_ADMIN only) */}
+          <ShipsGoRequestsBell />
 
           {/* Feedback Butonu - SUPER_ADMIN görmez */}
           {clickUpActive && !isSuperAdmin && (

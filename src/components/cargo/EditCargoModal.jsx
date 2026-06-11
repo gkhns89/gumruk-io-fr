@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { shipsGoService } from '../../api/shipsGoService';
@@ -25,6 +25,45 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const [overrideList, setOverrideList] = useState(cargo.shipsGoManuallyOverriddenFields || []);
   const shipsGoActive = !!cargo.shipsGoEnabled && !!cargo.shipsGoTrackingId;
   const isFieldOverridden = (fieldName) => overrideList.includes(fieldName);
+
+  // ===== ShipsGo request history (banner state) =====
+  const [requestHistory, setRequestHistory] = useState([]);
+  const [reRequestNotes, setReRequestNotes] = useState('');
+  const [reRequesting, setReRequesting] = useState(false);
+
+  const loadRequests = useCallback(async () => {
+    const res = await shipsGoService.listCargoRequests(cargo.id);
+    if (res.success) setRequestHistory(res.data?.requests || []);
+  }, [cargo.id]);
+
+  useEffect(() => { loadRequests(); }, [loadRequests]);
+
+  // The newest request always wins (rejection vs. pending vs. approved).
+  const latestRequest = requestHistory[0] || null;
+
+  const handleCancelMyRequest = async (requestId) => {
+    if (!window.confirm('Bekleyen ShipsGo talebinizi iptal etmek istiyor musunuz?')) return;
+    const res = await shipsGoService.cancelRequest(requestId);
+    if (res.success) {
+      showSuccess('Talep iptal edildi');
+      loadRequests();
+    } else {
+      showError(res.error);
+    }
+  };
+
+  const handleReRequest = async () => {
+    setReRequesting(true);
+    const res = await shipsGoService.requestEnable(cargo.id, { notes: reRequestNotes.trim() || null });
+    setReRequesting(false);
+    if (res.success) {
+      showSuccess('Yeni talep gönderildi');
+      setReRequestNotes('');
+      loadRequests();
+    } else {
+      showError(res.error);
+    }
+  };
 
   const handleResetOverride = async (fieldName) => {
     const labels = {
@@ -427,6 +466,31 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-background-dark transition-colors duration-300">
+          {/* ShipsGo request status banner */}
+          <ShipsGoRequestBanner
+            latest={latestRequest}
+            currentUserId={currentUser?.id}
+            shipsGoEnabled={!!cargo.shipsGoEnabled}
+            onCancel={handleCancelMyRequest}
+            reRequestNotes={reRequestNotes}
+            setReRequestNotes={setReRequestNotes}
+            onReRequest={handleReRequest}
+            reRequesting={reRequesting}
+          />
+
+          {/* Draft warning */}
+          {cargo.isDraft && (
+            <div className="mb-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">draft</span>
+                Bu kayıt taslak durumunda
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+                Tüm zorunlu alanları doldurup kaydettiğinizde aktif yük olarak işaretlenecek.
+              </p>
+            </div>
+          )}
+
           {/* Vehicle Type */}
           <div className="mb-6">
             <div className="flex items-center justify-between pb-2">
@@ -1360,6 +1424,117 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
  * needs the modal's local state shape; promoting it to a shared
  * component would just couple them through props.
  */
+/**
+ * In-modal banner reflecting the latest ShipsGo enable-request on the cargo.
+ * Three states matter:
+ *  - PENDING (the request is sitting in some BROKER_ADMIN's queue): blue
+ *    info banner. The original requester sees a "Talebi iptal et" button.
+ *  - REJECTED: red banner quoting the admin's reason. A "Tekrar Talep Et"
+ *    affordance lets the user file a fresh request (with a fresh note).
+ *  - APPROVED but ShipsGo isn't actually active anymore (rare; admin
+ *    disabled afterwards): green hint nudging the user to re-request.
+ *  - APPROVED and ShipsGo still active, or CANCELLED, or nothing: no banner.
+ */
+function ShipsGoRequestBanner({
+  latest, currentUserId, shipsGoEnabled,
+  onCancel, reRequestNotes, setReRequestNotes, onReRequest, reRequesting,
+}) {
+  if (!latest) return null;
+  const isOwner = latest.requestedByEmail && currentUserId
+    ? false
+    : latest.requestedByEmail && currentUserId === latest.requestedByEmail
+    ? true
+    : false;
+  // The list is ordered newest-first server-side. We render the most recent
+  // status as the banner; older history (cancelled, previously rejected, etc.)
+  // intentionally doesn't surface here to avoid noise.
+
+  if (latest.status === 'PENDING') {
+    return (
+      <div className="mb-4 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">schedule</span>
+              ShipsGo entegrasyon talebiniz yöneticinizin onayını bekliyor
+            </p>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+              Talep tarihi: {new Date(latest.requestedAt).toLocaleString('tr-TR')}
+              {latest.notes && <> · "{latest.notes}"</>}
+            </p>
+          </div>
+          <button
+            onClick={() => onCancel(latest.id)}
+            className="px-3 py-1.5 text-xs border border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+          >
+            Talebi iptal et
+          </button>
+        </div>
+        {/* unused but kept linked: isOwner is a placeholder if we later want
+            to show the cancel button only to the original requester */}
+        <span className="hidden">{String(isOwner)}</span>
+      </div>
+    );
+  }
+
+  if (latest.status === 'REJECTED') {
+    return (
+      <div className="mb-4 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4">
+        <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
+          <span className="material-symbols-outlined text-base">cancel</span>
+          ShipsGo entegrasyon talebiniz reddedildi
+        </p>
+        {latest.rejectionReason && (
+          <p className="text-xs text-red-700 dark:text-red-400 mt-1 italic">
+            Gerekçe: "{latest.rejectionReason}"
+          </p>
+        )}
+        {latest.reviewedByEmail && (
+          <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">
+            {latest.reviewedByEmail} tarafından · {new Date(latest.reviewedAt).toLocaleString('tr-TR')}
+          </p>
+        )}
+        <p className="text-xs text-red-700 dark:text-red-400 mt-2">
+          Bilgileri elle girmeye devam edebilir veya yeniden talep gönderebilirsiniz.
+        </p>
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            maxLength={500}
+            value={reRequestNotes}
+            onChange={(e) => setReRequestNotes(e.target.value)}
+            placeholder="Yeni talebe iletmek istediğiniz not (opsiyonel)"
+            className="flex-1 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          <button
+            onClick={onReRequest}
+            disabled={reRequesting}
+            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
+          >
+            {reRequesting ? 'Gönderiliyor...' : 'Tekrar Talep Et'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (latest.status === 'APPROVED' && !shipsGoEnabled) {
+    return (
+      <div className="mb-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
+        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+          <span className="material-symbols-outlined text-base">check_circle</span>
+          ShipsGo talebiniz onaylandı ama entegrasyon kapatılmış
+        </p>
+        <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
+          Yeniden açmak için yeni bir talep gönderebilirsiniz.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function ShipsGoFieldBadge({ shipsGoActive, overridden, canManage, onReset }) {
   if (!shipsGoActive) return null;
   if (overridden) {
