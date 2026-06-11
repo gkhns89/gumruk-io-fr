@@ -1,23 +1,51 @@
 import { useState, useEffect } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
+import { shipsGoService } from '../../api/shipsGoService';
 import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import TagInput from '../common/TagInput';
-import { t, getCurrentLocale } from '../../locales';
+import { t } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
   const isAdmin = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(currentUser?.globalRole);
-  const isBrokerUser = currentUser?.globalRole === 'BROKER_USER';
-  const locale = getCurrentLocale();
 
   // Admins can edit vehicle type and client company
   const canEditVehicleType = isAdmin && !isReadOnly;
   const canEditClientCompany = isAdmin && !isReadOnly;
+
+  // ===== ShipsGo override tracking =====
+  // Server keeps the authoritative list in cargo.shipsGoManuallyOverriddenFields;
+  // we mirror it locally so the "ShipsGo'ya bırak" reset button can update the
+  // UI immediately when the user releases a field.
+  const [overrideList, setOverrideList] = useState(cargo.shipsGoManuallyOverriddenFields || []);
+  const shipsGoActive = !!cargo.shipsGoEnabled && !!cargo.shipsGoTrackingId;
+  const isFieldOverridden = (fieldName) => overrideList.includes(fieldName);
+
+  const handleResetOverride = async (fieldName) => {
+    const labels = {
+      estimatedArrivalDate: 'tahmini varış tarihi',
+      cargoArrivalDate: 'gerçek varış tarihi',
+    };
+    const ok = window.confirm(
+      `${labels[fieldName] || fieldName} alanını ShipsGo kontrolüne geri vermek istiyor musunuz?\n\n` +
+      `Bir sonraki güncellemede bu alan ShipsGo'nun bildirdiği değerle değişecek.`
+    );
+    if (!ok) return;
+    const res = await shipsGoService.resetOverride(cargo.id, fieldName);
+    if (res.success) {
+      setOverrideList(prev => prev.filter(f => f !== fieldName));
+      showSuccess(`${labels[fieldName] || fieldName} ShipsGo kontrolüne bırakıldı`);
+      // Tell the parent to re-read so the just-resynced value shows up.
+      onSuccess?.();
+    } else {
+      showError(res.error || 'İşlem başarısız');
+    }
+  };
 
   const [formData, setFormData] = useState({
     status: cargo.status || "TRACKING",
@@ -1004,8 +1032,14 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             </div>
             <div className="p-4 grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text-main pb-2">
-                  Tahmini Varış Tarihi (ETA)
+                <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
+                  <span>Tahmini Varış Tarihi (ETA)</span>
+                  <ShipsGoFieldBadge
+                    shipsGoActive={shipsGoActive}
+                    overridden={isFieldOverridden('estimatedArrivalDate')}
+                    canManage={isAdmin && !isReadOnly}
+                    onReset={() => handleResetOverride('estimatedArrivalDate')}
+                  />
                 </label>
                 <input
                   type="date"
@@ -1083,8 +1117,14 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Varış tarihi → VARIŞ YAPTI</span>
             </div>
             <div className="p-4">
-              <label className="block text-sm font-medium text-text-main pb-2">
-                Varış Tarihi
+              <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
+                <span>Varış Tarihi</span>
+                <ShipsGoFieldBadge
+                  shipsGoActive={shipsGoActive}
+                  overridden={isFieldOverridden('cargoArrivalDate')}
+                  canManage={isAdmin && !isReadOnly}
+                  onReset={() => handleResetOverride('cargoArrivalDate')}
+                />
               </label>
               <input
                 type="date"
@@ -1299,5 +1339,58 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Compact inline indicator next to ShipsGo-managed cargo fields.
+ *
+ * Three states:
+ *  - ShipsGo not active: badge hidden (nothing to communicate).
+ *  - Active & user has manually overridden the field: 🔒 pill with a
+ *    one-click "↺ ShipsGo'ya bırak" reset button (BROKER_ADMIN /
+ *    SUPER_ADMIN only). Clicking it confirms, calls /reset-override,
+ *    and removes the field from the local override list so the badge
+ *    updates immediately.
+ *  - Active & ShipsGo currently owns the field: a small "ShipsGo
+ *    güncelliyor" tag — same shape so the label height does not jump
+ *    between rows.
+ *
+ * Lives in the same file as EditCargoModal because it is single-use and
+ * needs the modal's local state shape; promoting it to a shared
+ * component would just couple them through props.
+ */
+function ShipsGoFieldBadge({ shipsGoActive, overridden, canManage, onReset }) {
+  if (!shipsGoActive) return null;
+  if (overridden) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[11px] font-medium"
+        title="Manuel olarak girildi — ShipsGo bu alanı güncellemiyor"
+      >
+        <span className="material-symbols-outlined text-sm">lock</span>
+        Manuel
+        {canManage && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="ml-1 inline-flex items-center gap-0.5 hover:opacity-80 transition-opacity"
+            title="Alanı tekrar ShipsGo kontrolüne bırak"
+          >
+            <span className="material-symbols-outlined text-sm">restart_alt</span>
+            ShipsGo'ya bırak
+          </button>
+        )}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium"
+      title="Bu alan ShipsGo tarafından güncelleniyor — değiştirirseniz manuel kontrole alınır"
+    >
+      <span className="material-symbols-outlined text-sm">travel_explore</span>
+      ShipsGo güncelliyor
+    </span>
   );
 }
