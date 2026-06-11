@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { feedbackService } from '../api/feedbackService';
 import { contactService } from '../api/contactService';
+import { shipsGoService } from '../api/shipsGoService';
 import { showSuccess, showError } from '../utils/toastUtils';
 
 const TYPE_OPTIONS = [
@@ -29,10 +30,50 @@ const SettingsPage = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [registeringWebhook, setRegisteringWebhook] = useState(false);
 
+  // ShipsGo Master Config state
+  const [shipsGoConfig, setShipsGoConfig] = useState(null);
+  const [shipsGoForm, setShipsGoForm] = useState({
+    apiToken: '', webhookSecret: '', webhookUrl: '', active: false,
+  });
+  const [shipsGoSaving, setShipsGoSaving] = useState(false);
+
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
     loadData();
+    loadShipsGoConfig();
   }, [isSuperAdmin]);
+
+  const loadShipsGoConfig = async () => {
+    const res = await shipsGoService.getMasterConfig();
+    if (res.success) {
+      setShipsGoConfig(res.data);
+      setShipsGoForm({
+        apiToken: '', webhookSecret: '',
+        webhookUrl: res.data?.webhookUrl || '',
+        active: !!res.data?.active,
+      });
+    }
+  };
+
+  const handleSaveShipsGoConfig = async () => {
+    setShipsGoSaving(true);
+    const payload = {
+      webhookUrl: shipsGoForm.webhookUrl,
+      active: shipsGoForm.active,
+    };
+    if (shipsGoForm.apiToken.trim()) payload.apiToken = shipsGoForm.apiToken.trim();
+    if (shipsGoForm.webhookSecret.trim()) payload.webhookSecret = shipsGoForm.webhookSecret.trim();
+
+    const res = await shipsGoService.updateMasterConfig(payload);
+    setShipsGoSaving(false);
+    if (res.success) {
+      showSuccess(res.data?.message || 'ShipsGo konfigürasyonu güncellendi');
+      setShipsGoForm(prev => ({ ...prev, apiToken: '', webhookSecret: '' }));
+      loadShipsGoConfig();
+    } else {
+      showError(res.error);
+    }
+  };
 
   const loadData = async () => {
     setLoadingData(true);
@@ -438,6 +479,150 @@ const SettingsPage = () => {
                       Son güncelleme: {new Date(settings.updatedAt).toLocaleString('tr-TR')}
                     </p>
                   )}
+                </div>
+              </div>
+
+              {/* ShipsGo Master Konfigürasyon */}
+              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[22px] text-primary">travel_explore</span>
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-text-main">ShipsGo Entegrasyonu (Master)</h2>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Geliştirici hesabınızın API token'ı ve webhook ayarları. Tüm brokerlar bu hesap üzerinden çalışır.
+                    </p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                    shipsGoConfig?.active
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    {shipsGoConfig?.active ? 'Aktif' : 'Pasif'}
+                  </span>
+                </div>
+                <div className="p-6 space-y-5">
+                  {/* Master Havuz Bakiyesi */}
+                  <div className="rounded-xl p-4 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">savings</span>
+                          Master Havuz Bakiyesi
+                        </h3>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          ShipsGo hesabınızda kalan kredi. Brokerlara hiçbir yerde gösterilmez.
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-3xl font-bold ${
+                          (shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-purple-700 dark:text-purple-300'
+                        }`}>
+                          {shipsGoConfig?.lastKnownMasterCredits ?? '—'} kredi
+                        </div>
+                        {shipsGoConfig?.lastCreditCheckAt && (
+                          <p className="text-[11px] text-text-secondary mt-0.5">
+                            Son güncelleme: {new Date(shipsGoConfig.lastCreditCheckAt).toLocaleString('tr-TR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {(shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50 && shipsGoConfig?.lastKnownMasterCredits != null && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-base">warning</span>
+                        Master kredi tükeniyor — ShipsGo'dan paket yükleyin.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* API Token */}
+                  <label className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-text-secondary">API Token (X-Shipsgo-User-Token)</span>
+                      {shipsGoConfig?.apiTokenConfigured && (
+                        <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">check_circle</span>
+                          Kayıtlı
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      value={shipsGoForm.apiToken}
+                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, apiToken: e.target.value }))}
+                      placeholder={shipsGoConfig?.apiTokenConfigured ? '*** (değiştirmek için yeni token girin)' : 'ShipsGo API token'}
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <span className="text-[11px] text-text-secondary">Boş bırakırsanız mevcut token korunur. AES ile şifrelenerek saklanır.</span>
+                  </label>
+
+                  {/* Webhook URL */}
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-text-secondary">Webhook URL</span>
+                    <input
+                      type="text"
+                      value={shipsGoForm.webhookUrl}
+                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
+                      placeholder="https://backend.example.com/api/webhooks/shipsgo"
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <span className="text-[11px] text-text-secondary">
+                      Bu URL'i ShipsGo dashboard'una (air + ocean ayrı) manuel olarak eklemeniz gerekir.
+                    </span>
+                  </label>
+
+                  {/* Webhook Secret */}
+                  <label className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-text-secondary">Webhook Secret (HMAC-SHA256)</span>
+                      {shipsGoConfig?.webhookSecretConfigured && (
+                        <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">check_circle</span>
+                          Kayıtlı
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      value={shipsGoForm.webhookSecret}
+                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, webhookSecret: e.target.value }))}
+                      placeholder={shipsGoConfig?.webhookSecretConfigured ? '*** (değiştirmek için yeni secret girin)' : 'Webhook HMAC secret'}
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <span className="text-[11px] text-text-secondary">ShipsGo'nun X-Shipsgo-Webhook-Signature header'ını doğrulamak için kullanılır.</span>
+                  </label>
+
+                  {/* Active toggle */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={shipsGoForm.active}
+                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, active: e.target.checked }))}
+                      className="rounded"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-text-main">Entegrasyonu Aktif Et</span>
+                      <p className="text-xs text-text-secondary">Kapalı iken hiçbir broker ShipsGo işlemi yapamaz.</p>
+                    </div>
+                  </label>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                    {shipsGoConfig?.updatedAt && (
+                      <p className="text-xs text-text-secondary">
+                        Son güncelleme: {new Date(shipsGoConfig.updatedAt).toLocaleString('tr-TR')}
+                        {shipsGoConfig.updatedByEmail && ` — ${shipsGoConfig.updatedByEmail}`}
+                      </p>
+                    )}
+                    <button
+                      onClick={handleSaveShipsGoConfig}
+                      disabled={shipsGoSaving}
+                      className="ml-auto flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-base">save</span>
+                      {shipsGoSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
