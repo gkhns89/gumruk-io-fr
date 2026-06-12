@@ -1454,7 +1454,11 @@ function ShipsGoRequestBanner({
   latest, currentUserId, shipsGoEnabled,
   onCancel, reRequestNotes, setReRequestNotes, onReRequest, reRequesting,
 }) {
+  // No request at all → no banner. CANCELLED also stays quiet (the user
+  // intentionally walked away from it). Both branches dropped here so the
+  // demo doesn't show stale banners for cargos that never had a request.
   if (!latest) return null;
+  if (latest.status === 'CANCELLED') return null;
   const isOwner = latest.requestedByEmail && currentUserId
     ? false
     : latest.requestedByEmail && currentUserId === latest.requestedByEmail
@@ -1538,11 +1542,28 @@ function ShipsGoRequestBanner({
       <div className="mb-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
           <span className="material-symbols-outlined text-base">check_circle</span>
-          ShipsGo talebiniz onaylandı ama entegrasyon kapatılmış
+          ShipsGo talebiniz onaylandı ama bu yük için entegrasyon kapalı
         </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
           Yeniden açmak için yeni bir talep gönderebilirsiniz.
         </p>
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            maxLength={500}
+            value={reRequestNotes}
+            onChange={(e) => setReRequestNotes(e.target.value)}
+            placeholder="Talep notu (opsiyonel)"
+            className="flex-1 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <button
+            onClick={onReRequest}
+            disabled={reRequesting}
+            className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
+          >
+            {reRequesting ? 'Gönderiliyor...' : 'Tekrar Talep Et'}
+          </button>
+        </div>
       </div>
     );
   }
