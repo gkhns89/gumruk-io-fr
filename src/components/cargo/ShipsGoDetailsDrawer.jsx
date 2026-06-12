@@ -221,14 +221,14 @@ export default function ShipsGoDetailsDrawer({
           )}
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between">
+        <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
           <p className="text-[11px] text-text-secondary">Yenileme ücretsizdir — kredi tüketmez.</p>
           <button
             onClick={handleRefresh}
             disabled={refreshing || !canRefresh || !details?.shipsGoTrackingId}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
           >
-            <span className="material-symbols-outlined text-base">refresh</span>
+            <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
             {refreshing ? 'Yenileniyor...' : 'Yenile'}
           </button>
         </div>
