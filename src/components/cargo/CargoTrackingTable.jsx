@@ -522,15 +522,28 @@ export default function CargoTrackingTable({
  */
 function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch, onOpenDetails }) {
   const vt = cargoItem.vehicleType;
-  // Stop the click from bubbling up to the parent row (which opens the edit
-  // modal) AND prevent the icon spans inside from swallowing the click. We
-  // wrap the handlers instead of relying solely on the td-level stopPropagation
-  // so individual buttons stay self-contained.
-  const stop = (handler) => (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    handler?.();
-  };
+
+  // Defensive debug: when the user reports "buttons don't react", the most
+  // common cause is the cargo payload missing shipsGoEnabled / shipsGoTrackingId
+  // — the cell then falls through to the "Kapalı" span (not a button), so
+  // clicking does nothing. Log once per cargo so we can spot it in dev tools
+  // without flooding the console.
+  if (typeof window !== 'undefined' && !window.__shipsGoCellDebugged) {
+    window.__shipsGoCellDebugged = new Set();
+  }
+  if (typeof window !== 'undefined'
+      && (vt === 'SHIP' || vt === 'AIRPLANE')
+      && !window.__shipsGoCellDebugged.has(cargoItem.id)) {
+    window.__shipsGoCellDebugged.add(cargoItem.id);
+    console.debug('[ShipsGoCell]', cargoItem.id, {
+      vehicleType: vt,
+      status: cargoItem.status,
+      shipsGoEnabled: cargoItem.shipsGoEnabled,
+      shipsGoTrackingId: cargoItem.shipsGoTrackingId,
+      canManage,
+      isReadOnly,
+    });
+  }
 
   if (vt !== 'SHIP' && vt !== 'AIRPLANE') {
     return <span className="text-sm text-text-secondary">—</span>;
@@ -540,7 +553,7 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
       return (
         <button
           type="button"
-          onClick={stop(onOpenDetails)}
+          onClick={(e) => { e.stopPropagation(); onOpenDetails?.(); }}
           className="text-xs text-text-secondary italic hover:text-text-main underline-offset-2 hover:underline"
           title="Tamamlanan yüklerde ShipsGo durur. Geçmiş verileri görüntülemek için tıklayın."
         >
@@ -557,7 +570,7 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
   if (!cargoItem.shipsGoEnabled) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
-        <span className="material-symbols-outlined text-sm pointer-events-none">toggle_off</span>
+        <span className="material-symbols-outlined text-sm">toggle_off</span>
         Kapalı
       </span>
     );
@@ -573,17 +586,13 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
     return (
       <button
         type="button"
-        onClick={stop(onFetch)}
+        onClick={(e) => { e.stopPropagation(); onFetch?.(); }}
         disabled={fetching}
         title="ShipsGo'dan bilgileri çek (1 kredi)"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors disabled:opacity-50"
       >
-        {/* pointer-events-none keeps clicks landing on the <button>, not on
-            the icon span which would otherwise swallow them silently. */}
-        <span className="material-symbols-outlined text-sm pointer-events-none">download</span>
-        <span className="pointer-events-none">
-          {fetching ? 'Çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
-        </span>
+        <span className="material-symbols-outlined text-sm">download</span>
+        {fetching ? 'Çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
       </button>
     );
   }
@@ -594,13 +603,13 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
   return (
     <button
       type="button"
-      onClick={stop(onOpenDetails)}
+      onClick={(e) => { e.stopPropagation(); onOpenDetails?.(); }}
       title={tooltip}
       className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
     >
-      <span className="inline-block w-2 h-2 rounded-full bg-green-500 pointer-events-none"></span>
-      <span className="pointer-events-none">Aktif</span>
-      <span className="material-symbols-outlined text-sm pointer-events-none">open_in_new</span>
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+      Aktif
+      <span className="material-symbols-outlined text-sm">open_in_new</span>
     </button>
   );
 }
