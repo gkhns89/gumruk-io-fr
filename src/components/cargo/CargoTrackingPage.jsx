@@ -59,8 +59,61 @@ export default function CargoTrackingPage() {
 
   // ShipsGo per-cargo actions
   const [fetchingShipsGo, setFetchingShipsGo] = useState({}); // { cargoId: bool }
+  const [enablingShipsGo, setEnablingShipsGo] = useState({}); // { cargoId: bool } — also covers request submissions
   const [shipsGoDrawerCargo, setShipsGoDrawerCargo] = useState(null);
   const handleShipsGoDetails = (cargoItem) => setShipsGoDrawerCargo(cargoItem);
+  const handleShipsGoEnable = async (cargoItem) => {
+    const identifier = cargoItem.vehicleType === 'AIRPLANE'
+      ? cargoItem.consignmentNumber
+      : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
+    const ok = await confirmDialog({
+      title: 'ShipsGo entegrasyonunu aç',
+      message: `${identifier || 'Bu yük'} için ShipsGo entegrasyonu aktive edilecek.`,
+      details: [
+        'Bu adımda kredi tüketilmez.',
+        'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
+      ],
+      intent: 'primary',
+      icon: 'travel_explore',
+      confirmText: 'ShipsGo\'yu aç',
+    });
+    if (!ok) return;
+    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await shipsGoService.enable(cargoItem.id);
+    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    if (res.success) {
+      showSuccess('ShipsGo entegrasyonu açıldı');
+      loadData();
+    } else {
+      showError(res.error || 'ShipsGo açılamadı');
+    }
+  };
+  const handleShipsGoRequest = async (cargoItem) => {
+    const identifier = cargoItem.vehicleType === 'AIRPLANE'
+      ? cargoItem.consignmentNumber
+      : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
+    const ok = await confirmDialog({
+      title: 'ShipsGo entegrasyonu talep et',
+      message: `${identifier || 'Bu yük'} için yöneticinizden ShipsGo entegrasyonunu açmasını talep edeceksiniz.`,
+      details: [
+        'Yöneticiniz onayladığında bildirim alacaksınız.',
+        'Talep oluşturulduğunda kredi tüketilmez.',
+      ],
+      intent: 'primary',
+      icon: 'send',
+      confirmText: 'Talep gönder',
+    });
+    if (!ok) return;
+    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await shipsGoService.requestEnable(cargoItem.id, {});
+    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    if (res.success) {
+      showSuccess('Talep gönderildi — yöneticiniz onayladığında bildirim alacaksınız');
+      loadData();
+    } else {
+      showError(res.error || 'Talep gönderilemedi');
+    }
+  };
   const handleShipsGoFetch = async (cargoItem) => {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
@@ -506,8 +559,11 @@ export default function CargoTrackingPage() {
             onScroll={handleTableScroll}
             canManageShipsGo={canManageShipsGo}
             onShipsGoFetch={handleShipsGoFetch}
+            onShipsGoEnable={handleShipsGoEnable}
+            onShipsGoRequest={handleShipsGoRequest}
             onShipsGoDetails={handleShipsGoDetails}
             fetchingShipsGo={fetchingShipsGo}
+            enablingShipsGo={enablingShipsGo}
           />
         </div>
         </div>

@@ -18,8 +18,11 @@ export default function CargoTrackingTable({
   onScroll = null,
   canManageShipsGo = false,
   onShipsGoFetch,
+  onShipsGoEnable,
+  onShipsGoRequest,
   onShipsGoDetails,
   fetchingShipsGo = {},
+  enablingShipsGo = {},
 }) {
   const { containerRef: edgeScrollRef, scrollDirection } = useEdgeScroll({
     edgeZoneWidth: 25,
@@ -264,7 +267,10 @@ export default function CargoTrackingTable({
                         canManage={canManageShipsGo}
                         isReadOnly={isReadOnly}
                         fetching={!!fetchingShipsGo[cargoItem.id]}
+                        enabling={!!enablingShipsGo[cargoItem.id]}
                         onFetch={() => onShipsGoFetch?.(cargoItem)}
+                        onEnable={() => onShipsGoEnable?.(cargoItem)}
+                        onRequest={() => onShipsGoRequest?.(cargoItem)}
                         onOpenDetails={() => onShipsGoDetails?.(cargoItem)}
                       />
                     </td>
@@ -520,7 +526,11 @@ export default function CargoTrackingTable({
  * Click handlers stopPropagation so the row click (which opens the edit
  * modal) doesn't fire when the user is operating the cell.
  */
-function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch, onOpenDetails }) {
+function ShipsGoStatusCell({
+  cargoItem, canManage, isReadOnly,
+  fetching, enabling,
+  onFetch, onEnable, onRequest, onOpenDetails,
+}) {
   const vt = cargoItem.vehicleType;
 
   // Defensive debug: when the user reports "buttons don't react", the most
@@ -568,11 +578,42 @@ function ShipsGoStatusCell({ cargoItem, canManage, isReadOnly, fetching, onFetch
     );
   }
   if (!cargoItem.shipsGoEnabled) {
+    // Read-only viewers (CLIENT_USER / payment-frozen) get the muted pill.
+    if (isReadOnly) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
+          <span className="material-symbols-outlined text-sm">toggle_off</span>
+          Kapalı
+        </span>
+      );
+    }
+    // BROKER_ADMIN / SUPER_ADMIN can flip it on directly (no credit cost).
+    if (canManage) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onEnable?.(); }}
+          disabled={enabling}
+          title="ShipsGo entegrasyonunu bu yük için aç (kredi yok)"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-primary/10 dark:bg-gray-700 dark:hover:bg-primary/20 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary text-xs font-medium transition-colors disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-sm">toggle_off</span>
+          {enabling ? 'Açılıyor...' : 'ShipsGo\'yu Aç'}
+        </button>
+      );
+    }
+    // BROKER_USER cannot enable directly → opens a request flow.
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
-        <span className="material-symbols-outlined text-sm">toggle_off</span>
-        Kapalı
-      </span>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRequest?.(); }}
+        disabled={enabling}
+        title="Yöneticinizden ShipsGo entegrasyonunu açmasını talep edin"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-blue-50 dark:bg-gray-700 dark:hover:bg-blue-900/30 text-gray-600 hover:text-blue-700 dark:text-gray-300 dark:hover:text-blue-300 text-xs font-medium transition-colors disabled:opacity-50"
+      >
+        <span className="material-symbols-outlined text-sm">send</span>
+        {enabling ? 'Gönderiliyor...' : 'Talep Et'}
+      </button>
     );
   }
   if (!cargoItem.shipsGoTrackingId) {

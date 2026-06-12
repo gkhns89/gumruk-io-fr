@@ -67,8 +67,38 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       showSuccess('Yeni talep gönderildi');
       setReRequestNotes('');
       loadRequests();
+      onSuccess?.();
     } else {
       showError(res.error);
+    }
+  };
+
+  // Direct enable for BROKER_ADMIN / SUPER_ADMIN — the "modal-side" twin of
+  // the table's ShipsGo'yu Aç cell. No credit cost; the user can fetch the
+  // tracking data afterwards from the cargo list.
+  const [enablingNow, setEnablingNow] = useState(false);
+  const handleEnableNow = async () => {
+    const ok = await confirmDialog({
+      title: 'ShipsGo entegrasyonunu aç',
+      message: 'Bu yük için ShipsGo entegrasyonu aktive edilecek.',
+      details: [
+        'Bu adımda kredi tüketilmez.',
+        'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
+      ],
+      intent: 'primary',
+      icon: 'travel_explore',
+      confirmText: 'ShipsGo\'yu aç',
+    });
+    if (!ok) return;
+    setEnablingNow(true);
+    const res = await shipsGoService.enable(cargo.id);
+    setEnablingNow(false);
+    if (res.success) {
+      showSuccess('ShipsGo entegrasyonu açıldı');
+      onSuccess?.();
+      onClose?.();
+    } else {
+      showError(res.error || 'ShipsGo açılamadı');
     }
   };
 
@@ -486,11 +516,18 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             latest={latestRequest}
             currentUserId={currentUser?.id}
             shipsGoEnabled={!!cargo.shipsGoEnabled}
+            shipsGoTrackingId={cargo.shipsGoTrackingId}
+            vehicleType={cargo.vehicleType}
+            cargoStatus={cargo.status}
+            isAdmin={isAdmin}
+            isReadOnly={!!isReadOnly}
             onCancel={handleCancelMyRequest}
             reRequestNotes={reRequestNotes}
             setReRequestNotes={setReRequestNotes}
             onReRequest={handleReRequest}
             reRequesting={reRequesting}
+            onEnableNow={handleEnableNow}
+            enablingNow={enablingNow}
           />
 
           {/* Draft warning */}
@@ -1451,9 +1488,78 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
  *  - APPROVED and ShipsGo still active, or CANCELLED, or nothing: no banner.
  */
 function ShipsGoRequestBanner({
-  latest, currentUserId, shipsGoEnabled,
+  latest, currentUserId, shipsGoEnabled, shipsGoTrackingId,
+  vehicleType, cargoStatus, isAdmin, isReadOnly,
   onCancel, reRequestNotes, setReRequestNotes, onReRequest, reRequesting,
+  onEnableNow, enablingNow,
 }) {
+  const supportsShipsGo = vehicleType === 'SHIP' || vehicleType === 'AIRPLANE';
+  const isCompleted = cargoStatus === 'COMPLETED';
+  const noActiveRequest = !latest || latest.status === 'CANCELLED';
+
+  // "ShipsGo is off, nothing pending, can still be turned on" — show a
+  // call-to-action so the user has a way to enable from inside the modal
+  // (mirrors the table cell). Skipped for read-only viewers and for cargo
+  // already wired up (active or with a tracking ID waiting on fetch).
+  if (supportsShipsGo && !isCompleted && !isReadOnly && !shipsGoEnabled
+      && !shipsGoTrackingId && noActiveRequest) {
+    if (isAdmin) {
+      return (
+        <div className="mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 p-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-sm font-semibold text-text-main flex items-center gap-2">
+                <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
+                ShipsGo entegrasyonu bu yük için kapalı
+              </p>
+              <p className="text-xs text-text-secondary mt-1">
+                Açtığınızda kredi tüketilmez. Açtıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onEnableNow}
+              disabled={enablingNow}
+              className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
+            >
+              {enablingNow ? 'Açılıyor...' : 'ShipsGo\'yu Aç'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+    // BROKER_USER → request flow with optional note.
+    return (
+      <div className="mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 p-4">
+        <p className="text-sm font-semibold text-text-main flex items-center gap-2">
+          <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
+          ShipsGo entegrasyonu bu yük için kapalı
+        </p>
+        <p className="text-xs text-text-secondary mt-1">
+          Açma yetkisi yöneticinizde — talep gönderebilirsiniz.
+        </p>
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            maxLength={500}
+            value={reRequestNotes}
+            onChange={(e) => setReRequestNotes(e.target.value)}
+            placeholder="Talep notu (opsiyonel)"
+            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            type="button"
+            onClick={onReRequest}
+            disabled={reRequesting}
+            className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
+          >
+            {reRequesting ? 'Gönderiliyor...' : 'Talep Gönder'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // No request at all → no banner. CANCELLED also stays quiet (the user
   // intentionally walked away from it). Both branches dropped here so the
   // demo doesn't show stale banners for cargos that never had a request.
