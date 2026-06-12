@@ -564,16 +564,21 @@ function ShipsGoStatusCell({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenDetails?.(); }}
-          className="text-xs text-text-secondary italic hover:text-text-main underline-offset-2 hover:underline"
-          title="Tamamlanan yüklerde ShipsGo durur. Geçmiş verileri görüntülemek için tıklayın."
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-colors"
+          title="Yük tamamlandı — ShipsGo'nun son senkron ettiği veriyi görüntüleyin"
         >
-          Durdu — geçmişi göster
+          <span className="material-symbols-outlined text-sm">history</span>
+          Geçmişi Göster
         </button>
       );
     }
     return (
-      <span className="text-xs text-text-secondary italic" title="Tamamlanan yüklerde ShipsGo durur">
-        Durdu
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
+        title="Bu yük tamamlandı ve ShipsGo'dan hiç senkron edilmedi — geçmiş veri yok"
+      >
+        <span className="material-symbols-outlined text-sm">block</span>
+        Kullanılamaz
       </span>
     );
   }

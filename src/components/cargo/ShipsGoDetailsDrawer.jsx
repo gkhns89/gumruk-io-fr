@@ -146,6 +146,23 @@ export default function ShipsGoDetailsDrawer({
               />
 
               <div className="p-5 space-y-4">
+              {/* Completed-archive banner — for COMPLETED cargo the sync is
+                  frozen; we surface this once at the top so the user knows
+                  the rest of the panel is a snapshot, not live data. */}
+              {details.status === 'COMPLETED' && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-3 flex items-start gap-2">
+                  <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg flex-shrink-0">history</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      Tamamlanmış yük — geçmiş ShipsGo verisi
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      ShipsGo bu yük için senkronu durdurdu. Aşağıdakiler son senkronlanan kayıttır; yeni güncelleme alınmaz.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Status header */}
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-center justify-between gap-2">
@@ -222,10 +239,14 @@ export default function ShipsGoDetailsDrawer({
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
-          <p className="text-[11px] text-text-secondary">Yenileme ücretsizdir — kredi tüketmez.</p>
+          <p className="text-[11px] text-text-secondary">
+            {details?.status === 'COMPLETED'
+              ? 'Tamamlanmış yüklerde ShipsGo senkronu durur.'
+              : 'Yenileme ücretsizdir — kredi tüketmez.'}
+          </p>
           <button
             onClick={handleRefresh}
-            disabled={refreshing || !canRefresh || !details?.shipsGoTrackingId}
+            disabled={refreshing || !canRefresh || !details?.shipsGoTrackingId || details?.status === 'COMPLETED'}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
           >
             <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
