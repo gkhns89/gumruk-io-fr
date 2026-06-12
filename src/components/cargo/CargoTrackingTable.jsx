@@ -556,7 +556,15 @@ function ShipsGoStatusCell({
   }
 
   if (vt !== 'SHIP' && vt !== 'AIRPLANE') {
-    return <span className="text-sm text-text-secondary">—</span>;
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
+        title="ShipsGo sadece gemi ve uçak yüklerini takip eder — bu araç tipi için kullanılamaz"
+      >
+        <span className="material-symbols-outlined text-sm">block</span>
+        Kullanılamaz
+      </span>
+    );
   }
   if (cargoItem.status === 'COMPLETED') {
     if (cargoItem.shipsGoTrackingId) {
