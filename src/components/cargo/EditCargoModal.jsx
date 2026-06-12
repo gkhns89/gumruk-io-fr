@@ -3,7 +3,7 @@ import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { shipsGoService } from '../../api/shipsGoService';
 import { confirmDialog } from '../../utils/confirmDialog';
-import { CARGO_STATUS, VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
+import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
@@ -484,11 +484,11 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   return (
     <div
-      className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col animate-zoom-in transition-colors duration-300"
+        className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -733,26 +733,6 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 Alıcı firma sadece yöneticiler tarafından değiştirilebilir
               </p>
             )}
-          </div>
-
-          {/* Status */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-text-main pb-2">
-              Durum
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              disabled={isReadOnly}
-              className="form-select w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {CARGO_STATUS.map(status => (
-                <option key={status.value} value={status.value}>
-                  {status.displayName}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Common Fields */}
