@@ -594,7 +594,7 @@ function ShipsGoStatusCell({
           type="button"
           onClick={(e) => { e.stopPropagation(); onEnable?.(); }}
           disabled={enabling}
-          title="ShipsGo entegrasyonunu bu yük için aç (kredi yok)"
+          title="ShipsGo entegrasyonunu bu yük için aç — bu adımda kredi tüketilmez"
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-primary/10 dark:bg-gray-700 dark:hover:bg-primary/20 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary text-xs font-medium transition-colors disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-sm">toggle_off</span>
