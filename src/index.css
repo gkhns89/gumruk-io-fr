@@ -115,6 +115,12 @@ html {
   }
 }
 
+/* ShipsGo cargo map — pulse halo around the current-position marker. */
+@keyframes cargo-pulse {
+  0%   { transform: scale(0.6); opacity: 0.85; }
+  100% { transform: scale(1.8); opacity: 0;    }
+}
+
 @keyframes slideInFromLeft {
   from {
     opacity: 0;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { shipsGoService } from '../../api/shipsGoService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import CargoMap from './CargoMap';
 
 /**
  * Slide-in panel that shows the live ShipsGo data for a single cargo.
@@ -90,7 +91,7 @@ export default function ShipsGoDetailsDrawer({
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white dark:bg-background-dark shadow-2xl z-50 transition-transform duration-300 ease-out flex flex-col ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-[560px] lg:w-[640px] bg-white dark:bg-background-dark shadow-2xl z-50 transition-transform duration-300 ease-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         aria-hidden={!isOpen}
@@ -114,21 +115,21 @@ export default function ShipsGoDetailsDrawer({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : !details ? (
-            <p className="text-center text-text-secondary text-sm py-10">
+            <p className="text-center text-text-secondary text-sm py-10 px-5">
               ShipsGo bilgisi bulunamadı.
             </p>
           ) : !details.shipsGoEnabled ? (
-            <p className="text-center text-text-secondary text-sm py-10">
+            <p className="text-center text-text-secondary text-sm py-10 px-5">
               Bu yük için ShipsGo entegrasyonu açık değil.
             </p>
           ) : !details.shipsGoTrackingId ? (
-            <div className="rounded-xl border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+            <div className="m-5 rounded-xl border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
                 ShipsGo bu yük için açık ancak henüz veri çekilmedi.
                 Liste üzerinde "Bilgileri Getir" butonunu kullanın.
@@ -136,6 +137,15 @@ export default function ShipsGoDetailsDrawer({
             </div>
           ) : (
             <>
+              {/* Map — full width, sits above the data so it dominates the
+                  first impression (marketing screenshots, primary CTA). */}
+              <CargoMap
+                geoJson={details.geoJson}
+                vehicleType={details.vehicleType}
+                height={320}
+              />
+
+              <div className="p-5 space-y-4">
               {/* Status header */}
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-center justify-between gap-2">
@@ -206,6 +216,7 @@ export default function ShipsGoDetailsDrawer({
                   </div>
                 </div>
               )}
+              </div>
             </>
           )}
         </div>
