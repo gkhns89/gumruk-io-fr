@@ -51,6 +51,19 @@ export const shipsGoService = {
     }
   },
 
+  refreshMasterBalance: async () => {
+    try {
+      const res = await axiosInstance.post('/shipsgo/master-config/refresh-balance');
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - refreshMasterBalance', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Bakiye yenilenemedi',
+      };
+    }
+  },
+
   getMasterBalance: async () => {
     try {
       const res = await axiosInstance.get('/shipsgo/master-balance');

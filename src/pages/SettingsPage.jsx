@@ -38,6 +38,7 @@ const SettingsPage = () => {
   });
   const [shipsGoSaving, setShipsGoSaving] = useState(false);
   const [shipsGoTesting, setShipsGoTesting] = useState(false);
+  const [shipsGoRefreshing, setShipsGoRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
@@ -82,6 +83,18 @@ const SettingsPage = () => {
     } else {
       showError(res.error);
     }
+  };
+
+  const handleRefreshShipsGoBalance = async () => {
+    setShipsGoRefreshing(true);
+    const res = await shipsGoService.refreshMasterBalance();
+    setShipsGoRefreshing(false);
+    if (!res.success) {
+      showError(res.error);
+      return;
+    }
+    showSuccess(res.data?.message || 'Master bakiyesi güncellendi');
+    loadShipsGoConfig();
   };
 
   const handleTestShipsGoConnection = async () => {
@@ -571,6 +584,45 @@ const SettingsPage = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Outstanding allocations + refresh affordance */}
+                    <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-xs text-text-secondary">
+                        Brokerlara tanımlı toplam:
+                        <strong className="text-text-main ml-1">
+                          {shipsGoConfig?.totalAssignedCredits ?? 0} kredi
+                        </strong>
+                        {(shipsGoConfig?.walletsWithCreditsCount ?? 0) > 0 && (
+                          <span className="ml-1 opacity-70">
+                            ({shipsGoConfig.walletsWithCreditsCount} firma)
+                          </span>
+                        )}
+                        {shipsGoConfig?.lastKnownMasterCredits != null && (
+                          <span className="block mt-0.5 opacity-80">
+                            Kullanılabilir alan: <strong>
+                              {Math.max(0, (shipsGoConfig.lastKnownMasterCredits ?? 0) - (shipsGoConfig.totalAssignedCredits ?? 0) - (shipsGoConfig.reservedCredits ?? 0))}
+                            </strong> kredi
+                            <span className="opacity-60"> (master − tanımlı − güvenlik sınırı)</span>
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleRefreshShipsGoBalance}
+                        disabled={shipsGoRefreshing || !shipsGoConfig?.apiTokenConfigured}
+                        title={
+                          !shipsGoConfig?.apiTokenConfigured
+                            ? 'Önce API token kaydedin'
+                            : 'En son kayıtlı AWB üzerinden idempotent POST atar — ShipsGo 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
+                        }
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-40"
+                      >
+                        <span className={`material-symbols-outlined text-sm ${shipsGoRefreshing ? 'animate-spin' : ''}`}>
+                          {shipsGoRefreshing ? 'refresh' : 'sync'}
+                        </span>
+                        {shipsGoRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
+                      </button>
+                    </div>
+
                     {(shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50 && shipsGoConfig?.lastKnownMasterCredits != null && (
                       <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
                         <span className="material-symbols-outlined text-base">warning</span>
