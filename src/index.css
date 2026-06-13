@@ -121,6 +121,19 @@ html {
   100% { transform: scale(1.8); opacity: 0;    }
 }
 
+/* NewsPage currency ticker — duplicated list runs across the screen on a
+   single timeline; translateX -50% lands exactly at the start of the
+   second copy so the wrap is seamless. */
+@keyframes currency-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.currency-marquee {
+  animation: currency-marquee 60s linear infinite;
+  will-change: transform;
+}
+
 @keyframes slideInFromLeft {
   from {
     opacity: 0;

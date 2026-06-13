@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { customsNewsService } from '../api/customsNewsService';
 import MainLayout from '../components/layout/MainLayout';
+import CurrencyTicker from '../components/common/CurrencyTicker';
 import { handleError, handleApiResponse } from '../utils/errorUtils';
 
 const NewsPage = () => {
@@ -176,6 +177,10 @@ const NewsPage = () => {
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Live TCMB currency ticker — sits flush above the header so it
+            reads like a news-channel chyron across the top of the page. */}
+        <CurrencyTicker />
+
         {/* Page Header */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <div className="flex items-center justify-between">

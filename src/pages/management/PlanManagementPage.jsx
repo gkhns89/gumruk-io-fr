@@ -11,6 +11,7 @@ const EMPTY_FORM = {
   maxClientCompanies: '',
   monthlyPrice: '',
   yearlyPrice: '',
+  shipsGoPricePerCreditUsd: '',
 };
 
 const fmtPrice = (v) =>
@@ -54,6 +55,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
           maxClientCompanies: String(plan.maxClientCompanies ?? ''),
           monthlyPrice: String(plan.monthlyPrice ?? ''),
           yearlyPrice: String(plan.yearlyPrice ?? ''),
+          shipsGoPricePerCreditUsd: String(plan.shipsGoPricePerCreditUsd ?? ''),
         }
       : EMPTY_FORM
   );
@@ -77,6 +79,12 @@ function PlanFormModal({ plan, onClose, onSaved }) {
         maxClientCompanies: Number(form.maxClientCompanies),
         monthlyPrice: form.monthlyPrice ? Number(form.monthlyPrice) : null,
         yearlyPrice: form.yearlyPrice ? Number(form.yearlyPrice) : null,
+        // ShipsGo kredi başı USD ücreti. Boş gönderirsek bu plan ShipsGo'yu
+        // hiç desteklemiyor demek; brokerlar satın alma sayfasında "ShipsGo
+        // bu plana dahil değil" mesajı görür.
+        shipsGoPricePerCreditUsd: form.shipsGoPricePerCreditUsd
+          ? Number(form.shipsGoPricePerCreditUsd)
+          : null,
       };
       if (plan) {
         await planService.updatePlan(plan.id, payload);
@@ -164,6 +172,21 @@ function PlanFormModal({ plan, onClose, onSaved }) {
               />
             </label>
           </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-text-secondary">
+              ShipsGo — Kredi Başı USD Fiyatı
+            </span>
+            <input
+              type="number" min="0" step="0.01" value={form.shipsGoPricePerCreditUsd}
+              onChange={set('shipsGoPricePerCreditUsd')}
+              placeholder="örn. 2.50"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+            />
+            <span className="text-[11px] text-text-secondary">
+              Boş bırakırsanız bu plan ShipsGo'yu desteklemez. Satın alma anında güncel TCMB kuruyla ₺'ye çevrilir.
+            </span>
+          </label>
         </div>
 
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
@@ -331,7 +354,7 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
       </div>
 
       {/* ── Fiyat Bölümü ── */}
-      <div className="mx-5 rounded-xl bg-gray-50 dark:bg-gray-800/60 px-4 py-3 grid grid-cols-2 gap-3">
+      <div className="mx-5 rounded-xl bg-gray-50 dark:bg-gray-800/60 px-4 py-3 grid grid-cols-3 gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">Aylık</p>
           <p className={`text-base font-bold ${accent.icon}`}>{fmtPrice(plan.monthlyPrice)}</p>
@@ -339,6 +362,14 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
         <div>
           <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">Yıllık</p>
           <p className={`text-base font-bold ${accent.icon}`}>{fmtPrice(plan.yearlyPrice)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">ShipsGo/kr.</p>
+          <p className={`text-base font-bold ${accent.icon}`}>
+            {plan.shipsGoPricePerCreditUsd != null && Number(plan.shipsGoPricePerCreditUsd) > 0
+              ? `$${Number(plan.shipsGoPricePerCreditUsd).toFixed(2)}`
+              : '—'}
+          </p>
         </div>
       </div>
 
