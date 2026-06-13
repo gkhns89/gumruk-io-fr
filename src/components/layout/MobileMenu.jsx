@@ -48,7 +48,8 @@ export default function MobileMenu({ isOpen, onClose }) {
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
     { icon: "person", label: "Hesabım", path: "/profile" },
-    { icon: "settings", label: "Ayarlar", path: "/settings" },
+    // Ayarlar sadece SUPER_ADMIN için — diğer rollerin orada erişimi yok.
+    ...(isSuperAdmin ? [{ icon: "settings", label: "Ayarlar", path: "/settings" }] : []),
   ];
 
   const managementItems = [

@@ -41,7 +41,10 @@ export default function Sidebar() {
     { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
   ];
 
-  // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler
+  // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler.
+  // Ayarlar sayfası tamamen SUPER_ADMIN'e ait (ClickUp + ShipsGo master config);
+  // diğer rollerin orada zaten yetkili oldukları hiçbir alan yok, bu yüzden
+  // menü öğesini de hiç göstermiyoruz.
   const otherMenuItems = [
     { icon: "search", label: "İşlem Takip", path: "/transactions" },
     { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
@@ -49,7 +52,9 @@ export default function Sidebar() {
     { icon: "feed", label: "Haberler", path: "/news" },
     { icon: "campaign", label: "Duyurular", path: "/announcements" },
     { icon: "person", label: "Hesabım", path: "/profile" },
-    { icon: "settings", label: "Ayarlar", path: "/settings" },
+    ...(user?.globalRole === 'SUPER_ADMIN'
+      ? [{ icon: "settings", label: "Ayarlar", path: "/settings" }]
+      : []),
   ];
 
   // Yönetim menüsü - BROKER_ADMIN için
@@ -244,7 +249,7 @@ export default function Sidebar() {
     calculateVisibleItems();
     window.addEventListener('resize', calculateVisibleItems);
     return () => window.removeEventListener('resize', calculateVisibleItems);
-  }, [hasManagementAccess, visibleManagementItems.length]);
+  }, [hasManagementAccess, visibleManagementItems.length, otherMenuItems.length]);
 
   // Dinamik olarak görünür ve gizli öğeleri ayır
   const visibleOtherItems = otherMenuItems.slice(0, visibleOtherCount);

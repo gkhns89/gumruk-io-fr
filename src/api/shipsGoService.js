@@ -23,10 +23,10 @@ export const shipsGoService = {
     }
   },
 
-  updateMasterConfig: async ({ apiToken, webhookSecret, webhookUrl, active }) => {
+  updateMasterConfig: async ({ apiToken, webhookSecret, webhookUrl, active, reservedCredits }) => {
     try {
       const res = await axiosInstance.put('/shipsgo/master-config', {
-        apiToken, webhookSecret, webhookUrl, active,
+        apiToken, webhookSecret, webhookUrl, active, reservedCredits,
       });
       return { success: true, data: res.data };
     } catch (error) {
@@ -34,6 +34,19 @@ export const shipsGoService = {
       return {
         success: false,
         error: error.response?.data?.error || 'Master konfigürasyon güncellenemedi',
+      };
+    }
+  },
+
+  testMasterConnection: async () => {
+    try {
+      const res = await axiosInstance.post('/shipsgo/master-config/test');
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoService - testMasterConnection', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Bağlantı testi başarısız',
       };
     }
   },

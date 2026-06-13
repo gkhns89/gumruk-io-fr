@@ -34,9 +34,10 @@ const SettingsPage = () => {
   // ShipsGo Master Config state
   const [shipsGoConfig, setShipsGoConfig] = useState(null);
   const [shipsGoForm, setShipsGoForm] = useState({
-    apiToken: '', webhookSecret: '', webhookUrl: '', active: false,
+    apiToken: '', webhookSecret: '', webhookUrl: '', active: false, reservedCredits: 10,
   });
   const [shipsGoSaving, setShipsGoSaving] = useState(false);
+  const [shipsGoTesting, setShipsGoTesting] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
@@ -52,15 +53,22 @@ const SettingsPage = () => {
         apiToken: '', webhookSecret: '',
         webhookUrl: res.data?.webhookUrl || '',
         active: !!res.data?.active,
+        reservedCredits: res.data?.reservedCredits ?? 10,
       });
     }
   };
 
   const handleSaveShipsGoConfig = async () => {
+    const reservedNum = Number(shipsGoForm.reservedCredits);
+    if (!Number.isInteger(reservedNum) || reservedNum < 0) {
+      showError('Güvenlik sınırı kredisi 0 veya pozitif tamsayı olmalı');
+      return;
+    }
     setShipsGoSaving(true);
     const payload = {
       webhookUrl: shipsGoForm.webhookUrl,
       active: shipsGoForm.active,
+      reservedCredits: reservedNum,
     };
     if (shipsGoForm.apiToken.trim()) payload.apiToken = shipsGoForm.apiToken.trim();
     if (shipsGoForm.webhookSecret.trim()) payload.webhookSecret = shipsGoForm.webhookSecret.trim();
@@ -73,6 +81,21 @@ const SettingsPage = () => {
       loadShipsGoConfig();
     } else {
       showError(res.error);
+    }
+  };
+
+  const handleTestShipsGoConnection = async () => {
+    setShipsGoTesting(true);
+    const res = await shipsGoService.testMasterConnection();
+    setShipsGoTesting(false);
+    if (!res.success) {
+      showError(res.error);
+      return;
+    }
+    if (res.data?.success) {
+      showSuccess(res.data.message || 'ShipsGo bağlantısı başarılı');
+    } else {
+      showError(res.data?.message || 'ShipsGo bağlantısı başarısız');
     }
   };
 
@@ -620,6 +643,25 @@ const SettingsPage = () => {
                     </div>
                   </label>
 
+                  {/* Reserved credits — master pool safety threshold */}
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-text-secondary">Güvenlik Sınırı Kredisi</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={shipsGoForm.reservedCredits}
+                        onChange={(e) => setShipsGoForm(prev => ({ ...prev, reservedCredits: e.target.value }))}
+                        className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <span className="text-xs text-text-secondary">kredi</span>
+                    </div>
+                    <span className="text-[11px] text-text-secondary">
+                      Master havuzda bu sayının altına düşecek satın almalar reddedilir. Varsayılan 10 — havuz tükenmek üzereyken bunu yükseltip yeni broker alımlarını durdurabilirsiniz.
+                    </span>
+                  </label>
+
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                     {shipsGoConfig?.updatedAt && (
                       <p className="text-xs text-text-secondary">
@@ -627,14 +669,31 @@ const SettingsPage = () => {
                         {shipsGoConfig.updatedByEmail && ` — ${shipsGoConfig.updatedByEmail}`}
                       </p>
                     )}
-                    <button
-                      onClick={handleSaveShipsGoConfig}
-                      disabled={shipsGoSaving}
-                      className="ml-auto flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                      <span className="material-symbols-outlined text-base">save</span>
-                      {shipsGoSaving ? 'Kaydediliyor...' : 'Kaydet'}
-                    </button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        onClick={handleTestShipsGoConnection}
+                        disabled={shipsGoTesting || !shipsGoConfig?.apiTokenConfigured}
+                        title={
+                          !shipsGoConfig?.apiTokenConfigured
+                            ? 'Önce API token kaydedin'
+                            : 'Configured token ile ShipsGo\'ya kısa bir GET atar — kredi tüketmez'
+                        }
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main rounded-lg text-sm font-medium hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
+                      >
+                        <span className={`material-symbols-outlined text-base ${shipsGoTesting ? 'animate-spin' : ''}`}>
+                          {shipsGoTesting ? 'refresh' : 'cable'}
+                        </span>
+                        {shipsGoTesting ? 'Test ediliyor...' : 'Bağlantıyı Test Et'}
+                      </button>
+                      <button
+                        onClick={handleSaveShipsGoConfig}
+                        disabled={shipsGoSaving}
+                        className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-base">save</span>
+                        {shipsGoSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
