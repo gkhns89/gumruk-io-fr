@@ -51,9 +51,13 @@ export const shipsGoService = {
     }
   },
 
-  refreshMasterBalance: async () => {
+  refreshMasterBalance: async ({ identifier, type } = {}) => {
     try {
-      const res = await axiosInstance.post('/shipsgo/master-config/refresh-balance');
+      // Optional manual identifier — SuperAdmin pastes a B/L / AWB / container
+      // they know is already on the ShipsGo master account (e.g. an older
+      // dashboard-only query). Empty body falls back to backend auto-pick.
+      const body = identifier ? { identifier, type } : undefined;
+      const res = await axiosInstance.post('/shipsgo/master-config/refresh-balance', body);
       return { success: true, data: res.data };
     } catch (error) {
       logError('ShipsGoService - refreshMasterBalance', error);

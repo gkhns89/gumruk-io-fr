@@ -39,6 +39,8 @@ const SettingsPage = () => {
   const [shipsGoSaving, setShipsGoSaving] = useState(false);
   const [shipsGoTesting, setShipsGoTesting] = useState(false);
   const [shipsGoRefreshing, setShipsGoRefreshing] = useState(false);
+  const [shipsGoRefreshIdentifier, setShipsGoRefreshIdentifier] = useState('');
+  const [shipsGoRefreshType, setShipsGoRefreshType] = useState('AUTO');
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
@@ -87,13 +89,20 @@ const SettingsPage = () => {
 
   const handleRefreshShipsGoBalance = async () => {
     setShipsGoRefreshing(true);
-    const res = await shipsGoService.refreshMasterBalance();
+    const identifier = shipsGoRefreshIdentifier.trim();
+    // If admin typed something, send it + the explicit type (or let backend
+    // auto-detect when type=AUTO). Empty input falls back to auto-pick from
+    // existing cargo.
+    const res = await shipsGoService.refreshMasterBalance(
+      identifier ? { identifier, type: shipsGoRefreshType === 'AUTO' ? null : shipsGoRefreshType } : {}
+    );
     setShipsGoRefreshing(false);
     if (!res.success) {
       showError(res.error);
       return;
     }
     showSuccess(res.data?.message || 'Master bakiyesi güncellendi');
+    setShipsGoRefreshIdentifier('');
     loadShipsGoConfig();
   };
 
@@ -586,41 +595,71 @@ const SettingsPage = () => {
                     </div>
 
                     {/* Outstanding allocations + refresh affordance */}
-                    <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between gap-3 flex-wrap">
-                      <div className="text-xs text-text-secondary">
-                        Brokerlara tanımlı toplam:
-                        <strong className="text-text-main ml-1">
-                          {shipsGoConfig?.totalAssignedCredits ?? 0} kredi
-                        </strong>
-                        {(shipsGoConfig?.walletsWithCreditsCount ?? 0) > 0 && (
-                          <span className="ml-1 opacity-70">
-                            ({shipsGoConfig.walletsWithCreditsCount} firma)
-                          </span>
-                        )}
-                        {shipsGoConfig?.lastKnownMasterCredits != null && (
-                          <span className="block mt-0.5 opacity-80">
-                            Kullanılabilir alan: <strong>
-                              {Math.max(0, (shipsGoConfig.lastKnownMasterCredits ?? 0) - (shipsGoConfig.totalAssignedCredits ?? 0) - (shipsGoConfig.reservedCredits ?? 0))}
-                            </strong> kredi
-                            <span className="opacity-60"> (master − tanımlı − güvenlik sınırı)</span>
-                          </span>
-                        )}
+                    <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 space-y-2">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="text-xs text-text-secondary">
+                          Brokerlara tanımlı toplam:
+                          <strong className="text-text-main ml-1">
+                            {shipsGoConfig?.totalAssignedCredits ?? 0} kredi
+                          </strong>
+                          {(shipsGoConfig?.walletsWithCreditsCount ?? 0) > 0 && (
+                            <span className="ml-1 opacity-70">
+                              ({shipsGoConfig.walletsWithCreditsCount} firma)
+                            </span>
+                          )}
+                          {shipsGoConfig?.lastKnownMasterCredits != null && (
+                            <span className="block mt-0.5 opacity-80">
+                              Kullanılabilir alan: <strong>
+                                {Math.max(0, (shipsGoConfig.lastKnownMasterCredits ?? 0) - (shipsGoConfig.totalAssignedCredits ?? 0) - (shipsGoConfig.reservedCredits ?? 0))}
+                              </strong> kredi
+                              <span className="opacity-60"> (master − tanımlı − güvenlik sınırı)</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={handleRefreshShipsGoBalance}
-                        disabled={shipsGoRefreshing || !shipsGoConfig?.apiTokenConfigured}
-                        title={
-                          !shipsGoConfig?.apiTokenConfigured
-                            ? 'Önce API token kaydedin'
-                            : 'En son kayıtlı AWB üzerinden idempotent POST atar — ShipsGo 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
-                        }
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-40"
-                      >
-                        <span className={`material-symbols-outlined text-sm ${shipsGoRefreshing ? 'animate-spin' : ''}`}>
-                          {shipsGoRefreshing ? 'refresh' : 'sync'}
-                        </span>
-                        {shipsGoRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
-                      </button>
+
+                      {/* Manual identifier override — user can paste any AWB/B/L/
+                          container that ShipsGo already knows about (e.g. an old
+                          dashboard query) to force a fresh balance read without
+                          relying on auto-pick. */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                          type="text"
+                          value={shipsGoRefreshIdentifier}
+                          onChange={(e) => setShipsGoRefreshIdentifier(e.target.value)}
+                          placeholder="Var olan AWB / B/L / konteyner (opsiyonel)"
+                          className="flex-1 min-w-[200px] rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <select
+                          value={shipsGoRefreshType}
+                          onChange={(e) => setShipsGoRefreshType(e.target.value)}
+                          disabled={!shipsGoRefreshIdentifier.trim()}
+                          title={!shipsGoRefreshIdentifier.trim() ? 'Önce bir kimlik girin' : 'Kimlik tipi — Otomatik bırakırsanız format otomatik tahmin edilir (B/L varsayılan)'}
+                          className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                        >
+                          <option value="AUTO">Otomatik</option>
+                          <option value="AWB">AWB (hava)</option>
+                          <option value="BL">B/L (deniz)</option>
+                          <option value="CONTAINER">Konteyner (deniz)</option>
+                        </select>
+                        <button
+                          onClick={handleRefreshShipsGoBalance}
+                          disabled={shipsGoRefreshing || !shipsGoConfig?.apiTokenConfigured}
+                          title={
+                            !shipsGoConfig?.apiTokenConfigured
+                              ? 'Önce API token kaydedin'
+                              : shipsGoRefreshIdentifier.trim()
+                                ? 'Girdiğiniz kimlikle idempotent POST atar — ShipsGo 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
+                                : 'Otomatik: en son kayıtlı hava/deniz kargosunu kullanır — kredi tüketilmez'
+                          }
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-40"
+                        >
+                          <span className={`material-symbols-outlined text-sm ${shipsGoRefreshing ? 'animate-spin' : ''}`}>
+                            {shipsGoRefreshing ? 'refresh' : 'sync'}
+                          </span>
+                          {shipsGoRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
+                        </button>
+                      </div>
                     </div>
 
                     {(shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50 && shipsGoConfig?.lastKnownMasterCredits != null && (
