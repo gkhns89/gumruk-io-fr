@@ -94,6 +94,13 @@ const SettingsPage = () => {
     }
     if (res.data?.success) {
       showSuccess(res.data.message || 'ShipsGo bağlantısı başarılı');
+      // The probe reads X-Shipsgo-Credits-Remaining off the response; if
+      // ShipsGo sent it we just learned the real master pool size. Refresh
+      // the master config card so the cached number reflects upstream
+      // immediately instead of waiting for the next page reload.
+      if (res.data.masterCreditsRemaining != null) {
+        loadShipsGoConfig();
+      }
     } else {
       showError(res.data?.message || 'ShipsGo bağlantısı başarısız');
     }
