@@ -6,6 +6,7 @@ import { transactionService } from "../../api/transactionService";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
+import CurrencyTicker from "../common/CurrencyTicker";
 import NotificationCenter from "./NotificationCenter";
 import ShipsGoRequestsBell from "../shipsgo/ShipsGoRequestsBell";
 import AnnouncementsDrawer from "../dashboard/Announcements";
@@ -326,8 +327,14 @@ export default function Header() {
         {/* Alt Satır - Gümrük Haberleri Slider (sadece en tepede görünür) */}
         <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isAtTop ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
           <div className="overflow-hidden">
-            <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 border-t border-gray-100 dark:border-gray-700 transition-colors duration-300">
-              <NewsSlider />
+            <div className="px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 border-t border-gray-100 dark:border-gray-700 transition-colors duration-300 flex items-center gap-3">
+              {/* News pill stays centred via its own max-w wrapper; ticker
+                  sits as a sibling so it's anchored to the bar's right edge
+                  instead of the news pill's right edge. */}
+              <div className="flex-1 min-w-0">
+                <NewsSlider />
+              </div>
+              <CurrencyTicker />
             </div>
           </div>
         </div>

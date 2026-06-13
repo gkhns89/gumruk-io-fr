@@ -1,27 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { tcmbService } from '../../api/tcmbService';
 
 /**
- * Horizontal scrolling currency ticker — runs the latest TCMB rates across
- * the top of NewsPage like a financial news channel chyron. Each entry is
- * "CODE 12.3456 ₺" with a flag emoji for quick recognition.
+ * News-channel ticker bug: vertical stack of every cached TCMB rate slides
+ * upward one row at a time on a single inline transform transition.
  *
- * Reads from /api/tcmb/rates (cached server-side; cron refreshes daily at
- * 09:00). Re-fetches on mount only — no polling, because the upstream feed
- * is itself daily.
+ * Layout per row: scrolling column "USD 34,2034" + small static "₺" pinned
+ * right. Only the code/value rotates; the unit stays put.
  *
- * The marquee is built with a CSS keyframe and a duplicated list so the
- * scroll is seamless (no jump when it wraps). Pauses on hover so the user
- * can read a specific rate without chasing it.
+ * Wrap is seamless thanks to a duplicate of rates[0] appended to the stack:
+ * we slide into it, disable the transition, snap offset back to 0.
+ *
+ * Pauses on hover. Read from /api/tcmb/rates once on mount (upstream
+ * refreshes daily so polling would be wasteful).
  */
-const FLAGS = {
-  USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', CHF: '🇨🇭',
-  JPY: '🇯🇵', CNY: '🇨🇳', RUB: '🇷🇺',
-  SAR: '🇸🇦', AED: '🇦🇪',
-  AUD: '🇦🇺', CAD: '🇨🇦', SEK: '🇸🇪', NOK: '🇳🇴', DKK: '🇩🇰',
-};
-
 const PRIORITY = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CNY', 'RUB', 'SAR', 'AED', 'AUD', 'CAD', 'SEK', 'NOK', 'DKK'];
+
+const ROW_HEIGHT_PX = 20;
+const ROTATE_MS = 3500;
+const SLIDE_MS = 500;
 
 function sortByPriority(a, b) {
   const ai = PRIORITY.indexOf(a.currencyCode);
@@ -34,8 +31,14 @@ function sortByPriority(a, b) {
 
 export default function CurrencyTicker() {
   const [rates, setRates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [withTransition, setWithTransition] = useState(true);
   const [sourceDate, setSourceDate] = useState(null);
+  // paused lives in a ref instead of state so hover events don't tear down
+  // the interval — the timer keeps running, the tick just skips while
+  // paused. Avoids any race between effect re-runs and the rotation timer.
+  const pausedRef = useRef(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -47,59 +50,103 @@ export default function CurrencyTicker() {
         setRates(list);
         if (list.length > 0) setSourceDate(list[0].sourceDate);
       }
-      setLoading(false);
     })();
     return () => { alive = false; };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-10 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-y border-primary/20 flex items-center px-4 text-xs text-text-secondary">
-        <span className="material-symbols-outlined text-base animate-spin mr-2">refresh</span>
-        TCMB kurları yükleniyor...
-      </div>
-    );
-  }
+  // Single rotation timer — depends only on rates.length so it keeps running
+  // across pause/resume. Even with a single-row dataset (cron hasn't filled
+  // in the other currencies yet) the interval still fires; rates.length=1
+  // just means offset cycles 0→1(duplicate)→snap→0 endlessly with the same
+  // visible row. The moment a multi-row fetch is in scope, the cycle picks
+  // it up without restarting.
+  useEffect(() => {
+    if (rates.length === 0) return undefined;
+    timerRef.current = setInterval(() => {
+      if (pausedRef.current) return;
+      setOffset((o) => o + 1);
+    }, ROTATE_MS);
+    return () => clearInterval(timerRef.current);
+  }, [rates.length]);
+
+  // Seamless wrap: when the slide carries us past the last real row into
+  // the duplicated first-row, let the slide finish then snap offset back
+  // to 0 with the transition briefly disabled so the jump is invisible.
+  useEffect(() => {
+    if (rates.length === 0) return undefined;
+    if (offset < rates.length) {
+      if (!withTransition) setWithTransition(true);
+      return undefined;
+    }
+    const t = setTimeout(() => {
+      setWithTransition(false);
+      setOffset(0);
+    }, SLIDE_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, rates.length]);
 
   if (rates.length === 0) {
     return null;
   }
 
+  const stack = [...rates, rates[0]];
+
   return (
     <div
-      className="relative h-10 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 border-y border-primary/20 overflow-hidden group"
-      title={sourceDate ? `TCMB kuru — ${new Date(sourceDate).toLocaleDateString('tr-TR')}` : 'TCMB kuru'}
+      className="hidden md:flex flex-shrink-0 items-center justify-center gap-1 h-9 lg:h-10 px-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200 dark:border-gray-600 overflow-hidden"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      title={sourceDate
+        ? `TCMB kuru — ${new Date(sourceDate).toLocaleDateString('tr-TR')} (üstüne gelince durur)`
+        : 'TCMB kuru'}
     >
-      {/* Static "₺" badge at the leading edge */}
-      <div className="absolute left-0 top-0 bottom-0 z-10 px-3 flex items-center gap-1 bg-primary text-white text-[11px] font-semibold pointer-events-none">
-        <span className="material-symbols-outlined text-sm">currency_lira</span>
-        TCMB Kuru
+      {/* Scrolling column (code + rate). overflow-hidden + fixed height
+          clips everything except the row currently in the viewport. */}
+      <div
+        // min-w sized for the widest probable "CODE n,nnnn" pair so the
+        // badge frame doesn't jitter as the rates rotate, but tight
+        // enough that there's no dead space on the left.
+        className="relative overflow-hidden w-[88px]"
+        style={{ height: `${ROW_HEIGHT_PX}px` }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 flex flex-col"
+          style={{
+            transform: `translateY(-${offset * ROW_HEIGHT_PX}px)`,
+            transition: withTransition ? `transform ${SLIDE_MS}ms ease-in-out` : 'none',
+            willChange: 'transform',
+          }}
+        >
+          {stack.map((r, i) => (
+            <CurrencyRow key={`${r.currencyCode}-${i}`} rate={r} />
+          ))}
+        </div>
       </div>
 
-      {/* Scrolling track */}
-      <div
-        className="absolute inset-0 pl-32 pr-4 flex items-center whitespace-nowrap currency-marquee group-hover:[animation-play-state:paused]"
-      >
-        {[...rates, ...rates].map((r, i) => (
-          <TickerItem key={`${r.currencyCode}-${i}`} rate={r} />
-        ))}
-      </div>
+      {/* Static TL suffix — material-symbols lira glyph, primary tinted,
+          pinned to the right of the rotating column. */}
+      <span className="material-symbols-outlined text-base text-primary leading-none flex-shrink-0">
+        currency_lira
+      </span>
     </div>
   );
 }
 
-function TickerItem({ rate }) {
-  const flag = FLAGS[rate.currencyCode] || '';
+function CurrencyRow({ rate }) {
   const formatted = Number(rate.rate).toLocaleString('tr-TR', {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   });
   return (
-    <span className="inline-flex items-center gap-1.5 mx-4 text-xs text-text-main">
-      <span className="text-base leading-none">{flag}</span>
+    <span
+      // Column is now sized to the widest row so we can left-align here
+      // (no dead space to compensate for).
+      className="flex items-center gap-2 text-xs text-text-main whitespace-nowrap"
+      style={{ height: `${ROW_HEIGHT_PX}px` }}
+    >
       <span className="font-semibold text-text-secondary">{rate.currencyCode}</span>
       <span className="font-mono text-text-main">{formatted}</span>
-      <span className="text-text-secondary text-[10px]">₺</span>
     </span>
   );
 }

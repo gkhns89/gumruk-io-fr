@@ -19,4 +19,19 @@ export const tcmbService = {
       };
     }
   },
+
+  // SuperAdmin-only — hits TCMB right now and upserts all TICKER_CURRENCIES
+  // rates. Used after a deploy when the daily cron hasn't fired yet.
+  refreshNow: async () => {
+    try {
+      const res = await axiosInstance.post('/tcmb/refresh');
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('TcmbService - refreshNow', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'TCMB güncellenemedi',
+      };
+    }
+  },
 };
