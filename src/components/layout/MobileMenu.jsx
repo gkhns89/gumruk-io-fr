@@ -1,11 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { feedbackService } from "../../api/feedbackService";
+import FeedbackModal from "../common/FeedbackModal";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [clickUpActive, setClickUpActive] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+
+  // Feedback (Sorun Bildir) — masaüstü header'da gizli olan butonu mobil sidebar'a taşıdık
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      feedbackService.getClickUpStatus()
+        .then(res => setClickUpActive(res.data?.configured && res.data?.enabled))
+        .catch(() => setClickUpActive(false));
+    }
+  }, [isSuperAdmin]);
 
   // Menü açıkken body scroll'u engelle
   useEffect(() => {
@@ -106,12 +121,12 @@ export default function MobileMenu({ isOpen, onClose }) {
     logout();
   };
 
-  if (!isOpen) return null;
-
   return (
+    <>
+    {isOpen && (
     <div className="fixed inset-0 z-50 lg:hidden">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
@@ -120,19 +135,23 @@ export default function MobileMenu({ isOpen, onClose }) {
       <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-background-dark shadow-2xl flex flex-col animate-slide-in-left transition-colors duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-lg">
+          <Link
+            to="/profile"
+            onClick={onClose}
+            className="group flex items-center gap-3 flex-1 min-w-0 rounded-xl -m-1 p-1 hover:bg-white/40 dark:hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-lg flex-shrink-0 group-hover:ring-2 group-hover:ring-primary/40 transition-all">
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-text-main text-base font-semibold leading-normal">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-text-main text-base font-semibold leading-normal truncate">
                 {user?.username || "Kullanıcı"}
               </h1>
-              <p className="text-text-secondary text-sm font-normal leading-normal">
+              <p className="text-text-secondary text-sm font-normal leading-normal truncate">
                 {user?.globalRole || "Role"}
               </p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={onClose}
             className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -268,6 +287,22 @@ export default function MobileMenu({ isOpen, onClose }) {
                 </Link>
               );
             })}
+
+            {/* Sorun Bildir / Öneri — masaüstü header'da telefonda gizliydi, buraya taşındı */}
+            {clickUpActive && !isSuperAdmin && (
+              <button
+                onClick={() => {
+                  onClose();
+                  setFeedbackModalOpen(true);
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-text-main"
+              >
+                <span className="material-symbols-outlined">feedback</span>
+                <p className="text-sm font-medium leading-normal">
+                  Sorun Bildir / Öneri
+                </p>
+              </button>
+            )}
           </div>
         </nav>
 
@@ -283,5 +318,12 @@ export default function MobileMenu({ isOpen, onClose }) {
         </div>
       </div>
     </div>
+    )}
+
+    {/* Feedback Modal — menü kapalıyken de açık kalabilmesi için dışarıda render edilir */}
+    {feedbackModalOpen && (
+      <FeedbackModal onClose={() => setFeedbackModalOpen(false)} />
+    )}
+    </>
   );
 }

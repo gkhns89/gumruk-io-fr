@@ -314,20 +314,12 @@ export default function Header() {
           )}
 
           {/* Logout Button - Desktop */}
-          <button 
+          <button
             onClick={logout}
             className="hidden lg:flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
           >
             <span className="truncate">Oturumu Kapat</span>
           </button>
-
-          {/* User Avatar */}
-          <Link
-            to="/profile"
-            className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm lg:text-lg flex-shrink-0 hover:ring-2 hover:ring-primary/50 transition-all"
-          >
-            {user?.username?.charAt(0).toUpperCase() || 'U'}
-          </Link>
         </div>
         </div>
 

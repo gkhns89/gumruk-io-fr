@@ -339,11 +339,19 @@ export default function Sidebar() {
           flex-shrink-0
         `}
       >
-        {/* User Profile */}
-        <div className="flex items-center justify-between p-4">
-          {isExpanded && (
+        {/* User Profile - Profil sayfasına gider */}
+        <Link
+          to="/profile"
+          title={!isExpanded ? "Hesabım" : ""}
+          className={`
+            group flex items-center p-4 transition-colors
+            hover:bg-gray-100 dark:hover:bg-gray-700/60
+            ${isActive("/profile") ? "bg-primary/5 dark:bg-primary/10" : ""}
+          `}
+        >
+          {isExpanded ? (
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md flex-shrink-0">
+              <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md flex-shrink-0 group-hover:ring-2 group-hover:ring-primary/40 transition-all">
                 {user?.username?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="flex flex-col min-w-0">
@@ -354,15 +362,16 @@ export default function Sidebar() {
                   {user?.globalRole || "Role"}
                 </p>
               </div>
+              <span className="material-symbols-outlined text-base text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0">
+                chevron_right
+              </span>
             </div>
-          )}
-
-          {!isExpanded && (
-            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md mx-auto">
+          ) : (
+            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md mx-auto group-hover:ring-2 group-hover:ring-primary/40 transition-all">
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Control Buttons */}
         <div className="mx-4 mb-4 h-11 flex gap-2 items-center">
