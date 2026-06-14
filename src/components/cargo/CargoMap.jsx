@@ -149,16 +149,80 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
 
 function parseGeoJson(raw) {
   if (!raw) return null;
-  if (typeof raw === 'object') return raw;
-  try {
-    const obj = JSON.parse(raw);
-    if (obj?.type !== 'FeatureCollection' || !Array.isArray(obj.features) || obj.features.length === 0) {
-      return null;
-    }
-    return obj;
-  } catch {
+  const fc = (() => {
+    if (typeof raw === 'object') return raw;
+    try { return JSON.parse(raw); } catch { return null; }
+  })();
+  if (!fc || fc.type !== 'FeatureCollection' || !Array.isArray(fc.features) || fc.features.length === 0) {
     return null;
   }
+  return normalizeToInternalShape(fc);
+}
+
+/**
+ * The map renders against a fixed "kind"-based feature shape (route /
+ * origin / destination / current — see DataInitializer's seed payload).
+ * ShipsGo's live geojson uses a different vocabulary: status=PAST | CURRENT
+ * | FUTURE, with the vessel's live position buried inside the LineString's
+ * properties.current.coordinates. This walks an arbitrary upstream payload
+ * and emits a FeatureCollection in our internal shape so the rest of the
+ * component stays simple — and the demo seed payloads keep rendering
+ * without touching anything.
+ */
+function normalizeToInternalShape(fc) {
+  const features = [];
+  for (const f of fc.features) {
+    if (!f?.geometry) continue;
+    const props = f.properties || {};
+
+    if (f.geometry.type === 'LineString') {
+      features.push({
+        type: 'Feature',
+        geometry: f.geometry,
+        properties: { kind: 'route' },
+      });
+      // ShipsGo embeds the live vessel position inside the LineString feature
+      // (`properties.current.coordinates`). Lift it out as its own point so
+      // the pulsing marker layer picks it up.
+      const cur = props.current?.coordinates;
+      if (Array.isArray(cur) && cur.length >= 2) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: cur },
+          properties: {
+            kind: 'current',
+            label: props.vessel?.name || 'Şu an',
+          },
+        });
+      }
+      continue;
+    }
+
+    if (f.geometry.type !== 'Point') continue;
+
+    // Already in our internal shape — passthrough.
+    if (props.kind === 'origin' || props.kind === 'destination' || props.kind === 'current') {
+      features.push(f);
+      continue;
+    }
+
+    // ShipsGo native shape: status-driven role + label from location.name.
+    const status = props.status;
+    if (status === 'PAST') {
+      features.push({
+        type: 'Feature',
+        geometry: f.geometry,
+        properties: { kind: 'origin', label: props.location?.name || 'Çıkış' },
+      });
+    } else if (status === 'FUTURE') {
+      features.push({
+        type: 'Feature',
+        geometry: f.geometry,
+        properties: { kind: 'destination', label: props.location?.name || 'Varış' },
+      });
+    }
+  }
+  return { type: 'FeatureCollection', features };
 }
 
 function pickCenter(fc) {
