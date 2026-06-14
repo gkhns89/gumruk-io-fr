@@ -133,6 +133,26 @@ export const shipsGoCreditService = {
     }
   },
 
+  // SuperAdmin reconciliation — FIFO-debits credits from a broker's wallet.
+  // Used when local wallet drifts from upstream ShipsGo (e.g. an old timing
+  // bug burned a master credit but didn't debit the broker).
+  adminDebit: async (brokerCompanyId, { credits, notes }) => {
+    try {
+      const res = await axiosInstance.post(
+        `/shipsgo/wallets/${brokerCompanyId}/admin-debit`,
+        { credits, notes },
+      );
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('ShipsGoCreditService - adminDebit', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Kredi eksiltilemedi',
+        code: error.response?.data?.code,
+      };
+    }
+  },
+
   /**
    * SuperAdmin per-broker ShipsGo toggle. Persists the new state, fires the
    * matching notification on the backend and returns the fresh wallet so

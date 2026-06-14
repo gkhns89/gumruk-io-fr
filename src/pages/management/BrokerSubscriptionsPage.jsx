@@ -31,6 +31,8 @@ export default function BrokerSubscriptionsPage() {
   const [creditForms, setCreditForms] = useState({}); // { brokerId: {amount, note} }
   const [shipsGoGrantForms, setShipsGoGrantForms] = useState({}); // { brokerId: {credits, notes} }
   const [grantingShipsGo, setGrantingShipsGo] = useState({}); // { brokerId: bool }
+  const [shipsGoDebitForms, setShipsGoDebitForms] = useState({}); // { brokerId: {credits, notes} }
+  const [debitingShipsGo, setDebitingShipsGo] = useState({}); // { brokerId: bool }
   const [togglingShipsGo, setTogglingShipsGo] = useState({}); // { brokerId: bool }
   const [shipsGoWallets, setShipsGoWallets] = useState({}); // { brokerId: walletView }
   const [addingCredit, setAddingCredit] = useState({});
@@ -334,6 +336,53 @@ export default function BrokerSubscriptionsPage() {
     }
   };
 
+  const handleShipsGoDebitFormChange = (brokerId, field, value) => {
+    setShipsGoDebitForms(prev => ({
+      ...prev,
+      [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value },
+    }));
+  };
+
+  const handleDebitShipsGo = async (brokerId) => {
+    const form = shipsGoDebitForms[brokerId] ?? {};
+    const credits = parseInt(form.credits, 10);
+    if (!credits || credits < 1) {
+      showError('Eksiltilecek kredi 1 veya daha büyük olmalı');
+      return;
+    }
+    const notes = (form.notes ?? '').trim();
+    if (!notes) {
+      showError('Düzeltme nedeni (not) zorunludur');
+      return;
+    }
+    const ok = await confirmDialog({
+      title: 'Kredi eksiltme onayı',
+      message: `${credits} kredi brokerin cüzdanından FIFO ile düşülecek.`,
+      details: [
+        'Bu işlem geri alınamaz — ledger\'a ADMIN_DEBIT olarak kaydedilir.',
+        'Brokere bildirim gönderilir.',
+        'Sadece upstream ShipsGo ile cüzdan arasında drift varsa kullanılmalı.',
+      ],
+      intent: 'warning',
+      icon: 'remove_circle',
+      confirmText: `${credits} Kredi Eksilt`,
+    });
+    if (!ok) return;
+
+    setDebitingShipsGo(prev => ({ ...prev, [brokerId]: true }));
+    const res = await shipsGoCreditService.adminDebit(brokerId, { credits, notes });
+    setDebitingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    if (res.success) {
+      showSuccess(`${credits} kredi cüzdandan eksiltildi`);
+      setShipsGoDebitForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
+      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+    } else if (res.code === 'INSUFFICIENT_WALLET') {
+      showError(res.error || 'Cüzdanda yeterli kredi yok');
+    } else {
+      showError(res.error);
+    }
+  };
+
   const handleAddCredit = async (brokerId) => {
     const form = creditForms[brokerId] ?? {};
     const amount = parseFloat(form.amount);
@@ -629,6 +678,63 @@ export default function BrokerSubscriptionsPage() {
                                   <span className="material-symbols-outlined text-base">add</span>
                                   {grantingShipsGo[broker.brokerId] ? 'Tanımlanıyor...' : 'Kredi Tanımla'}
                                 </button>
+                              </div>
+                            </div>
+
+                            {/* Reconciliation form — debit credits from the
+                                broker's wallet without an associated cargo.
+                                Used when local wallet drifts from upstream
+                                (e.g. timing-rollback bug burned a master
+                                credit but didn't debit the broker). FIFO
+                                from oldest active lot; ledger records as
+                                ADMIN_DEBIT with the SuperAdmin's note. */}
+                            <div className="mt-4 pt-4 border-t border-purple-200/60 dark:border-purple-800/60">
+                              <h4 className="text-xs font-semibold text-text-main mb-2 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm text-amber-600 dark:text-amber-400">remove_circle</span>
+                                Kredi Eksilt (Düzeltme)
+                                <span className="text-[11px] font-normal text-text-secondary">
+                                  Upstream ShipsGo ile cüzdan arasında drift varsa kullanın
+                                </span>
+                              </h4>
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex flex-col gap-1 w-full sm:w-32">
+                                  <span className="text-xs font-medium text-text-secondary">Eksilt *</span>
+                                  <input
+                                    type="number" min="1"
+                                    value={shipsGoDebitForms[broker.brokerId]?.credits ?? ''}
+                                    onChange={e => handleShipsGoDebitFormChange(broker.brokerId, 'credits', e.target.value)}
+                                    placeholder="örn. 1"
+                                    className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1 flex-1">
+                                  <span className="text-xs font-medium text-text-secondary">Neden *</span>
+                                  <input
+                                    type="text"
+                                    value={shipsGoDebitForms[broker.brokerId]?.notes ?? ''}
+                                    onChange={e => handleShipsGoDebitFormChange(broker.brokerId, 'notes', e.target.value)}
+                                    placeholder="örn. ShipsGo timing bug — kayıp kredi düzeltmesi"
+                                    className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
+                                  />
+                                </div>
+                                <div className="flex items-end">
+                                  <button
+                                    onClick={() => handleDebitShipsGo(broker.brokerId)}
+                                    disabled={
+                                      debitingShipsGo[broker.brokerId]
+                                      || (shipsGoWallets[broker.brokerId]?.currentCredits ?? 0) < 1
+                                    }
+                                    title={
+                                      (shipsGoWallets[broker.brokerId]?.currentCredits ?? 0) < 1
+                                        ? 'Eksiltilecek kredi yok'
+                                        : undefined
+                                    }
+                                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                  >
+                                    <span className="material-symbols-outlined text-base">remove</span>
+                                    {debitingShipsGo[broker.brokerId] ? 'Eksiltiliyor...' : 'Kredi Eksilt'}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
