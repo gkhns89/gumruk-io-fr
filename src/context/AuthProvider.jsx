@@ -5,6 +5,26 @@ import { userService } from '../api/userService';
 import { tokenManager } from '../utils/tokenManager';
 import { logError } from '../utils/errorUtils';
 import { showWarning } from '../utils/toastUtils';
+import { fetchAuthedImageDataUrl, saveLoginProfile } from '../utils/imageUtils';
+
+/**
+ * Başarılı giriş sonrası firma/profil görsellerini ve adlarını bu makineye (localStorage)
+ * yazar. Böylece kullanıcı tekrar mail girdiğinde login ekranı lokal olarak ön-doldurulabilir.
+ * Görseller base64 data URL olarak saklanır (auth gerektirmeden gösterilebilsin diye).
+ */
+async function cacheLoginProfile(email, u) {
+  try {
+    if (!email) return;
+    const companyName = u?.companyDetails?.name || u?.company?.name || null;
+    const [avatarDataUrl, logoDataUrl] = await Promise.all([
+      u?.avatarUrl ? fetchAuthedImageDataUrl(u.avatarUrl) : Promise.resolve(null),
+      u?.companyDetails?.logoUrl ? fetchAuthedImageDataUrl(u.companyDetails.logoUrl) : Promise.resolve(null),
+    ]);
+    saveLoginProfile({ email, username: u?.username, companyName, avatarDataUrl, logoDataUrl });
+  } catch (error) {
+    logError('AuthProvider - cacheLoginProfile', error);
+  }
+}
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -69,6 +89,8 @@ export default function AuthProvider({ children }) {
           const result = await userService.getProfile();
           if (result.success) {
             setUser((prev) => ({ ...prev, ...result.data }));
+            // Bu makinede login ön-doldurma cache'ini tazele
+            cacheLoginProfile(currentUser?.email, { ...currentUser, ...result.data });
           }
         } catch (error) {
           logError('Profil alınamadı', error);
@@ -95,14 +117,26 @@ export default function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const result = await authService.login(email, password);
-    
+
     if (result.success) {
       setUser(result.data.user);
       setIsAuthenticated(true);
       startTokenCheck();
+
+      // Profili zenginleştir (companyDetails, avatarUrl, logoUrl) ve login cache'ini güncelle
+      try {
+        const profileRes = await userService.getProfile();
+        if (profileRes.success) {
+          setUser((prev) => ({ ...prev, ...profileRes.data }));
+          cacheLoginProfile(email, { ...result.data.user, ...profileRes.data });
+        }
+      } catch (error) {
+        logError('Login sonrası profil alınamadı', error);
+      }
+
       return { success: true };
     }
-    
+
     return { success: false, error: result.error };
   };
 

@@ -179,8 +179,11 @@ export default function Header() {
                 fill="currentColor"
               />
             </svg>
-            <h2 className="text-text-main text-base lg:text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block truncate max-w-[150px] lg:max-w-none">
-              {user?.company?.name || 'AACC Tracker'}
+            <h2
+              className="text-text-main text-base lg:text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block truncate max-w-[150px] lg:max-w-none"
+              title="All about customs clearance"
+            >
+              Gümrük.io
             </h2>
           </Link>
         </div>

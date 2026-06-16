@@ -4,6 +4,7 @@ import Stats from "./dashboard/Stats";
 import TransactionsTable from "./dashboard/TransactionsTable";
 import CourierTrackingCard from "./dashboard/CourierTrackingCard";
 import { useAuth } from "../hooks/useAuth";
+import AuthedImage from "./common/AuthedImage";
 import { transactionService } from "../api/transactionService";
 import { cargoService } from "../api/cargoService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
@@ -174,6 +175,14 @@ export default function Dashboard() {
                 {user?.company?.name || "Şirket bilgisi yok"}
               </p>
             </div>
+
+            {/* Firma logosu — yalnızca logo ekliyse görünür */}
+            <AuthedImage
+              url={user?.companyDetails?.logoUrl}
+              alt={user?.company?.name || "Firma logosu"}
+              className="flex-shrink-0 self-start sm:self-auto"
+              imgClassName="h-16 md:h-20 w-auto max-w-[200px] object-contain rounded-lg"
+            />
           </div>
         </AnimatedSection>
 

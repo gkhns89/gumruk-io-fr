@@ -6,6 +6,7 @@ import AddClientModal from '../../components/common/AddClientModal';
 import ViewClientModal from '../../components/common/ViewClientModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
+import ImageUploadField from '../../components/common/ImageUploadField';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 
 const ClientsPage = () => {
@@ -29,6 +30,7 @@ const ClientsPage = () => {
   const [showCreateAgreementModal, setShowCreateAgreementModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+  const [logoBust, setLogoBust] = useState(0);
 
   const brokerCompanyId = isSuperAdmin ? selectedBroker?.id : user?.company?.id;
 
@@ -296,11 +298,22 @@ const ClientsPage = () => {
                           {/* Client Header */}
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center h-12 w-12 bg-primary/10 dark:bg-primary/20 rounded-full transition-colors">
-                                <span className="material-symbols-outlined text-primary text-2xl">
-                                  corporate_fare
-                                </span>
-                              </div>
+                              <ImageUploadField
+                                compact
+                                shape="circle"
+                                size={48}
+                                currentUrl={client.logoUrl}
+                                bustKey={`client-${client.id}-${logoBust}`}
+                                uploadFn={(file) => companyService.uploadCompanyLogo(client.id, file)}
+                                onUploaded={() => { setLogoBust((n) => n + 1); loadClients(); }}
+                                fallback={
+                                  <div className="flex items-center justify-center h-full w-full bg-primary/10 dark:bg-primary/20">
+                                    <span className="material-symbols-outlined text-primary text-2xl">
+                                      corporate_fare
+                                    </span>
+                                  </div>
+                                }
+                              />
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                                   {client.name}

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { feedbackService } from "../../api/feedbackService";
 import FeedbackModal from "../common/FeedbackModal";
+import AuthedImage from "../common/AuthedImage";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -82,6 +83,13 @@ export default function MobileMenu({ isOpen, onClose }) {
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
     {
+      icon: "domain",
+      label: "Firma Ayarları",
+      path: "/company-settings",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
       icon: "account_balance",
       label: "Abonelik & Ödeme",
       path: "/payment/submit",
@@ -141,8 +149,12 @@ export default function MobileMenu({ isOpen, onClose }) {
             onClick={onClose}
             className="group flex items-center gap-3 flex-1 min-w-0 rounded-xl -m-1 p-1 hover:bg-white/40 dark:hover:bg-white/5 transition-colors"
           >
-            <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-lg flex-shrink-0 group-hover:ring-2 group-hover:ring-primary/40 transition-all">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
+            <div className="flex items-center justify-center h-12 w-12 bg-primary rounded-full text-white font-bold text-lg shadow-lg flex-shrink-0 overflow-hidden group-hover:ring-2 group-hover:ring-primary/40 transition-all">
+              <AuthedImage
+                url={user?.avatarUrl}
+                imgClassName="h-full w-full object-cover"
+                fallback={<span>{user?.username?.charAt(0).toUpperCase() || "U"}</span>}
+              />
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="text-text-main text-base font-semibold leading-normal truncate">

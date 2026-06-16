@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "./common/ThemeToggle";
+import { getLoginProfile } from "../utils/imageUtils";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,9 +11,19 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Bu makinede daha önce giriş yapılmışsa, mail girilince lokal profil ön-dolar
+  const [prefill, setPrefill] = useState(null);
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Mail değişince (kısa debounce) bu makinedeki localStorage'dan profil ara
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPrefill(email.includes("@") ? getLoginProfile(email) : null);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +82,36 @@ export default function Login() {
               </p>
             </div>
           </div>
+
+          {/* Bu makinede tanınan kullanıcı — lokal ön-doldurma kartı */}
+          {prefill && (
+            <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 transition-colors">
+              {prefill.logoDataUrl ? (
+                <img
+                  src={prefill.logoDataUrl}
+                  alt={prefill.companyName || "Firma"}
+                  className="h-10 w-auto max-w-[80px] object-contain rounded"
+                />
+              ) : null}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
+                  {prefill.avatarDataUrl ? (
+                    <img src={prefill.avatarDataUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{prefill.username?.charAt(0).toUpperCase() || "U"}</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-text-main truncate">
+                    Tekrar hoş geldin{prefill.username ? `, ${prefill.username}` : ""}
+                  </p>
+                  {prefill.companyName && (
+                    <p className="text-xs text-text-secondary truncate">{prefill.companyName}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (

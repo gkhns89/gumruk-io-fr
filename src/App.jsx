@@ -14,6 +14,7 @@ import ShippingPage from "./pages/ShippingPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import CompanySettingsPage from "./pages/CompanySettingsPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import ReportsPage from "./pages/management/ReportsPage";
@@ -230,6 +231,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Firma Ayarları (SUPER_ADMIN + BROKER_ADMIN — sayfa içinde yetki kontrolü) */}
+      <Route
+        path="/company-settings"
+        element={
+          <ProtectedRoute>
+            <CompanySettingsPage />
           </ProtectedRoute>
         }
       />

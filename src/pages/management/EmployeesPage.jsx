@@ -8,6 +8,8 @@ import AddEmployeeModal from '../../components/employees/AddEmployeeModal';
 import ViewEmployeeModal from '../../components/employees/ViewEmployeeModal';
 import EditEmployeeModal from '../../components/employees/EditEmployeeModal';
 import DeleteEmployeeModal from '../../components/employees/DeleteEmployeeModal';
+import ImageUploadField from '../../components/common/ImageUploadField';
+import { userService } from '../../api/userService';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 
 const EmployeesPage = () => {
@@ -39,6 +41,7 @@ const EmployeesPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [avatarBust, setAvatarBust] = useState(0);
 
   const effectiveCompanyId = isSuperAdmin ? selectedBroker?.id : user?.company?.id;
 
@@ -382,8 +385,24 @@ const EmployeesPage = () => {
                               >
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
-                                    <div className="flex-shrink-0 h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                      <span className="material-symbols-outlined text-primary">person</span>
+                                    <div
+                                      className="flex-shrink-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <ImageUploadField
+                                        compact
+                                        shape="circle"
+                                        size={40}
+                                        currentUrl={employee.avatarUrl}
+                                        bustKey={`emp-${employee.id}-${avatarBust}`}
+                                        uploadFn={(file) => userService.uploadUserAvatar(employee.id, file)}
+                                        onUploaded={() => { setAvatarBust((n) => n + 1); loadEmployees(); }}
+                                        fallback={
+                                          <div className="flex items-center justify-center h-full w-full bg-primary/10">
+                                            <span className="material-symbols-outlined text-primary">person</span>
+                                          </div>
+                                        }
+                                      />
                                     </div>
                                     <div className="ml-4">
                                       <div className="text-sm font-medium text-text-main">

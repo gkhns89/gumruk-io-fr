@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { userService } from '../api/userService';
 import { shipsGoCreditService } from '../api/shipsGoCreditService';
 import { showSuccess, showError, showInfo } from '../utils/toastUtils';
+import ImageUploadField from '../components/common/ImageUploadField';
 
 const LOT_SOURCE_LABEL = {
   PURCHASE_BALANCE: 'Bakiyeden satın alma',
@@ -73,10 +74,18 @@ function passwordStrength(pwd) {
 }
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const isBrokerAdmin = user?.globalRole === 'BROKER_ADMIN';
+  const isClientUser = user?.globalRole === 'CLIENT_USER';
+
+  // Avatar değişince AuthedImage'i tekrar yüklemeye zorlamak için
+  const [avatarBust, setAvatarBust] = useState(0);
+  const handleAvatarChanged = async () => {
+    await refreshUser?.();
+    setAvatarBust((n) => n + 1);
+  };
   const tabs = useMemo(() => {
     const t = [
       { id: 'profile', label: 'Profil', icon: 'person' },
@@ -217,6 +226,27 @@ export default function ProfilePage() {
             {activeTab === 'profile' && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
                 <h2 className="text-lg font-semibold text-text-main mb-4">Profil Bilgileri</h2>
+
+                {/* Profil fotoğrafı — CLIENT_USER'a gösterilmez */}
+                {!isClientUser && (
+                  <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
+                    <span className="text-xs font-medium text-text-secondary block mb-3">Profil Fotoğrafı</span>
+                    <ImageUploadField
+                      currentUrl={user?.avatarUrl}
+                      bustKey={avatarBust}
+                      uploadFn={(file) => userService.uploadMyAvatar(file)}
+                      deleteFn={() => userService.deleteUserAvatar(user.id)}
+                      onUploaded={handleAvatarChanged}
+                      shape="circle"
+                      size={96}
+                      fallback={
+                        <span className="text-2xl font-bold text-white bg-primary w-full h-full flex items-center justify-center">
+                          {user?.username?.charAt(0).toUpperCase() || 'U'}
+                        </span>
+                      }
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="flex flex-col gap-1">

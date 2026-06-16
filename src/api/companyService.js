@@ -105,6 +105,38 @@ export const companyService = {
     }
   },
 
+  // Firma logosunu yükle/değiştir (SUPER_ADMIN her firma; BROKER_ADMIN kendi broker'ı/client'ları)
+  uploadCompanyLogo: async (companyId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await axiosInstance.post(`/companies/${companyId}/logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CompanyService - uploadCompanyLogo', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Logo yüklenemedi',
+      };
+    }
+  },
+
+  // Firma logosunu kaldır
+  deleteCompanyLogo: async (companyId) => {
+    try {
+      const response = await axiosInstance.delete(`/companies/${companyId}/logo`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CompanyService - deleteCompanyLogo', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Logo kaldırılamadı',
+      };
+    }
+  },
+
   // ✅ YENİ: Client company güncelle
   updateClientCompany: async (companyId, companyData) => {
     try {

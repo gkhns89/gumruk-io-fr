@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Link, useLocation } from "react-router-dom";
+import AuthedImage from "../common/AuthedImage";
 import "./Sidebar.css";
 
 export default function Sidebar() {
@@ -84,6 +85,13 @@ export default function Sidebar() {
       icon: "two_wheeler",
       label: "Kurye Yönetimi",
       path: "/management/couriers",
+      active: true,
+      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      icon: "domain",
+      label: "Firma Ayarları",
+      path: "/company-settings",
       active: true,
       roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
     },
@@ -356,8 +364,12 @@ export default function Sidebar() {
         >
           {isExpanded ? (
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md flex-shrink-0 group-hover:ring-2 group-hover:ring-primary/40 transition-all">
-                {user?.username?.charAt(0).toUpperCase() || "U"}
+              <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md flex-shrink-0 overflow-hidden group-hover:ring-2 group-hover:ring-primary/40 transition-all">
+                <AuthedImage
+                  url={user?.avatarUrl}
+                  imgClassName="h-full w-full object-cover"
+                  fallback={<span>{user?.username?.charAt(0).toUpperCase() || "U"}</span>}
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <h1 className="text-text-main text-sm font-medium leading-tight truncate">
@@ -372,8 +384,12 @@ export default function Sidebar() {
               </span>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md mx-auto group-hover:ring-2 group-hover:ring-primary/40 transition-all">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
+            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white font-bold text-sm shadow-md mx-auto overflow-hidden group-hover:ring-2 group-hover:ring-primary/40 transition-all">
+              <AuthedImage
+                url={user?.avatarUrl}
+                imgClassName="h-full w-full object-cover"
+                fallback={<span>{user?.username?.charAt(0).toUpperCase() || "U"}</span>}
+              />
             </div>
           )}
         </Link>
