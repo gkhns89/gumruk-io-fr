@@ -121,8 +121,11 @@ axiosInstance.interceptors.response.use(
 
     const isSilent500 =
       originalRequest?.silentOn500 && error.response?.status === 500;
+    // Görsel (avatar/logo) çağrıları gibi beklenen hataları sessizce geç —
+    // örn. fotoğrafı olmayan kullanıcının /users/{id}/avatar 404'ü konsolu kirletmesin.
+    const isSilentError = originalRequest?.silentOnError;
 
-    if (!isSilent500) {
+    if (!isSilent500 && !isSilentError) {
       console.error(`❌ Response hatası: ${originalRequest?.url}`, {
         status: error.response?.status,
         message: error.message,
@@ -191,7 +194,7 @@ axiosInstance.interceptors.response.use(
     }
 
     // 404 - Not Found
-    if (error.response?.status === 404) {
+    if (error.response?.status === 404 && !isSilentError) {
       console.warn("⚠️ Kaynak bulunamadı");
     }
 

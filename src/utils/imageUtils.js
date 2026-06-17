@@ -1,6 +1,18 @@
 import axiosInstance from '../api/axios';
 import { logError } from './errorUtils';
 
+// Bulunamayan (404) görsel URL'lerini hatırla; aynı URL için tekrar tekrar
+// (her sayfa geçişinde Sidebar yeniden mount oldukça) boşuna istek atmayalım.
+const missingImageUrls = new Set();
+
+/**
+ * Bir görsel URL'i için "bulunamadı" işaretini kaldırır (başarılı yükleme/silme sonrası
+ * çağrılır ki aynı URL yeniden denenebilsin).
+ */
+export function clearImageCache(relativeUrl) {
+  if (relativeUrl) missingImageUrls.delete(relativeUrl);
+}
+
 /**
  * Auth'lu bir resim endpoint'ini (örn. "/users/5/avatar") blob olarak çeker ve
  * <img src> için kullanılabilir bir objectURL döndürür. Çağıran taraf, işi
@@ -8,15 +20,17 @@ import { logError } from './errorUtils';
  */
 export async function fetchAuthedImageObjectUrl(relativeUrl) {
   if (!relativeUrl) return null;
+  if (missingImageUrls.has(relativeUrl)) return null; // bilinen 404 — ağ isteği atma
   try {
     const response = await axiosInstance.get(relativeUrl, {
       responseType: 'blob',
-      silentOn500: true,
+      silentOnError: true,
     });
     return URL.createObjectURL(response.data);
   } catch (error) {
-    // 404 = görsel yok; sessizce geç
-    if (error?.response?.status !== 404) {
+    if (error?.response?.status === 404) {
+      missingImageUrls.add(relativeUrl); // bir daha deneme
+    } else {
       logError('imageUtils - fetchAuthedImageObjectUrl', error);
     }
     return null;
@@ -96,14 +110,17 @@ export function blobToDataUrl(blob) {
  */
 export async function fetchAuthedImageDataUrl(relativeUrl) {
   if (!relativeUrl) return null;
+  if (missingImageUrls.has(relativeUrl)) return null;
   try {
     const response = await axiosInstance.get(relativeUrl, {
       responseType: 'blob',
-      silentOn500: true,
+      silentOnError: true,
     });
     return await blobToDataUrl(response.data);
   } catch (error) {
-    if (error?.response?.status !== 404) {
+    if (error?.response?.status === 404) {
+      missingImageUrls.add(relativeUrl);
+    } else {
       logError('imageUtils - fetchAuthedImageDataUrl', error);
     }
     return null;

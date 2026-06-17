@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import AuthedImage from './AuthedImage';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { processImageToWebp } from '../../utils/imageUtils';
+import { processImageToWebp, clearImageCache } from '../../utils/imageUtils';
 
 // Seçilebilir dosya üst sınırı. Görsel yüklemeden önce tarayıcıda WebP'e küçültülür,
 // dolayısıyla sunucuya giden dosya çok daha küçüktür (genelde < 100 KB).
@@ -65,6 +65,7 @@ export default function ImageUploadField({
     const res = await uploadFn(optimized);
     setBusy(false);
     if (res?.success) {
+      clearImageCache(currentUrl); // önceki 404 işaretini kaldır ki yeni görsel yüklensin
       showSuccess('Görsel güncellendi');
       onUploaded?.();
     } else {
@@ -78,6 +79,7 @@ export default function ImageUploadField({
     const res = await deleteFn();
     setBusy(false);
     if (res?.success) {
+      clearImageCache(currentUrl);
       showSuccess('Görsel kaldırıldı');
       onUploaded?.();
     } else {
