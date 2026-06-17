@@ -4,23 +4,24 @@ import { shipsGoService } from '../../api/shipsGoService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
 /**
- * Header bell + popover that lists every PENDING ShipsGo enable request for
- * the current broker. Visible only to BROKER_ADMIN and SUPER_ADMIN.
+ * Header bell + popover that lists PENDING ShipsGo enable requests.
+ *  - BROKER_ADMIN: requests for their own broker, with approve / reject
+ *    actions. They are the audience the original notification flow
+ *    targets, so the badge is the active to-do indicator.
+ *  - SUPER_ADMIN: read-only oversight pool — requests across EVERY broker,
+ *    no action buttons. Notifications themselves still stay scoped to
+ *    broker admins (the people who can actually act); this is purely
+ *    visibility for dev.
  *
- * Behaviour:
- *  - Polls /pending-requests every 60s while mounted so the badge stays
- *    fresh even when the user is on an unrelated page. Lightweight payload
- *    (request count + minimal fields) so polling has near-zero cost.
- *  - Clicking the bell toggles the popover. Each request row carries
- *    requester info, cargo identifier, free-form note, and three actions:
- *    "Onayla", "Onayla + Bilgileri Getir (1 kredi)", "Reddet".
- *  - Reject reveals a reason input (required) before sending.
- *  - All actions trigger a reload so the popover and badge stay in sync.
- *  - Closing happens on outside-click or ESC.
+ * Polling: every 10 minutes while mounted. The upstream changes infrequently
+ * (humans typing notes) so anything tighter just adds chatter.
  */
+const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
 export default function ShipsGoRequestsBell() {
   const { user } = useAuth();
   const isEligible = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
+  const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
 
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState([]);
@@ -40,11 +41,12 @@ export default function ShipsGoRequestsBell() {
     }
   }, [isEligible]);
 
-  // Initial load + periodic refresh
+  // Initial load + periodic refresh (10 min — the underlying request stream
+  // changes slowly, no need for a hot poll loop).
   useEffect(() => {
     if (!isEligible) return;
     load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [isEligible, load]);
 
@@ -155,6 +157,15 @@ export default function ShipsGoRequestsBell() {
                       <p className="text-sm font-semibold text-text-main truncate">
                         {r.cargoVehicleType === 'AIRPLANE' ? '✈️' : '🚢'} {r.cargoIdentifier || `Yük #${r.cargoId}`}
                       </p>
+                      {/* SUPER_ADMIN sees requests across every broker — show
+                          which one this belongs to so the pool view is
+                          legible. BROKER_ADMIN always sees just their own
+                          broker, so the line is hidden. */}
+                      {isSuperAdmin && r.brokerCompanyName && (
+                        <p className="text-[11px] text-primary font-medium">
+                          {r.brokerCompanyName}
+                        </p>
+                      )}
                       <p className="text-[11px] text-text-secondary">
                         {r.requestedByUsername || r.requestedByEmail || 'Bilinmeyen kullanıcı'}
                         {' · '}
@@ -167,7 +178,13 @@ export default function ShipsGoRequestsBell() {
                       "{r.notes}"
                     </p>
                   )}
-                  {rejectingId === r.id ? (
+                  {isSuperAdmin ? (
+                    // Read-only oversight pool — broker admins are the only
+                    // ones who can act, SuperAdmin just watches.
+                    <p className="text-[11px] text-text-secondary italic">
+                      Yalnızca görüntüleme — onay/red broker yöneticisinde
+                    </p>
+                  ) : rejectingId === r.id ? (
                     <div className="flex flex-col gap-2">
                       <input
                         type="text"
