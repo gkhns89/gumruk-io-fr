@@ -53,17 +53,17 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ transactions, loading, courierExpanded = false }) {
+const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpanded = false }) {
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const gridRef = useRef(null);
 
   useEffect(() => {
-    if (!loading && transactions?.length > 0 && !hasPlayedInitialAnimationsRef.current) {
+    if (!loading && stats && !hasPlayedInitialAnimationsRef.current) {
       hasPlayedInitialAnimationsRef.current = true;
       setShouldAnimate(true);
     }
-  }, [loading, transactions]);
+  }, [loading, stats]);
 
   const equalizeCardHeights = useCallback(() => {
     const el = gridRef.current;
@@ -80,71 +80,72 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
 
   useLayoutEffect(() => {
     equalizeCardHeights();
-  }, [transactions, loading, equalizeCardHeights]);
+  }, [stats, warehouseStats, loading, equalizeCardHeights]);
 
   useEffect(() => {
     window.addEventListener('resize', equalizeCardHeights);
     return () => window.removeEventListener('resize', equalizeCardHeights);
   }, [equalizeCardHeights]);
 
-  const stats = {
-    total: transactions?.length || 0,
-    withdrawn:
-      transactions?.filter((t) => t.status === "WITHDRAWN")?.length || 0,
-    pending: transactions?.filter((t) => t.status === "PENDING")?.length || 0,
-    registered:
-      transactions?.filter((t) => t.status === "REGISTERED")?.length || 0,
-    inspection:
-      transactions?.filter((t) => t.status === "INSPECTION")?.length || 0,
-    completed:
-      transactions?.filter((t) => t.status === "CP_COMPLETED")?.length || 0,
-    cancelled:
-      transactions?.filter((t) => t.status === "CANCELLED")?.length || 0,
-    delayed:
-      transactions?.filter((t) => t.delayReason && t.delayReason.trim() !== "")?.length || 0,
+  // Backend'den gelen sayım özeti (tüm kayıt indirmeden)
+  const byStatus = stats?.byStatus || {};
+  const counts = {
+    total: stats?.total || 0,
+    withdrawn: byStatus.WITHDRAWN || 0,
+    pending: byStatus.PENDING || 0,
+    registered: byStatus.REGISTERED || 0,
+    inspection: byStatus.INSPECTION || 0,
+    completed: byStatus.CP_COMPLETED || 0,
+    cancelled: byStatus.CANCELLED || 0,
+    delayed: stats?.delayed || 0,
   };
 
-  // Hat bazlı çekilen işlem sayıları
-  const withdrawnTransactions = transactions?.filter((t) => t.status === "WITHDRAWN") || [];
+  // Hat bazlı çekilen işlem sayıları (backend'den)
   const withdrawnByGate = {
-    SARI: withdrawnTransactions.filter((t) => t.gate === "SARI").length,
-    KIRMIZI: withdrawnTransactions.filter((t) => t.gate === "KIRMIZI").length,
+    SARI: stats?.withdrawnByGate?.SARI || 0,
+    KIRMIZI: stats?.withdrawnByGate?.KIRMIZI || 0,
+  };
+
+  // Antrepo (WarehouseDeclaration) sayımları
+  const warehouseCounts = {
+    tescil: warehouseStats?.TESCIL_EDILDI || 0,
+    kapandi: warehouseStats?.KAPANDI || 0,
   };
 
   const statsData = [
     {
       label: "İşlemler",
-      value: stats.total,
+      value: counts.total,
       color: "gray",
       icon: "description",
     },
     {
       label: "Bekleyenler",
-      value: stats.pending,
+      value: counts.pending,
       color: "pending",
       icon: "schedule",
     },
     {
       label: "Tescil Edilenler",
-      value: stats.registered,
+      value: counts.registered,
       color: "registered",
       icon: "assignment_turned_in",
     },
     {
       label: "Muayenedekiler",
-      value: stats.inspection,
+      value: counts.inspection,
       color: "inspection",
       icon: "fact_check",
     },
     {
       label: "Tamamlananlar",
-      value: stats.completed,
+      value: counts.completed,
       color: "completed",
       icon: "verified",
     },
     {
       label: "Çekilenler",
-      value: stats.withdrawn,
+      value: counts.withdrawn,
       color: "withdrawn",
       icon: "check_circle",
       showGateBreakdown: true,
@@ -152,15 +153,39 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
     },
     {
       label: "Gecikenler",
-      value: stats.delayed,
+      value: counts.delayed,
       color: "delayed",
       icon: "warning",
     },
     {
       label: "İptal Edilenler",
-      value: stats.cancelled,
+      value: counts.cancelled,
       color: "cancelled",
       icon: "cancel",
+    },
+  ];
+
+  // Antrepo (WarehouseDeclaration) kartları — işlem kartlarından ayrı grup
+  const warehouseData = [
+    {
+      label: "Tescil Edilenler",
+      value: warehouseCounts.tescil,
+      icon: "inventory_2",
+      colors: {
+        bg: "bg-amber-50 dark:bg-amber-900/20",
+        text: "text-amber-700 dark:text-amber-300",
+        icon: "text-amber-600 dark:text-amber-400",
+      },
+    },
+    {
+      label: "Kapananlar",
+      value: warehouseCounts.kapandi,
+      icon: "inventory",
+      colors: {
+        bg: "bg-emerald-50 dark:bg-emerald-900/20",
+        text: "text-emerald-700 dark:text-emerald-300",
+        icon: "text-emerald-600 dark:text-emerald-400",
+      },
     },
   ];
 
@@ -359,19 +384,53 @@ const Stats = memo(function Stats({ transactions, loading, courierExpanded = fal
   };
 
   return (
-    <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-      {statsData.map((stat, index) => {
-        const colors = getColorClasses(stat.color);
-        return (
-          <StatCard
-            key={stat.label}
-            stat={stat}
-            index={index}
-            colors={colors}
-            shouldPlayAnimation={shouldAnimate}
-          />
-        );
-      })}
+    <div ref={gridRef} className="flex flex-col gap-5">
+      {/* İşlem durumları grubu */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="material-symbols-outlined text-primary text-xl">description</span>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-text-secondary dark:text-gray-400">
+            İşlem Durumları
+          </h3>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+          {statsData.map((stat, index) => {
+            const colors = getColorClasses(stat.color);
+            return (
+              <StatCard
+                key={stat.label}
+                stat={stat}
+                index={index}
+                colors={colors}
+                shouldPlayAnimation={shouldAnimate}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Antrepo grubu — işlemlerden net ayrılmış, kendini belli eden panel */}
+      <div className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 bg-indigo-50/40 dark:bg-indigo-900/10 p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400 text-xl">warehouse</span>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            Antrepo
+          </h3>
+          <div className="flex-1 h-px bg-indigo-200 dark:bg-indigo-800/50" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:gap-4 lg:gap-6">
+          {warehouseData.map((stat, i) => (
+            <StatCard
+              key={`wh-${stat.label}`}
+              stat={stat}
+              index={statsData.length + i}
+              colors={stat.colors}
+              shouldPlayAnimation={shouldAnimate}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 });

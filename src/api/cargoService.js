@@ -40,6 +40,24 @@ export const cargoService = {
   },
 
   /**
+   * Dashboard için son aktif cargo (COMPLETED hariç, TRACKING önce, LIMIT 10)
+   */
+  getRecentCargo: async () => {
+    try {
+      const response = await axiosInstance.get('/cargo/recent');
+      const dataArray = safeArrayConversion(response.data, 'Recent Cargo');
+      return { success: true, data: dataArray };
+    } catch (error) {
+      logError('CargoService - getRecentCargo', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Son yük verileri alınamadı',
+        message: error.message
+      };
+    }
+  },
+
+  /**
    * Get single cargo by ID
    */
   getCargoById: async (id) => {

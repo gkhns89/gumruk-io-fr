@@ -29,6 +29,28 @@ export const warehouseService = {
     }
   },
 
+  // Dashboard sayım özeti (TESCIL_EDILDI / KAPANDI / total)
+  getStatsSummary: async () => {
+    try {
+      const response = await axiosInstance.get('/warehouse/stats/summary');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('WarehouseService - getStatsSummary', error);
+      return { success: false, error: error.response?.data?.error || 'Antrepo özeti alınamadı' };
+    }
+  },
+
+  // Dashboard birleşik liste için: son aktif antrepolar (KAPANDI hariç, LIMIT 10)
+  getRecent: async () => {
+    try {
+      const response = await axiosInstance.get('/warehouse/recent');
+      return { success: true, data: safeArrayConversion(response.data, 'RecentWarehouseDeclarations') };
+    } catch (error) {
+      logError('WarehouseService - getRecent', error);
+      return { success: false, error: error.response?.data?.error || 'Son antrepo kayıtları alınamadı' };
+    }
+  },
+
   getTransfers: async (id) => {
     try {
       const response = await axiosInstance.get(`/warehouse/${id}/transfers`);

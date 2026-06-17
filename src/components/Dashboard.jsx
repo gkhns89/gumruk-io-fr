@@ -7,7 +7,35 @@ import { useAuth } from "../hooks/useAuth";
 import AuthedImage from "./common/AuthedImage";
 import { transactionService } from "../api/transactionService";
 import { cargoService } from "../api/cargoService";
+import { warehouseService } from "../api/warehouseService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
+
+// Birleşik liste sıralama anahtarı: her satırın duruma göre referans tarihi.
+// İşlem: PENDING→antrepo varış, REGISTERED/INSPECTION→tescil, CP_COMPLETED→kapanma,
+// diğer (CANCELLED)→ilk dolu olan. Antrepo: beyan tarihi (declarationDate).
+const getReferenceDate = (item) => {
+  let raw = null;
+  if (item.kind === "warehouse") {
+    raw = item.declarationDate;
+  } else {
+    switch (item.status) {
+      case "PENDING":
+        raw = item.warehouseArrivalDate;
+        break;
+      case "REGISTERED":
+      case "INSPECTION":
+        raw = item.registrationDate;
+        break;
+      case "CP_COMPLETED":
+        raw = item.lineClosureDate;
+        break;
+      default:
+        raw = item.lineClosureDate || item.registrationDate || item.warehouseArrivalDate || item.createdAt;
+    }
+  }
+  const t = raw ? new Date(raw).getTime() : NaN;
+  return Number.isNaN(t) ? null : t;
+};
 
 // Animated Section Component
 const AnimatedSection = ({ children, delay = 0, shouldAnimate = false, className = "" }) => {
@@ -23,8 +51,9 @@ const AnimatedSection = ({ children, delay = 0, shouldAnimate = false, className
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [warehouseStats, setWarehouseStats] = useState(null);
+  const [recentItems, setRecentItems] = useState([]);
   const [recentCargo, setRecentCargo] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cargoLoading, setCargoLoading] = useState(true);
@@ -54,75 +83,63 @@ export default function Dashboard() {
 
   // Heading animasyonu — veriler gelince
   useEffect(() => {
-    if (!loading && allTransactions.length > 0 && !hasAnimatedHeadingRef.current) {
+    if (!loading && stats && !hasAnimatedHeadingRef.current) {
       hasAnimatedHeadingRef.current = true;
       setShouldAnimateHeading(true);
     }
-  }, [loading, allTransactions]);
+  }, [loading, stats]);
 
   // Diğer bölümler — stat kartları bittikten sonra
   useEffect(() => {
-    if (!loading && allTransactions.length > 0 && !hasAnimatedSectionsRef.current) {
+    if (!loading && stats && !hasAnimatedSectionsRef.current) {
       hasAnimatedSectionsRef.current = true;
       setTimeout(() => {
         setShouldAnimateSections(true);
       }, 2200);
     }
-  }, [loading, allTransactions]);
+  }, [loading, stats]);
 
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const result = await transactionService.getAllTransactions();
+      // Kartlar için sayım özetleri + tablo için sınırlı (LIMIT 10) listeler — paralel
+      const [statsRes, whStatsRes, txRecentRes, whRecentRes] = await Promise.all([
+        transactionService.getDashboardStats(),
+        warehouseService.getStatsSummary(),
+        transactionService.getRecentTransactions(),
+        warehouseService.getRecent(),
+      ]);
 
-      if (result.success) {
-        let dataArray = [];
-
-        if (Array.isArray(result.data)) {
-          dataArray = result.data;
-        } else if (result.data && typeof result.data === "object") {
-          const possibleArrayFields = ["transactions", "data", "items", "content", "results", "list"];
-          for (const field of possibleArrayFields) {
-            if (Array.isArray(result.data[field])) {
-              dataArray = result.data[field];
-              break;
-            }
-          }
-          if (dataArray.length === 0 && result.data) {
-            dataArray = [result.data];
-          }
-        }
-
-        setAllTransactions(dataArray);
-
-        const sortedTransactions = [...dataArray].sort((a, b) => {
-          const getPriority = (status) => {
-            if (status === "WITHDRAWN") return 3;
-            if (status === "CP_COMPLETED" || status === "CANCELLED") return 2;
-            return 1;
-          };
-
-          const priorityA = getPriority(a.status);
-          const priorityB = getPriority(b.status);
-          if (priorityA !== priorityB) return priorityA - priorityB;
-
-          const dateA = new Date(a.createdAt || a.warehouseArrivalDate || 0);
-          const dateB = new Date(b.createdAt || b.warehouseArrivalDate || 0);
-          return dateB - dateA;
-        });
-
-        setRecentTransactions(sortedTransactions.slice(0, 10));
+      if (statsRes.success) {
+        setStats(statsRes.data);
       } else {
-        handleApiResponse(result, null, setError, "Dashboard - İşlemler yüklenirken");
-        setAllTransactions([]);
-        setRecentTransactions([]);
+        handleApiResponse(statsRes, null, setError, "Dashboard - İşlem özeti yüklenirken");
+        setStats(null);
       }
+
+      setWarehouseStats(whStatsRes.success ? whStatsRes.data : null);
+
+      // İşlem + antrepo birleşik liste: referans tarihine göre (en güncel üstte), ilk 10
+      const txItems = (txRecentRes.success ? txRecentRes.data : []).map((t) => ({ ...t, kind: "transaction" }));
+      const whItems = (whRecentRes.success ? whRecentRes.data : []).map((w) => ({ ...w, kind: "warehouse" }));
+
+      const merged = [...txItems, ...whItems].sort((a, b) => {
+        const da = getReferenceDate(a);
+        const db = getReferenceDate(b);
+        if (da === db) return 0;
+        if (da === null) return 1; // null tarihliler sona
+        if (db === null) return -1;
+        return db - da; // en güncel tarih en üstte
+      });
+
+      setRecentItems(merged.slice(0, 10));
     } catch (err) {
       handleError(err, setError, "Dashboard - İşlemler yüklenirken", "İşlemler yüklenirken bir hata oluştu.");
-      setAllTransactions([]);
-      setRecentTransactions([]);
+      setStats(null);
+      setWarehouseStats(null);
+      setRecentItems([]);
     } finally {
       setLoading(false);
     }
@@ -131,29 +148,8 @@ export default function Dashboard() {
   const fetchCargo = async () => {
     try {
       setCargoLoading(true);
-      const result = await cargoService.getAllCargo();
-
-      if (result.success) {
-        const STATUS_PRIORITY = { ARRIVED: 1, TRACKING: 2, COMPLETED: 3 };
-
-        const sorted = [...result.data].sort((a, b) => {
-          const pA = STATUS_PRIORITY[a.status] || 999;
-          const pB = STATUS_PRIORITY[b.status] || 999;
-          if (pA !== pB) return pA - pB;
-
-          const etaA = a.estimatedArrivalDate
-            ? new Date(a.estimatedArrivalDate).getTime()
-            : Infinity;
-          const etaB = b.estimatedArrivalDate
-            ? new Date(b.estimatedArrivalDate).getTime()
-            : Infinity;
-          return etaA - etaB;
-        });
-
-        setRecentCargo(sorted.slice(0, 10));
-      } else {
-        setRecentCargo([]);
-      }
+      const result = await cargoService.getRecentCargo();
+      setRecentCargo(result.success ? result.data : []);
     } catch {
       setRecentCargo([]);
     } finally {
@@ -194,7 +190,7 @@ export default function Dashboard() {
             transition: 'grid-template-columns 400ms ease-in-out',
           } : {}}
         >
-          <Stats transactions={allTransactions} loading={loading} courierExpanded={courierExpanded} />
+          <Stats stats={stats} warehouseStats={warehouseStats} loading={loading} courierExpanded={courierExpanded} />
           <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
             <CourierTrackingCard
               expanded={courierExpanded}
@@ -207,7 +203,7 @@ export default function Dashboard() {
         {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik */}
         <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
           <TransactionsTable
-            transactions={recentTransactions}
+            transactions={recentItems}
             loading={loading}
             error={error}
             onRetry={fetchTransactions}

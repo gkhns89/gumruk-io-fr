@@ -113,6 +113,20 @@ export const transactionService = {
     }
   },
 
+  // Dashboard sayım özeti (yalnızca sayı - tüm kayıt indirmeden)
+  getDashboardStats: async () => {
+    try {
+      const response = await axiosInstance.get('/transactions/stats/summary');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('TransactionService - getDashboardStats', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'İşlem özeti alınamadı',
+      };
+    }
+  },
+
   // Broker'ın işlemleri
   getBrokerTransactions: async (brokerId) => {
     try {
