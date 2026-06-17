@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { cargoService } from '../../api/cargoService';
@@ -11,6 +12,7 @@ import MainLayout from '../layout/MainLayout';
 import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
 import EditCargoModal from './EditCargoModal';
+import CargoDetailModal from '../common/CargoDetailModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
 import ShipsGoDetailsDrawer from './ShipsGoDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
@@ -31,8 +33,11 @@ export default function CargoTrackingPage() {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCargo, setSelectedCargo] = useState(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Vehicle type quick filter
   const [selectedVehicleType, setSelectedVehicleType] = useState("");
@@ -296,12 +301,20 @@ export default function CargoTrackingPage() {
     return count;
   }, [filters, selectedVehicleType]);
 
+  // Satıra tıklayınca önce detay modalı açılır (tek tıkla incele, isterse düzenle)
   const handleRowClick = (cargoItem) => {
+    setSelectedCargo(cargoItem);
+    setShowDetailModal(true);
+  };
+
+  const handleEditClick = (cargoItem) => {
     setSelectedCargo(cargoItem);
     setShowEditModal(true);
   };
 
-  const handleEditClick = (cargoItem) => {
+  // Detay modalındaki "Düzenle" → detayı kapat, düzenleme modalını aç
+  const handleEditFromDetail = (cargoItem) => {
+    setShowDetailModal(false);
     setSelectedCargo(cargoItem);
     setShowEditModal(true);
   };
@@ -315,9 +328,23 @@ export default function CargoTrackingPage() {
     loadData();
     setShowAddModal(false);
     setShowEditModal(false);
+    setShowDetailModal(false);
     setShowDeleteModal(false);
     setSelectedCargo(null);
   };
+
+  // Dashboard'dan "/cargo?edit=<id>" ile gelindiğinde ilgili yükün düzenleme modalını aç
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && cargo.length > 0) {
+      const item = cargo.find((c) => c.id === parseInt(editId, 10));
+      if (item) {
+        setSelectedCargo(item);
+        setShowEditModal(true);
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, cargo, setSearchParams]);
 
   // Render pagination buttons with ellipsis
   const renderPaginationButtons = () => {
@@ -669,6 +696,17 @@ export default function CargoTrackingPage() {
           onClose={() => setShowAddModal(false)}
           onSuccess={handleModalSuccess}
           currentUser={user}
+        />
+      )}
+
+      {showDetailModal && selectedCargo && (
+        <CargoDetailModal
+          cargo={selectedCargo}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedCargo(null);
+          }}
+          onEdit={isTableReadOnly ? undefined : handleEditFromDetail}
         />
       )}
 

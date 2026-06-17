@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
-import TransactionsTable from "./dashboard/TransactionsTable";
+import RecentActivityTable from "./dashboard/RecentActivityTable";
 import CourierTrackingCard from "./dashboard/CourierTrackingCard";
 import { useAuth } from "../hooks/useAuth";
 import AuthedImage from "./common/AuthedImage";
@@ -202,7 +202,7 @@ export default function Dashboard() {
 
         {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik */}
         <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
-          <TransactionsTable
+          <RecentActivityTable
             transactions={recentItems}
             loading={loading}
             error={error}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TransactionDetailModal from "../common/TransactionDetailModal";
+import CargoDetailModal from "../common/CargoDetailModal";
 import ViewWarehouseModal from "../warehouse/ViewWarehouseModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { getCargoStatus, VEHICLE_TYPES } from "../../utils/constants";
@@ -63,7 +64,7 @@ const getStatusBadgeClass = (status) => {
   return { className: colors[statusInfo.color], label: statusInfo.label };
 };
 
-export default function TransactionsTable({
+export default function RecentActivityTable({
   transactions,
   loading,
   error,
@@ -75,6 +76,7 @@ export default function TransactionsTable({
   const [activeTab, setActiveTab] = useState("transactions");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const [selectedCargo, setSelectedCargo] = useState(null);
 
   const { containerRef: txScrollRef, scrollDirection: txScrollDir } = useEdgeScroll({
     edgeZoneWidth: 25,
@@ -99,6 +101,15 @@ export default function TransactionsTable({
   const openDetail = (item) => {
     if (item.kind === "warehouse") setSelectedWarehouse(item);
     else setSelectedTransaction(item);
+  };
+
+  // Son İşlemler tablosuyla aynı satır davranışı (metin seçimi / buton tıklamasını yok say)
+  const handleCargoRowClick = (cargoItem, event) => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+    const target = event.target;
+    if (target.tagName === "BUTTON" || target.closest("button")) return;
+    setSelectedCargo(cargoItem);
   };
 
   const handleCloseModal = () => setSelectedTransaction(null);
@@ -261,7 +272,7 @@ export default function TransactionsTable({
                 return (
                   <tr
                     key={cargoItem.id}
-                    onClick={() => navigate("/cargo")}
+                    onClick={(e) => handleCargoRowClick(cargoItem, e)}
                     className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${borderClass} transition-colors cursor-pointer`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -292,7 +303,7 @@ export default function TransactionsTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate("/cargo"); }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedCargo(cargoItem); }}
                         className="flex items-center gap-1 text-primary hover:text-primary/80 dark:text-primary-light dark:hover:text-primary-light/80 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-lg">visibility</span>
@@ -487,6 +498,17 @@ export default function TransactionsTable({
         <ViewWarehouseModal
           declaration={selectedWarehouse}
           onClose={() => setSelectedWarehouse(null)}
+        />
+      )}
+
+      {selectedCargo && (
+        <CargoDetailModal
+          cargo={selectedCargo}
+          onClose={() => setSelectedCargo(null)}
+          onEdit={(c) => {
+            setSelectedCargo(null);
+            navigate(`/cargo?edit=${c.id}`);
+          }}
         />
       )}
     </>
