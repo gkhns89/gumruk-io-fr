@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect, useCallback, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
 
 // Custom hook for counting animation with delay
@@ -54,6 +55,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
 };
 
 const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpanded = false }) {
+  const navigate = useNavigate();
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const gridRef = useRef(null);
@@ -118,30 +120,35 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
       value: counts.total,
       color: "gray",
       icon: "description",
+      to: "/transactions",
     },
     {
       label: "Bekleyenler",
       value: counts.pending,
       color: "pending",
       icon: "schedule",
+      to: "/transactions?status=PENDING",
     },
     {
       label: "Tescil Edilenler",
       value: counts.registered,
       color: "registered",
       icon: "assignment_turned_in",
+      to: "/transactions?status=REGISTERED",
     },
     {
       label: "Muayenedekiler",
       value: counts.inspection,
       color: "inspection",
       icon: "fact_check",
+      to: "/transactions?status=INSPECTION",
     },
     {
       label: "Tamamlananlar",
       value: counts.completed,
       color: "completed",
       icon: "verified",
+      to: "/transactions?status=CP_COMPLETED",
     },
     {
       label: "Çekilenler",
@@ -150,18 +157,21 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
       icon: "check_circle",
       showGateBreakdown: true,
       gateBreakdown: withdrawnByGate,
+      to: "/transactions?status=WITHDRAWN",
     },
     {
       label: "Gecikenler",
       value: counts.delayed,
       color: "delayed",
       icon: "warning",
+      to: "/transactions?delay=TG",
     },
     {
       label: "İptal Edilenler",
       value: counts.cancelled,
       color: "cancelled",
       icon: "cancel",
+      to: "/transactions?status=CANCELLED",
     },
   ];
 
@@ -171,6 +181,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
       label: "Tescil Edilenler",
       value: warehouseCounts.tescil,
       icon: "inventory_2",
+      to: "/warehouse?status=TESCIL_EDILDI",
       colors: {
         bg: "bg-amber-50 dark:bg-amber-900/20",
         text: "text-amber-700 dark:text-amber-300",
@@ -181,6 +192,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
       label: "Kapananlar",
       value: warehouseCounts.kapandi,
       icon: "inventory",
+      to: "/warehouse?status=KAPANDI",
       colors: {
         bg: "bg-emerald-50 dark:bg-emerald-900/20",
         text: "text-emerald-700 dark:text-emerald-300",
@@ -247,10 +259,14 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
             : 'border-gray-300/50 dark:border-gray-600/50 scale-100 translate-y-0 shadow-md'
           }
           ${shouldPlayAnimation ? 'animate-slide-up-bounce' : 'opacity-0'}
-          transform transition-all duration-300 ease-out cursor-default group
+          ${stat.to ? 'cursor-pointer' : 'cursor-default'}
+          transform transition-all duration-300 ease-out group
         `}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={() => stat.to && navigate(stat.to)}
+        role={stat.to ? 'button' : undefined}
+        title={stat.to ? `${stat.label} — listede gör` : undefined}
       >
         {/* Animated background gradient overlay */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />

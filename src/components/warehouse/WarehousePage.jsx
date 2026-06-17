@@ -87,6 +87,17 @@ export default function WarehousePage() {
     }
   }, [searchParams, declarations, setSearchParams]);
 
+  // Dashboard antrepo kartından "/warehouse?status=..." ile gelindiğinde durum filtresini uygula
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status) {
+      setFilters((prev) => ({ ...prev, status }));
+      const next = new URLSearchParams(searchParams);
+      next.delete("status");
+      setSearchParams(next, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);

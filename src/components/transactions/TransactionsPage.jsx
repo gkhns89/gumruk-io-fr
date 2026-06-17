@@ -36,6 +36,7 @@ export default function TransactionsPage() {
   const [itemsPerPage] = useState(20);
   const [filters, setFilters] = useState({
     status: "",
+    delay: "",
     clientSearch: "",
     customsOffice: "",
     warehouse: "",
@@ -117,6 +118,23 @@ export default function TransactionsPage() {
     }
   }, [searchParams, transactions, setSearchParams]);
 
+  // Dashboard kartlarından gelen filtreleri uygula (?status=... veya ?delay=TG|GG)
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const delay = searchParams.get('delay');
+    if (status || delay) {
+      setFilters(prev => ({
+        ...prev,
+        ...(status ? { status } : {}),
+        ...(delay ? { delay } : {}),
+      }));
+      const next = new URLSearchParams(searchParams);
+      next.delete('status');
+      next.delete('delay');
+      setSearchParams(next, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -141,6 +159,15 @@ export default function TransactionsPage() {
 
     if (filters.status) {
       result = result.filter(t => t.status === filters.status);
+    }
+
+    // Gecikme filtresi: TG (tescil→kapanma) / GG (genel) / ANY (herhangi)
+    if (filters.delay === "TG") {
+      result = result.filter(t => t.systemDelayFlags?.includes("TG"));
+    } else if (filters.delay === "GG") {
+      result = result.filter(t => t.systemDelayFlags?.includes("GG"));
+    } else if (filters.delay === "ANY") {
+      result = result.filter(t => !!t.systemDelayFlags);
     }
 
     if (filters.clientSearch) {
@@ -281,6 +308,7 @@ export default function TransactionsPage() {
   const clearFilters = () => {
     setFilters({
       status: "",
+      delay: "",
       clientSearch: "",
       customsOffice: "",
       warehouse: "",
@@ -300,6 +328,7 @@ export default function TransactionsPage() {
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.status) count++;
+    if (filters.delay) count++;
     if (filters.clientSearch) count++;
     if (filters.customsOffice) count++;
     if (filters.warehouse) count++;
@@ -569,6 +598,37 @@ export default function TransactionsPage() {
                         <option value="CP_COMPLETED">Gümrük İşlemleri Tamamlandı</option>
                         <option value="WITHDRAWN">Çekildi</option>
                         <option value="CANCELLED">İptal</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Delay Filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                      Gecikme
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                        warning
+                      </span>
+                      <select
+                        value={filters.delay}
+                        onChange={(e) => handleFilterChange('delay', e.target.value)}
+                        style={{
+                          backgroundImage: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          appearance: 'none'
+                        }}
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
+                      >
+                        <option value="">Tüm Kayıtlar</option>
+                        <option value="ANY">Tüm Gecikmeler</option>
+                        <option value="TG">İthalat Gecikmesi (TG)</option>
+                        <option value="GG">Genel Gecikme (GG)</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
                         expand_more
