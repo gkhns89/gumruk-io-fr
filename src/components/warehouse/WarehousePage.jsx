@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { usePaymentRestriction } from "../../context/PaymentRestrictionProvider";
 import { warehouseService } from "../../api/warehouseService";
@@ -32,6 +33,8 @@ export default function WarehousePage() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDeclaration, setSelectedDeclaration] = useState(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
@@ -70,6 +73,19 @@ export default function WarehousePage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Dashboard'dan "/warehouse?edit=<id>" ile gelindiğinde ilgili antreponun düzenleme modalını aç
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId && declarations.length > 0) {
+      const decl = declarations.find((d) => d.id === parseInt(editId, 10));
+      if (decl) {
+        setSelectedDeclaration(decl);
+        setShowEditModal(true);
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, declarations, setSearchParams]);
 
   useEffect(() => {
     setCurrentPage(1);

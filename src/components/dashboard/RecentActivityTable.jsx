@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import CargoDetailModal from "../common/CargoDetailModal";
 import ViewWarehouseModal from "../warehouse/ViewWarehouseModal";
@@ -73,6 +74,8 @@ export default function RecentActivityTable({
   cargoLoading = false,
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canEditWarehouse = ["SUPER_ADMIN", "BROKER_ADMIN", "BROKER_USER"].includes(user?.globalRole);
   const [activeTab, setActiveTab] = useState("transactions");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [selectedWarehouse, setSelectedWarehouse] = useState(null);
@@ -498,6 +501,11 @@ export default function RecentActivityTable({
         <ViewWarehouseModal
           declaration={selectedWarehouse}
           onClose={() => setSelectedWarehouse(null)}
+          onEdit={(decl) => {
+            setSelectedWarehouse(null);
+            navigate(`/warehouse?edit=${decl.id}`);
+          }}
+          canEdit={canEditWarehouse}
         />
       )}
 
