@@ -121,17 +121,24 @@ export default function Dashboard() {
 
       setWarehouseStats(whStatsRes.success ? whStatsRes.data : null);
 
-      // İşlem + antrepo birleşik liste: referans tarihine göre (en güncel üstte), ilk 10
+      // İşlem + antrepo birleşik liste: her satırın "son durum tarihi"ne göre en güncel
+      // üstte; eşit tarihte en son girilen (createdAt) üstte. İlk 10 alınır, taşan atılır.
       const txItems = (txRecentRes.success ? txRecentRes.data : []).map((t) => ({ ...t, kind: "transaction" }));
       const whItems = (whRecentRes.success ? whRecentRes.data : []).map((w) => ({ ...w, kind: "warehouse" }));
+
+      const entryTime = (item) => (item.createdAt ? new Date(item.createdAt).getTime() : 0);
 
       const merged = [...txItems, ...whItems].sort((a, b) => {
         const da = getReferenceDate(a);
         const db = getReferenceDate(b);
-        if (da === db) return 0;
-        if (da === null) return 1; // null tarihliler sona
-        if (db === null) return -1;
-        return db - da; // en güncel tarih en üstte
+        // 1) Son durum tarihi — en güncel üstte; tarihi olmayan en sona
+        if (da !== db) {
+          if (da === null) return 1;
+          if (db === null) return -1;
+          return db - da;
+        }
+        // 2) Eşit tarihte: en son girilen kayıt üstte (tür ayrımı yapmadan, adil)
+        return entryTime(b) - entryTime(a);
       });
 
       setRecentItems(merged.slice(0, 10));

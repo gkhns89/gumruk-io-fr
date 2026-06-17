@@ -10,7 +10,7 @@ import { getCargoStatus, VEHICLE_TYPES } from "../../utils/constants";
 // Birleşik tablo: satır türü ikonu (İşlem → ithalat, Antrepo → depo) + tooltip
 const getTypeInfo = (kind) =>
   kind === "warehouse"
-    ? { icon: "warehouse", label: "Antrepo", className: "text-indigo-600 dark:text-indigo-400" }
+    ? { icon: "warehouse", label: "Antrepo", className: "text-amber-500 dark:text-amber-400" }
     : { icon: "input", label: "İşlem (İthalat)", className: "text-blue-600 dark:text-blue-400" };
 
 // Hat göstergesi: renkli yuvarlak (Sarı / Kırmızı) + tooltip
@@ -261,6 +261,7 @@ export default function RecentActivityTable({
                 <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">ETA</th>
                 <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Alıcı Firma</th>
                 <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Gönderici</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Taşıyıcı</th>
                 <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Detaylar</th>
               </tr>
             </thead>
@@ -303,6 +304,9 @@ export default function RecentActivityTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
                       {cargoItem.senderCompany || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
+                      {cargoItem.carrierName || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -439,7 +443,7 @@ export default function RecentActivityTable({
                       {declarationNo || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
-                      {item.clientCompany?.name || item.recipientName || "-"}
+                      {item.clientCompany?.shortName || item.clientCompany?.name || item.recipientName || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
                       {item.senderCompany?.name || item.senderName || "-"}
