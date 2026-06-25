@@ -22,11 +22,20 @@ const safeArrayConversion = (data, context = 'data') => {
 
 export const cargoService = {
   /**
-   * Get all cargo (role-based filtering on backend)
+   * Get all cargo (role-based filtering on backend).
+   *
+   * @param {Object} [opts]
+   * @param {boolean} [opts.includeCompleted=false] — by default only TRACKING +
+   *   ARRIVED rows are returned. The cargo page toggles this on when the user
+   *   ticks "Tamamlananları Göster"; the heavier query gets its own longer
+   *   timeout to survive brokers with thousands of historical records.
    */
-  getAllCargo: async () => {
+  getAllCargo: async ({ includeCompleted = false } = {}) => {
     try {
-      const response = await axiosInstance.get('/cargo/all');
+      const response = await axiosInstance.get('/cargo/all', {
+        params: { includeCompleted },
+        timeout: includeCompleted ? 60_000 : 20_000,
+      });
       const dataArray = safeArrayConversion(response.data, 'All Cargo');
       return { success: true, data: dataArray };
     } catch (error) {

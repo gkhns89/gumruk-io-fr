@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
@@ -48,6 +48,10 @@ export default function CargoTrackingPage() {
     clientSearch: "",
     search: "",
   });
+
+  // Default fetch excludes COMPLETED so brokers with thousands of historical
+  // records don't time out. User opts in via the checkbox below.
+  const [includeCompleted, setIncludeCompleted] = useState(false);
 
   const [showFilters, setShowFilters] = useState(false);
   const filterButtonRef = useRef(null);
@@ -159,10 +163,11 @@ export default function CargoTrackingPage() {
     };
   }, []);
 
-  // Load data
+  // Load data — re-runs when the user toggles "Tamamlananları Göster"
+  // because loadData closes over includeCompleted.
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Apply filters
   useEffect(() => {
@@ -170,12 +175,12 @@ export default function CargoTrackingPage() {
     setCurrentPage(1);
   }, [filters, cargo, selectedVehicleType]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const result = await cargoService.getAllCargo();
+      const result = await cargoService.getAllCargo({ includeCompleted });
 
       if (result.success) {
         setCargo(result.data);
@@ -187,7 +192,7 @@ export default function CargoTrackingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [includeCompleted]);
 
   const applyFilters = () => {
     let filtered = [...cargo];
@@ -414,6 +419,24 @@ export default function CargoTrackingPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* "Tamamlananları Göster" toggle — re-fetches on change.
+                  Hidden when scrolled to keep the header compact; the
+                  Filtrele button below covers the wider filter set. */}
+              {!isScrolled && (
+                <label
+                  className="hidden lg:inline-flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-text-main dark:text-gray-300 cursor-pointer transition-colors"
+                  title="Tamamlanmış yükleri de getir — büyük listeler için yavaşlatabilir"
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeCompleted}
+                    onChange={(e) => setIncludeCompleted(e.target.checked)}
+                    className="form-checkbox h-4 w-4 rounded text-primary focus:ring-primary"
+                  />
+                  <span className="font-medium">Tamamlananları Göster</span>
+                </label>
+              )}
+
               {/* Filter Toggle */}
               <button
                 ref={filterButtonRef}
@@ -524,7 +547,7 @@ export default function CargoTrackingPage() {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="form-input w-full"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 transition-colors"
                 >
                   <option value="">Tümü</option>
                   {CARGO_STATUS.map(status => (
@@ -546,7 +569,7 @@ export default function CargoTrackingPage() {
                     value={filters.clientSearch}
                     onChange={(e) => handleFilterChange('clientSearch', e.target.value)}
                     placeholder="Müşteri adı..."
-                    className="form-input w-full"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   />
                 </div>
               )}
@@ -561,9 +584,27 @@ export default function CargoTrackingPage() {
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   placeholder="Plaka, B/L, konşimento..."
-                  className="form-input w-full"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                 />
               </div>
+            </div>
+
+            {/* "Tamamlananları Göster" — duplicated inside the panel so the
+                toggle is reachable on screens narrower than lg where the
+                header-level pill is hidden. Re-fetches on change. */}
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-700 lg:hidden">
+              <label className="inline-flex items-center gap-2 text-sm text-text-main dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeCompleted}
+                  onChange={(e) => setIncludeCompleted(e.target.checked)}
+                  className="form-checkbox h-4 w-4 rounded text-primary focus:ring-primary"
+                />
+                <span className="font-medium">Tamamlananları Göster</span>
+                <span className="text-xs text-text-secondary dark:text-gray-500">
+                  (büyük listeler için yavaşlatabilir)
+                </span>
+              </label>
             </div>
           </div>
         )}
