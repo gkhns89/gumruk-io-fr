@@ -163,18 +163,6 @@ export default function CargoTrackingPage() {
     };
   }, []);
 
-  // Load data — re-runs when the user toggles "Tamamlananları Göster"
-  // because loadData closes over includeCompleted.
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Apply filters
-  useEffect(() => {
-    applyFilters();
-    setCurrentPage(1);
-  }, [filters, cargo, selectedVehicleType]);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -193,6 +181,18 @@ export default function CargoTrackingPage() {
       setLoading(false);
     }
   }, [includeCompleted]);
+
+  // Load data — re-runs when the user toggles "Tamamlananları Göster"
+  // because loadData closes over includeCompleted.
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Apply filters
+  useEffect(() => {
+    applyFilters();
+    setCurrentPage(1);
+  }, [filters, cargo, selectedVehicleType]);
 
   const applyFilters = () => {
     let filtered = [...cargo];
