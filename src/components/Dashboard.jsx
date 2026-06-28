@@ -53,6 +53,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [warehouseStats, setWarehouseStats] = useState(null);
+  const [cargoStats, setCargoStats] = useState(null);
   const [recentItems, setRecentItems] = useState([]);
   const [recentCargo, setRecentCargo] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,13 +90,13 @@ export default function Dashboard() {
     }
   }, [loading, stats]);
 
-  // Diğer bölümler — stat kartları bittikten sonra
+  // Kurye + tablo — antrepo/yoldakiler kartlarından sonra (kademeli kaskad)
   useEffect(() => {
     if (!loading && stats && !hasAnimatedSectionsRef.current) {
       hasAnimatedSectionsRef.current = true;
       setTimeout(() => {
         setShouldAnimateSections(true);
-      }, 2200);
+      }, 1300);
     }
   }, [loading, stats]);
 
@@ -105,9 +106,10 @@ export default function Dashboard() {
       setError("");
 
       // Kartlar için sayım özetleri + tablo için sınırlı (LIMIT 10) listeler — paralel
-      const [statsRes, whStatsRes, txRecentRes, whRecentRes] = await Promise.all([
+      const [statsRes, whStatsRes, cargoStatsRes, txRecentRes, whRecentRes] = await Promise.all([
         transactionService.getDashboardStats(),
         warehouseService.getStatsSummary(),
+        cargoService.getStatsSummary(),
         transactionService.getRecentTransactions(),
         warehouseService.getRecent(),
       ]);
@@ -120,6 +122,7 @@ export default function Dashboard() {
       }
 
       setWarehouseStats(whStatsRes.success ? whStatsRes.data : null);
+      setCargoStats(cargoStatsRes.success ? cargoStatsRes.data : null);
 
       // İşlem + antrepo birleşik liste: her satırın "son durum tarihi"ne göre en güncel
       // üstte; eşit tarihte en son girilen (createdAt) üstte. İlk 10 alınır, taşan atılır.
@@ -146,6 +149,7 @@ export default function Dashboard() {
       handleError(err, setError, "Dashboard - İşlemler yüklenirken", "İşlemler yüklenirken bir hata oluştu.");
       setStats(null);
       setWarehouseStats(null);
+      setCargoStats(null);
       setRecentItems([]);
     } finally {
       setLoading(false);
@@ -197,7 +201,7 @@ export default function Dashboard() {
             transition: 'grid-template-columns 400ms ease-in-out',
           } : {}}
         >
-          <Stats stats={stats} warehouseStats={warehouseStats} loading={loading} courierExpanded={courierExpanded} />
+          <Stats stats={stats} warehouseStats={warehouseStats} cargoStats={cargoStats} loading={loading} courierExpanded={courierExpanded} />
           <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
             <CourierTrackingCard
               expanded={courierExpanded}
@@ -207,8 +211,8 @@ export default function Dashboard() {
           </AnimatedSection>
         </div>
 
-        {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik */}
-        <AnimatedSection delay={200} shouldAnimate={shouldAnimateSections}>
+        {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik (kurye bölümünden sonra) */}
+        <AnimatedSection delay={600} shouldAnimate={shouldAnimateSections}>
           <RecentActivityTable
             transactions={recentItems}
             loading={loading}

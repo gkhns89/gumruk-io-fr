@@ -54,7 +54,7 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpanded = false }) {
+const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, courierExpanded = false }) {
   const navigate = useNavigate();
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
@@ -200,6 +200,18 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
       },
     },
   ];
+
+  // Yoldaki Yükler (cargo TRACKING) — araç tipi kırılımı; yalnızca sayısı > 0 olanlar gösterilir
+  const trackingByVehicle = cargoStats?.byStatusAndVehicle?.TRACKING || {};
+  const cargoVehicleOrder = [
+    { key: "AIRPLANE", icon: "flight", label: "Uçak" },
+    { key: "SHIP", icon: "directions_boat", label: "Gemi" },
+    { key: "TRUCK", icon: "local_shipping", label: "Kamyon" },
+  ];
+  const trackingVehicles = cargoVehicleOrder
+    .map((v) => ({ ...v, value: trackingByVehicle[v.key] || 0 }))
+    .filter((v) => v.value > 0);
+  const trackingTotal = cargoVehicleOrder.reduce((sum, v) => sum + (trackingByVehicle[v.key] || 0), 0);
 
   const getColorClasses = (color) => {
     // Constants'dan status rengini bul
@@ -426,25 +438,85 @@ const Stats = memo(function Stats({ stats, warehouseStats, loading, courierExpan
         </div>
       </div>
 
-      {/* Antrepo grubu — işlemlerden net ayrılmış, kendini belli eden panel */}
-      <div className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 bg-indigo-50/40 dark:bg-indigo-900/10 p-3 md:p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400 text-xl">warehouse</span>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-            Antrepo
-          </h3>
-          <div className="flex-1 h-px bg-indigo-200 dark:bg-indigo-800/50" />
+      {/* Antrepo (sol %50) + Yoldaki Yükler (sağ %50) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        {/* Antrepo grubu — üst kartlardan sonra belirir */}
+        <div
+          style={{ animationDelay: '700ms' }}
+          className={`rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 bg-indigo-50/40 dark:bg-indigo-900/10 p-3 md:p-4 ${shouldAnimate ? 'animate-fade-slide-up' : 'opacity-0'}`}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400 text-xl">warehouse</span>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+              Antrepo
+            </h3>
+            <div className="flex-1 h-px bg-indigo-200 dark:bg-indigo-800/50" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:gap-4 lg:gap-6">
+            {warehouseData.map((stat, i) => (
+              <StatCard
+                key={`wh-${stat.label}`}
+                stat={stat}
+                index={statsData.length + i}
+                colors={stat.colors}
+                shouldPlayAnimation={shouldAnimate}
+              />
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:gap-4 lg:gap-6">
-          {warehouseData.map((stat, i) => (
-            <StatCard
-              key={`wh-${stat.label}`}
-              stat={stat}
-              index={statsData.length + i}
-              colors={stat.colors}
-              shouldPlayAnimation={shouldAnimate}
-            />
-          ))}
+
+        {/* Yoldaki Yükler grubu — antrepodan sonra belirir */}
+        <div
+          style={{ animationDelay: '1000ms' }}
+          className={`rounded-2xl border-2 border-dashed border-teal-200 dark:border-teal-800/50 bg-teal-50/40 dark:bg-teal-900/10 p-3 md:p-4 flex flex-col ${shouldAnimate ? 'animate-fade-slide-up' : 'opacity-0'}`}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="material-symbols-outlined text-teal-500 dark:text-teal-400 text-xl">local_shipping</span>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-teal-600 dark:text-teal-300">
+              Yoldaki Yükler
+            </h3>
+            <div className="flex-1 h-px bg-teal-200 dark:bg-teal-800/50" />
+          </div>
+
+          <div
+            onClick={() => navigate("/cargo?status=TRACKING")}
+            role="button"
+            title="Yoldaki yükleri listede gör"
+            className="relative overflow-hidden flex flex-col flex-1 rounded-2xl bg-teal-50 dark:bg-teal-900/20 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md cursor-pointer transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-xl"
+          >
+            <div className="p-4 md:p-5 flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium opacity-90 text-text-main">Yolda</p>
+                <span className="material-symbols-outlined text-lg md:text-xl text-teal-600 dark:text-teal-400">route</span>
+              </div>
+              {loading ? (
+                <div className="h-8 md:h-10 flex items-center">
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+                </div>
+              ) : (
+                <p className="tracking-light text-2xl md:text-3xl font-bold leading-tight text-teal-700 dark:text-teal-300">
+                  {trackingTotal}
+                </p>
+              )}
+            </div>
+
+            {/* Araç tipi kırılımı — yalnızca sayısı > 0 olanlar */}
+            {!loading && trackingVehicles.length > 0 && (
+              <div className="relative z-10 flex border-t border-gray-300/60 dark:border-gray-600/60">
+                {trackingVehicles.map((v, i) => (
+                  <button
+                    key={v.key}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/cargo?status=TRACKING&vehicleType=${v.key}`); }}
+                    title={`${v.label} (yolda) — listede gör`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 bg-teal-100/70 dark:bg-teal-900/30 hover:bg-teal-200/70 dark:hover:bg-teal-800/40 transition-colors ${i > 0 ? "border-l border-gray-300/60 dark:border-gray-600/60" : ""}`}
+                  >
+                    <span className="material-symbols-outlined text-base text-teal-700 dark:text-teal-300">{v.icon}</span>
+                    <span className="text-xs font-bold text-teal-800 dark:text-teal-300">{v.value}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

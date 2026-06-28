@@ -49,6 +49,19 @@ export const cargoService = {
   },
 
   /**
+   * Dashboard sayım özeti (durum × araç tipi)
+   */
+  getStatsSummary: async () => {
+    try {
+      const response = await axiosInstance.get('/cargo/stats/summary');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CargoService - getStatsSummary', error);
+      return { success: false, error: error.response?.data?.error || 'Yük özeti alınamadı' };
+    }
+  },
+
+  /**
    * Dashboard için son aktif cargo (COMPLETED hariç, TRACKING önce, LIMIT 10)
    */
   getRecentCargo: async () => {

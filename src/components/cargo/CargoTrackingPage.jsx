@@ -351,6 +351,20 @@ export default function CargoTrackingPage() {
     }
   }, [searchParams, cargo, setSearchParams]);
 
+  // Dashboard "Yoldaki Yükler" kartından "/cargo?status=...&vehicleType=..." ile gelindiğinde filtreleri uygula
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const vehicleType = searchParams.get('vehicleType');
+    if (status || vehicleType) {
+      if (status) setFilters((prev) => ({ ...prev, status }));
+      if (vehicleType) setSelectedVehicleType(vehicleType);
+      const next = new URLSearchParams(searchParams);
+      next.delete('status');
+      next.delete('vehicleType');
+      setSearchParams(next, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Render pagination buttons with ellipsis
   const renderPaginationButtons = () => {
     const buttons = [];
