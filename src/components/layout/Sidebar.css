@@ -1,23 +1,38 @@
-/* Custom scrollbar for sidebar navigation */
+/* Tema dostu, ince ve şeffaf-track scrollbar.
+   Track şeffaf olduğu için sidebar boyunca "ortadan bölen" şerit oluşmaz;
+   thumb yalnızca gerektiğinde, hafifçe görünür. */
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #d1d5db #f3f4f6;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent; /* thumb, track */
 }
 
 .sidebar-scroll::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-track {
-  background: #f3f4f6;
-  border-radius: 3px;
+  background: transparent;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.4); /* slate-400 @ ~40% */
+  border-radius: 9999px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: rgba(100, 116, 139, 0.65); /* slate-500 */
+}
+
+/* Koyu tema — thumb daha koyu/yumuşak, track yine şeffaf */
+.dark .sidebar-scroll {
+  scrollbar-color: rgba(71, 85, 105, 0.6) transparent;
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.55); /* slate-600 */
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8); /* slate-500 */
 }

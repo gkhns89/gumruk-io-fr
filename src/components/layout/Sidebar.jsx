@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Link, useLocation } from "react-router-dom";
 import AuthedImage from "../common/AuthedImage";
+import { getVisibleManagementItems } from "./menuConfig";
 import "./Sidebar.css";
 
 export default function Sidebar() {
@@ -58,120 +59,15 @@ export default function Sidebar() {
       : []),
   ];
 
-  // Yönetim menüsü - BROKER_ADMIN için
-  const managementItems = [
-    {
-      icon: "verified",
-      label: "Vekalet Yönetimi",
-      path: "/management/agreements",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "corporate_fare",
-      label: "Müşteri Firmaları",
-      path: "/management/clients",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "group",
-      label: "Çalışan Yönetimi",
-      path: "/management/employees",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "two_wheeler",
-      label: "Kurye Yönetimi",
-      path: "/management/couriers",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "domain",
-      label: "Firma Ayarları",
-      path: "/company-settings",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "account_balance",
-      label: "Abonelik & Ödeme",
-      path: "/payment/submit",
-      active: true,
-      roles: ['BROKER_ADMIN', 'BROKER_USER'],
-      condition: (user) => user?.isPaymentResponsible === true
-    },
-    {
-      icon: "assessment",
-      label: "Raporlar",
-      path: "/management/reports",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "manage_accounts",
-      label: "Session Yönetimi",
-      path: "/session-management",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-    {
-      icon: "payments",
-      label: "Ödeme Yönetimi",
-      path: "/management/payments",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-    {
-      icon: "subscriptions",
-      label: "Abonelik Yönetimi",
-      path: "/management/broker-subscriptions",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-    {
-      icon: "library_add",
-      label: "Hizmet Kataloğu",
-      path: "/management/addon-catalog",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-    {
-      icon: "workspace_premium",
-      label: "Plan Yönetimi",
-      path: "/management/plans",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-    {
-      icon: "task_alt",
-      label: "Feedback Taskları",
-      path: "/management/feedback-tasks",
-      active: true,
-      roles: ['SUPER_ADMIN']
-    },
-  ];
-
+  // Yönetim menüsü öğeleri ortak config'ten gelir (MobileMenu ile aynı kaynak)
   // Kullanıcının yönetim menüsüne erişimi var mı?
   // Not: isPaymentResponsible BROKER_USER da yönetim altındaki "Abonelik & Ödeme"ye erişebilir
   const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN'
     || user?.globalRole === 'SUPER_ADMIN'
     || (user?.globalRole === 'BROKER_USER' && user?.isPaymentResponsible === true);
 
-  // Aktif yönetim menü öğelerini filtrele
-  const visibleManagementItems = managementItems.filter(item => {
-    // Rol kontrolü
-    if (!item.roles.includes(user?.globalRole)) {
-      return false;
-    }
-    // Ek koşul kontrolü (varsa)
-    if (item.condition && !item.condition(user)) {
-      return false;
-    }
-    return true;
-  });
+  // Aktif yönetim menü öğelerini filtrele (rol + koşul)
+  const visibleManagementItems = getVisibleManagementItems(user);
 
   // Dinamik buton görünürlüğü hesaplama
   useEffect(() => {

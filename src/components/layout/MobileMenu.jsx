@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { feedbackService } from "../../api/feedbackService";
 import FeedbackModal from "../common/FeedbackModal";
 import AuthedImage from "../common/AuthedImage";
+import { getVisibleManagementItems } from "./menuConfig";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -53,70 +54,13 @@ export default function MobileMenu({ isOpen, onClose }) {
     ...(isSuperAdmin ? [{ icon: "settings", label: "Ayarlar", path: "/settings" }] : []),
   ];
 
-  const managementItems = [
-    {
-      icon: "verified",
-      label: "Vekalet Yönetimi",
-      path: "/management/agreements",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "corporate_fare",
-      label: "Müşteri Firmaları",
-      path: "/management/clients",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "group",
-      label: "Çalışan Yönetimi",
-      path: "/management/employees",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "two_wheeler",
-      label: "Kurye Yönetimi",
-      path: "/management/couriers",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "domain",
-      label: "Firma Ayarları",
-      path: "/company-settings",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-    {
-      icon: "account_balance",
-      label: "Abonelik & Ödeme",
-      path: "/payment/submit",
-      active: true,
-      roles: ['BROKER_ADMIN', 'BROKER_USER'],
-      condition: (u) => u?.isPaymentResponsible === true
-    },
-    {
-      icon: "assessment",
-      label: "Raporlar",
-      path: "/management/reports",
-      active: true,
-      roles: ['BROKER_ADMIN', 'SUPER_ADMIN']
-    },
-  ];
-
   const bottomMenuItems = [
     { icon: "headset_mic", label: "İletişim", path: "/contact" },
     { icon: "help_center", label: "Yardım", path: "/help" },
   ];
 
-  // Aktif yönetim menü öğelerini filtrele (condition desteği dahil)
-  const visibleManagementItems = managementItems.filter(item => {
-    if (!item.roles.includes(user?.globalRole)) return false;
-    if (item.condition && !item.condition(user)) return false;
-    return true;
-  });
+  // Yönetim menüsü öğeleri ortak config'ten (Sidebar ile birebir aynı, rol + koşula göre)
+  const visibleManagementItems = getVisibleManagementItems(user);
 
   // isPaymentResponsible BROKER_USER da yönetim bölümüne erişebilir
   const hasManagementAccess = visibleManagementItems.length > 0;
@@ -184,7 +128,7 @@ export default function MobileMenu({ isOpen, onClose }) {
         )}
 
         {/* Main Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4">
+        <nav className="flex-1 overflow-y-auto p-4 sidebar-scroll">
           {/* Ana Menü Öğeleri */}
           <div className="space-y-1">
             {menuItems.map((item, index) => {
