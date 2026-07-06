@@ -68,14 +68,41 @@ export const paymentService = {
     return response.data;
   },
 
-  // Dekontu auth header'ı ile blob olarak indirir ve geçici bir object URL döner.
+  // Dekontu auth header'ı ile blob olarak indirir ve DEKONT_firma-tarih.uzanti adıyla kaydeder.
   // Not: Düz <a href> ile açmak Authorization: Bearer token'ını göndermediği için
   // backend isteği anonim sayıp 403 döner; bu yüzden axiosInstance üzerinden çekiyoruz.
   downloadReceipt: async (id) => {
-    const response = await axiosInstance.get(`/payments/${id}/receipt`, {
-      responseType: 'blob',
-    });
-    return window.URL.createObjectURL(response.data);
+    try {
+      const response = await axiosInstance.get(`/payments/${id}/receipt`, {
+        responseType: 'blob',
+      });
+
+      // Dosya adını backend'in Content-Disposition header'ından al
+      let filename = `dekont-${id}`;
+      const cd = response.headers?.['content-disposition'];
+      if (cd) {
+        const star = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+        const plain = /filename="?([^";]+)"?/i.exec(cd);
+        if (star) {
+          filename = decodeURIComponent(star[1]);
+        } else if (plain) {
+          filename = plain[1].trim();
+        }
+      }
+
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Dekont indirilemedi' };
+    }
   },
 
   // ===== KISITLAMA DURUMU =====

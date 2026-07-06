@@ -156,12 +156,9 @@ export default function PaymentSubmitPage() {
   };
 
   const handleViewReceipt = async (id) => {
-    try {
-      const url = await paymentService.downloadReceipt(id);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-    } catch {
-      showError('Dekont açılamadı');
+    const result = await paymentService.downloadReceipt(id);
+    if (!result.success) {
+      showError(result.error || 'Dekont indirilemedi');
     }
   };
 
