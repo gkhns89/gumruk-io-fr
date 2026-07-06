@@ -340,11 +340,15 @@ const AgreementsPage = () => {
                               <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
-                                    <span className="material-symbols-outlined text-primary mr-3">corporate_fare</span>
-                                    <div>
-                                      <div className="text-sm font-medium text-text-main">{agreement.clientCompany?.name}</div>
+                                    <span className="material-symbols-outlined text-primary mr-3 flex-shrink-0">corporate_fare</span>
+                                    <div className="min-w-0 max-w-[52ch]">
+                                      <div className="text-sm font-medium text-text-main truncate" title={agreement.clientCompany?.name}>
+                                        {agreement.clientCompany?.name}
+                                      </div>
                                       {agreement.clientCompany?.shortName && (
-                                        <div className="text-sm text-text-secondary">{agreement.clientCompany.shortName}</div>
+                                        <div className="text-sm text-text-secondary truncate" title={agreement.clientCompany.shortName}>
+                                          {agreement.clientCompany.shortName}
+                                        </div>
                                       )}
                                     </div>
                                   </div>

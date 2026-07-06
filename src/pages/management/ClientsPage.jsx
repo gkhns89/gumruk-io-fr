@@ -331,10 +331,14 @@ const ClientsPage = () => {
                                         </div>
                                       }
                                     />
-                                    <div className="min-w-0">
-                                      <div className="text-sm font-medium text-text-main">{client.name}</div>
+                                    <div className="min-w-0 max-w-[52ch]">
+                                      <div className="text-sm font-medium text-text-main truncate" title={client.name}>
+                                        {client.name}
+                                      </div>
                                       {client.shortName && (
-                                        <div className="text-sm text-text-secondary">{client.shortName}</div>
+                                        <div className="text-sm text-text-secondary truncate" title={client.shortName}>
+                                          {client.shortName}
+                                        </div>
                                       )}
                                     </div>
                                   </div>
