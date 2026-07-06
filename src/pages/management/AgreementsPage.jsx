@@ -7,6 +7,7 @@ import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import MainLayout from '../../components/layout/MainLayout';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 
 const AgreementsPage = () => {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ const AgreementsPage = () => {
 
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [scanning, setScanning] = useState(false);
 
   const brokerCompanyId = isSuperAdmin ? selectedBroker?.id : user?.company?.id;
 
@@ -75,6 +77,23 @@ const AgreementsPage = () => {
     loadAgreements();
   }, [loadAgreements]);
 
+  // Kayıp belge taraması (SUPER_ADMIN): dosyası diskte olmayan vekalet yollarını temizler
+  const handleReconcile = async () => {
+    setScanning(true);
+    const result = await agencyAgreementService.reconcileDocuments();
+    setScanning(false);
+    if (result.success) {
+      if (result.clearedCount > 0) {
+        showSuccess(`${result.clearedCount} vekaletin kayıp belge kaydı temizlendi. İlgili firmalar belgeyi yeniden yükleyebilir.`);
+      } else {
+        showSuccess('Tüm vekalet belgeleri yerinde — temizlenecek kayıt bulunamadı.');
+      }
+      loadAgreements();
+    } else {
+      showError(result.error || 'Belge taraması yapılamadı');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', border: 'border-green-300 dark:border-green-700', label: 'Aktif' },
@@ -112,17 +131,32 @@ const AgreementsPage = () => {
                   : 'Müşteri firmalarınızla olan vekalet anlaşmalarınızı yönetin'}
               </p>
             </div>
-            {(!isSuperAdmin || selectedBroker) && (
-              <button
-                onClick={() => !isAddBlocked && setShowCreateModal(true)}
-                disabled={isAddBlocked}
-                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : 'Yeni vekalet ekle'}
-              >
-                <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'add'}</span>
-                Yeni Vekalet Ekle
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {isSuperAdmin && (
+                <button
+                  onClick={handleReconcile}
+                  disabled={scanning}
+                  className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Tüm vekaletleri tarar; dosyası sunucuda bulunamayan kayıtların belge yolunu temizler"
+                >
+                  <span className={`material-symbols-outlined ${scanning ? 'animate-spin' : ''}`}>
+                    {scanning ? 'progress_activity' : 'fact_check'}
+                  </span>
+                  {scanning ? 'Taranıyor...' : 'Eksik Belgeleri Tara'}
+                </button>
+              )}
+              {(!isSuperAdmin || selectedBroker) && (
+                <button
+                  onClick={() => !isAddBlocked && setShowCreateModal(true)}
+                  disabled={isAddBlocked}
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : 'Yeni vekalet ekle'}
+                >
+                  <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'add'}</span>
+                  Yeni Vekalet Ekle
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -285,6 +319,8 @@ const AgreementsPage = () => {
                         <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
                           {filteredAgreements.map((agreement) => {
                             const badge = getStatusBadge(agreement.status);
+                            const needsDocument = (agreement.status === 'ACTIVE' || agreement.status === 'PENDING')
+                              && agreement.documentExists === false;
                             let remainingDays = null;
                             if (agreement.status === 'ACTIVE' && agreement.endDate) {
                               const today = new Date();
@@ -305,9 +341,20 @@ const AgreementsPage = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
-                                    {badge.label}
-                                  </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
+                                      {badge.label}
+                                    </span>
+                                    {needsDocument && (
+                                      <span
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                                        title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">error</span>
+                                        Belge eksik
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                                   {agreement.startDate ? new Date(agreement.startDate).toLocaleDateString('tr-TR') : '-'}

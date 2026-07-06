@@ -62,6 +62,23 @@ export const agencyAgreementService = {
     }
   },
 
+  // Kayıp belge temizliği (SUPER_ADMIN): dosyası diskte olmayan tüm vekalet yollarını temizler
+  reconcileDocuments: async () => {
+    try {
+      const response = await axiosInstance.post('/agreements/reconcile-documents');
+      return {
+        success: true,
+        clearedCount: response.data.clearedCount || 0,
+        cleared: response.data.cleared || []
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Belge taraması yapılamadı',
+      };
+    }
+  },
+
   // Anlaşma oluştur (INACTIVE)
   createAgreement: async (agreementData) => {
     try {

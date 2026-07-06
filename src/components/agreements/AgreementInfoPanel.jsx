@@ -107,6 +107,10 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
   // Anlaşma varsa
   const badge = getStatusBadge(agreement.agreementStatus);
   const isActive = agreement.agreementStatus === 'ACTIVE';
+  // Belge dosyası sunucuda var mı? (documentExists tanımsızsa geriye dönük uyumluluk için "var" say)
+  const hasDocumentFile = agreement.documentPath && agreement.documentExists !== false;
+  const documentMissing = (agreement.agreementStatus === 'ACTIVE' || agreement.agreementStatus === 'PENDING')
+    && agreement.documentExists === false;
 
   // Kalan süre hesapla (sadece ACTIVE için)
   let remainingDays = null;
@@ -201,8 +205,8 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
           </div>
         </div>
 
-        {/* Belge indirme butonu */}
-        {agreement.documentPath && (
+        {/* Belge indirme butonu / eksik belge uyarısı */}
+        {hasDocumentFile ? (
           <button
             type="button"
             onClick={handleDownloadDocument}
@@ -213,7 +217,17 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
             <span className="material-symbols-outlined text-lg">download</span>
             Belge İndir
           </button>
-        )}
+        ) : documentMissing ? (
+          <span
+            className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700 ${
+              compact ? 'w-full mt-3' : 'w-full lg:w-auto lg:flex-shrink-0'
+            } whitespace-nowrap`}
+            title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+          >
+            <span className="material-symbols-outlined text-base">error</span>
+            Belge eksik — yeniden yükleyin
+          </span>
+        ) : null}
       </div>
     </div>
   );
