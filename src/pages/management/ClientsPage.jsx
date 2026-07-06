@@ -7,7 +7,10 @@ import ViewClientModal from '../../components/common/ViewClientModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 import ImageUploadField from '../../components/common/ImageUploadField';
+import Pagination from '../../components/common/Pagination';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
+
+const PAGE_SIZE = 10;
 
 const ClientsPage = () => {
   const { user } = useAuth();
@@ -31,6 +34,7 @@ const ClientsPage = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   const [logoBust, setLogoBust] = useState(0);
+  const [page, setPage] = useState(1);
 
   const brokerCompanyId = isSuperAdmin ? selectedBroker?.id : user?.company?.id;
 
@@ -83,6 +87,11 @@ const ClientsPage = () => {
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.shortName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Arama/firma değişince ilk sayfaya dön
+  useEffect(() => { setPage(1); }, [searchTerm, brokerCompanyId]);
+
+  const pagedClients = filteredClients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const getAgreementStatusBadge = (agreementStatus) => {
     const badges = {
@@ -283,117 +292,110 @@ const ClientsPage = () => {
                   </div>
                 )}
 
-                {/* Clients Grid */}
+                {/* Clients Table */}
                 {!loading && !error && filteredClients.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredClients.map((client) => {
-                      const agreementBadge = getAgreementStatusBadge(client.agreementStatus);
-                      const hasAgreement = client.agreementId != null;
+                  <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 transition-colors">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">Müşteri Firma</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Vekalet Durumu</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Başlangıç</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Bitiş</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
+                          {pagedClients.map((client) => {
+                            const agreementBadge = getAgreementStatusBadge(client.agreementStatus);
+                            const hasAgreement = client.agreementId != null;
+                            const needsDocument = (client.agreementStatus === 'ACTIVE' || client.agreementStatus === 'PENDING')
+                              && client.documentExists === false;
 
-                      return (
-                        <div
-                          key={client.id}
-                          className="bg-white dark:bg-background-dark rounded-xl shadow-sm hover:shadow-md transition-all p-6"
-                        >
-                          {/* Client Header */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <ImageUploadField
-                                compact
-                                shape="circle"
-                                size={48}
-                                currentUrl={client.logoUrl}
-                                bustKey={`client-${client.id}-${logoBust}`}
-                                uploadFn={(file) => companyService.uploadCompanyLogo(client.id, file)}
-                                onUploaded={() => { setLogoBust((n) => n + 1); loadClients(); }}
-                                fallback={
-                                  <div className="flex items-center justify-center h-full w-full bg-primary/10 dark:bg-primary/20">
-                                    <span className="material-symbols-outlined text-primary text-2xl">
-                                      corporate_fare
+                            return (
+                              <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center gap-3">
+                                    <ImageUploadField
+                                      compact
+                                      shape="circle"
+                                      size={40}
+                                      currentUrl={client.logoUrl}
+                                      bustKey={`client-${client.id}-${logoBust}`}
+                                      uploadFn={(file) => companyService.uploadCompanyLogo(client.id, file)}
+                                      onUploaded={() => { setLogoBust((n) => n + 1); loadClients(); }}
+                                      fallback={
+                                        <div className="flex items-center justify-center h-full w-full bg-primary/10 dark:bg-primary/20">
+                                          <span className="material-symbols-outlined text-primary text-xl">corporate_fare</span>
+                                        </div>
+                                      }
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-medium text-text-main">{client.name}</div>
+                                      {client.shortName && (
+                                        <div className="text-sm text-text-secondary">{client.shortName}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${agreementBadge.bg} ${agreementBadge.text} ${agreementBadge.border}`}>
+                                      <span className="material-symbols-outlined text-sm">{hasAgreement ? 'verified' : 'cancel'}</span>
+                                      {agreementBadge.label}
                                     </span>
+                                    {needsDocument && (
+                                      <span
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                                        title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">error</span>
+                                        Belge eksik
+                                      </span>
+                                    )}
                                   </div>
-                                }
-                              />
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                  {client.name}
-                                </h3>
-                                {client.shortName && (
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">{client.shortName}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Agreement Status */}
-                          <div className="mb-4">
-                            <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${agreementBadge.bg} ${agreementBadge.text} ${agreementBadge.border}`}>
-                              <span className="material-symbols-outlined text-sm">
-                                {hasAgreement ? 'verified' : 'cancel'}
-                              </span>
-                              {agreementBadge.label}
-                            </span>
-                          </div>
-
-                          {/* Description */}
-                          {client.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                              {client.description}
-                            </p>
-                          )}
-
-                          {/* Agreement Dates */}
-                          {hasAgreement && client.agreementStartDate && (
-                            <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-4 transition-colors">
-                              <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div>
-                                  <p className="text-gray-500 dark:text-gray-400 mb-1">Başlangıç</p>
-                                  <p className="text-gray-800 dark:text-gray-200 font-semibold">
-                                    {new Date(client.agreementStartDate).toLocaleDateString('tr-TR')}
-                                  </p>
-                                </div>
-                                {client.agreementEndDate && (
-                                  <div>
-                                    <p className="text-gray-500 dark:text-gray-400 mb-1">Bitiş</p>
-                                    <p className="text-gray-800 dark:text-gray-200 font-semibold">
-                                      {new Date(client.agreementEndDate).toLocaleDateString('tr-TR')}
-                                    </p>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
+                                  {client.agreementStartDate ? new Date(client.agreementStartDate).toLocaleDateString('tr-TR') : '-'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
+                                  {client.agreementEndDate ? new Date(client.agreementEndDate).toLocaleDateString('tr-TR') : '-'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => { setSelectedClient(client); setShowViewModal(true); }}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 text-primary bg-primary/10 dark:bg-primary/20 rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
+                                      title="Detayları Görüntüle"
+                                    >
+                                      <span className="material-symbols-outlined text-lg">visibility</span>
+                                      Detay
+                                    </button>
+                                    {!hasAgreement && (
+                                      <button
+                                        onClick={() => { setSelectedClient(client); setShowCreateAgreementModal(true); }}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
+                                        title="Vekalet Ekle"
+                                      >
+                                        <span className="material-symbols-outlined text-lg">add_circle</span>
+                                        Vekalet
+                                      </button>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 transition-colors">
-                            <button
-                              onClick={() => {
-                                setSelectedClient(client);
-                                setShowViewModal(true);
-                              }}
-                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary bg-primary/10 dark:bg-primary/20 rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                              title="Detayları Görüntüle"
-                            >
-                              <span className="material-symbols-outlined text-lg">visibility</span>
-                              Detay
-                            </button>
-                            {!hasAgreement && (
-                              <button
-                                onClick={() => {
-                                  setSelectedClient(client);
-                                  setShowCreateAgreementModal(true);
-                                }}
-                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
-                                title="Vekalet Ekle"
-                              >
-                                <span className="material-symbols-outlined text-lg">add_circle</span>
-                                Vekalet
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination
+                      currentPage={page}
+                      pageSize={PAGE_SIZE}
+                      totalItems={filteredClients.length}
+                      onPageChange={setPage}
+                    />
                   </div>
                 )}
               </>

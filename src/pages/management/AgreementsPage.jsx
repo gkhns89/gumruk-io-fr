@@ -6,8 +6,11 @@ import { companyService } from '../../api/companyService';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import MainLayout from '../../components/layout/MainLayout';
+import Pagination from '../../components/common/Pagination';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+
+const PAGE_SIZE = 10;
 
 const AgreementsPage = () => {
   const { user } = useAuth();
@@ -32,6 +35,7 @@ const AgreementsPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [page, setPage] = useState(1);
 
   const brokerCompanyId = isSuperAdmin ? selectedBroker?.id : user?.company?.id;
 
@@ -111,6 +115,11 @@ const AgreementsPage = () => {
       agreement.clientCompany?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  // Filtre/arama/firma değişince ilk sayfaya dön
+  useEffect(() => { setPage(1); }, [statusFilter, searchTerm, brokerCompanyId]);
+
+  const pagedAgreements = filteredAgreements.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <MainLayout>
@@ -317,7 +326,7 @@ const AgreementsPage = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
-                          {filteredAgreements.map((agreement) => {
+                          {pagedAgreements.map((agreement) => {
                             const badge = getStatusBadge(agreement.status);
                             const needsDocument = (agreement.status === 'ACTIVE' || agreement.status === 'PENDING')
                               && agreement.documentExists === false;
@@ -386,6 +395,12 @@ const AgreementsPage = () => {
                         </tbody>
                       </table>
                     </div>
+                    <Pagination
+                      currentPage={page}
+                      pageSize={PAGE_SIZE}
+                      totalItems={filteredAgreements.length}
+                      onPageChange={setPage}
+                    />
                   </div>
                 )}
               </>
