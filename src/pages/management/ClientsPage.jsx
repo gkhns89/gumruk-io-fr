@@ -331,7 +331,7 @@ const ClientsPage = () => {
                                         </div>
                                       }
                                     />
-                                    <div className="min-w-0 max-w-[45ch]">
+                                    <div className="min-w-0 max-w-[40ch]">
                                       <div className="text-sm font-medium text-text-main truncate" title={client.name}>
                                         {client.name}
                                       </div>

@@ -341,7 +341,7 @@ const AgreementsPage = () => {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
                                     <span className="material-symbols-outlined text-primary mr-3 flex-shrink-0">corporate_fare</span>
-                                    <div className="min-w-0 max-w-[45ch]">
+                                    <div className="min-w-0 max-w-[40ch]">
                                       <div className="text-sm font-medium text-text-main truncate" title={agreement.clientCompany?.name}>
                                         {agreement.clientCompany?.name}
                                       </div>

@@ -37,41 +37,44 @@ const Pagination = ({ currentPage, pageSize, totalItems, onPageChange }) => {
       <p className="text-sm text-text-secondary">
         <span className="font-semibold text-text-main">{start}-{end}</span> / {totalItems}
       </p>
-      <div className="flex items-center gap-1">
+      {/* Sabit genişlikli kutu: oklar kenarlarda sabit, sayılar ortada esner */}
+      <div className="flex items-center justify-between gap-1 w-[300px] max-w-full">
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`${btnBase} text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
+          className={`${btnBase} flex-shrink-0 text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
           aria-label="Önceki sayfa"
         >
           <span className="material-symbols-outlined text-lg">chevron_left</span>
         </button>
 
-        {items.map((it) =>
-          it.ellipsis ? (
-            <span key={it.key} className="px-2 text-text-secondary select-none">…</span>
-          ) : (
-            <button
-              key={it.key}
-              type="button"
-              onClick={() => onPageChange(it.page)}
-              className={`${btnBase} ${
-                it.page === currentPage
-                  ? 'bg-primary text-white'
-                  : 'text-text-main hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              {it.page}
-            </button>
-          )
-        )}
+        <div className="flex-1 flex items-center justify-center gap-1 overflow-hidden">
+          {items.map((it) =>
+            it.ellipsis ? (
+              <span key={it.key} className="px-2 text-text-secondary select-none">…</span>
+            ) : (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => onPageChange(it.page)}
+                className={`${btnBase} ${
+                  it.page === currentPage
+                    ? 'bg-primary text-white'
+                    : 'text-text-main hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                {it.page}
+              </button>
+            )
+          )}
+        </div>
 
         <button
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`${btnBase} text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
+          className={`${btnBase} flex-shrink-0 text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
           aria-label="Sonraki sayfa"
         >
           <span className="material-symbols-outlined text-lg">chevron_right</span>
