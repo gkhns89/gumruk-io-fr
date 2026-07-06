@@ -60,6 +60,8 @@ export default function PaymentSubmitPage() {
   const [balanceHistory, setBalanceHistory] = useState([]);
   const transferFormRef = useRef(null);
   const addonsSectionRef = useRef(null);
+  const receiptInputRef = useRef(null);
+  const [reuploadTargetId, setReuploadTargetId] = useState(null);
 
   const load = useCallback(async () => {
     setDataLoading(true);
@@ -155,11 +157,37 @@ export default function PaymentSubmitPage() {
     });
   };
 
-  const handleViewReceipt = async (id) => {
+  const handleReceiptView = async (id) => {
+    const result = await paymentService.viewReceipt(id);
+    if (!result.success) {
+      showError(result.error || 'Dekont açılamadı');
+    }
+  };
+
+  const handleReceiptDownload = async (id) => {
     const result = await paymentService.downloadReceipt(id);
     if (!result.success) {
       showError(result.error || 'Dekont indirilemedi');
     }
+  };
+
+  const triggerReupload = (id) => {
+    setReuploadTargetId(id);
+    receiptInputRef.current?.click();
+  };
+
+  const handleReuploadFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !reuploadTargetId) return;
+    const result = await paymentService.replaceReceipt(reuploadTargetId, file);
+    if (result.success) {
+      showSuccess('Dekont yeniden yüklendi');
+      load();
+    } else {
+      showError(result.error || 'Dekont yüklenemedi');
+    }
+    setReuploadTargetId(null);
   };
 
   const handleSubmit = async (e) => {
@@ -302,6 +330,14 @@ export default function PaymentSubmitPage() {
 
   return (
     <MainLayout>
+      {/* Kayıp dekont yeniden yükleme için gizli dosya girişi */}
+      <input
+        ref={receiptInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        className="hidden"
+        onChange={handleReuploadFileChange}
+      />
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Page Header */}
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
@@ -656,14 +692,46 @@ export default function PaymentSubmitPage() {
                               <div className="flex flex-col items-end gap-2">
                                 <p className="text-xs text-text-secondary">{fmt(p.submittedAt)}</p>
                                 {p.receiptFilePath && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleViewReceipt(p.id)}
-                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                                  >
-                                    <span className="material-symbols-outlined text-base">download</span>
-                                    Dekont
-                                  </button>
+                                  p.receiptExists ? (
+                                    <div className="flex items-center gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReceiptView(p.id)}
+                                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                      >
+                                        <span className="material-symbols-outlined text-base">visibility</span>
+                                        Görüntüle
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReceiptDownload(p.id)}
+                                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                      >
+                                        <span className="material-symbols-outlined text-base">download</span>
+                                        İndir
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                                        title="Dekont dosyası sunucuda bulunamadı"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">error</span>
+                                        Evrak eksik
+                                      </span>
+                                      {canSubmit && (
+                                        <button
+                                          type="button"
+                                          onClick={() => triggerReupload(p.id)}
+                                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                        >
+                                          <span className="material-symbols-outlined text-base">upload_file</span>
+                                          Yeniden Yükle
+                                        </button>
+                                      )}
+                                    </div>
+                                  )
                                 )}
                               </div>
                             </div>

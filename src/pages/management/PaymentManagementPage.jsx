@@ -99,7 +99,14 @@ export default function PaymentManagementPage() {
     setShowMethodForm(true);
   };
 
-  const handleViewReceipt = async (id) => {
+  const handleReceiptView = async (id) => {
+    const result = await paymentService.viewReceipt(id);
+    if (!result.success) {
+      showError(result.error || 'Dekont açılamadı');
+    }
+  };
+
+  const handleReceiptDownload = async (id) => {
     const result = await paymentService.downloadReceipt(id);
     if (!result.success) {
       showError(result.error || 'Dekont indirilemedi');
@@ -176,13 +183,34 @@ export default function PaymentManagementPage() {
                 </td>
                 <td className="py-3">
                   {p.receiptFilePath ? (
-                    <button
-                      type="button"
-                      onClick={() => handleViewReceipt(p.id)}
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-base">download</span>
-                    </button>
+                    p.receiptExists ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleReceiptView(p.id)}
+                          className="text-primary hover:text-primary/80"
+                          title="Görüntüle"
+                        >
+                          <span className="material-symbols-outlined text-base">visibility</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReceiptDownload(p.id)}
+                          className="text-primary hover:text-primary/80"
+                          title="İndir"
+                        >
+                          <span className="material-symbols-outlined text-base">download</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                        title="Dekont dosyası sunucuda bulunamadı"
+                      >
+                        <span className="material-symbols-outlined text-sm">error</span>
+                        Evrak eksik
+                      </span>
+                    )
                   ) : '-'}
                 </td>
                 {activeTab === 'pending' && (

@@ -105,6 +105,35 @@ export const paymentService = {
     }
   },
 
+  // Dekontu yeni sekmede görüntüler (inline). Content-Type doğru olduğu için tarayıcı render eder.
+  viewReceipt: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/payments/${id}/receipt`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(response.data);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Dekont açılamadı' };
+    }
+  },
+
+  // Kayıp dekontu yeniden yükler (SUPER_ADMIN veya ödeme sorumlusu Broker ADMIN).
+  replaceReceipt: async (id, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('receipt', file);
+      const response = await axiosInstance.post(`/payments/${id}/receipt`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error || 'Dekont yüklenemedi' };
+    }
+  },
+
   // ===== KISITLAMA DURUMU =====
 
   getRestrictionStatus: async () => {
