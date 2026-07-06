@@ -99,6 +99,17 @@ export default function PaymentManagementPage() {
     setShowMethodForm(true);
   };
 
+  const handleViewReceipt = async (id) => {
+    try {
+      const url = await paymentService.downloadReceipt(id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      // Sekme yükledikten sonra belleği serbest bırak
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch {
+      showError('Dekont açılamadı');
+    }
+  };
+
   const handleDeleteMethod = async (id) => {
     try {
       await paymentService.deletePaymentMethod(id);
@@ -169,13 +180,13 @@ export default function PaymentManagementPage() {
                 </td>
                 <td className="py-3">
                   {p.receiptFilePath ? (
-                    <a
-                      href={paymentService.downloadReceipt(p.id)}
-                      target="_blank" rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => handleViewReceipt(p.id)}
                       className="text-primary hover:underline flex items-center gap-1"
                     >
                       <span className="material-symbols-outlined text-base">download</span>
-                    </a>
+                    </button>
                   ) : '-'}
                 </td>
                 {activeTab === 'pending' && (

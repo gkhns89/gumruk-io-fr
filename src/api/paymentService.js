@@ -68,8 +68,14 @@ export const paymentService = {
     return response.data;
   },
 
-  downloadReceipt: (id) => {
-    return `${axiosInstance.defaults.baseURL}/payments/${id}/receipt`;
+  // Dekontu auth header'ı ile blob olarak indirir ve geçici bir object URL döner.
+  // Not: Düz <a href> ile açmak Authorization: Bearer token'ını göndermediği için
+  // backend isteği anonim sayıp 403 döner; bu yüzden axiosInstance üzerinden çekiyoruz.
+  downloadReceipt: async (id) => {
+    const response = await axiosInstance.get(`/payments/${id}/receipt`, {
+      responseType: 'blob',
+    });
+    return window.URL.createObjectURL(response.data);
   },
 
   // ===== KISITLAMA DURUMU =====

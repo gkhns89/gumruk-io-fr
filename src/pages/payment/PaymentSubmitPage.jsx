@@ -155,6 +155,16 @@ export default function PaymentSubmitPage() {
     });
   };
 
+  const handleViewReceipt = async (id) => {
+    try {
+      const url = await paymentService.downloadReceipt(id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch {
+      showError('Dekont açılamadı');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedMethodId || !amount) {
@@ -649,14 +659,14 @@ export default function PaymentSubmitPage() {
                               <div className="flex flex-col items-end gap-2">
                                 <p className="text-xs text-text-secondary">{fmt(p.submittedAt)}</p>
                                 {p.receiptFilePath && (
-                                  <a
-                                    href={paymentService.downloadReceipt(p.id)}
-                                    target="_blank" rel="noreferrer"
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewReceipt(p.id)}
                                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                   >
                                     <span className="material-symbols-outlined text-base">download</span>
                                     Dekont
-                                  </a>
+                                  </button>
                                 )}
                               </div>
                             </div>
