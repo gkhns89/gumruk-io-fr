@@ -1,5 +1,4 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
 
 export const agencyAgreementService = {
   // Aktif anlaşma kontrolü
@@ -173,18 +172,31 @@ export const agencyAgreementService = {
         { responseType: 'blob' }
       );
 
+      // Dosya adını backend'in Content-Disposition header'ından al (VEK_firma-tarih.uzanti)
+      let filename = `vekalet-${agreementId}`;
+      const cd = response.headers?.['content-disposition'];
+      if (cd) {
+        const star = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+        const plain = /filename="?([^";]+)"?/i.exec(cd);
+        if (star) {
+          filename = decodeURIComponent(star[1]);
+        } else if (plain) {
+          filename = plain[1].trim();
+        }
+      }
+
       // Blob'u dosya olarak indir
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `vekalet-${agreementId}.pdf`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
 
       return { success: true };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Belge indirilemedi',
