@@ -16,7 +16,7 @@
 export const INCLUDED_FEATURES = [
   "İthalat ve ihracat işlem takibi",
   "Canlı konteyner ve yük takibi",
-  "Depo giriş/çıkış takibi",
+  "Antrepo giriş/çıkış takibi",
   "Kurye ve evrak teslim takibi",
   "Vekalet ve müşteri firma yönetimi",
   "Raporlama ve cari hesap takibi",
