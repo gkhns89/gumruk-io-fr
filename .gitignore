@@ -32,3 +32,7 @@ claude-*
 *.sln
 *.sw?
 *.gitignore
+
+# Marka kiti — kaynak dosyalar repoda tutulmuyor.
+# Uygulamanın kullandığı görseller src/assets/brand/ altına kopyalanır ve takip edilir.
+src/assets/gumruk-io-sosyal-kit/
