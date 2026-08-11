@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
@@ -28,6 +28,9 @@ import FeedbackTasksPage from "./pages/management/FeedbackTasksPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
+
+// Tanıtım sayfası ana bundle'a girmesin — ziyaretçi uygulama kodunun tamamını indirmemeli
+const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
 
 // Protected Route Component with Role Support
 function ProtectedRoute({ children, requiredRole }) {
@@ -345,8 +348,22 @@ export default function App() {
         }
       />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Tanıtım sayfası — public, PublicRoute ile sarmalanmaz */}
+      <Route
+        path="/"
+        element={
+          <Suspense
+            fallback={
+              <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-navy">
+                <p className="text-text-secondary">Yükleniyor...</p>
+              </div>
+            }
+          >
+            <LandingPage />
+          </Suspense>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   );
