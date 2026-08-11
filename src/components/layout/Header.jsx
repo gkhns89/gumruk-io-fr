@@ -12,6 +12,8 @@ import ShipsGoRequestsBell from "../shipsgo/ShipsGoRequestsBell";
 import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
+import emblemLight from "../../assets/brand/emblem-light.png";
+import emblemDark from "../../assets/brand/emblem-dark.png";
 import FeedbackModal from "../common/FeedbackModal";
 import { feedbackService } from "../../api/feedbackService";
 
@@ -166,19 +168,16 @@ export default function Header() {
 
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center gap-2 lg:gap-3">
-            <svg
-              className="text-primary flex-shrink-0"
-              fill="currentColor"
-              height="28"
-              viewBox="0 0 48 48"
-              width="28"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z"
-                fill="currentColor"
-              />
-            </svg>
+            <img
+              src={emblemLight}
+              alt="Gümrük.io"
+              className="h-7 w-7 flex-shrink-0 dark:hidden"
+            />
+            <img
+              src={emblemDark}
+              alt="Gümrük.io"
+              className="hidden h-7 w-7 flex-shrink-0 dark:block"
+            />
             <h2
               className="text-text-main text-base lg:text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block truncate max-w-[150px] lg:max-w-none"
               title="All about customs clearance"

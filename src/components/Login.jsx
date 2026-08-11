@@ -3,6 +3,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "./common/ThemeToggle";
 import { getLoginProfile } from "../utils/imageUtils";
+import emblemLight from "../assets/brand/emblem-light.png";
+import emblemDark from "../assets/brand/emblem-dark.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -49,11 +51,23 @@ export default function Login() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo ve Başlık */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white">
-              <span className="material-symbols-outlined text-2xl">anchor</span>
-            </div>
+            <img
+              src={emblemLight}
+              alt="Gümrük.io"
+              className="h-10 w-10 flex-shrink-0 dark:hidden"
+            />
+            <img
+              src={emblemDark}
+              alt="Gümrük.io"
+              className="hidden h-10 w-10 flex-shrink-0 dark:block"
+            />
             <div>
-              <h1 className="text-xl font-bold text-text-main">AACC Tracker</h1>
+              <h1
+                className="text-xl font-bold text-text-main"
+                title="All about customs clearance"
+              >
+                Gümrük.io
+              </h1>
               <p className="text-xs text-text-secondary hidden sm:block">Gümrük Takip Sistemi</p>
             </div>
           </div>
@@ -70,12 +84,19 @@ export default function Login() {
 
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-4">
-            <div className="flex items-center justify-center h-16 w-16 bg-primary rounded-full text-white">
-              <span className="material-symbols-outlined text-4xl">anchor</span>
-            </div>
+            <img
+              src={emblemLight}
+              alt="Gümrük.io"
+              className="h-16 w-16 flex-shrink-0 dark:hidden"
+            />
+            <img
+              src={emblemDark}
+              alt="Gümrük.io"
+              className="hidden h-16 w-16 flex-shrink-0 dark:block"
+            />
             <div>
               <p className="text-text-main text-3xl font-bold leading-tight tracking-tight">
-                AACC Tracker Girişi
+                Gümrük.io Girişi
               </p>
               <p className="text-text-secondary text-base font-normal leading-normal mt-2">
                 Gümrük işlemlerinizi takip etmek için giriş yapın.
@@ -205,7 +226,7 @@ export default function Login() {
       <footer className="w-full bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors">
         <div className="max-w-7xl mx-auto">
           <p className="text-center text-xs text-text-secondary">
-            © {new Date().getFullYear()} AACC Tracker. Tüm hakları saklıdır.
+            © {new Date().getFullYear()} Gümrük.io. Tüm hakları saklıdır.
           </p>
         </div>
       </footer>
