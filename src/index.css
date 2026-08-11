@@ -20,6 +20,11 @@ html {
   --color-background: #f1f1f1;
   --color-background-light: #f5f8f8;
   --color-background-dark: #0f1e23;
+  /* Marka renkleri (gumruk.io kiti) — tanıtım sayfasında kullanılır */
+  --color-brand-navy: #0a1f44;
+  --color-brand-blue: #1e4fd8;
+  --color-brand-sky: #38bdf8;
+  --font-brand: "Sora", "Inter", sans-serif;
   --border-radius-default: 0.25rem;
   --border-radius-lg: 0.5rem;
   --border-radius-xl: 0.75rem;
