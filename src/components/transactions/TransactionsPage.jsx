@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { usePaymentRestriction } from "../../context/PaymentRestrictionProvider";
 import { useSearchParams } from "react-router-dom";
@@ -10,6 +10,24 @@ import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import AutoRefreshControl from "./AutoRefreshControl";
+
+// Kapanmış (Çekildi/İptal) işlemler için ilk yükleme penceresi. Açık işlemler
+// her zaman gelir; kapanmışlardan yalnızca seçilen dönem içindekiler çekilir,
+// böylece binlerce geçmiş kaydı olan brokerlarda sayfa hızlı açılır.
+// 0 = pencere yok (tüm geçmiş).
+const CLOSED_WINDOW_OPTIONS = [
+  { value: 15, label: "Son 15 gün" },
+  { value: 30, label: "Son 30 gün" },
+  { value: 90, label: "Son 90 gün" },
+  { value: 0, label: "Tümü" },
+];
+const CLOSED_WINDOW_DEFAULT = 30;
+const CLOSED_WINDOW_STORAGE_KEY = "transactionsClosedWindowDays";
+
+const readStoredClosedWindow = () => {
+  const stored = parseInt(localStorage.getItem(CLOSED_WINDOW_STORAGE_KEY), 10);
+  return CLOSED_WINDOW_OPTIONS.some(o => o.value === stored) ? stored : CLOSED_WINDOW_DEFAULT;
+};
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -53,6 +71,15 @@ export default function TransactionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showDateFilters, setShowDateFilters] = useState(false);
 
+  // Kapanmış işlem penceresi — değişince veri yeniden çekilir
+  const [closedWindowDays, setClosedWindowDays] = useState(readStoredClosedWindow);
+  const isClosedWindowed = closedWindowDays > 0;
+
+  const handleClosedWindowChange = (days) => {
+    setClosedWindowDays(days);
+    localStorage.setItem(CLOSED_WINDOW_STORAGE_KEY, String(days));
+  };
+
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
@@ -74,10 +101,6 @@ export default function TransactionsPage() {
   }, []);
 
   // ... mevcut useEffect ve fonksiyonlar aynı kalacak ...
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   useEffect(() => {
     applyFilters();
@@ -135,12 +158,14 @@ export default function TransactionsPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const result = await transactionService.getAllTransactions();
+      const result = await transactionService.getAllTransactions({
+        withdrawnWithinDays: closedWindowDays > 0 ? closedWindowDays : null,
+      });
 
       if (result.success) {
         setTransactions(result.data);
@@ -152,7 +177,13 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [closedWindowDays]);
+
+  // İlk yükleme + kapanmış işlem penceresi değişince yeniden çeker
+  // (loadData closedWindowDays üzerine kapanıyor).
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const applyFilters = () => {
     let result = [...transactions];
@@ -264,15 +295,16 @@ export default function TransactionsPage() {
     setFilteredTransactions(result);
   };
 
-  // Sort transactions: 3 levels - Active, Closed, Withdrawn
+  // Sort transactions: 4 levels - Active, Closed, Withdrawn, Cancelled
   const sortedTransactions = useMemo(() => {
     if (!filteredTransactions) return [];
 
     return [...filteredTransactions].sort((a, b) => {
-      // Priority levels: 1 = Active, 2 = Closed, 3 = Withdrawn
+      // Priority levels: 1 = Active, 2 = Closed, 3 = Withdrawn, 4 = Cancelled
       const getPriority = (status) => {
-        if (status === "WITHDRAWN") return 3; // Last: Withdrawn
-        if (status === "CP_COMPLETED" || status === "CANCELLED") return 2; // Middle: Closed
+        if (status === "CANCELLED") return 4; // Last: Cancelled — takip edilecek bir işi kalmadı
+        if (status === "WITHDRAWN") return 3; // Withdrawn
+        if (status === "CP_COMPLETED") return 2; // Middle: Closed
         return 1; // First: Active transactions (PENDING, REGISTERED, INSPECTION)
       };
 
@@ -341,6 +373,21 @@ export default function TransactionsPage() {
   };
 
   const hasActiveFilters = getActiveFiltersCount() > 0;
+
+  // Pencere dışında kalan bir tarih aralığı seçilirse kullanıcı boş sonuç
+  // görür; bunu sessizce yaşamak yerine uyarı gösterip "Tümü"nü öneriyoruz.
+  const dateFilterPredatesClosedWindow = useMemo(() => {
+    if (!isClosedWindowed) return false;
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - closedWindowDays);
+    return [
+      filters.dateFrom,
+      filters.registrationDateFrom,
+      filters.closureDateFrom,
+      filters.withdrawalDateFrom,
+    ].some(value => value && new Date(value) < cutoff);
+  }, [filters, isClosedWindowed, closedWindowDays]);
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
@@ -466,6 +513,32 @@ export default function TransactionsPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Kapanmış işlem penceresi — değişince yeniden çeker.
+                  Scroll edilince gizlenir; dar ekranlarda Filtreler
+                  panelindeki kopyası kullanılır. */}
+              {!isScrolled && (
+                <div
+                  className="hidden lg:flex items-center gap-2 pl-3 pr-2 py-[7px] bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg"
+                  title="Çekilen ve iptal edilen işlemlerden yalnızca bu dönem içindekiler yüklenir. Açık işlemler her zaman listelenir."
+                >
+                  <span className="material-symbols-outlined text-primary text-[20px]">history</span>
+                  <span className="text-sm font-medium text-text-main dark:text-gray-300 whitespace-nowrap">
+                    Çekilen/İptal
+                  </span>
+                  <select
+                    value={closedWindowDays}
+                    onChange={(e) => handleClosedWindowChange(parseInt(e.target.value, 10))}
+                    className="text-sm font-medium bg-transparent text-text-main dark:text-gray-200 cursor-pointer focus:outline-none"
+                  >
+                    {CLOSED_WINDOW_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value} className="bg-white dark:bg-gray-800">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Filter Toggle Button */}
               <button
                 ref={filterButtonRef}
@@ -603,6 +676,11 @@ export default function TransactionsPage() {
                         expand_more
                       </span>
                     </div>
+                    {isClosedWindowed && (filters.status === 'WITHDRAWN' || filters.status === 'CANCELLED') && (
+                      <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+                        Son {closedWindowDays} gün yüklü — daha eskisi için Çekilen/İptal seçimini “Tümü” yapın.
+                      </p>
+                    )}
                   </div>
 
                   {/* Delay Filter */}
@@ -720,6 +798,42 @@ export default function TransactionsPage() {
                   )}
                 </div>
 
+                {/* Kapanmış işlem penceresi — lg altında header'daki kopya
+                    gizli olduğu için burada gösterilir. */}
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-700 lg:hidden">
+                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                    Çekilen / İptal edilen işlemler
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
+                      history
+                    </span>
+                    <select
+                      value={closedWindowDays}
+                      onChange={(e) => handleClosedWindowChange(parseInt(e.target.value, 10))}
+                      style={{
+                        backgroundImage: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        appearance: 'none'
+                      }}
+                      className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
+                    >
+                      {CLOSED_WINDOW_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
+                      expand_more
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-text-secondary">
+                    Açık işlemler her zaman listelenir; kapanmışlardan yalnızca seçilen dönem yüklenir.
+                  </p>
+                </div>
+
                 {/* Date Filters - Collapsible */}
                 <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
                   <button
@@ -740,6 +854,16 @@ export default function TransactionsPage() {
                       {showDateFilters ? 'expand_less' : 'expand_more'}
                     </span>
                   </button>
+
+                  {showDateFilters && dateFilterPredatesClosedWindow && (
+                    <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                      <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">info</span>
+                      <p className="text-xs text-amber-800 dark:text-amber-300">
+                        Seçtiğiniz tarih aralığı, yüklenen çekilen/iptal işlem penceresinden (son {closedWindowDays} gün) daha eskiye gidiyor.
+                        Bu kayıtları görmek için üstteki <strong>Çekilen/İptal</strong> seçimini <strong>Tümü</strong> yapın.
+                      </p>
+                    </div>
+                  )}
 
                   {showDateFilters && (
                     <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 animate-slideDown">
@@ -934,6 +1058,20 @@ export default function TransactionsPage() {
                     Toplam: <strong className="font-bold">{transactions.length}</strong>
                   </span>
                 </div>
+
+                {/* Yüklenen verinin kapsamı — "Toplam" sayısının neden tüm
+                    geçmişi kapsamadığını görünür kılar. */}
+                {isClosedWindowed && (
+                  <div
+                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
+                    title="Çekilen ve iptal edilen işlemlerden yalnızca bu dönem yüklendi. Açık işlemlerin tamamı listede."
+                  >
+                    <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base">history</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Çekilen/İptal: <strong className="font-bold">son {closedWindowDays} gün</strong>
+                    </span>
+                  </div>
+                )}
 
                 {hasActiveFilters && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">

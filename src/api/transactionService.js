@@ -91,12 +91,25 @@ export const transactionService = {
     }
   },
 
-  // Tüm işlemleri getir (yetki bazlı - LIMIT YOK)
-  getAllTransactions: async () => {
+  /**
+   * Tüm işlemleri getir (yetki bazlı - LIMIT YOK)
+   *
+   * @param {Object} [opts]
+   * @param {number|null} [opts.withdrawnWithinDays=null] — verilirse kapanmış
+   *   (Çekildi/İptal) işlemlerden yalnızca son N gün içindekiler gelir; açık
+   *   işlemler her zaman gelir. İşlem Takip sayfası ilk açılışta bu pencereyi
+   *   kullanır, böylece binlerce geçmiş kaydı olan brokerlarda sayfa hızlı
+   *   açılır. Parametresiz çağrılar (arama, öneri listeleri) tüm geçmişi alır.
+   */
+  getAllTransactions: async ({ withdrawnWithinDays = null } = {}) => {
     try {
-      console.log("📋 Tüm işlemler getiriliyor (LIMIT yok)...");
+      const windowed = Number.isInteger(withdrawnWithinDays) && withdrawnWithinDays > 0;
+      console.log(`📋 Tüm işlemler getiriliyor (${windowed ? `kapanmışlar: son ${withdrawnWithinDays} gün` : 'LIMIT yok'})...`);
 
-      const response = await axiosInstance.get('/transactions/all');
+      const response = await axiosInstance.get('/transactions/all', {
+        params: windowed ? { withdrawnWithinDays } : {},
+        timeout: windowed ? 20_000 : 60_000,
+      });
 
       const dataArray = safeArrayConversion(response.data, 'All Transactions');
 
