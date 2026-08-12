@@ -5,7 +5,7 @@ export default function Pricing() {
   const [yearly, setYearly] = useState(false);
 
   return (
-    <section id="fiyatlandirma" className="bg-background-light py-20 lg:py-28 dark:bg-brand-navy">
+    <section id="fiyatlandirma" className="bg-white py-20 lg:py-28 dark:bg-brand-navy">
       <div className="mx-auto max-w-7xl px-6">
         {/* Başlık */}
         <div className="mx-auto max-w-2xl text-center">
@@ -58,7 +58,7 @@ export default function Pricing() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col rounded-2xl border bg-white p-7 transition-shadow dark:bg-white/5 ${
+                className={`relative flex flex-col rounded-2xl border bg-background-light p-7 transition-shadow dark:bg-white/5 ${
                   plan.highlighted
                     ? "border-brand-blue shadow-xl shadow-brand-blue/10 dark:border-brand-sky"
                     : "border-gray-200 hover:shadow-lg dark:border-white/10"
