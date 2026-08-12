@@ -47,7 +47,7 @@ const EXTRAS = [
 
 export default function Features() {
   return (
-    <section id="ozellikler" className="bg-white py-20 lg:py-28 dark:bg-brand-navy">
+    <section id="ozellikler" className="bg-background-light py-20 lg:py-28 dark:bg-brand-navy">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold tracking-wide text-brand-blue uppercase dark:text-brand-sky">
@@ -66,7 +66,7 @@ export default function Features() {
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
-              className="group rounded-2xl border border-gray-200 bg-background-light p-7 transition-all hover:-translate-y-0.5 hover:border-brand-blue/40 hover:shadow-lg dark:border-white/10 dark:bg-white/5 dark:hover:border-brand-sky/40"
+              className="group rounded-2xl border border-gray-200 bg-white p-7 transition-all hover:-translate-y-0.5 hover:border-brand-blue/40 hover:shadow-lg dark:border-white/10 dark:bg-white/5 dark:hover:border-brand-sky/40"
             >
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white dark:bg-brand-sky/15 dark:text-brand-sky dark:group-hover:bg-brand-sky dark:group-hover:text-brand-navy">
                 <span className="material-symbols-outlined">{feature.icon}</span>

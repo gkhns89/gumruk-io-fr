@@ -126,6 +126,21 @@ html {
   100% { transform: scale(1.8); opacity: 0;    }
 }
 
+/* Tanıtım sayfası — çizim haritadaki rota çizgisinin akışı */
+@keyframes landing-route-dash {
+  to { stroke-dashoffset: -24; }
+}
+
+.landing-route-line {
+  animation: landing-route-dash 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-route-line {
+    animation: none;
+  }
+}
+
 /* CurrencyTicker now uses a stack-based slide (transform driven from React
    state, transition handled inline) so it no longer needs a keyframe. */
 

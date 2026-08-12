@@ -2,6 +2,7 @@ import React from "react";
 import LandingHeader from "./sections/LandingHeader";
 import Hero from "./sections/Hero";
 import Features from "./sections/Features";
+import LiveTracking from "./sections/LiveTracking";
 import Pricing from "./sections/Pricing";
 
 // Tanıtım sayfası: public, PublicRoute ile SARMALANMAZ.
@@ -13,6 +14,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <Features />
+        <LiveTracking />
         <Pricing />
       </main>
     </div>
