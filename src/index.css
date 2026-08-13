@@ -189,38 +189,38 @@ html {
     transform: translateX(-300px);
     animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1); /* yanaşırken yavaşlar */
   }
-  20%, 40% {
+  22%, 40% {
     transform: translateX(0); /* vinçlerin hizasında duruş — yükleme */
     animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); /* yavaşça kalkar, yavaşça durur */
   }
-  60%, 80% {
+  63%, 81% {
     transform: translateX(880px); /* boşaltma vincinin önünde duruş */
     animation-timing-function: cubic-bezier(0.5, 0, 0.9, 1); /* yavaşça hızlanarak çıkar */
   }
-  90%, 100% {
+  92%, 100% {
     transform: translateX(1250px); /* sahne dışı */
   }
 }
 
-/* Geminin güvertesindeki yük */
+/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %22-40, boşaltma %63-81 */
 @keyframes landing-cargo-ship {
-  0%, 27%   { opacity: 0; transform: translateY(-9px); }
-  31%, 67%  { opacity: 1; transform: translateY(0); }
-  71%, 100% { opacity: 0; transform: translateY(-9px); }
+  0%, 29%   { opacity: 0; transform: translateY(-9px); }
+  33%, 70%  { opacity: 1; transform: translateY(0); }
+  74%, 100% { opacity: 0; transform: translateY(-9px); }
 }
 
 /* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
 @keyframes landing-cargo-yard {
-  0%, 28%   { opacity: 1; }
-  32%, 90%  { opacity: 0; }
-  96%, 100% { opacity: 1; }
+  0%, 30%   { opacity: 1; }
+  34%, 93%  { opacity: 0; }
+  97%, 100% { opacity: 1; }
 }
 
 /* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
 @keyframes landing-cargo-dest {
-  0%, 67%   { opacity: 0; }
-  71%, 90%  { opacity: 1; }
-  96%, 100% { opacity: 0; }
+  0%, 70%   { opacity: 0; }
+  74%, 95%  { opacity: 1; }
+  99%, 100% { opacity: 0; }
 }
 
 /* Yanaşan geminin salınımı — sahnedeki diğer gemilerden belirgin biçimde daha derin */
@@ -229,10 +229,12 @@ html {
   50%      { transform: translateY(-10px); }
 }
 
-.landing-berth      { animation: landing-berth 52s linear infinite; }
-.landing-cargo-ship { animation: landing-cargo-ship 52s linear infinite; }
-.landing-cargo-yard { animation: landing-cargo-yard 52s linear infinite; }
-.landing-cargo-dest { animation: landing-cargo-dest 52s linear infinite; }
+/* 58s: yol segmentleri 26 sn'den 32,5 sn'ye çıktı (hız %20 düştü), duraklar 10,4 sn'de kaldı.
+   Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
+.landing-berth      { animation: landing-berth 58s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 58s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 58s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 58s linear infinite; }
 .landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
