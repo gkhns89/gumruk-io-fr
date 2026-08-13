@@ -212,7 +212,7 @@ export function PortSilhouette({ className = "" }) {
 
       {/* Sol istif — gemiye yüklendikçe boşalır */}
       <g fill="currentColor" opacity="0.75">
-        {yardSlots(200).map((slot, i) => (
+        {yardSlots(178).map((slot, i) => (
           <rect
             key={`src${i}`}
             className="landing-cargo-yard"
@@ -228,7 +228,7 @@ export function PortSilhouette({ className = "" }) {
 
       {/* Sağ istif — gemi boşalttıkça dolar */}
       <g fill="currentColor" opacity="0.75">
-        {yardSlots(1020).map((slot, i) => (
+        {yardSlots(1058).map((slot, i) => (
           <rect
             key={`dst${i}`}
             className="landing-cargo-dest"
@@ -253,10 +253,12 @@ export function PortSilhouette({ className = "" }) {
       </g>
 
       {/* Gemi — hareket dışta, konum içte; sağa gittiği için aynalı.
-          Su hattı (yerel y=31) sahnede WATER_S'e denk gelir. */}
+          Su hattı (yerel y=31) sahnede WATER_S'e denk gelir.
+          Temel konum = yükleme duruşu: gemi (x≈60..160) sol vinçlerin (x 40..201)
+          tam hizasında duruyor; `landing-berth` bu noktaya göre öteliyor. */}
       <g className="landing-berth">
-        <g transform={`translate(368 ${WATER_S - 31 * 0.55}) scale(-0.55 0.55)`} fill="currentColor">
-          <g className="landing-bob">
+        <g transform={`translate(162 ${WATER_S - 31 * 0.55}) scale(-0.55 0.55)`} fill="currentColor">
+          <g className="landing-bob-deep">
             {/* Güverte yükü — sırayla yüklenip boşalıyor */}
             {CARGO_SLOTS.map((slot, i) => (
               <rect

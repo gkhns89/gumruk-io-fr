@@ -181,40 +181,59 @@ html {
    Bütün parçalar aynı süreyi paylaşır, sahneye kendi yüzdeleriyle girer.
    Sıralı yükleme negatif `animation-delay` ile veriliyor: pozitif gecikme yalnızca ilk
    turu geciktirir, sonsuz döngüde kalıcı faz kayması sağlamaz. */
+/* Hız geçişleri keyframe içindeki `animation-timing-function` ile veriliyor: her adım
+   bir sonraki adıma kadar geçerli. Böylece gemi duruştan yavaşça kalkıp yanaşırken
+   yavaşça duruyor; sabit hızlı (linear) sert gidiş-geliş kalmıyor. */
 @keyframes landing-berth {
-  0%        { transform: translateX(-640px); }
-  14%       { transform: translateX(-60px); }  /* yanaşırken yavaşlar */
-  18%, 38%  { transform: translateX(0); }      /* sol rıhtımda duruş — yükleme */
-  52%       { transform: translateX(580px); }  /* vince yaklaşırken yavaşlar */
-  58%, 78%  { transform: translateX(650px); }  /* vinç önünde duruş — boşaltma */
-  92%, 100% { transform: translateX(1240px); } /* sahneden çıkış */
+  0% {
+    transform: translateX(-300px);
+    animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1); /* yanaşırken yavaşlar */
+  }
+  20%, 40% {
+    transform: translateX(0); /* vinçlerin hizasında duruş — yükleme */
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); /* yavaşça kalkar, yavaşça durur */
+  }
+  60%, 80% {
+    transform: translateX(880px); /* boşaltma vincinin önünde duruş */
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 1); /* yavaşça hızlanarak çıkar */
+  }
+  90%, 100% {
+    transform: translateX(1250px); /* sahne dışı */
+  }
 }
 
 /* Geminin güvertesindeki yük */
 @keyframes landing-cargo-ship {
-  0%, 23%   { opacity: 0; transform: translateY(-7px); }
-  26%, 66%  { opacity: 1; transform: translateY(0); }
-  69%, 100% { opacity: 0; transform: translateY(-7px); }
+  0%, 27%   { opacity: 0; transform: translateY(-9px); }
+  31%, 67%  { opacity: 1; transform: translateY(0); }
+  71%, 100% { opacity: 0; transform: translateY(-9px); }
 }
 
 /* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
 @keyframes landing-cargo-yard {
-  0%, 24%   { opacity: 1; }
-  27%, 90%  { opacity: 0; }
-  94%, 100% { opacity: 1; }
+  0%, 28%   { opacity: 1; }
+  32%, 90%  { opacity: 0; }
+  96%, 100% { opacity: 1; }
 }
 
 /* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
 @keyframes landing-cargo-dest {
-  0%, 64%   { opacity: 0; }
-  67%, 90%  { opacity: 1; }
-  94%, 100% { opacity: 0; }
+  0%, 67%   { opacity: 0; }
+  71%, 90%  { opacity: 1; }
+  96%, 100% { opacity: 0; }
 }
 
-.landing-berth      { animation: landing-berth 36s linear infinite; }
-.landing-cargo-ship { animation: landing-cargo-ship 36s linear infinite; }
-.landing-cargo-yard { animation: landing-cargo-yard 36s linear infinite; }
-.landing-cargo-dest { animation: landing-cargo-dest 36s linear infinite; }
+/* Yanaşan geminin salınımı — sahnedeki diğer gemilerden belirgin biçimde daha derin */
+@keyframes landing-bob-deep {
+  0%, 100% { transform: translateY(4px); }
+  50%      { transform: translateY(-10px); }
+}
+
+.landing-berth      { animation: landing-berth 52s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 52s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 52s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 52s linear infinite; }
+.landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
@@ -230,6 +249,7 @@ html {
   .landing-cargo-ship,
   .landing-cargo-yard,
   .landing-cargo-dest,
+  .landing-bob-deep,
   .landing-ship,
   .landing-ship-back,
   .landing-truck,
