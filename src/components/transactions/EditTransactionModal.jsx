@@ -27,6 +27,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     gate: transaction.gate || "",
     weight: transaction.weight || "",
     tax: transaction.tax || "",
+    guaranteeAmount: transaction.guaranteeAmount || "",
     senderName: transaction.senderName || "",
     warehouseArrivalDate: transaction.warehouseArrivalDate || "",
     registrationDate: transaction.registrationDate || "",
@@ -124,6 +125,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const [displayTax, setDisplayTax] = useState(() => {
     if (transaction.tax) {
       return transaction.tax.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    }
+    return "";
+  });
+  const [displayGuaranteeAmount, setDisplayGuaranteeAmount] = useState(() => {
+    if (transaction.guaranteeAmount) {
+      return transaction.guaranteeAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
     }
     return "";
   });
@@ -619,9 +626,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const handleTaxChange = (e) => {
     const inputValue = e.target.value;
 
-    // Clear error when user types
-    if (fieldErrors.tax) {
-      setFieldErrors(prev => ({ ...prev, tax: null }));
+    // Clear error when user types (vergi/teminat ortak hatası, ikisini de temizle)
+    if (fieldErrors.tax || fieldErrors.guaranteeAmount) {
+      setFieldErrors(prev => ({ ...prev, tax: null, guaranteeAmount: null }));
     }
 
     // Display değerini güncelle
@@ -661,6 +668,55 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     // onFocus'ta ham değeri göster
     if (formData.tax) {
       setDisplayTax(formData.tax.toString());
+    }
+  };
+
+  // Teminat değeri için özel handler (vergi ile aynı formatlama, ancak zorunlu değil)
+  const handleGuaranteeAmountChange = (e) => {
+    const inputValue = e.target.value;
+
+    // Clear error when user types (vergi/teminat ortak hatası, ikisini de temizle)
+    if (fieldErrors.tax || fieldErrors.guaranteeAmount) {
+      setFieldErrors(prev => ({ ...prev, tax: null, guaranteeAmount: null }));
+    }
+
+    // Display değerini güncelle
+    setDisplayGuaranteeAmount(inputValue);
+
+    // Boş değere izin ver (teminatsız evraklar)
+    if (inputValue === '') {
+      setFormData(prev => ({ ...prev, guaranteeAmount: '' }));
+      return;
+    }
+
+    // Parse et
+    const parsedValue = parseFormattedNumber(inputValue);
+    if (parsedValue !== "") {
+      // Maksimum 2 ondalık basamak kontrolü
+      const valueStr = parsedValue.toString();
+      const parts = valueStr.split(',');
+      if (parts.length === 2 && parts[1].length > 2) {
+        // 2 haneden fazla ondalık varsa, 2 haneye kısalt
+        const truncatedValue = parseFloat(`${parts[0]}.${parts[1].substring(0, 2)}`);
+        setFormData(prev => ({ ...prev, guaranteeAmount: truncatedValue }));
+        setDisplayGuaranteeAmount(truncatedValue.toString());
+      } else {
+        setFormData(prev => ({ ...prev, guaranteeAmount: parsedValue }));
+      }
+    }
+  };
+
+  const handleGuaranteeAmountBlur = () => {
+    // onBlur'da formatla ve göster
+    if (formData.guaranteeAmount) {
+      setDisplayGuaranteeAmount(formatNumber(formData.guaranteeAmount, 2));
+    }
+  };
+
+  const handleGuaranteeAmountFocus = () => {
+    // onFocus'ta ham değeri göster
+    if (formData.guaranteeAmount) {
+      setDisplayGuaranteeAmount(formData.guaranteeAmount.toString());
     }
   };
 
@@ -923,8 +979,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     if (!formData.weight) {
       errors.weight = "Kilo zorunludur";
     }
-    if (formData.tax === '' || formData.tax === null || formData.tax === undefined) {
-      errors.tax = "Vergi zorunludur";
+    // Bir evrak peşin vergili, teminatlı ya da ikisi birden olabilir: en az biri dolu olmalı
+    const isEmptyAmount = (value) => value === '' || value === null || value === undefined;
+    if (isEmptyAmount(formData.tax) && isEmptyAmount(formData.guaranteeAmount)) {
+      errors.tax = "Vergi veya teminattan en az biri zorunludur";
+      errors.guaranteeAmount = "Vergi veya teminattan en az biri zorunludur";
     }
     if (!senderSearchTerm || !senderSearchTerm.trim()) {
       errors.senderName = "Gönderici adı zorunludur";
@@ -1049,6 +1108,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       }
       if (cleanedData.tax !== null && cleanedData.tax !== undefined) {
         cleanedData.tax = parseFloat(cleanedData.tax);
+      }
+      if (cleanedData.guaranteeAmount !== null && cleanedData.guaranteeAmount !== undefined) {
+        cleanedData.guaranteeAmount = parseFloat(cleanedData.guaranteeAmount);
       }
       if (cleanedData.containerAmount !== null && cleanedData.containerAmount !== undefined) {
         cleanedData.containerAmount = parseInt(cleanedData.containerAmount);
@@ -2048,6 +2110,39 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                     </span>
                     <p className="text-sm text-red-700 font-medium">
                       {fieldErrors.tax}
+                    </p>
+                  </div>
+                )}
+              </label>
+
+              {/* Teminat — evrak hem peşin vergili hem teminatlı olabilir */}
+              <label className="flex flex-col w-full">
+                <p className="text-text-main text-sm font-medium pb-2">
+                  {t('transaction.guaranteeAmount')}
+                </p>
+                <input
+                  type="text"
+                  name="guaranteeAmount"
+                  value={displayGuaranteeAmount || formData.guaranteeAmount}
+                  onChange={handleGuaranteeAmountChange}
+                  onBlur={handleGuaranteeAmountBlur}
+                  onFocus={handleGuaranteeAmountFocus}
+                  disabled={isFieldLocked}
+                  className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
+                    fieldErrors.guaranteeAmount
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                  } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal disabled:bg-gray-100 dark:disabled:bg-gray-700 transition-colors`}
+                  placeholder={toUpperCase(t('placeholders.enterGuaranteeAmount'))}
+                />
+                {/* Error Message */}
+                {fieldErrors.guaranteeAmount && (
+                  <div className="mt-2 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fadeIn">
+                    <span className="material-symbols-outlined text-red-500 text-lg flex-shrink-0">
+                      error
+                    </span>
+                    <p className="text-sm text-red-700 font-medium">
+                      {fieldErrors.guaranteeAmount}
                     </p>
                   </div>
                 )}

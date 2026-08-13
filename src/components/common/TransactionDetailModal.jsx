@@ -247,7 +247,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
 
             <div className="p-6">
 
-            {/* Info Grid — 6 kart, 2 satır */}
+            {/* Info Grid — 7 kart */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
                 <p className="text-text-secondary text-sm mb-1">Gönderici Firma</p>
@@ -274,6 +274,13 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                 <p className="text-text-secondary text-sm mb-1">Vergi Tutarı</p>
                 <p className="text-text-main font-semibold">
                   {transaction.tax ? `${Number(transaction.tax).toLocaleString('tr-TR')} ₺` : '-'}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
+                <p className="text-text-secondary text-sm mb-1">Teminat Tutarı</p>
+                <p className="text-text-main font-semibold">
+                  {transaction.guaranteeAmount ? `${Number(transaction.guaranteeAmount).toLocaleString('tr-TR')} ₺` : '-'}
                 </p>
               </div>
 

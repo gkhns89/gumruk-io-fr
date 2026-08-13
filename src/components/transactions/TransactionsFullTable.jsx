@@ -203,6 +203,7 @@ export default function TransactionsFullTable({
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kap</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kilo (Kg)</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Vergi (TL)</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Teminat (TL)</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Durum</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Antrepo Varış</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Tescil Tarihi</th>
@@ -266,6 +267,11 @@ export default function TransactionsFullTable({
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
                       {transaction.tax
                         ? transaction.tax.toLocaleString("tr-TR", { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 })
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
+                      {transaction.guaranteeAmount
+                        ? transaction.guaranteeAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 })
                         : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
