@@ -19,9 +19,9 @@ import React from "react";
  */
 
 /* Sahnenin dikey düzeni (viewBox birimi) */
-const QUAY = 130; // rıhtım hattı — vinçler ve istif burada duruyor
-const SEA_TOP = 130;
-const ROAD_TOP = 205;
+const QUAY = 124; // rıhtım hattı — vinçler ve istif burada duruyor
+const SEA_TOP = 124;
+const ROAD_TOP = 210;
 const SCENE_H = 240;
 
 /* Konteyner gemisi — yerel kutu: y 11..66, genişlik ~190 */
@@ -239,17 +239,27 @@ export default function PortScene() {
           y={SEA_TOP}
           width="1440"
           height={ROAD_TOP - SEA_TOP}
-          className="fill-brand-sky/15 dark:fill-brand-sky/10"
+          className="fill-brand-sky/20 dark:fill-brand-sky/10"
+        />
+        {/* Ufuk çizgisi — su hattının nerede başladığı okunsun */}
+        <line
+          x1="0"
+          y1={SEA_TOP}
+          x2="1440"
+          y2={SEA_TOP}
+          className="text-brand-blue/30 dark:text-brand-sky/25"
+          stroke="currentColor"
+          strokeWidth="2"
         />
 
         {/* Uzaktaki gemi — ters yönde, küçük ve soluk (derinlik) */}
         <g className="landing-ship-back">
-          <g transform="translate(0 124) scale(0.55)" opacity="0.35">
+          <g transform="translate(0 116) scale(0.55)" opacity="0.35">
             <ContainerShip className="landing-bob" />
           </g>
         </g>
 
-        {/* Dalgalar — geminin arkasında kalsın diye ondan önce çiziliyor */}
+        {/* Arka dalgalar — ufka yakın, gemilerin gerisinde */}
         <g
           className="text-brand-blue/25 dark:text-brand-sky/20"
           stroke="currentColor"
@@ -258,16 +268,30 @@ export default function PortScene() {
           strokeLinecap="round"
         >
           <g className="landing-wave">
-            <WaveLine y={168} />
-            <WaveLine y={192} opacity={0.6} />
+            <WaveLine y={162} opacity={0.7} />
           </g>
         </g>
 
-        {/* Ön plandaki gemi — su hattı (yerel y=44) sahnede y=182'ye denk gelir.
+        {/* Ön plandaki gemi — su hattı (yerel y=44) sahnede y=186'ya denk gelir.
             Köprüüstü kıçta çizili, yani gemi sola bakıyor; sağa gittiği için aynalanıyor. */}
         <g className="landing-ship">
-          <g transform="translate(190 138) scale(-1 1)">
+          <g transform="translate(190 142) scale(-1 1)">
             <ContainerShip className="landing-bob" />
+          </g>
+        </g>
+
+        {/* Ön dalgalar — GEMİDEN SONRA çiziliyor ki gövdenin önünden geçsinler.
+            Hepsi geminin arkasında kalırsa gemi suyun üstünde uçuyormuş gibi durur. */}
+        <g
+          className="text-brand-blue/35 dark:text-brand-sky/25"
+          stroke="currentColor"
+          fill="none"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <g className="landing-wave">
+            <WaveLine y={194} />
+            <WaveLine y={204} opacity={0.7} />
           </g>
         </g>
 
@@ -280,12 +304,12 @@ export default function PortScene() {
           className="fill-brand-navy/85 dark:fill-white/10"
         />
         <g className="text-white/30" stroke="currentColor" strokeWidth="3" strokeDasharray="26 22">
-          <line x1="0" y1="224" x2="1440" y2="224" />
+          <line x1="0" y1="227" x2="1440" y2="227" />
         </g>
 
         {/* Tır — tekerlekler (yerel y=34) yol şeridine oturuyor */}
         <g className="landing-truck">
-          <g transform="translate(0 195)">
+          <g transform="translate(0 197)">
             <Truck />
           </g>
         </g>

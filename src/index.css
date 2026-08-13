@@ -168,6 +168,15 @@ html {
   to   { transform: translateX(-180px); }
 }
 
+/* Haritadaki gemi rotayı SMIL `animateMotion` ile kat ediyor; uçların sert kesilmemesi
+   için opaklık burada, aynı süreyle sönümleniyor. */
+@keyframes landing-voyage-fade {
+  0%, 3%    { opacity: 0; }
+  9%, 91%   { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+.landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
 .landing-truck     { animation: landing-drive 26s linear infinite; }
@@ -177,6 +186,7 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .landing-route-line,
+  .landing-voyage,
   .landing-ship,
   .landing-ship-back,
   .landing-truck,

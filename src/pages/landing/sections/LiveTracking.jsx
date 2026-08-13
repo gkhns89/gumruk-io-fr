@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 // Sahte sefer verisi — gerçek müşteri/sefer kaydı değil.
 // Not: takip sağlayıcısının adı bilinçli olarak hiçbir yerde geçmiyor.
@@ -27,10 +27,55 @@ const BULLETS = [
   },
 ];
 
-/** Rota çizgisinin yolu — marker konumları da bu eğriye oturuyor */
+/** Rota çizgisinin yolu — liman işaretçileri ve gemi bu eğriye oturuyor */
 const ROUTE = "M 88 250 Q 250 300 330 205 T 552 96";
 
+/** Rotanın ~%62'si — sefer kartındaki "şu an" konumunun eğri üzerindeki karşılığı */
+const CURRENT = { x: 452, y: 146, angle: -24 };
+
+/**
+ * SMIL (`animateMotion`) CSS ile durdurulamadığı için azaltılmış hareket tercihini
+ * burada okuyup animasyonu tamamen devre dışı bırakıyoruz.
+ */
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return reduced;
+}
+
+/** Konteyner gemisi — merkezi (0,0), pruvası +x yönünde (rotate="auto" için şart) */
+function RouteShip() {
+  return (
+    <>
+      <circle
+        r="11"
+        className="fill-brand-sky/35"
+        style={{ transformOrigin: "0px 0px", animation: "cargo-pulse 2.4s ease-out infinite" }}
+      />
+      {/* Köprüüstü ve baca kıçta */}
+      <rect x="-19" y="-9" width="8" height="10" rx="1" className="fill-brand-navy dark:fill-white" />
+      <rect x="-16.5" y="-14" width="3.5" height="5" rx="0.8" className="fill-brand-blue dark:fill-brand-sky" />
+      {/* Güverte yükü */}
+      <rect x="-8" y="-4" width="9" height="5" rx="0.8" className="fill-brand-blue dark:fill-brand-sky" />
+      <rect x="2" y="-4" width="9" height="5" rx="0.8" className="fill-brand-sky" />
+      <rect x="-8" y="-9" width="9" height="4.5" rx="0.8" className="fill-brand-sky" />
+      {/* Gövde — su hattı y=0 */}
+      <path d="M-20 1 H21 L16 8 H-16 Z" className="fill-brand-navy dark:fill-white" />
+    </>
+  );
+}
+
 export default function LiveTracking() {
+  const reducedMotion = useReducedMotion();
+
   return (
     <section id="canli-takip" className="bg-white py-20 lg:py-28 dark:bg-brand-navy">
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2">
@@ -136,32 +181,23 @@ export default function LiveTracking() {
                 </g>
               ))}
 
-              {/* Şu anki konum — gemi, işaretçinin üzerinde hafifçe salınıyor */}
-              <g>
-                <circle
-                  cx="452"
-                  cy="146"
-                  r="10"
-                  className="fill-brand-sky/40"
-                  style={{ transformOrigin: "452px 146px", animation: "cargo-pulse 2s ease-out infinite" }}
-                />
-                <circle cx="452" cy="146" r="4.5" className="fill-brand-blue dark:fill-brand-sky" />
-
-                {/* Rota soldan sağa ilerliyor; gemi kıçı sağda çizili olduğu için aynalanıyor */}
-                <g className="landing-bob" transform="translate(472 116) scale(-1 1)">
-                  {/* Güverte yükü */}
-                  <rect x="6" y="6" width="9" height="5" rx="0.8" className="fill-brand-blue dark:fill-brand-sky" />
-                  <rect x="17" y="6" width="9" height="5" rx="0.8" className="fill-brand-sky" />
-                  <rect x="6" y="1" width="9" height="4" rx="0.8" className="fill-brand-sky" />
-                  {/* Köprüüstü */}
-                  <rect x="29" y="3" width="8" height="8" rx="1" className="fill-brand-navy dark:fill-white" />
-                  {/* Gövde */}
-                  <path
-                    d="M2 11 H40 L36 18 H6 Z"
-                    className="fill-brand-navy dark:fill-white"
+              {/* Gemi rotayı kat ediyor — rotate="auto" ile eğrinin teğetine göre dönüyor.
+                  Azaltılmış hareket tercihinde "şu an" konumunda sabit duruyor. */}
+              {reducedMotion ? (
+                <g transform={`translate(${CURRENT.x} ${CURRENT.y}) rotate(${CURRENT.angle})`}>
+                  <RouteShip />
+                </g>
+              ) : (
+                <g className="landing-voyage">
+                  <RouteShip />
+                  <animateMotion
+                    dur="24s"
+                    repeatCount="indefinite"
+                    rotate="auto"
+                    path={ROUTE}
                   />
                 </g>
-              </g>
+              )}
             </svg>
 
             {/* Harita üstü rozet */}
