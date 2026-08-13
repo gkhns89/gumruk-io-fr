@@ -151,9 +151,20 @@ function ContainerYard({ x, baseline = QUAY }) {
   );
 }
 
-/* Tekrarlayan dalga çizgisi — viewBox'tan geniş, kaydıkça sonsuz görünür */
-function WaveLine({ y, opacity = 1 }) {
-  const d = `M-180 ${y} ` + "q 45 -8 90 0 t 90 0 ".repeat(1) + "t 90 0 ".repeat(16);
+/**
+ * Tekrarlayan dalga çizgisi.
+ *
+ * Desenin tam periyodu 180 birim (bir tepe + bir çukur) ve `landing-wave` da tam 180 birim
+ * kaydırıyor; bu yüzden döngü dikişsiz. Ancak yol, sahne genişliğine ek olarak SOLDA ve
+ * SAĞDA birer periyot pay bırakacak kadar uzun olmalı: sola kayma ilerledikçe sağ uçtaki
+ * dalga sahnenin içine giriyor ve deniz boş kalıyor.
+ */
+const WAVE_HALF = 90; // yarım periyot
+const WAVE_LEAD = 180; // iki uçtaki pay
+
+function WaveLine({ y, width = 1440, opacity = 1 }) {
+  const segments = Math.ceil((width + WAVE_LEAD * 2) / WAVE_HALF);
+  const d = `M${-WAVE_LEAD} ${y} q 45 -8 90 0 ` + `t 90 0 `.repeat(segments - 1);
   return <path d={d} opacity={opacity} />;
 }
 
@@ -252,7 +263,7 @@ export function PortSilhouette({ className = "" }) {
       {/* Arka dalga — geminin gerisinde */}
       <g stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" opacity="0.35">
         <g className="landing-wave">
-          <WaveLine y={WATER_S + 2} />
+          <WaveLine y={WATER_S + 2} width={1200} />
         </g>
       </g>
 
@@ -286,8 +297,8 @@ export function PortSilhouette({ className = "" }) {
       {/* Ön dalgalar — GEMİDEN SONRA çiziliyor ki gövdenin önünden geçsinler */}
       <g stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" opacity="0.55">
         <g className="landing-wave">
-          <WaveLine y={WATER_S + 8} />
-          <WaveLine y={WATER_S + 18} opacity={0.6} />
+          <WaveLine y={WATER_S + 8} width={1200} />
+          <WaveLine y={WATER_S + 18} width={1200} opacity={0.6} />
         </g>
       </g>
     </svg>
