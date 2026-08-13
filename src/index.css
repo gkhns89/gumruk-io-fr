@@ -184,42 +184,49 @@ html {
 /* Hız geçişleri keyframe içindeki `animation-timing-function` ile veriliyor: her adım
    bir sonraki adıma kadar geçerli. Böylece gemi duruştan yavaşça kalkıp yanaşırken
    yavaşça duruyor; sabit hızlı (linear) sert gidiş-geliş kalmıyor. */
+/* Süre oranı bilinçli: gerçekte liman operasyonu ~1 gün, Uzakdoğu seferi ~30 gün (1:30).
+   Bu oran animasyona sığmaz; 1:3,4'e sıkıştırıldı — sefer, liman duruşunun üç katından
+   uzun sürdüğü için "kıtalar arası yol" olarak okunuyor, ama izleyiciyi yormuyor.
+   74 sn'lik turda: yanaşma 8 sn · yükleme 10 sn · SEFER 34 sn · boşaltma 10 sn · çıkış 7 sn. */
 @keyframes landing-berth {
   0% {
     transform: translateX(-300px);
     animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1); /* yanaşırken yavaşlar */
   }
-  22%, 40% {
+  11%, 24% {
     transform: translateX(0); /* vinçlerin hizasında duruş — yükleme */
-    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); /* yavaşça kalkar, yavaşça durur */
+    /* Uzun seferde yumuşak uçlar, ortada neredeyse sabit seyir hızı */
+    animation-timing-function: cubic-bezier(0.2, 0.15, 0.8, 0.85);
   }
-  63%, 81% {
+  70%, 84% {
     transform: translateX(880px); /* boşaltma vincinin önünde duruş */
     animation-timing-function: cubic-bezier(0.5, 0, 0.9, 1); /* yavaşça hızlanarak çıkar */
   }
-  92%, 100% {
+  93%, 100% {
     transform: translateX(1250px); /* sahne dışı */
   }
 }
 
-/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %22-40, boşaltma %63-81 */
+/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %11-24, boşaltma %70-84.
+   Konteynerler 1,2 sn arayla giriyor (bkz. PortScene `stagger`), yani en erken parça
+   pencereden 6,5 puan önce başlıyor; aşağıdaki yüzdeler bu paya göre seçildi. */
 @keyframes landing-cargo-ship {
-  0%, 29%   { opacity: 0; transform: translateY(-9px); }
-  33%, 70%  { opacity: 1; transform: translateY(0); }
-  74%, 100% { opacity: 0; transform: translateY(-9px); }
+  0%, 19%   { opacity: 0; transform: translateY(-9px); }
+  22%, 77%  { opacity: 1; transform: translateY(0); }
+  80%, 100% { opacity: 0; transform: translateY(-9px); }
 }
 
 /* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
 @keyframes landing-cargo-yard {
-  0%, 30%   { opacity: 1; }
-  34%, 93%  { opacity: 0; }
-  97%, 100% { opacity: 1; }
+  0%, 20%   { opacity: 1; }
+  23%, 96%  { opacity: 0; }
+  99%, 100% { opacity: 1; }
 }
 
 /* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
 @keyframes landing-cargo-dest {
-  0%, 70%   { opacity: 0; }
-  74%, 95%  { opacity: 1; }
+  0%, 77%   { opacity: 0; }
+  80%, 96%  { opacity: 1; }
   99%, 100% { opacity: 0; }
 }
 
@@ -229,12 +236,11 @@ html {
   50%      { transform: translateY(-10px); }
 }
 
-/* 58s: yol segmentleri 26 sn'den 32,5 sn'ye çıktı (hız %20 düştü), duraklar 10,4 sn'de kaldı.
-   Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
-.landing-berth      { animation: landing-berth 58s linear infinite; }
-.landing-cargo-ship { animation: landing-cargo-ship 58s linear infinite; }
-.landing-cargo-yard { animation: landing-cargo-yard 58s linear infinite; }
-.landing-cargo-dest { animation: landing-cargo-dest 58s linear infinite; }
+/* Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
+.landing-berth      { animation: landing-berth 74s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 74s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 74s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 74s linear infinite; }
 .landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }

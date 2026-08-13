@@ -180,8 +180,12 @@ const yardSlots = (originX) => [
   { x: originX + 33, y: 78 },
 ];
 
-/** Sıralı yükleme: negatif gecikme, sonsuz döngüde kalıcı faz kayması verir */
-const stagger = (i) => ({ animationDelay: `${-(CARGO_SLOTS.length - 1 - i) * 0.4}s` });
+/**
+ * Sıralı yükleme: negatif gecikme, sonsuz döngüde kalıcı faz kayması verir.
+ * 1,2 sn aralık, 5 konteyner → ~4,8 sn'lik yayılım; 10 sn'lik liman duruşuna oturuyor.
+ * Değer değişirse `index.css`'teki landing-cargo-* yüzdeleri de kaydırılmalı.
+ */
+const stagger = (i) => ({ animationDelay: `${-(CARGO_SLOTS.length - 1 - i) * 1.2}s` });
 
 /**
  * İnce siluet şeridi — koyu zeminli CTA bandının altında kullanılır.
