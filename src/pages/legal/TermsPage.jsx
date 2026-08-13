@@ -21,10 +21,20 @@ export default function TermsPage() {
       <Section no={1} title="Taraflar">
         <p>
           İşbu koşullar bir tarafta{" "}
-          <strong className="text-text-main">{LEGAL.legalName}</strong> ({LEGAL.address},{" "}
-          {LEGAL.taxOffice} — {LEGAL.taxNumber}, MERSİS: {LEGAL.mersis}) ile diğer tarafta
-          hizmetten yararlanan gümrük müşavirliği firması ("Abone") ve Abone adına sisteme
-          erişim yetkisi verilen kişiler ("Kullanıcı") arasında geçerlidir.
+          <strong className="text-text-main">{LEGAL.legalName}</strong>
+          {LEGAL.isCompany ? (
+            <>
+              {" "}
+              ({LEGAL.address}, {LEGAL.taxOffice} — {LEGAL.taxNumber}, MERSİS: {LEGAL.mersis})
+            </>
+          ) : (
+            <>
+              {" "}
+              ({LEGAL.title}, {LEGAL.address})
+            </>
+          )}{" "}
+          ile diğer tarafta hizmetten yararlanan gümrük müşavirliği firması ("Abone") ve Abone
+          adına sisteme erişim yetkisi verilen kişiler ("Kullanıcı") arasında geçerlidir.
         </p>
       </Section>
 
@@ -62,7 +72,8 @@ export default function TermsPage() {
           ]}
         />
         <p>
-          Açık oturumlar Hesabım bölümünden görüntülenebilir ve gerektiğinde uzaktan
+          Açık oturumlar sistem tarafından kayıt altına alınır. Yetkisiz erişim şüphesi
+          hâlinde oturumlar, talep üzerine sistem yöneticisi tarafından uzaktan
           sonlandırılabilir.
         </p>
       </Section>

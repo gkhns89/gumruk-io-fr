@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "../../components/common/ThemeToggle";
+import CookieConsent from "../landing/sections/CookieConsent";
 import { LEGAL, hasPlaceholders } from "./legalInfo";
 import emblemLight from "../../assets/brand/emblem-light.png";
 import emblemDark from "../../assets/brand/emblem-dark.png";
@@ -125,6 +126,9 @@ export default function LegalLayout({ title, intro, children }) {
           </div>
         </div>
       </footer>
+
+      {/* Yasal sayfalar da pazarlama tarafında; onay bandı burada da görünür */}
+      <CookieConsent />
     </div>
   );
 }

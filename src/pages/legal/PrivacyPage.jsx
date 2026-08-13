@@ -20,14 +20,20 @@ export default function PrivacyPage() {
     >
       <Section no={1} title="Veri sorumlusu">
         <p>
-          Veri sorumlusu, <strong className="text-text-main">{LEGAL.legalName}</strong>'dir.
+          Veri sorumlusu, <strong className="text-text-main">{LEGAL.legalName}</strong>
+          {LEGAL.isCompany ? "'dir." : ` (${LEGAL.title}) adlı gerçek kişidir.`}
         </p>
         <List
           items={[
             `Adres: ${LEGAL.address}`,
-            `Vergi dairesi / numarası: ${LEGAL.taxOffice} — ${LEGAL.taxNumber}`,
-            `MERSİS: ${LEGAL.mersis}`,
+            ...(LEGAL.isCompany
+              ? [
+                  `Vergi dairesi / numarası: ${LEGAL.taxOffice} — ${LEGAL.taxNumber}`,
+                  `MERSİS: ${LEGAL.mersis}`,
+                ]
+              : []),
             `E-posta: ${LEGAL.email}`,
+            `Telefon: ${LEGAL.phone}`,
           ]}
         />
         <p>
@@ -119,6 +125,10 @@ export default function PrivacyPage() {
               term: "Görev yönetimi",
               desc: "Sistem üzerinden ilettiğiniz geri bildirim ve destek talepleri, takip edilebilmesi için bir görev yönetimi aracına aktarılır.",
             },
+            {
+              term: "Ölçümleme (yalnızca tanıtım sayfası)",
+              desc: "Onay vermeniz hâlinde, tanıtım sayfasındaki ziyaret istatistikleri Google Analytics'e iletilir. Giriş yapılan sistemde bu araç kullanılmaz. Ayrıntı için 7. bölüm.",
+            },
           ]}
         />
         <p>
@@ -128,14 +138,29 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section no={7} title="Çerezler ve tarayıcı depolaması">
+      <Section no={7} title="Çerezler, ölçümleme ve tarayıcı depolaması">
         <p>
-          <strong className="text-text-main">
-            Sistemde analitik, reklam veya izleme çerezi kullanılmamaktadır.
-          </strong>{" "}
-          Üçüncü taraf bir analiz veya reklam aracı yüklenmez. Tarayıcınızda yalnızca hizmetin
-          çalışması için gereken bilgiler saklanır:
+          Ölçümleme bakımından tanıtım sayfası ile giriş yapılan sistem{" "}
+          <strong className="text-text-main">birbirinden tamamen ayrıdır</strong>:
         </p>
+        <DefList
+          rows={[
+            {
+              term: "Tanıtım sayfası",
+              desc: "Ziyaretçi sayısını ve hangi bölümlerin ilgi gördüğünü ölçmek için Google Analytics kullanılabilir. Bu ölçüm isteğe bağlıdır: sayfayı ilk açtığınızda çıkan bantta onay vermediğiniz sürece ölçüm aracı tarayıcınıza hiç yüklenmez, Google'a hiçbir istek gönderilmez. Reddettiğinizde sayfa aynı şekilde çalışır.",
+            },
+            {
+              term: "Giriş yapılan sistem",
+              desc: "Panelde ve tüm uygulama sayfalarında analitik, reklam veya izleme aracı KULLANILMAZ. Kullanıcıların sistem içindeki davranışları ölçümlenmez; bu sayfalarda üçüncü taraf bir ölçüm scripti yüklenmez.",
+            },
+          ]}
+        />
+        <p>
+          Onay verdiğiniz takdirde ölçüm, IP adresi kısaltılarak ve Google'ın reklam
+          kişiselleştirme sinyalleri kapalı olarak yapılandırılır; veriler reklam hedeflemesi
+          için kullanılmaz. Tercihinizi tarayıcı verilerini temizleyerek geri alabilirsiniz.
+        </p>
+        <p>Bunların dışında tarayıcınızda yalnızca hizmetin çalışması için gereken bilgiler saklanır:</p>
         <DefList
           rows={[
             { term: "Oturum bilgisi", desc: "Giriş yaptığınızda oturumun sürdürülmesi için." },
@@ -145,7 +170,7 @@ export default function PrivacyPage() {
             },
             {
               term: "Bilgilendirme durumu",
-              desc: "Tarayıcı uyumluluk uyarısını kapattığınızın hatırlanması.",
+              desc: "Tarayıcı uyumluluk uyarısını ve çerez tercihinizi kapattığınızın hatırlanması.",
             },
           ]}
         />
@@ -170,7 +195,7 @@ export default function PrivacyPage() {
           items={[
             "Şifreler geri döndürülemez biçimde özetlenerek saklanır; düz metin olarak tutulmaz.",
             "Sisteme erişim rol bazlı yetkilendirmeyle sınırlandırılır.",
-            "Açık oturumlar görüntülenebilir ve uzaktan sonlandırılabilir.",
+            "Açık oturumlar kayıt altına alınır; şüpheli bir durumda sistem yöneticisi tarafından uzaktan sonlandırılabilir.",
             "Veri aktarımı şifreli bağlantı (HTTPS) üzerinden yapılır.",
           ]}
         />

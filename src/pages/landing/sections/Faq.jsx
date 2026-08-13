@@ -8,7 +8,11 @@ const QUESTIONS = [
   },
   {
     q: "Ekibimdeki herkes her şeyi görebilir mi?",
-    a: "Hayır. Kullanıcılar rollerine göre yetkilendirilir; yönetici ve çalışan yetkileri ayrıdır. Açık oturumları ayrıca görebilir, gerektiğinde uzaktan sonlandırabilirsiniz.",
+    a: "Hayır. Kullanıcılar rollerine göre yetkilendirilir; firma yöneticisi ile çalışan yetkileri ayrıdır. Açık oturumlar sistem tarafından kayıt altına alınır; yetkisiz erişim şüphesi hâlinde talebiniz üzerine sistem yöneticisi tarafından uzaktan sonlandırılır.",
+  },
+  {
+    q: "Vekaletleri nasıl takip ediyoruz?",
+    a: "Her müşteri firmayla olan vekalet ilişkiniz sistemde kayıtlı tutulur; başlangıç ve bitiş tarihleriyle birlikte listelenir ve kalan gün sayısı otomatik hesaplanır. Süresi dolmak üzere olan vekaletler listede öne çıkar, böylece süresi geçmiş bir vekaletle işlem yapma riski ortadan kalkar.",
   },
   {
     q: "Konteyner takibi nasıl çalışıyor?",

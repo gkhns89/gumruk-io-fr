@@ -11,6 +11,7 @@ const COLUMNS = [
       { href: "#ozellikler", label: "Özellikler" },
       { href: "#canli-takip", label: "Canlı Takip" },
       { href: "#ekranlar", label: "Ekranlar" },
+      { href: "#yakinda", label: "Yakında" },
       { href: "#fiyatlandirma", label: "Fiyatlandırma" },
     ],
   },
