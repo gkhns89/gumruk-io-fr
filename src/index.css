@@ -135,8 +135,54 @@ html {
   animation: landing-route-dash 1.2s linear infinite;
 }
 
+/* Tanıtım sayfası — liman sahnesindeki taşıtlar.
+   Ötelemeler SVG kullanıcı biriminde (viewBox koordinatı) verilir; yüzde kullanılırsa
+   elemanın kendi bbox'ına göre çözülür ve sahne genişliğini kat etmez. */
+@keyframes landing-sail {
+  from { transform: translateX(-260px); }
+  to   { transform: translateX(1620px); }
+}
+
+@keyframes landing-sail-back {
+  from { transform: translateX(1500px); }
+  to   { transform: translateX(-240px); }
+}
+
+@keyframes landing-drive {
+  from { transform: translateX(-160px); }
+  to   { transform: translateX(1560px); }
+}
+
+@keyframes landing-fly {
+  from { transform: translate(-140px, 26px); }
+  to   { transform: translate(1560px, -22px); }
+}
+
+@keyframes landing-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+@keyframes landing-wave {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-180px); }
+}
+
+.landing-ship      { animation: landing-sail 46s linear infinite; }
+.landing-ship-back { animation: landing-sail-back 62s linear infinite; }
+.landing-truck     { animation: landing-drive 26s linear infinite; }
+.landing-plane     { animation: landing-fly 32s linear infinite; }
+.landing-bob       { animation: landing-bob 4.5s ease-in-out infinite; }
+.landing-wave      { animation: landing-wave 9s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .landing-route-line {
+  .landing-route-line,
+  .landing-ship,
+  .landing-ship-back,
+  .landing-truck,
+  .landing-plane,
+  .landing-bob,
+  .landing-wave {
     animation: none;
   }
 }

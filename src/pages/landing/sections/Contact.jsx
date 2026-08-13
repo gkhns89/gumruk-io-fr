@@ -1,5 +1,6 @@
 import React from "react";
 import { CONTACT, DEMO_MAILTO } from "../contactInfo";
+import { PortSilhouette } from "./PortScene";
 
 // Public bir "demo talebi" endpoint'i yok — form yerine doğrudan e-posta/telefon.
 // Boşa giden bir form göstermektense çalışan bir kanal veriyoruz.
@@ -7,13 +8,13 @@ export default function Contact() {
   return (
     <section id="iletisim" className="bg-white py-20 lg:py-28 dark:bg-brand-navy">
       <div className="mx-auto max-w-5xl px-6">
-        <div className="relative overflow-hidden rounded-3xl bg-brand-navy px-8 py-14 text-center sm:px-14 dark:border dark:border-white/15 dark:bg-white/[0.07]">
+        <div className="relative overflow-hidden rounded-3xl bg-brand-navy px-8 pt-14 pb-32 text-center sm:px-14 dark:border dark:border-white/15 dark:bg-white/[0.07]">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_0%,rgba(56,189,248,0.22),transparent_70%)]"
           />
 
-          <div className="relative">
+          <div className="relative z-10">
             <h2 className="font-brand text-3xl font-extrabold text-white sm:text-4xl">
               Sistemi kendi işleyişiniz üzerinden görün
             </h2>
@@ -46,6 +47,9 @@ export default function Contact() {
               </a>
             </p>
           </div>
+
+          {/* Dekoratif siluet — bandın alt kenarını doldurur */}
+          <PortSilhouette className="absolute inset-x-0 bottom-0 text-white/10" />
         </div>
       </div>
     </section>

@@ -136,17 +136,30 @@ export default function LiveTracking() {
                 </g>
               ))}
 
-              {/* Şu anki konum */}
+              {/* Şu anki konum — gemi, işaretçinin üzerinde hafifçe salınıyor */}
               <g>
                 <circle
                   cx="452"
                   cy="146"
-                  r="9"
+                  r="10"
                   className="fill-brand-sky/40"
                   style={{ transformOrigin: "452px 146px", animation: "cargo-pulse 2s ease-out infinite" }}
                 />
-                <circle cx="452" cy="146" r="8" className="fill-brand-blue dark:fill-brand-sky" />
-                <circle cx="452" cy="146" r="3" className="fill-white" />
+                <circle cx="452" cy="146" r="4.5" className="fill-brand-blue dark:fill-brand-sky" />
+
+                <g className="landing-bob" transform="translate(430 116)">
+                  {/* Güverte yükü */}
+                  <rect x="6" y="6" width="9" height="5" rx="0.8" className="fill-brand-blue dark:fill-brand-sky" />
+                  <rect x="17" y="6" width="9" height="5" rx="0.8" className="fill-brand-sky" />
+                  <rect x="6" y="1" width="9" height="4" rx="0.8" className="fill-brand-sky" />
+                  {/* Köprüüstü */}
+                  <rect x="29" y="3" width="8" height="8" rx="1" className="fill-brand-navy dark:fill-white" />
+                  {/* Gövde */}
+                  <path
+                    d="M2 11 H40 L36 18 H6 Z"
+                    className="fill-brand-navy dark:fill-white"
+                  />
+                </g>
               </g>
             </svg>
 

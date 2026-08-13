@@ -9,8 +9,8 @@
  */
 export const CONTACT = {
   email: "iletisim@gumruk.io",
-  phone: "+90 000 000 00 00",
-  phoneHref: "tel:+900000000000",
+  phone: "+90 541 935 55 89",
+  phoneHref: "tel:+905419355589",
 };
 
 export const DEMO_MAILTO = `mailto:${CONTACT.email}?subject=${encodeURIComponent(

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
+import PortScene from "./PortScene";
 
 // Önizleme kartındaki sahte veri — gerçek müşteri verisi kullanılmaz
 const PREVIEW_ROWS = [
@@ -34,7 +35,7 @@ export default function Hero() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_70%_0%,rgba(56,189,248,0.16),transparent_70%),radial-gradient(50%_50%_at_10%_20%,rgba(30,79,216,0.12),transparent_70%)]"
       />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pt-20 pb-12 lg:grid-cols-2 lg:pt-28 lg:pb-16">
         {/* Sol: metin */}
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-blue/20 bg-brand-blue/5 px-4 py-1.5 text-xs font-semibold text-brand-blue dark:border-brand-sky/25 dark:bg-brand-sky/10 dark:text-brand-sky">
@@ -123,6 +124,11 @@ export default function Hero() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Dekoratif liman sahnesi — hero'yu bir sonraki bölüme bağlar */}
+      <div className="relative">
+        <PortScene />
       </div>
     </section>
   );
