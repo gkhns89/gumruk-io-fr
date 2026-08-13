@@ -225,9 +225,10 @@ export function PortSilhouette({ className = "" }) {
         <GantryCrane x={950} scale={0.6} opacity={0.8} baseline={QUAY_S} />
       </g>
 
-      {/* Sol istif — gemiye yüklendikçe boşalır */}
+      {/* Sol istif — gemiye yüklendikçe boşalır.
+          x=215: ikinci vincin ayakları x≈201'de bitiyor, istif onun önünde kalmasın. */}
       <g fill="currentColor" opacity="0.75">
-        {yardSlots(178).map((slot, i) => (
+        {yardSlots(215).map((slot, i) => (
           <rect
             key={`src${i}`}
             className="landing-cargo-yard"
