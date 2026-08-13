@@ -4,8 +4,6 @@ import { CONTACT } from "../contactInfo";
 import emblemLight from "../../../assets/brand/emblem-light.png";
 import emblemDark from "../../../assets/brand/emblem-dark.png";
 
-// NOT: Kullanım Koşulları ve Gizlilik Politikası henüz hazırlanmadı; hazır olmadan
-// buraya link eklenmiyor — çalışmayan yasal link olmaması daha iyi.
 const COLUMNS = [
   {
     title: "Ürün",
@@ -73,12 +71,26 @@ export default function LandingFooter() {
           <p className="text-sm text-text-secondary">
             © {year} Gümrük.io — G.Codes. Tüm hakları saklıdır.
           </p>
-          <Link
-            to="/login"
-            className="text-sm font-semibold text-brand-blue hover:underline dark:text-brand-sky"
-          >
-            Sisteme Giriş
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link
+              to="/kullanim-kosullari"
+              className="text-sm text-text-secondary transition-colors hover:text-brand-blue dark:hover:text-brand-sky"
+            >
+              Kullanım Koşulları
+            </Link>
+            <Link
+              to="/gizlilik"
+              className="text-sm text-text-secondary transition-colors hover:text-brand-blue dark:hover:text-brand-sky"
+            >
+              Gizlilik Politikası
+            </Link>
+            <Link
+              to="/login"
+              className="text-sm font-semibold text-brand-blue hover:underline dark:text-brand-sky"
+            >
+              Sisteme Giriş
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
