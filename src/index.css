@@ -176,6 +176,45 @@ html {
   97%, 100% { opacity: 0; }
 }
 
+/* İletişim bandındaki liman sahnesi — tek bir 36 sn'lik koreografi:
+   gemi boş girer → sol rıhtımda yüklenir → sağ vince yanaşıp boşaltır → sahneden çıkar.
+   Bütün parçalar aynı süreyi paylaşır, sahneye kendi yüzdeleriyle girer.
+   Sıralı yükleme negatif `animation-delay` ile veriliyor: pozitif gecikme yalnızca ilk
+   turu geciktirir, sonsuz döngüde kalıcı faz kayması sağlamaz. */
+@keyframes landing-berth {
+  0%        { transform: translateX(-640px); }
+  14%       { transform: translateX(-60px); }  /* yanaşırken yavaşlar */
+  18%, 38%  { transform: translateX(0); }      /* sol rıhtımda duruş — yükleme */
+  52%       { transform: translateX(580px); }  /* vince yaklaşırken yavaşlar */
+  58%, 78%  { transform: translateX(650px); }  /* vinç önünde duruş — boşaltma */
+  92%, 100% { transform: translateX(1240px); } /* sahneden çıkış */
+}
+
+/* Geminin güvertesindeki yük */
+@keyframes landing-cargo-ship {
+  0%, 23%   { opacity: 0; transform: translateY(-7px); }
+  26%, 66%  { opacity: 1; transform: translateY(0); }
+  69%, 100% { opacity: 0; transform: translateY(-7px); }
+}
+
+/* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
+@keyframes landing-cargo-yard {
+  0%, 24%   { opacity: 1; }
+  27%, 90%  { opacity: 0; }
+  94%, 100% { opacity: 1; }
+}
+
+/* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
+@keyframes landing-cargo-dest {
+  0%, 64%   { opacity: 0; }
+  67%, 90%  { opacity: 1; }
+  94%, 100% { opacity: 0; }
+}
+
+.landing-berth      { animation: landing-berth 36s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 36s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 36s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 36s linear infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
@@ -187,6 +226,10 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .landing-route-line,
   .landing-voyage,
+  .landing-berth,
+  .landing-cargo-ship,
+  .landing-cargo-yard,
+  .landing-cargo-dest,
   .landing-ship,
   .landing-ship-back,
   .landing-truck,

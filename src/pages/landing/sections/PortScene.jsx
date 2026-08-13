@@ -157,52 +157,131 @@ function WaveLine({ y, opacity = 1 }) {
   return <path d={d} opacity={opacity} />;
 }
 
+/* --- İletişim bandındaki sahnenin yerleşimi --- */
+
+const QUAY_S = 100; // siluet sahnesindeki rıhtım hattı
+const WATER_S = 110; // su hattı
+
+/** Geminin güvertesindeki yük gözleri (gemi yerel koordinatı, aynalamadan önce) */
+const CARGO_SLOTS = [
+  { x: 90, y: 22 },
+  { x: 66, y: 22 },
+  { x: 42, y: 22 },
+  { x: 18, y: 22 },
+  { x: 42, y: 11 },
+];
+
+/** Rıhtım istifi — 3 alt + 2 üst */
+const yardSlots = (originX) => [
+  { x: originX, y: 90 },
+  { x: originX + 22, y: 90 },
+  { x: originX + 44, y: 90 },
+  { x: originX + 11, y: 78 },
+  { x: originX + 33, y: 78 },
+];
+
+/** Sıralı yükleme: negatif gecikme, sonsuz döngüde kalıcı faz kayması verir */
+const stagger = (i) => ({ animationDelay: `${-(CARGO_SLOTS.length - 1 - i) * 0.4}s` });
+
 /**
  * İnce siluet şeridi — koyu zeminli CTA bandının altında kullanılır.
- * Tek renk (currentColor), sahnenin sade hali.
+ * Tek renk (currentColor).
+ *
+ * Döngü (36 sn, tamamı `index.css`'teki keyframe'lerde):
+ *   boş gemi girer → sol rıhtımda yüklenir → sağ vince yanaşır → boşaltır → sahneden çıkar.
+ * Azaltılmış hareket tercihinde animasyonlar kapanır ve sahne "gemi sol rıhtımda yüklü
+ * bekliyor" halinde donar; bu yüzden geminin duruş noktası aynı zamanda temel konumdur.
  */
 export function PortSilhouette({ className = "" }) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 1200 130"
-      preserveAspectRatio="xMidYMax slice"
+      /* `meet`: sahnenin tamamı görünmeli — `slice` dar kartlarda sağdaki boşaltma
+         vincini kırpıyor ve koreografinin yarısı ekran dışında kalıyordu. */
+      preserveAspectRatio="xMidYMax meet"
       className={`pointer-events-none h-24 w-full select-none sm:h-32 ${className}`}
     >
+      {/* Sol rıhtım: vinçler */}
       <g fill="currentColor">
-        <GantryCrane x={60} scale={0.62} opacity={0.9} baseline={104} />
-        <GantryCrane x={150} scale={0.5} opacity={0.65} baseline={104} />
-        <GantryCrane x={980} scale={0.55} opacity={0.7} baseline={104} />
+        <GantryCrane x={40} scale={0.62} opacity={0.9} baseline={QUAY_S} />
+        <GantryCrane x={140} scale={0.5} opacity={0.65} baseline={QUAY_S} />
+        {/* Sağ rıhtımdaki boşaltma vinci */}
+        <GantryCrane x={950} scale={0.6} opacity={0.8} baseline={QUAY_S} />
       </g>
 
-      {/* İstif */}
+      {/* Sol istif — gemiye yüklendikçe boşalır */}
       <g fill="currentColor" opacity="0.75">
-        {[0, 1, 2, 3].map((i) => (
-          <rect key={`a${i}`} x={250 + i * 22} y="94" width="20" height="10" rx="1" />
-        ))}
-        {[0, 1].map((i) => (
-          <rect key={`b${i}`} x={272 + i * 22} y="82" width="20" height="10" rx="1" />
+        {yardSlots(200).map((slot, i) => (
+          <rect
+            key={`src${i}`}
+            className="landing-cargo-yard"
+            style={stagger(i)}
+            x={slot.x}
+            y={slot.y}
+            width="20"
+            height="10"
+            rx="1"
+          />
         ))}
       </g>
 
-      {/* Sefer halindeki gemi — animasyon dışta, konum içte; sağa gittiği için aynalı */}
-      <g className="landing-ship">
-        <g transform="translate(118 62) scale(-0.62 0.62)" fill="currentColor">
+      {/* Sağ istif — gemi boşalttıkça dolar */}
+      <g fill="currentColor" opacity="0.75">
+        {yardSlots(1020).map((slot, i) => (
+          <rect
+            key={`dst${i}`}
+            className="landing-cargo-dest"
+            style={stagger(i)}
+            x={slot.x}
+            y={slot.y}
+            width="20"
+            height="10"
+            rx="1"
+            /* Animasyon kapalıyken (azaltılmış hareket) sağ istif boş görünsün;
+               keyframe'deki CSS opacity bu sunum niteliğini zaten ezer. */
+            opacity="0"
+          />
+        ))}
+      </g>
+
+      {/* Arka dalga — geminin gerisinde */}
+      <g stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" opacity="0.35">
+        <g className="landing-wave">
+          <WaveLine y={WATER_S + 2} />
+        </g>
+      </g>
+
+      {/* Gemi — hareket dışta, konum içte; sağa gittiği için aynalı.
+          Su hattı (yerel y=31) sahnede WATER_S'e denk gelir. */}
+      <g className="landing-berth">
+        <g transform={`translate(368 ${WATER_S - 31 * 0.55}) scale(-0.55 0.55)`} fill="currentColor">
           <g className="landing-bob">
-            <rect x="18" y="22" width="21" height="9" rx="1" />
-            <rect x="42" y="22" width="21" height="9" rx="1" />
-            <rect x="66" y="22" width="21" height="9" rx="1" />
-            <rect x="30" y="11" width="21" height="9" rx="1" />
+            {/* Güverte yükü — sırayla yüklenip boşalıyor */}
+            {CARGO_SLOTS.map((slot, i) => (
+              <rect
+                key={`hold${i}`}
+                className="landing-cargo-ship"
+                style={stagger(i)}
+                x={slot.x}
+                y={slot.y}
+                width="21"
+                height="9"
+                rx="1"
+              />
+            ))}
+            {/* Köprüüstü ve gövde — her zaman görünür */}
             <rect x="146" y="4" width="26" height="27" rx="2" />
             <path d="M4 31 H186 L172 53 H16 Z" />
           </g>
         </g>
       </g>
 
-      {/* Su hattı */}
-      <g stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" opacity="0.5">
+      {/* Ön dalgalar — GEMİDEN SONRA çiziliyor ki gövdenin önünden geçsinler */}
+      <g stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" opacity="0.55">
         <g className="landing-wave">
-          <WaveLine y={118} />
+          <WaveLine y={WATER_S + 8} />
+          <WaveLine y={WATER_S + 18} opacity={0.6} />
         </g>
       </g>
     </svg>
