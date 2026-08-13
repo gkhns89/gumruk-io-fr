@@ -262,10 +262,30 @@ html {
   99%, 100% { opacity: 0; }
 }
 
-/* Yanaşan geminin salınımı — sahnedeki diğer gemilerden belirgin biçimde daha derin */
+/* Yanaşan geminin salınımı — sahnedeki diğer gemilerden belirgin biçimde daha derin.
+   Genlik sabit değil: `--bob-amp` ile tur boyunca ölçekleniyor (aşağıya bakınız). */
 @keyframes landing-bob-deep {
-  0%, 100% { transform: translateY(4px); }
-  50%      { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(calc(var(--bob-amp) * 4px)); }
+  50%      { transform: translateY(calc(var(--bob-amp) * -10px)); }
+}
+
+/* Salınım genliğinin çarpanı. `@property` ile sayı olarak kaydedilmesi şart — kayıtsız
+   özel özellikler animasyonda kademeli değil, sıçrayarak değişir. */
+@property --bob-amp {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* Genlik, geminin hız profiliyle aynı yüzdelere oturuyor (bkz. landing-berth):
+   rıhtıma yanaşırken sönümlenir, kalkışta artar, seyirde en yüksektir. */
+@keyframes landing-bob-amp {
+  0%, 9%    { --bob-amp: 1; }    /* sahneye sabit hızda giriş */
+  15%, 27%  { --bob-amp: 0.2; }  /* yükleme rıhtımında — neredeyse durgun */
+  33%, 62%  { --bob-amp: 1.15; } /* açık deniz seyri */
+  68%, 80%  { --bob-amp: 0.2; }  /* boşaltma rıhtımında */
+  86%       { --bob-amp: 1.15; } /* çıkışta yeniden canlanır */
+  96%, 100% { --bob-amp: 1; }
 }
 
 /* Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
@@ -274,6 +294,10 @@ html {
 .landing-cargo-yard { animation: landing-cargo-yard 84s linear infinite; }
 .landing-cargo-dest { animation: landing-cargo-dest 84s linear infinite; }
 .landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
+/* `--bob-amp` genlik çarpanını taşır; salınımı yapan grubun ÜST grubuna verilir ki
+   değer miras yoluyla çözülsün. Statik tanım, `@property` desteklenmeyen bir tarayıcıda
+   var() geçersiz kalıp transform'u tamamen düşürmesin diye duruyor. */
+.landing-bob-amp    { --bob-amp: 1; animation: landing-bob-amp 84s linear infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
@@ -290,6 +314,7 @@ html {
   .landing-cargo-yard,
   .landing-cargo-dest,
   .landing-bob-deep,
+  .landing-bob-amp,
   .landing-ship,
   .landing-ship-back,
   .landing-truck,

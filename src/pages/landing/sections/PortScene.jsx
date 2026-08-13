@@ -272,7 +272,14 @@ export function PortSilhouette({ className = "" }) {
           Temel konum = yükleme duruşu: gemi (x≈60..160) sol vinçlerin (x 40..201)
           tam hizasında duruyor; `landing-berth` bu noktaya göre öteliyor. */}
       <g className="landing-berth">
-        <g transform={`translate(162 ${WATER_S - 31 * 0.55}) scale(-0.55 0.55)`} fill="currentColor">
+        {/* `landing-bob-amp` yalnızca --bob-amp özel özelliğini canlandırır (transform'a
+            dokunmaz), alttaki salınım bu çarpanı miras alır: limanda sönümlenir,
+            seferde artar. */}
+        <g
+          className="landing-bob-amp"
+          transform={`translate(162 ${WATER_S - 31 * 0.55}) scale(-0.55 0.55)`}
+          fill="currentColor"
+        >
           <g className="landing-bob-deep">
             {/* Güverte yükü — sırayla yüklenip boşalıyor */}
             {CARGO_SLOTS.map((slot, i) => (
