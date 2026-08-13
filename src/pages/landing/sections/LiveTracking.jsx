@@ -147,7 +147,8 @@ export default function LiveTracking() {
                 />
                 <circle cx="452" cy="146" r="4.5" className="fill-brand-blue dark:fill-brand-sky" />
 
-                <g className="landing-bob" transform="translate(430 116)">
+                {/* Rota soldan sağa ilerliyor; gemi kıçı sağda çizili olduğu için aynalanıyor */}
+                <g className="landing-bob" transform="translate(472 116) scale(-1 1)">
                   {/* Güverte yükü */}
                   <rect x="6" y="6" width="9" height="5" rx="0.8" className="fill-brand-blue dark:fill-brand-sky" />
                   <rect x="17" y="6" width="9" height="5" rx="0.8" className="fill-brand-sky" />
