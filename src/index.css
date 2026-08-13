@@ -187,46 +187,78 @@ html {
 /* Süre oranı bilinçli: gerçekte liman operasyonu ~1 gün, Uzakdoğu seferi ~30 gün (1:30).
    Bu oran animasyona sığmaz; 1:3,4'e sıkıştırıldı — sefer, liman duruşunun üç katından
    uzun sürdüğü için "kıtalar arası yol" olarak okunuyor, ama izleyiciyi yormuyor.
-   74 sn'lik turda: yanaşma 8 sn · yükleme 10 sn · SEFER 34 sn · boşaltma 10 sn · çıkış 7 sn. */
+   84 sn'lik tur: giriş 12,6 · YÜKLEME 10 · SEFER 34,7 · BOŞALTMA 10 · çıkış 13,3 · bekleme 3,4
+
+   Her yol parçası üçe bölünmüş durumda: hızlanma → sabit seyir → yavaşlama.
+   Tek bir cubic-bezier bunu yapamaz; uçlarında eğimi sıfır olan bir eğri (ease-in-out)
+   ortada aşırı hızlanır, ortası düz olan bir eğrinin (ör. 0.2,0.15,0.8,0.85) ise uç
+   eğimi sıfır olmadığı için gemi duruştan anında fırlar ve anında durur.
+   Rampalar 80px / ~5,3 sn; seyir hızı ~30px/sn — üç parçanın hızı bu değerde buluşuyor. */
 @keyframes landing-berth {
+  /* Sahneye giriş: sabit hızda gelir */
   0% {
     transform: translateX(-300px);
-    animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1); /* yanaşırken yavaşlar */
+    animation-timing-function: linear;
   }
-  11%, 24% {
-    transform: translateX(0); /* vinçlerin hizasında duruş — yükleme */
-    /* Uzun seferde yumuşak uçlar, ortada neredeyse sabit seyir hızı */
-    animation-timing-function: cubic-bezier(0.2, 0.15, 0.8, 0.85);
+  9% {
+    transform: translateX(-80px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
   }
-  70%, 84% {
-    transform: translateX(880px); /* boşaltma vincinin önünde duruş */
-    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 1); /* yavaşça hızlanarak çıkar */
+  /* Vinçlerin hizasında duruş — yükleme */
+  15% {
+    transform: translateX(0);
   }
-  93%, 100% {
-    transform: translateX(1250px); /* sahne dışı */
+  27% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  /* Sefer */
+  33% {
+    transform: translateX(80px);
+    animation-timing-function: linear; /* sabit seyir */
+  }
+  62% {
+    transform: translateX(800px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
+  }
+  /* Boşaltma vincinin önünde duruş */
+  68% {
+    transform: translateX(880px);
+  }
+  80% {
+    transform: translateX(880px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  /* Çıkış */
+  86% {
+    transform: translateX(960px);
+    animation-timing-function: linear;
+  }
+  96%, 100% {
+    transform: translateX(1200px); /* sahne dışı */
   }
 }
 
-/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %11-24, boşaltma %70-84.
+/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %15-27, boşaltma %68-80.
    Konteynerler 1,2 sn arayla giriyor (bkz. PortScene `stagger`), yani en erken parça
-   pencereden 6,5 puan önce başlıyor; aşağıdaki yüzdeler bu paya göre seçildi. */
+   pencereden 5,7 puan önce başlıyor; aşağıdaki yüzdeler bu paya göre seçildi. */
 @keyframes landing-cargo-ship {
-  0%, 19%   { opacity: 0; transform: translateY(-9px); }
-  22%, 77%  { opacity: 1; transform: translateY(0); }
-  80%, 100% { opacity: 0; transform: translateY(-9px); }
+  0%, 21%   { opacity: 0; transform: translateY(-9px); }
+  24%, 74%  { opacity: 1; transform: translateY(0); }
+  77%, 100% { opacity: 0; transform: translateY(-9px); }
 }
 
 /* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
 @keyframes landing-cargo-yard {
-  0%, 20%   { opacity: 1; }
-  23%, 96%  { opacity: 0; }
+  0%, 21%   { opacity: 1; }
+  24%, 96%  { opacity: 0; }
   99%, 100% { opacity: 1; }
 }
 
 /* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
 @keyframes landing-cargo-dest {
-  0%, 77%   { opacity: 0; }
-  80%, 96%  { opacity: 1; }
+  0%, 74%   { opacity: 0; }
+  77%, 96%  { opacity: 1; }
   99%, 100% { opacity: 0; }
 }
 
@@ -237,10 +269,10 @@ html {
 }
 
 /* Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
-.landing-berth      { animation: landing-berth 74s linear infinite; }
-.landing-cargo-ship { animation: landing-cargo-ship 74s linear infinite; }
-.landing-cargo-yard { animation: landing-cargo-yard 74s linear infinite; }
-.landing-cargo-dest { animation: landing-cargo-dest 74s linear infinite; }
+.landing-berth      { animation: landing-berth 84s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 84s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 84s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 84s linear infinite; }
 .landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
 .landing-ship      { animation: landing-sail 46s linear infinite; }
