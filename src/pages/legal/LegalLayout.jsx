@@ -70,7 +70,7 @@ export default function LegalLayout({ title, intro, children }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white transition-colors duration-300 dark:bg-brand-navy">
+    <div className="landing-root min-h-screen bg-white transition-colors duration-300 dark:bg-brand-navy">
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-brand-navy/85">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <Link to="/" className="flex items-center gap-3">

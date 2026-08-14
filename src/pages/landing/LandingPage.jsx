@@ -15,7 +15,7 @@ import CookieConsent from "./sections/CookieConsent";
 // Giriş yapmış kullanıcı da bu sayfayı görebilmeli (CTA "Panele Git"e döner).
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white transition-colors duration-300 dark:bg-brand-navy">
+    <div className="landing-root min-h-screen bg-white transition-colors duration-300 dark:bg-brand-navy">
       <LandingHeader />
       <main>
         <Hero />

@@ -12,6 +12,8 @@ const FEATURES = [
     icon: "public",
     title: "Yük Takip",
     text: "Konteynerlerinizin son konumu, uğradığı limanlar ve tahmini varış tarihi canlı haritada. Gemi hareket ettikçe kayıt kendini günceller, müşteriyi aramaya gerek kalmaz.",
+    // Abonelik bedeline dahil değil — Fiyatlandırma ve SSS ile tutarlı kalmalı
+    note: "Kullanım başına ücretlendirilir",
   },
   {
     icon: "warehouse",
@@ -72,9 +74,16 @@ export default function Features() {
                 <span className="material-symbols-outlined">{feature.icon}</span>
               </span>
 
-              <h3 className="font-brand mt-5 text-lg font-bold text-brand-navy dark:text-white">
-                {feature.title}
-              </h3>
+              <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <h3 className="font-brand text-lg font-bold text-brand-navy dark:text-white">
+                  {feature.title}
+                </h3>
+                {feature.note && (
+                  <span className="rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary dark:border-white/25">
+                    {feature.note}
+                  </span>
+                )}
+              </div>
               <p className="mt-2.5 text-sm leading-relaxed text-text-secondary">{feature.text}</p>
             </div>
           ))}
@@ -86,7 +95,7 @@ export default function Features() {
           {EXTRAS.map((extra) => (
             <span
               key={extra}
-              className="rounded-full border border-gray-200 px-4 py-1.5 text-sm text-text-main dark:border-white/15"
+              className="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm text-text-main shadow-sm dark:border-white/15 dark:bg-white/5"
             >
               {extra}
             </span>

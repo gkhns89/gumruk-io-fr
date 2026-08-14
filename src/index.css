@@ -126,6 +126,43 @@ html {
   100% { transform: scale(1.8); opacity: 0;    }
 }
 
+/* --- Tanıtım ve yasal sayfaların ortak davranışı (.landing-root) --- */
+
+/* Sticky header çapa hedeflerinin üstünü kapatmasın. Bölüm bazlı değil kök seviyede
+   tanımlı: sonradan eklenen her section[id] bunu kendiliğinden alır. */
+.landing-root section[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Yumuşak kaydırma yalnızca tanıtım tarafında. `scroll-behavior` kaydırılan elemana
+   (html) yazılmak zorunda; `:has()` ile uygulama sayfaları etkilenmiyor. */
+html:has(.landing-root) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-root) {
+    scroll-behavior: auto;
+  }
+}
+
+/* Klavye odağı — marka renginde tek bir halka, her etkileşimli öğede aynı */
+.landing-root a:focus-visible,
+.landing-root button:focus-visible,
+.landing-root [role="button"]:focus-visible,
+.landing-root [role="switch"]:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+.dark .landing-root a:focus-visible,
+.dark .landing-root button:focus-visible,
+.dark .landing-root [role="button"]:focus-visible,
+.dark .landing-root [role="switch"]:focus-visible {
+  outline-color: var(--color-brand-sky);
+}
+
 /* Tanıtım sayfası — çizim haritadaki rota çizgisinin akışı */
 @keyframes landing-route-dash {
   to { stroke-dashoffset: -24; }

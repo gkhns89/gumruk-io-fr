@@ -60,14 +60,14 @@ export default function Faq() {
                   type="button"
                   onClick={() => setOpen(isOpen ? -1 : i)}
                   aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-4 py-5 text-left"
+                  className="group flex w-full items-center justify-between gap-4 py-5 text-left"
                 >
-                  <span className="font-brand font-semibold text-brand-navy dark:text-white">
+                  <span className="font-brand font-semibold text-brand-navy transition-colors group-hover:text-brand-blue dark:text-white dark:group-hover:text-brand-sky">
                     {item.q}
                   </span>
                   <span
-                    className={`material-symbols-outlined flex-shrink-0 text-text-secondary transition-transform ${
-                      isOpen ? "rotate-180" : ""
+                    className={`material-symbols-outlined flex-shrink-0 transition-all group-hover:text-brand-blue dark:group-hover:text-brand-sky ${
+                      isOpen ? "rotate-180 text-brand-blue dark:text-brand-sky" : "text-text-secondary"
                     }`}
                   >
                     expand_more

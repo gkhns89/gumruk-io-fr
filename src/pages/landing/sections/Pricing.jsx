@@ -69,10 +69,11 @@ export default function Pricing() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col rounded-2xl border bg-background-light p-7 transition-shadow dark:bg-white/5 ${
+                className={`relative flex flex-col rounded-2xl border bg-background-light p-7 transition-all dark:bg-white/5 ${
                   plan.highlighted
-                    ? "border-brand-blue shadow-xl shadow-brand-blue/10 dark:border-brand-sky"
-                    : "border-gray-200 hover:shadow-lg dark:border-white/10"
+                    ? // Önerilen plan hafifçe yukarıda dursun — dörtlü gridde göz ona gitsin
+                      "border-brand-blue shadow-xl shadow-brand-blue/10 lg:-translate-y-3 dark:border-brand-sky"
+                    : "border-gray-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10"
                 }`}
               >
                 {plan.highlighted && (
