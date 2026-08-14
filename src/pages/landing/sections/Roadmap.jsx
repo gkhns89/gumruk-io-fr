@@ -49,11 +49,11 @@ export default function Roadmap() {
             Yakında
           </span>
           <h2 className="font-brand mt-3 text-3xl font-extrabold text-white sm:text-4xl">
-            Üzerinde çalıştıklarımız
+            Sistem gelişmeye devam ediyor
           </h2>
           <p className="mt-4 text-lg text-white/70">
-            Aşağıdakiler henüz yayında değil. Sistemin nereye gittiğini görmeniz için
-            paylaşıyoruz — tarih taahhüdü vermiyoruz.
+            Aşağıdaki çalışmalar hâlihazırda geliştirme aşamasındadır. Tamamlandıkça devreye
+            alınacak ve abonelerimize ayrıca duyurulacaktır.
           </p>
         </div>
 
