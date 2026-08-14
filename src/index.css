@@ -20,6 +20,11 @@ html {
   --color-background: #f1f1f1;
   --color-background-light: #f5f8f8;
   --color-background-dark: #0f1e23;
+  /* Marka renkleri (gumruk.io kiti) — tanıtım sayfasında kullanılır */
+  --color-brand-navy: #0a1f44;
+  --color-brand-blue: #1e4fd8;
+  --color-brand-sky: #38bdf8;
+  --font-brand: "Sora", "Inter", sans-serif;
   --border-radius-default: 0.25rem;
   --border-radius-lg: 0.5rem;
   --border-radius-xl: 0.75rem;
@@ -119,6 +124,352 @@ html {
 @keyframes cargo-pulse {
   0%   { transform: scale(0.6); opacity: 0.85; }
   100% { transform: scale(1.8); opacity: 0;    }
+}
+
+/* --- Tanıtım ve yasal sayfaların ortak davranışı (.landing-root) --- */
+
+/* Sticky header çapa hedeflerinin üstünü kapatmasın. Bölüm bazlı değil kök seviyede
+   tanımlı: sonradan eklenen her section[id] bunu kendiliğinden alır. */
+.landing-root section[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Yumuşak kaydırma yalnızca tanıtım tarafında. `scroll-behavior` kaydırılan elemana
+   (html) yazılmak zorunda; `:has()` ile uygulama sayfaları etkilenmiyor. */
+html:has(.landing-root) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-root) {
+    scroll-behavior: auto;
+  }
+}
+
+/* Klavye odağı — marka renginde tek bir halka, her etkileşimli öğede aynı */
+.landing-root a:focus-visible,
+.landing-root button:focus-visible,
+.landing-root [role="button"]:focus-visible,
+.landing-root [role="switch"]:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+.dark .landing-root a:focus-visible,
+.dark .landing-root button:focus-visible,
+.dark .landing-root [role="button"]:focus-visible,
+.dark .landing-root [role="switch"]:focus-visible {
+  outline-color: var(--color-brand-sky);
+}
+
+/* Tanıtım sayfası — çizim haritadaki rota çizgisinin akışı */
+@keyframes landing-route-dash {
+  to { stroke-dashoffset: -24; }
+}
+
+.landing-route-line {
+  animation: landing-route-dash 1.2s linear infinite;
+}
+
+/* Tanıtım sayfası — liman sahnesindeki taşıtlar.
+   Ötelemeler SVG kullanıcı biriminde (viewBox koordinatı) verilir; yüzde kullanılırsa
+   elemanın kendi bbox'ına göre çözülür ve sahne genişliğini kat etmez. */
+/* Hareket mesafeleri değişkenden okunuyor: sahnenin geniş ve dar (mobil) sürümleri aynı
+   keyframe'leri paylaşsın, yalnızca uç noktalar değişsin. Değerler `.landing-scene` ve
+   `.landing-scene-compact` üzerinde tanımlı. */
+@keyframes landing-sail {
+  from { transform: translateX(var(--sail-from)); }
+  to   { transform: translateX(var(--sail-to)); }
+}
+
+@keyframes landing-sail-back {
+  from { transform: translateX(var(--sail-back-from)); }
+  to   { transform: translateX(var(--sail-back-to)); }
+}
+
+@keyframes landing-drive {
+  from { transform: translateX(var(--drive-from)); }
+  to   { transform: translateX(var(--drive-to)); }
+}
+
+/* Kamyonet — tırla aynı yönde ama daha yavaş, aynı anda ekranda olmasınlar diye */
+@keyframes landing-drive-slow {
+  from { transform: translateX(var(--drive-slow-from)); }
+  to   { transform: translateX(var(--drive-slow-to)); }
+}
+
+/* Rıhtım treni — sağdan girer, SAĞDAKİ istiften yüklenir, sola gider, SOLDAKİ istife
+   boşaltır, sahneden çıkar. Gemininkiyle aynı mantık ama kendi süresinde (96 sn):
+   tren sahnedeki en ağır kara aracı, gemiyle senkron olmasına gerek yok.
+   Her yol parçası hızlanma → sabit seyir → yavaşlama diye üçe bölünmüş; tek bir
+   cubic-bezier bunu veremiyor (bkz. landing-berth'teki aynı not). */
+@keyframes landing-railyard {
+  0% {
+    transform: translateX(var(--rail-in));
+    animation-timing-function: linear;
+  }
+  17% {
+    transform: translateX(calc(var(--rail-load) + var(--rail-ramp)));
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
+  }
+  23% {
+    transform: translateX(var(--rail-load)); /* sağdaki istifte duruş — yükleme */
+  }
+  35% {
+    transform: translateX(var(--rail-load));
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  41% {
+    transform: translateX(calc(var(--rail-load) - var(--rail-ramp)));
+    animation-timing-function: linear;
+  }
+  56% {
+    transform: translateX(calc(var(--rail-unload) + var(--rail-ramp)));
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1);
+  }
+  62% {
+    transform: translateX(var(--rail-unload)); /* soldaki istifte duruş — boşaltma */
+  }
+  74% {
+    transform: translateX(var(--rail-unload));
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+  }
+  80% {
+    transform: translateX(calc(var(--rail-unload) - var(--rail-ramp)));
+    animation-timing-function: linear;
+  }
+  96%, 100% {
+    transform: translateX(var(--rail-out)); /* sahne dışı */
+  }
+}
+
+/* --- Sahnenin geniş ve dar sürümleri için hareket uçları ---
+   Dar sürüm ayrı bir viewBox (560 birim) kullanıyor; mesafeler ona göre. */
+.landing-scene {
+  --sail-from: -260px;      --sail-to: 1620px;
+  --sail-back-from: 1500px; --sail-back-to: -240px;
+  --drive-from: -160px;     --drive-to: 1560px;
+  --drive-slow-from: -220px;--drive-slow-to: 1540px;
+  --fly-from: -140px;       --fly-to: 1560px;
+  --rail-in: 1500px; --rail-load: 894px; --rail-unload: 244px;
+  --rail-out: -400px; --rail-ramp: 90px;
+}
+
+.landing-scene-compact {
+  --sail-from: -210px;      --sail-to: 760px;
+  --sail-back-from: 700px;  --sail-back-to: -200px;
+  --drive-from: -120px;     --drive-to: 700px;
+  --drive-slow-from: -170px;--drive-slow-to: 690px;
+  --fly-from: -110px;       --fly-to: 690px;
+  --rail-in: 620px; --rail-load: 258px; --rail-unload: 3px;
+  --rail-out: -280px; --rail-ramp: 55px;
+}
+
+/* Duruş pencereleri: yükleme %23-35, boşaltma %62-74.
+   Transfer 7 kutuya yayıldığı için en erken parça pencereden ~3,8 puan önce başlıyor;
+   aşağıdaki yüzdeler bu paya göre seçildi (bkz. PortScene `yardStagger`). */
+@keyframes landing-rail-cargo {
+  0%, 27%   { opacity: 0; transform: translateY(-8px); }
+  30%, 67%  { opacity: 1; transform: translateY(0); }
+  70%, 100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* Sağdaki istifin üst sıraları — trene yüklendikçe boşalır */
+@keyframes landing-rail-src {
+  0%, 27%   { opacity: 0.55; }
+  30%, 96%  { opacity: 0; }
+  99%, 100% { opacity: 0.55; }
+}
+
+/* Soldaki istifin üst sıraları — tren boşalttıkça dolar */
+@keyframes landing-rail-dst {
+  0%, 67%   { opacity: 0; }
+  70%, 96%  { opacity: 0.55; }
+  99%, 100% { opacity: 0; }
+}
+
+@keyframes landing-fly {
+  from { transform: translate(var(--fly-from), 26px); }
+  to   { transform: translate(var(--fly-to), -22px); }
+}
+
+@keyframes landing-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+@keyframes landing-wave {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-180px); }
+}
+
+/* Haritadaki gemi rotayı SMIL `animateMotion` ile kat ediyor; uçların sert kesilmemesi
+   için opaklık burada, aynı süreyle sönümleniyor. */
+@keyframes landing-voyage-fade {
+  0%, 3%    { opacity: 0; }
+  9%, 91%   { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+/* İletişim bandındaki liman sahnesi — tek bir 36 sn'lik koreografi:
+   gemi boş girer → sol rıhtımda yüklenir → sağ vince yanaşıp boşaltır → sahneden çıkar.
+   Bütün parçalar aynı süreyi paylaşır, sahneye kendi yüzdeleriyle girer.
+   Sıralı yükleme negatif `animation-delay` ile veriliyor: pozitif gecikme yalnızca ilk
+   turu geciktirir, sonsuz döngüde kalıcı faz kayması sağlamaz. */
+/* Hız geçişleri keyframe içindeki `animation-timing-function` ile veriliyor: her adım
+   bir sonraki adıma kadar geçerli. Böylece gemi duruştan yavaşça kalkıp yanaşırken
+   yavaşça duruyor; sabit hızlı (linear) sert gidiş-geliş kalmıyor. */
+/* Süre oranı bilinçli: gerçekte liman operasyonu ~1 gün, Uzakdoğu seferi ~30 gün (1:30).
+   Bu oran animasyona sığmaz; 1:3,4'e sıkıştırıldı — sefer, liman duruşunun üç katından
+   uzun sürdüğü için "kıtalar arası yol" olarak okunuyor, ama izleyiciyi yormuyor.
+   84 sn'lik tur: giriş 12,6 · YÜKLEME 10 · SEFER 34,7 · BOŞALTMA 10 · çıkış 13,3 · bekleme 3,4
+
+   Her yol parçası üçe bölünmüş durumda: hızlanma → sabit seyir → yavaşlama.
+   Tek bir cubic-bezier bunu yapamaz; uçlarında eğimi sıfır olan bir eğri (ease-in-out)
+   ortada aşırı hızlanır, ortası düz olan bir eğrinin (ör. 0.2,0.15,0.8,0.85) ise uç
+   eğimi sıfır olmadığı için gemi duruştan anında fırlar ve anında durur.
+   Rampalar 80px / ~5,3 sn; seyir hızı ~30px/sn — üç parçanın hızı bu değerde buluşuyor. */
+@keyframes landing-berth {
+  /* Sahneye giriş: sabit hızda gelir */
+  0% {
+    transform: translateX(-300px);
+    animation-timing-function: linear;
+  }
+  9% {
+    transform: translateX(-80px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
+  }
+  /* Vinçlerin hizasında duruş — yükleme */
+  15% {
+    transform: translateX(0);
+  }
+  27% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  /* Sefer */
+  33% {
+    transform: translateX(80px);
+    animation-timing-function: linear; /* sabit seyir */
+  }
+  62% {
+    transform: translateX(800px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
+  }
+  /* Boşaltma vincinin önünde duruş */
+  68% {
+    transform: translateX(880px);
+  }
+  80% {
+    transform: translateX(880px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  /* Çıkış */
+  86% {
+    transform: translateX(960px);
+    animation-timing-function: linear;
+  }
+  96%, 100% {
+    transform: translateX(1200px); /* sahne dışı */
+  }
+}
+
+/* Geminin güvertesindeki yük — duruş pencereleri: yükleme %15-27, boşaltma %68-80.
+   Konteynerler 1,2 sn arayla giriyor (bkz. PortScene `stagger`), yani en erken parça
+   pencereden 5,7 puan önce başlıyor; aşağıdaki yüzdeler bu paya göre seçildi. */
+@keyframes landing-cargo-ship {
+  0%, 21%   { opacity: 0; transform: translateY(-9px); }
+  24%, 74%  { opacity: 1; transform: translateY(0); }
+  77%, 100% { opacity: 0; transform: translateY(-9px); }
+}
+
+/* Sol rıhtımdaki istif — gemiye yüklendikçe boşalır, tur sonunda geri gelir */
+@keyframes landing-cargo-yard {
+  0%, 21%   { opacity: 1; }
+  24%, 96%  { opacity: 0; }
+  99%, 100% { opacity: 1; }
+}
+
+/* Sağ rıhtımdaki istif — gemi boşalttıkça dolar, tur sonunda sıfırlanır */
+@keyframes landing-cargo-dest {
+  0%, 74%   { opacity: 0; }
+  77%, 96%  { opacity: 1; }
+  99%, 100% { opacity: 0; }
+}
+
+/* Yanaşan geminin salınımı — sahnedeki diğer gemilerden belirgin biçimde daha derin.
+   Genlik sabit değil: `--bob-amp` ile tur boyunca ölçekleniyor (aşağıya bakınız). */
+@keyframes landing-bob-deep {
+  0%, 100% { transform: translateY(calc(var(--bob-amp) * 4px)); }
+  50%      { transform: translateY(calc(var(--bob-amp) * -10px)); }
+}
+
+/* Salınım genliğinin çarpanı. `@property` ile sayı olarak kaydedilmesi şart — kayıtsız
+   özel özellikler animasyonda kademeli değil, sıçrayarak değişir. */
+@property --bob-amp {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* Genlik, geminin hız profiliyle aynı yüzdelere oturuyor (bkz. landing-berth):
+   rıhtıma yanaşırken sönümlenir, kalkışta artar, seyirde en yüksektir. */
+@keyframes landing-bob-amp {
+  0%, 9%    { --bob-amp: 1; }    /* sahneye sabit hızda giriş */
+  15%, 27%  { --bob-amp: 0.2; }  /* yükleme rıhtımında — neredeyse durgun */
+  33%, 62%  { --bob-amp: 1.15; } /* açık deniz seyri */
+  68%, 80%  { --bob-amp: 0.2; }  /* boşaltma rıhtımında */
+  86%       { --bob-amp: 1.15; } /* çıkışta yeniden canlanır */
+  96%, 100% { --bob-amp: 1; }
+}
+
+/* Dördü de aynı süreyi paylaşmalı — biri kayarsa yükleme koreografisi geminin duruşundan kopar. */
+.landing-berth      { animation: landing-berth 84s linear infinite; }
+.landing-cargo-ship { animation: landing-cargo-ship 84s linear infinite; }
+.landing-cargo-yard { animation: landing-cargo-yard 84s linear infinite; }
+.landing-cargo-dest { animation: landing-cargo-dest 84s linear infinite; }
+.landing-bob-deep   { animation: landing-bob-deep 5s ease-in-out infinite; }
+/* `--bob-amp` genlik çarpanını taşır; salınımı yapan grubun ÜST grubuna verilir ki
+   değer miras yoluyla çözülsün. Statik tanım, `@property` desteklenmeyen bir tarayıcıda
+   var() geçersiz kalıp transform'u tamamen düşürmesin diye duruyor. */
+.landing-bob-amp    { --bob-amp: 1; animation: landing-bob-amp 84s linear infinite; }
+.landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
+.landing-ship      { animation: landing-sail 46s linear infinite; }
+.landing-ship-back { animation: landing-sail-back 62s linear infinite; }
+.landing-truck     { animation: landing-drive 26s linear infinite; }
+.landing-van       { animation: landing-drive-slow 39s linear infinite; }
+/* Dördü de aynı süreyi paylaşmalı — kayarsa vagon yükü trenin duruşundan kopar. */
+.landing-train      { animation: landing-railyard 96s linear infinite; }
+.landing-rail-cargo { animation: landing-rail-cargo 96s linear infinite; }
+.landing-rail-src   { animation: landing-rail-src 96s linear infinite; }
+.landing-rail-dst   { animation: landing-rail-dst 96s linear infinite; }
+.landing-plane     { animation: landing-fly 32s linear infinite; }
+.landing-bob       { animation: landing-bob 4.5s ease-in-out infinite; }
+.landing-wave      { animation: landing-wave 9s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-route-line,
+  .landing-voyage,
+  .landing-berth,
+  .landing-cargo-ship,
+  .landing-cargo-yard,
+  .landing-cargo-dest,
+  .landing-bob-deep,
+  .landing-bob-amp,
+  .landing-ship,
+  .landing-ship-back,
+  .landing-truck,
+  .landing-van,
+  .landing-train,
+  .landing-rail-cargo,
+  .landing-rail-src,
+  .landing-rail-dst,
+  .landing-plane,
+  .landing-bob,
+  .landing-wave {
+    animation: none;
+  }
 }
 
 /* CurrencyTicker now uses a stack-based slide (transform driven from React

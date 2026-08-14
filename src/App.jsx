@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
@@ -28,6 +28,26 @@ import FeedbackTasksPage from "./pages/management/FeedbackTasksPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
+
+// Tanıtım ve yasal sayfalar ana bundle'a girmesin — ziyaretçi uygulama kodunun tamamını indirmemeli
+const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
+const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
+const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
+
+// Giriş gerektirmeyen, ayrı chunk'tan gelen sayfalar için ortak sarmalayıcı
+function PublicPage({ element }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-navy">
+          <p className="text-text-secondary">Yükleniyor...</p>
+        </div>
+      }
+    >
+      {element}
+    </Suspense>
+  );
+}
 
 // Protected Route Component with Role Support
 function ProtectedRoute({ children, requiredRole }) {
@@ -345,8 +365,14 @@ export default function App() {
         }
       />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Tanıtım ve yasal sayfalar — public, PublicRoute ile sarmalanmaz */}
+      <Route path="/" element={<PublicPage element={<LandingPage />} />} />
+      <Route
+        path="/kullanim-kosullari"
+        element={<PublicPage element={<TermsPage />} />}
+      />
+      <Route path="/gizlilik" element={<PublicPage element={<PrivacyPage />} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   );
