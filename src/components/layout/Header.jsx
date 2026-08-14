@@ -14,6 +14,8 @@ import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
 import emblemLight from "../../assets/brand/emblem-light.png";
 import emblemDark from "../../assets/brand/emblem-dark.png";
+import lockupLight from "../../assets/brand/lockup-light.png";
+import lockupDark from "../../assets/brand/lockup-dark.png";
 import FeedbackModal from "../common/FeedbackModal";
 import { feedbackService } from "../../api/feedbackService";
 
@@ -167,23 +169,29 @@ export default function Header() {
           </button>
 
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center gap-2 lg:gap-3">
-            <img
-              src={emblemLight}
-              alt="Gümrük.io"
-              className="h-7 w-7 flex-shrink-0 dark:hidden"
-            />
-            <img
-              src={emblemDark}
-              alt="Gümrük.io"
-              className="hidden h-7 w-7 flex-shrink-0 dark:block"
-            />
-            <h2
-              className="text-text-main text-base lg:text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block truncate max-w-[150px] lg:max-w-none"
-              title="All about customs clearance"
-            >
-              Gümrük.io
-            </h2>
+          <Link
+            to="/dashboard"
+            className="flex items-center"
+            title="All about customs clearance"
+          >
+            {/* Dar ekranda yer yok: sadece amblem */}
+            <span className="sm:hidden">
+              <img src={emblemLight} alt="Gümrük.io" className="h-7 w-7 dark:hidden" />
+              <img src={emblemDark} alt="Gümrük.io" className="hidden h-7 w-7 dark:block" />
+            </span>
+            {/* sm ve üstünde amblem + kelime markası tek görselde */}
+            <span className="hidden sm:block">
+              <img
+                src={lockupLight}
+                alt="Gümrük.io"
+                className="h-7 lg:h-8 w-auto dark:hidden"
+              />
+              <img
+                src={lockupDark}
+                alt="Gümrük.io"
+                className="hidden h-7 lg:h-8 w-auto dark:block"
+              />
+            </span>
           </Link>
         </div>
 

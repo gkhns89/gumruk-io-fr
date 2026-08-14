@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "./common/ThemeToggle";
 import { getLoginProfile } from "../utils/imageUtils";
-import emblemLight from "../assets/brand/emblem-light.png";
-import emblemDark from "../assets/brand/emblem-dark.png";
+import lockupLight from "../assets/brand/lockup-light.png";
+import lockupDark from "../assets/brand/lockup-dark.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -49,28 +49,24 @@ export default function Login() {
       {/* Login Page Header */}
       <header className="w-full bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo ve Başlık */}
-          <div className="flex items-center gap-3">
+          {/* Logo ve Başlık — logo tanıtım sayfasına döner */}
+          <Link
+            to="/"
+            className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            title="Tanıtım sayfasına dön"
+          >
             <img
-              src={emblemLight}
+              src={lockupLight}
               alt="Gümrük.io"
-              className="h-10 w-10 flex-shrink-0 dark:hidden"
+              className="h-9 w-auto flex-shrink-0 dark:hidden"
             />
             <img
-              src={emblemDark}
+              src={lockupDark}
               alt="Gümrük.io"
-              className="hidden h-10 w-10 flex-shrink-0 dark:block"
+              className="hidden h-9 w-auto flex-shrink-0 dark:block"
             />
-            <div>
-              <h1
-                className="text-xl font-bold text-text-main"
-                title="All about customs clearance"
-              >
-                Gümrük.io
-              </h1>
-              <p className="text-xs text-text-secondary hidden sm:block">Gümrük Takip Sistemi</p>
-            </div>
-          </div>
+            <p className="text-xs text-text-secondary hidden sm:block">Gümrük Takip Sistemi</p>
+          </Link>
 
           {/* Tema Toggle */}
           <div className="flex items-center gap-4">
@@ -85,18 +81,18 @@ export default function Login() {
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-4">
             <img
-              src={emblemLight}
+              src={lockupLight}
               alt="Gümrük.io"
-              className="h-16 w-16 flex-shrink-0 dark:hidden"
+              className="h-12 sm:h-14 w-auto flex-shrink-0 dark:hidden"
             />
             <img
-              src={emblemDark}
+              src={lockupDark}
               alt="Gümrük.io"
-              className="hidden h-16 w-16 flex-shrink-0 dark:block"
+              className="hidden h-12 sm:h-14 w-auto flex-shrink-0 dark:block"
             />
             <div>
               <p className="text-text-main text-3xl font-bold leading-tight tracking-tight">
-                Gümrük.io Girişi
+                Sisteme Giriş
               </p>
               <p className="text-text-secondary text-base font-normal leading-normal mt-2">
                 Gümrük işlemlerinizi takip etmek için giriş yapın.
