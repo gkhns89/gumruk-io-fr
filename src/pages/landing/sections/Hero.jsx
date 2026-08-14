@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import PortScene from "./PortScene";
 
-// Önizleme kartındaki sahte veri — gerçek müşteri verisi kullanılmaz
+// Önizleme kartındaki sahte veri — gerçek müşteri verisi kullanılmaz.
+// Firma adları Kurtlar Vadisi'ne selam: "Tataroğlu Holding" dizide geçen kurgusal şirket,
+// diğerleri karakter soyadlarından türetildi (Alemdar, Karahanlı, Akbey).
 const PREVIEW_ROWS = [
-  { ref: "IM-2026-0418", client: "Anadolu Tekstil A.Ş.", stage: "Beyanname tescil edildi", tone: "blue" },
-  { ref: "IM-2026-0417", client: "Marmara Kimya Ltd.", stage: "Gümrük muayenesi", tone: "amber" },
-  { ref: "EX-2026-0231", client: "Ege Makine San.", stage: "Yüklendi — yolda", tone: "sky" },
-  { ref: "IM-2026-0415", client: "Toros Gıda A.Ş.", stage: "Teslim edildi", tone: "green" },
+  { ref: "IM-2026-0418", client: "Alemdar Tekstil A.Ş.", stage: "Beyanname tescil edildi", tone: "blue" },
+  { ref: "IM-2026-0417", client: "Karahanlı Kimya Ltd.", stage: "Gümrük muayenesi", tone: "amber" },
+  { ref: "EX-2026-0231", client: "Akbey Makine San.", stage: "Yüklendi — yolda", tone: "sky" },
+  { ref: "IM-2026-0415", client: "Tataroğlu Holding", stage: "Teslim edildi", tone: "green" },
 ];
 
 const TONES = {
