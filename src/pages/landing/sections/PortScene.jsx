@@ -124,10 +124,20 @@ function FreightTrain({ className = "" }) {
         <circle key={cx} cx={cx} cy="28" r="4" fill="#0f172a" />
       ))}
 
-      {/* Konteyner vagonları */}
+      {/* Konteyner vagonları — platform sabit, üzerindeki yük koreografiyle gelip gidiyor */}
       {wagons.map((x, i) => (
         <g key={x}>
-          <rect x={x + 3} y="8" width="64" height="14" rx="1" fill={cargo[i]} opacity="0.9" />
+          <rect
+            className="landing-rail-cargo"
+            style={railStagger(i)}
+            x={x + 3}
+            y="8"
+            width="64"
+            height="14"
+            rx="1"
+            fill={cargo[i]}
+            opacity="0"
+          />
           <rect x={x} y="22" width="70" height="4" rx="1" fill="#0a1f44" />
           {[x + 12, x + 58].map((cx) => (
             <circle key={cx} cx={cx} cy="28" r="3.5" fill="#0f172a" />
@@ -138,17 +148,25 @@ function FreightTrain({ className = "" }) {
   );
 }
 
-/* Kargo uçağı — yerel kutu: y 2..24.
-   Gövde solda burunlu çizildi; uçuş yönü sağa olduğu için yatay aynalanıyor. */
+/* Kargo uçağı — yerel kutu: y 0..30, genişlik ~96. Burnu sağda, uçuş yönünde.
+   Gövde uzun ve künt burunlu, kanatlar hafif ok açılı, altında iki motor: nakliye
+   uçağı silueti. (Önceki çizim sivri burunlu ve dar kanatlıydı, savaş uçağı gibi duruyordu.) */
 function Plane({ className = "" }) {
   return (
-    <g className={className}>
-      <g transform="translate(87 0) scale(-1 1)">
-        <path
-          d="M2 13 L46 8 L62 2 h8 l-6 11 h10 l6 -4 h5 l-4 6 l4 6 h-5 l-6 -4 h-10 l6 11 h-8 l-16 -6 Z"
-          fill="#1e4fd8"
-        />
-      </g>
+    <g className={className} fill="#1e4fd8">
+      {/* Dikey stabilize */}
+      <path d="M6 14 L14 2 h7 l-2 12 Z" />
+      {/* Yatay kuyruk */}
+      <path d="M8 14 L20 9 h9 l-6 5 Z" />
+      <path d="M8 16 L20 21 h9 l-6 -5 Z" />
+      {/* Gövde — arkada incelen, burnu yuvarlak */}
+      <path d="M6 13 h72 q16 0 16 2 t-16 2 H6 q-3 -2 0 -4 Z" />
+      {/* Kanatlar (geriye ok açılı) */}
+      <path d="M52 14 L34 30 h11 l24 -14 Z" />
+      <path d="M52 16 L34 2 h11 l24 12 Z" />
+      {/* Motorlar */}
+      <rect x="44" y="19" width="13" height="5" rx="2.5" />
+      <rect x="46" y="7" width="13" height="5" rx="2.5" />
     </g>
   );
 }
@@ -172,30 +190,52 @@ function GantryCrane({ x, scale = 1, opacity = 1, baseline = QUAY }) {
   );
 }
 
-/* Rıhtımda istiflenmiş konteynerler — yerel taban y=108 */
-function ContainerYard({ x, baseline = QUAY }) {
+/** Trenin yükleyip boşalttığı konteyner sayısı — vagon sayısıyla eşit olmalı */
+const RAIL_LOAD = 3;
+
+/** Sıralı transfer: negatif gecikme, sonsuz döngüde kalıcı faz kayması verir */
+const railStagger = (i) => ({ animationDelay: `${-(RAIL_LOAD - 1 - i) * 1.2}s` });
+
+/**
+ * Rıhtımda istiflenmiş konteynerler — yerel taban y=108.
+ *
+ * `transfer` verilirse EN ÜST SIRA trenin koreografisine bağlanır: "source" trene
+ * yüklendikçe boşalır, "dest" tren boşalttıkça dolar. Alt iki sıra her zaman sabit —
+ * tren istifin tamamını değil birkaç kutuyu alır, gerçekçi olan da bu.
+ *
+ * Üst sıra bilerek trenin üst kenarının (y≈94) YUKARISINDA kalıyor; tren istifin önünden
+ * geçtiği için alt sıralar duruş sırasında kapanıyor, transfer olan sıra görünür kalıyor.
+ */
+function ContainerYard({ x, baseline = QUAY, transfer = null }) {
   const rows = [
     { y: 96, count: 6 },
     { y: 82, count: 4 },
-    { y: 68, count: 2 },
+    { y: 68, count: RAIL_LOAD, animated: true },
   ];
   const colors = ["#1e4fd8", "#38bdf8", "#0a1f44", "#1e4fd8", "#0a1f44", "#38bdf8"];
+  const transferClass = transfer === "source" ? "landing-rail-src" : "landing-rail-dst";
 
   return (
     <g transform={`translate(${x} ${baseline - 108})`}>
       {rows.map((row) =>
-        Array.from({ length: row.count }).map((_, i) => (
-          <rect
-            key={`${row.y}-${i}`}
-            x={i * 26}
-            y={row.y}
-            width="24"
-            height="12"
-            rx="1"
-            fill={colors[(i + row.y) % colors.length]}
-            opacity="0.55"
-          />
-        ))
+        Array.from({ length: row.count }).map((_, i) => {
+          const animated = row.animated && transfer;
+          return (
+            <rect
+              key={`${row.y}-${i}`}
+              className={animated ? transferClass : undefined}
+              style={animated ? railStagger(i) : undefined}
+              x={i * 26}
+              y={row.y}
+              width="24"
+              height="12"
+              rx="1"
+              fill={colors[(i + row.y) % colors.length]}
+              // Animasyonlu sıranın opaklığını keyframe yönetiyor; "dest" boş başlamalı.
+              opacity={animated ? (transfer === "dest" ? 0 : 0.55) : 0.55}
+            />
+          );
+        })
       )}
     </g>
   );
@@ -409,15 +449,18 @@ export default function PortScene() {
           <line x1="0" y1={RAIL_Y + 3} x2="1440" y2={RAIL_Y + 3} strokeWidth="1.5" />
         </g>
 
-        {/* Tren — istiflerin ARKASINDAN geçsin diye onlardan önce çiziliyor (derinlik) */}
+        {/* İstifler: sağdaki trene yükleniyor, soldaki tren boşalttıkça doluyor.
+            Tren sağdan geldiği için kaynak sağda, hedef solda. */}
+        <ContainerYard x={360} transfer="dest" />
+        <ContainerYard x={1010} transfer="source" />
+
+        {/* Tren — istiflerin ÖNÜNDEN geçiyor. Arkada kalsaydı duruş anında vagonlar
+            istifin arkasında kalır, yükleme hiç görünmezdi. */}
         <g className="landing-train">
           <g transform={`translate(0 ${RAIL_Y - 32})`}>
             <FreightTrain />
           </g>
         </g>
-
-        <ContainerYard x={360} />
-        <ContainerYard x={1010} />
 
         {/* --- Deniz --- */}
         <rect

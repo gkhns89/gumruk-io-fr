@@ -159,10 +159,70 @@ html {
   to   { transform: translateX(1540px); }
 }
 
-/* Rıhtım treni — ters yönde, ağır. Yük treni sahnedeki en yavaş kara aracı olmalı. */
-@keyframes landing-rail {
-  from { transform: translateX(1480px); }
-  to   { transform: translateX(-340px); }
+/* Rıhtım treni — sağdan girer, SAĞDAKİ istiften yüklenir, sola gider, SOLDAKİ istife
+   boşaltır, sahneden çıkar. Gemininkiyle aynı mantık ama kendi süresinde (96 sn):
+   tren sahnedeki en ağır kara aracı, gemiyle senkron olmasına gerek yok.
+   Her yol parçası hızlanma → sabit seyir → yavaşlama diye üçe bölünmüş; tek bir
+   cubic-bezier bunu veremiyor (bkz. landing-berth'teki aynı not). */
+@keyframes landing-railyard {
+  0% {
+    transform: translateX(1500px);
+    animation-timing-function: linear;
+  }
+  17% {
+    transform: translateX(984px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
+  }
+  23% {
+    transform: translateX(894px); /* sağdaki istifte duruş — yükleme */
+  }
+  35% {
+    transform: translateX(894px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
+  }
+  41% {
+    transform: translateX(804px);
+    animation-timing-function: linear;
+  }
+  56% {
+    transform: translateX(334px);
+    animation-timing-function: cubic-bezier(0, 0, 0.5, 1);
+  }
+  62% {
+    transform: translateX(244px); /* soldaki istifte duruş — boşaltma */
+  }
+  74% {
+    transform: translateX(244px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+  }
+  80% {
+    transform: translateX(154px);
+    animation-timing-function: linear;
+  }
+  96%, 100% {
+    transform: translateX(-400px); /* sahne dışı */
+  }
+}
+
+/* Vagonlardaki yük — duruş pencereleri: yükleme %23-35, boşaltma %62-74 */
+@keyframes landing-rail-cargo {
+  0%, 26%   { opacity: 0; transform: translateY(-8px); }
+  29%, 66%  { opacity: 1; transform: translateY(0); }
+  69%, 100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* Sağdaki istifin üst sırası — trene yüklendikçe boşalır */
+@keyframes landing-rail-src {
+  0%, 26%   { opacity: 0.55; }
+  29%, 96%  { opacity: 0; }
+  99%, 100% { opacity: 0.55; }
+}
+
+/* Soldaki istifin üst sırası — tren boşalttıkça dolar */
+@keyframes landing-rail-dst {
+  0%, 66%   { opacity: 0; }
+  69%, 96%  { opacity: 0.55; }
+  99%, 100% { opacity: 0; }
 }
 
 @keyframes landing-fly {
@@ -315,7 +375,11 @@ html {
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
 .landing-truck     { animation: landing-drive 26s linear infinite; }
 .landing-van       { animation: landing-drive-slow 39s linear infinite; }
-.landing-train     { animation: landing-rail 64s linear infinite; }
+/* Dördü de aynı süreyi paylaşmalı — kayarsa vagon yükü trenin duruşundan kopar. */
+.landing-train      { animation: landing-railyard 96s linear infinite; }
+.landing-rail-cargo { animation: landing-rail-cargo 96s linear infinite; }
+.landing-rail-src   { animation: landing-rail-src 96s linear infinite; }
+.landing-rail-dst   { animation: landing-rail-dst 96s linear infinite; }
 .landing-plane     { animation: landing-fly 32s linear infinite; }
 .landing-bob       { animation: landing-bob 4.5s ease-in-out infinite; }
 .landing-wave      { animation: landing-wave 9s linear infinite; }
@@ -334,6 +398,9 @@ html {
   .landing-truck,
   .landing-van,
   .landing-train,
+  .landing-rail-cargo,
+  .landing-rail-src,
+  .landing-rail-dst,
   .landing-plane,
   .landing-bob,
   .landing-wave {
