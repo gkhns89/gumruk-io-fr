@@ -10,11 +10,11 @@ const TABS = [
     caption: "Açık dosyalarınız, aşamalarıyla birlikte tek listede.",
     columns: ["Dosya No", "Müşteri", "Tür", "Aşama", "Tarih"],
     rows: [
-      ["IM-2026-0418", "Alemdar Tekstil A.Ş.", "İthalat", { text: "Beyanname tescil", tone: "blue" }, "12.08.2026"],
-      ["IM-2026-0417", "Karahanlı Kimya Ltd.", "İthalat", { text: "Muayene", tone: "amber" }, "11.08.2026"],
-      ["EX-2026-0231", "Akbey Makine San.", "İhracat", { text: "Yüklendi", tone: "sky" }, "11.08.2026"],
-      ["IM-2026-0415", "Baş Gıda A.Ş.", "İthalat", { text: "Teslim edildi", tone: "green" }, "08.08.2026"],
-      ["EX-2026-0229", "Büyük Otomotiv A.Ş.", "İhracat", { text: "Evrak bekleniyor", tone: "gray" }, "07.08.2026"],
+      ["IM-2026-0418", "Tataroğlu Tekstil A.Ş.", "İthalat", { text: "Beyanname tescil", tone: "blue" }, "12.08.2026"],
+      ["IM-2026-0417", "Karacadağ Kimya Ltd.", "İthalat", { text: "Muayene", tone: "amber" }, "11.08.2026"],
+      ["EX-2026-0231", "Sayman Makine San.", "İhracat", { text: "Yüklendi", tone: "sky" }, "11.08.2026"],
+      ["IM-2026-0415", "Toros Gıda A.Ş.", "İthalat", { text: "Teslim edildi", tone: "green" }, "08.08.2026"],
+      ["EX-2026-0229", "Ergene Otomotiv A.Ş.", "İhracat", { text: "Evrak bekleniyor", tone: "gray" }, "07.08.2026"],
     ],
   },
   {
@@ -24,10 +24,10 @@ const TABS = [
     caption: "Antrepodaki yükün süresi dolmadan haberiniz olsun.",
     columns: ["Beyanname", "Müşteri", "Giriş", "Kalan Süre", "Durum"],
     rows: [
-      ["26341200AN000412", "Alemdar Tekstil A.Ş.", "24.07.2026", { text: "38 gün", tone: "green" }, "Antrepoda"],
-      ["26341200AN000408", "Baş Gıda A.Ş.", "02.07.2026", { text: "12 gün", tone: "amber" }, "Antrepoda"],
-      ["26341200AN000401", "Karahanlı Kimya Ltd.", "18.06.2026", { text: "4 gün", tone: "red" }, "Antrepoda"],
-      ["26341200AN000396", "Akbey Makine San.", "05.06.2026", { text: "—", tone: "gray" }, "İşleme aktarıldı"],
+      ["26341200AN000412", "Tataroğlu Tekstil A.Ş.", "24.07.2026", { text: "38 gün", tone: "green" }, "Antrepoda"],
+      ["26341200AN000408", "Toros Gıda A.Ş.", "02.07.2026", { text: "12 gün", tone: "amber" }, "Antrepoda"],
+      ["26341200AN000401", "Karacadağ Kimya Ltd.", "18.06.2026", { text: "4 gün", tone: "red" }, "Antrepoda"],
+      ["26341200AN000396", "Sayman Makine San.", "05.06.2026", { text: "—", tone: "gray" }, "İşleme aktarıldı"],
     ],
   },
   {
@@ -37,10 +37,10 @@ const TABS = [
     caption: "Evrakın kimde olduğu ve nasıl teslim edildiği kayıt altında.",
     columns: ["Kurye", "Güzergah", "Evrak", "Teslim", "Durum"],
     rows: [
-      ["Memati B.", "Ofis → Gümrük Müdürlüğü", "Beyanname dosyası", "Elden", { text: "Teslim edildi", tone: "green" }],
-      ["Abdülhey Ç.", "Ofis → Alemdar Tekstil", "Orijinal konşimento", "Elden", { text: "Yolda", tone: "blue" }],
-      ["Kargo", "Ofis → Akbey Makine", "Fatura seti", "Kargo", { text: "Yolda", tone: "blue" }],
-      ["Memati B.", "Liman → Ofis", "Ordino", "Elden", { text: "Planlandı", tone: "gray" }],
+      ["Mehmet A.", "Ofis → Gümrük Müdürlüğü", "Beyanname dosyası", "Elden", { text: "Teslim edildi", tone: "green" }],
+      ["Ayşe K.", "Ofis → Tataroğlu Tekstil", "Orijinal konşimento", "Elden", { text: "Yolda", tone: "blue" }],
+      ["Kargo", "Ofis → Sayman Makine", "Fatura seti", "Kargo", { text: "Yolda", tone: "blue" }],
+      ["Mehmet A.", "Liman → Ofis", "Ordino", "Elden", { text: "Planlandı", tone: "gray" }],
     ],
   },
 ];

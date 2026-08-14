@@ -213,7 +213,7 @@ export default function LiveTracking() {
               <div>
                 <p className="font-mono text-sm font-semibold text-text-main">MSKU 481 5520</p>
                 <p className="mt-0.5 text-xs text-text-secondary">
-                  Alemdar Tekstil A.Ş. · IM-2026-0418
+                  Tataroğlu Tekstil A.Ş. · IM-2026-0418
                 </p>
               </div>
               <span className="rounded-md bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-blue dark:bg-brand-sky/15 dark:text-brand-sky">
