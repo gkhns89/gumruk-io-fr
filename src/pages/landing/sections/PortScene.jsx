@@ -437,11 +437,6 @@ export default function PortScene() {
         className="h-[150px] w-full sm:h-[190px] lg:h-[240px]"
         preserveAspectRatio="xMidYMax slice"
       >
-        {/* --- Gökyüzü --- */}
-        <g className="landing-plane">
-          <Plane className="opacity-60" />
-        </g>
-
         {/* --- Rıhtım zemini: vinçlerin ve trenin üzerinde durduğu şerit --- */}
         <rect
           x="0"
@@ -486,6 +481,14 @@ export default function PortScene() {
             doluyor — tren sağdan geldiği için kaynak sağda, hedef solda. */}
         <ContainerYard x={360} transfer="dest" />
         <ContainerYard x={1010} transfer="source" />
+
+        {/* --- Gökyüzü ---
+            Vinç bomları sahnenin en üstüne kadar uzanıyor; uçak daha önce çizilseydi
+            (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
+            yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
+        <g className="landing-plane">
+          <Plane className="opacity-60" />
+        </g>
 
         {/* --- Deniz --- */}
         <rect
