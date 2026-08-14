@@ -204,24 +204,26 @@ html {
   }
 }
 
-/* Vagonlardaki yük — duruş pencereleri: yükleme %23-35, boşaltma %62-74 */
+/* Duruş pencereleri: yükleme %23-35, boşaltma %62-74.
+   Transfer 7 kutuya yayıldığı için en erken parça pencereden ~3,8 puan önce başlıyor;
+   aşağıdaki yüzdeler bu paya göre seçildi (bkz. PortScene `yardStagger`). */
 @keyframes landing-rail-cargo {
-  0%, 26%   { opacity: 0; transform: translateY(-8px); }
-  29%, 66%  { opacity: 1; transform: translateY(0); }
-  69%, 100% { opacity: 0; transform: translateY(-8px); }
+  0%, 27%   { opacity: 0; transform: translateY(-8px); }
+  30%, 67%  { opacity: 1; transform: translateY(0); }
+  70%, 100% { opacity: 0; transform: translateY(-8px); }
 }
 
-/* Sağdaki istifin üst sırası — trene yüklendikçe boşalır */
+/* Sağdaki istifin üst sıraları — trene yüklendikçe boşalır */
 @keyframes landing-rail-src {
-  0%, 26%   { opacity: 0.55; }
-  29%, 96%  { opacity: 0; }
+  0%, 27%   { opacity: 0.55; }
+  30%, 96%  { opacity: 0; }
   99%, 100% { opacity: 0.55; }
 }
 
-/* Soldaki istifin üst sırası — tren boşalttıkça dolar */
+/* Soldaki istifin üst sıraları — tren boşalttıkça dolar */
 @keyframes landing-rail-dst {
-  0%, 66%   { opacity: 0; }
-  69%, 96%  { opacity: 0.55; }
+  0%, 67%   { opacity: 0; }
+  70%, 96%  { opacity: 0.55; }
   99%, 100% { opacity: 0; }
 }
 
