@@ -153,6 +153,18 @@ html {
   to   { transform: translateX(1560px); }
 }
 
+/* Kamyonet — tırla aynı yönde ama daha yavaş, aynı anda ekranda olmasınlar diye */
+@keyframes landing-drive-slow {
+  from { transform: translateX(-220px); }
+  to   { transform: translateX(1540px); }
+}
+
+/* Rıhtım treni — ters yönde, ağır. Yük treni sahnedeki en yavaş kara aracı olmalı. */
+@keyframes landing-rail {
+  from { transform: translateX(1480px); }
+  to   { transform: translateX(-340px); }
+}
+
 @keyframes landing-fly {
   from { transform: translate(-140px, 26px); }
   to   { transform: translate(1560px, -22px); }
@@ -302,6 +314,8 @@ html {
 .landing-ship      { animation: landing-sail 46s linear infinite; }
 .landing-ship-back { animation: landing-sail-back 62s linear infinite; }
 .landing-truck     { animation: landing-drive 26s linear infinite; }
+.landing-van       { animation: landing-drive-slow 39s linear infinite; }
+.landing-train     { animation: landing-rail 64s linear infinite; }
 .landing-plane     { animation: landing-fly 32s linear infinite; }
 .landing-bob       { animation: landing-bob 4.5s ease-in-out infinite; }
 .landing-wave      { animation: landing-wave 9s linear infinite; }
@@ -318,6 +332,8 @@ html {
   .landing-ship,
   .landing-ship-back,
   .landing-truck,
+  .landing-van,
+  .landing-train,
   .landing-plane,
   .landing-bob,
   .landing-wave {

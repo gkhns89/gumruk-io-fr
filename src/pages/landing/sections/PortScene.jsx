@@ -20,6 +20,7 @@ import React from "react";
 
 /* Sahnenin dikey düzeni (viewBox birimi) */
 const QUAY = 124; // rıhtım hattı — vinçler ve istif burada duruyor
+const RAIL_Y = 120; // demiryolu hattı; tren tekerlekleri bu çizgiye oturuyor
 const SEA_TOP = 124;
 const ROAD_TOP = 210;
 const SCENE_H = 240;
@@ -82,6 +83,55 @@ function Truck({ className = "" }) {
         <g key={cx}>
           <circle cx={cx} cy="28" r="5.5" fill="#0f172a" />
           <circle cx={cx} cy="28" r="2" fill="#cbd5e1" />
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/* Kamyonet — yerel kutu: y 4..31, genişlik ~66. Tırla aynı açık gövde mantığı:
+   koyu yol şeridinde okunabilmesi için kasa açık renk. */
+function Van({ className = "" }) {
+  return (
+    <g className={className}>
+      <rect x="0" y="4" width="44" height="22" rx="2" fill="#f1f5f9" />
+      <rect x="0" y="4" width="44" height="22" rx="2" fill="none" stroke="#0a1f44" strokeWidth="1.5" />
+      <path d="M44 26 V10 h12 l10 9 v7 Z" fill="#1e4fd8" />
+      <rect x="47" y="12" width="8" height="6" rx="1" fill="#38bdf8" />
+      {[13, 55].map((cx) => (
+        <g key={cx}>
+          <circle cx={cx} cy="26" r="5" fill="#0f172a" />
+          <circle cx={cx} cy="26" r="1.8" fill="#cbd5e1" />
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/* Yük treni — yerel kutu: y 6..32, genişlik ~308. Sağdan sola gittiği için lokomotif solda.
+   Limanlarda rıhtım boyunca demiryolu hattı bulunur; sahnedeki durgun rıhtım bandını doldurur. */
+function FreightTrain({ className = "" }) {
+  const wagons = [78, 158, 238];
+  const cargo = ["#1e4fd8", "#38bdf8", "#0a1f44"];
+
+  return (
+    <g className={className}>
+      {/* Lokomotif */}
+      <path d="M2 14 l10 -8 h52 v20 H2 Z" fill="#0a1f44" />
+      <rect x="6" y="10" width="12" height="8" rx="1" fill="#38bdf8" opacity="0.85" />
+      <rect x="2" y="21" width="62" height="3" fill="#1e4fd8" />
+      {[12, 26, 52].map((cx) => (
+        <circle key={cx} cx={cx} cy="28" r="4" fill="#0f172a" />
+      ))}
+
+      {/* Konteyner vagonları */}
+      {wagons.map((x, i) => (
+        <g key={x}>
+          <rect x={x + 3} y="8" width="64" height="14" rx="1" fill={cargo[i]} opacity="0.9" />
+          <rect x={x} y="22" width="70" height="4" rx="1" fill="#0a1f44" />
+          {[x + 12, x + 58].map((cx) => (
+            <circle key={cx} cx={cx} cy="28" r="3.5" fill="#0f172a" />
+          ))}
         </g>
       ))}
     </g>
@@ -328,12 +378,44 @@ export default function PortScene() {
           <Plane className="opacity-60" />
         </g>
 
+        {/* --- Rıhtım zemini: vinçlerin ve trenin üzerinde durduğu şerit --- */}
+        <rect
+          x="0"
+          y={RAIL_Y - 22}
+          width="1440"
+          height={QUAY - (RAIL_Y - 22)}
+          className="fill-brand-navy/[0.07] dark:fill-white/[0.05]"
+        />
+
         {/* --- Rıhtım: vinçler ve istif, hepsi QUAY hattına oturuyor --- */}
         <g className="text-brand-navy/25 dark:text-white/15">
           <GantryCrane x={40} scale={0.95} opacity={0.75} />
           <GantryCrane x={196} scale={1.1} />
           <GantryCrane x={1180} scale={0.85} opacity={0.6} />
         </g>
+
+        {/* Demiryolu hattı — travers + iki ray */}
+        <g className="text-brand-navy/30 dark:text-white/20" stroke="currentColor">
+          <line
+            x1="0"
+            y1={RAIL_Y + 1.5}
+            x2="1440"
+            y2={RAIL_Y + 1.5}
+            strokeWidth="4"
+            strokeDasharray="4 11"
+            opacity="0.55"
+          />
+          <line x1="0" y1={RAIL_Y} x2="1440" y2={RAIL_Y} strokeWidth="1.5" />
+          <line x1="0" y1={RAIL_Y + 3} x2="1440" y2={RAIL_Y + 3} strokeWidth="1.5" />
+        </g>
+
+        {/* Tren — istiflerin ARKASINDAN geçsin diye onlardan önce çiziliyor (derinlik) */}
+        <g className="landing-train">
+          <g transform={`translate(0 ${RAIL_Y - 32})`}>
+            <FreightTrain />
+          </g>
+        </g>
+
         <ContainerYard x={360} />
         <ContainerYard x={1010} />
 
@@ -409,6 +491,13 @@ export default function PortScene() {
         />
         <g className="text-white/30" stroke="currentColor" strokeWidth="3" strokeDasharray="26 22">
           <line x1="0" y1="227" x2="1440" y2="227" />
+        </g>
+
+        {/* Kamyonet — tırla aynı şeritte, tekerlekleri aynı hizada ama daha yavaş */}
+        <g className="landing-van">
+          <g transform="translate(0 200)">
+            <Van />
+          </g>
         </g>
 
         {/* Tır — tekerlekler (yerel y=34) yol şeridine oturuyor */}
