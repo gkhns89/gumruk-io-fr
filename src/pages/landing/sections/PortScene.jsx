@@ -171,7 +171,7 @@ function Plane({ className = "" }) {
       <path d="M28 19 L18 27 H12 L22 19 Z" />
 
       {/* Dikey stabilize — kuş bakışında eksen üzerinde dar bir dilim */}
-      <path d="M8 16 L26 13.6 v4.8 Z" opacity="0.75" />
+      <path d="M8 16 L26 13.6 v4.8 Z" />
 
       {/* Kanat motorları */}
       <rect x="50" y="5" width="14" height="4.5" rx="2.25" />
@@ -487,7 +487,9 @@ export default function PortScene() {
             (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
             yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
         <g className="landing-plane">
-          <Plane className="opacity-60" />
+          {/* Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor.
+              Sahnedeki diğer taşıtlar da tam opak. */}
+          <Plane />
         </g>
 
         {/* --- Deniz --- */}
