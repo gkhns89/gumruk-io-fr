@@ -110,9 +110,10 @@ function Van({ className = "" }) {
 
 /* Yük treni — yerel kutu: y 6..32, genişlik ~308. Sağdan sola gittiği için lokomotif solda.
    Limanlarda rıhtım boyunca demiryolu hattı bulunur; sahnedeki durgun rıhtım bandını doldurur. */
-function FreightTrain({ className = "" }) {
-  const wagons = [78, 158, 238];
+function FreightTrain({ className = "", wagonCount = 3, compact = false }) {
+  const wagons = [78, 158, 238].slice(0, wagonCount);
   const cargo = ["#1e4fd8", "#38bdf8", "#0a1f44"];
+  const total = transferCount(rowsFor(compact));
 
   return (
     <g className={className}>
@@ -129,7 +130,7 @@ function FreightTrain({ className = "" }) {
         <g key={x}>
           <rect
             className="landing-rail-cargo"
-            style={wagonStagger(i)}
+            style={wagonStagger(i, wagons.length, total)}
             x={x + 3}
             y="8"
             width="64"
@@ -203,23 +204,35 @@ function GantryCrane({ x, scale = 1, opacity = 1, baseline = QUAY }) {
  * İstif sıraları. Alt sıra sabit kalır — rıhtım hiçbir anda tamamen boşalmasın diye;
  * üstteki iki sıra trenin koreografisine bağlı.
  */
-const YARD_ROWS = [
-  { y: 96, count: 6, animated: false },
-  { y: 82, count: 4, animated: true },
-  { y: 68, count: 3, animated: true },
-];
+const YARD_ROWS = {
+  wide: [
+    { y: 96, count: 6 },
+    { y: 82, count: 4, animated: true },
+    { y: 68, count: 3, animated: true },
+  ],
+  // Dar sahnede istif de küçülüyor; 560 birimlik viewBox'ta 6'lı sıra yerin yarısını yer.
+  compact: [
+    { y: 96, count: 4 },
+    { y: 82, count: 3, animated: true },
+    { y: 68, count: 2, animated: true },
+  ],
+};
+
+const rowsFor = (compact) => YARD_ROWS[compact ? "compact" : "wide"];
 
 /** Transfere katılan toplam kutu sayısı */
-const TRANSFER_COUNT = YARD_ROWS.filter((r) => r.animated).reduce((n, r) => n + r.count, 0);
+const transferCount = (rows) =>
+  rows.filter((r) => r.animated).reduce((n, r) => n + r.count, 0);
 
 /** Sıralı transfer: negatif gecikme, sonsuz döngüde kalıcı faz kayması verir */
-const yardStagger = (i) => ({ animationDelay: `${-(TRANSFER_COUNT - 1 - i) * 0.6}s` });
+const staggerOf = (i, total) => ({ animationDelay: `${-(total - 1 - i) * 0.6}s` });
 
 /**
- * Vagon yükünün gecikmesi. Üç vagon, istifin yedi kutusuyla aynı pencereye yayılsın diye
- * istif dizinine eşleniyor (0, 3, 6) — yoksa tren, istif boşalmadan dolmuş görünür.
+ * Vagon yükünün gecikmesi. Vagonlar istifin kutularına eşit aralıkla eşleniyor
+ * (geniş: 0-3-6 / dar: 0-4) — yoksa tren, istif boşalmadan dolmuş görünür.
  */
-const wagonStagger = (i) => yardStagger(i * 3);
+const wagonStagger = (i, wagonCount, total) =>
+  staggerOf(Math.round((i * (total - 1)) / Math.max(1, wagonCount - 1)), total);
 
 /**
  * Rıhtımda istiflenmiş konteynerler — yerel taban y=108.
@@ -231,16 +244,18 @@ const wagonStagger = (i) => yardStagger(i * 3);
  * Üst sıra bilerek trenin üst kenarının (y≈94) YUKARISINDA kalıyor; tren istifin önünden
  * geçtiği için alt sıralar duruş sırasında kapanıyor, transfer olan sıra görünür kalıyor.
  */
-function ContainerYard({ x, baseline = QUAY, transfer = null }) {
+function ContainerYard({ x, baseline = QUAY, transfer = null, compact = false }) {
   const colors = ["#1e4fd8", "#38bdf8", "#0a1f44", "#1e4fd8", "#0a1f44", "#38bdf8"];
   const transferClass = transfer === "source" ? "landing-rail-src" : "landing-rail-dst";
+  const rows = rowsFor(compact);
+  const total = transferCount(rows);
 
   // Gecikme dizini sıralar boyunca sürüyor: alttan üste doğru tek bir sıra hâlinde taşınıyor
   let slot = -1;
 
   return (
     <g transform={`translate(${x} ${baseline - 108})`}>
-      {YARD_ROWS.map((row) =>
+      {rows.map((row) =>
         Array.from({ length: row.count }).map((_, i) => {
           const animated = row.animated && transfer;
           if (animated) slot += 1;
@@ -248,7 +263,7 @@ function ContainerYard({ x, baseline = QUAY, transfer = null }) {
             <rect
               key={`${row.y}-${i}`}
               className={animated ? transferClass : undefined}
-              style={animated ? yardStagger(slot) : undefined}
+              style={animated ? staggerOf(slot, total) : undefined}
               x={i * 26}
               y={row.y}
               width="24"
@@ -427,159 +442,208 @@ export function PortSilhouette({ className = "" }) {
   );
 }
 
+/**
+ * Sahnenin iki yerleşimi.
+ *
+ * Geniş sürüm 1440 birim; dar ekranda `slice` ile kırpıldığında yalnızca ortadaki ~600
+ * birim görünüyordu ve trenin yükleme durağı (x≈1010) tamamen ekran dışında kalıyordu.
+ * Dar sürüm bu yüzden ayrı: 560 birimlik viewBox, kısaltılmış tren, birbirine yakın
+ * istifler — koreografinin tamamı 375 piksellik ekranda da görünüyor.
+ *
+ * Hareket mesafeleri JSX'te değil, `index.css`'teki `.landing-scene-compact`
+ * değişkenlerinde; iki sürüm aynı keyframe'leri paylaşıyor.
+ */
+const LAYOUTS = {
+  wide: {
+    width: 1440,
+    cranes: [
+      { x: 40, scale: 0.95, opacity: 0.75 },
+      { x: 196, scale: 1.1 },
+      { x: 1180, scale: 0.85, opacity: 0.6 },
+    ],
+    destYard: 360,
+    sourceYard: 1010,
+    wagonCount: 3,
+  },
+  compact: {
+    width: 560,
+    cranes: [
+      { x: 8, scale: 0.7, opacity: 0.8 },
+      { x: 205, scale: 0.85 },
+      { x: 478, scale: 0.6, opacity: 0.6 },
+    ],
+    destYard: 105,
+    sourceYard: 360,
+    wagonCount: 2,
+  },
+};
+
+function Scene({ compact = false }) {
+  const L = LAYOUTS[compact ? "compact" : "wide"];
+  const W = L.width;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${SCENE_H}`}
+      className={
+        compact
+          ? "landing-scene landing-scene-compact h-auto w-full sm:hidden"
+          : "landing-scene hidden h-[190px] w-full sm:block lg:h-[240px]"
+      }
+      // Dar sürümde `meet`: sahnenin tamamı görünmeli, kırpma yok.
+      preserveAspectRatio={compact ? "xMidYMax meet" : "xMidYMax slice"}
+    >
+      {/* --- Rıhtım zemini: vinçlerin ve trenin üzerinde durduğu şerit --- */}
+      <rect
+        x="0"
+        y={RAIL_Y - 22}
+        width={W}
+        height={QUAY - (RAIL_Y - 22)}
+        className="fill-brand-navy/[0.07] dark:fill-white/[0.05]"
+      />
+
+      {/* --- Rıhtım: vinçler ve istif, hepsi QUAY hattına oturuyor --- */}
+      <g className="text-brand-navy/25 dark:text-white/15">
+        {L.cranes.map((c) => (
+          <GantryCrane key={c.x} x={c.x} scale={c.scale} opacity={c.opacity ?? 1} />
+        ))}
+      </g>
+
+      {/* Demiryolu hattı — travers + iki ray */}
+      <g className="text-brand-navy/30 dark:text-white/20" stroke="currentColor">
+        <line
+          x1="0"
+          y1={RAIL_Y + 1.5}
+          x2={W}
+          y2={RAIL_Y + 1.5}
+          strokeWidth="4"
+          strokeDasharray="4 11"
+          opacity="0.55"
+        />
+        <line x1="0" y1={RAIL_Y} x2={W} y2={RAIL_Y} strokeWidth="1.5" />
+        <line x1="0" y1={RAIL_Y + 3} x2={W} y2={RAIL_Y + 3} strokeWidth="1.5" />
+      </g>
+
+      {/* Tren — istiflerin ARKASINDAN geçiyor.
+          Yükleme sırasında öndeki istif eriyip arkasındaki dolu vagonları ortaya
+          çıkarıyor; boşaltmada da kutular trenin önünde birikiyor. */}
+      <g className="landing-train">
+        <g transform={`translate(0 ${RAIL_Y - 32})`}>
+          <FreightTrain wagonCount={L.wagonCount} compact={compact} />
+        </g>
+      </g>
+
+      {/* İstifler trenin ÖNÜNDE. Sağdaki trene yükleniyor, soldaki tren boşalttıkça
+          doluyor — tren sağdan geldiği için kaynak sağda, hedef solda. */}
+      <ContainerYard x={L.destYard} transfer="dest" compact={compact} />
+      <ContainerYard x={L.sourceYard} transfer="source" compact={compact} />
+
+      {/* --- Gökyüzü ---
+          Vinç bomları sahnenin en üstüne kadar uzanıyor; uçak daha önce çizilseydi
+          (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
+          yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
+      <g className="landing-plane">
+        {/* Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor. */}
+        <Plane />
+      </g>
+
+      {/* --- Deniz --- */}
+      <rect
+        x="0"
+        y={SEA_TOP}
+        width={W}
+        height={ROAD_TOP - SEA_TOP}
+        className="fill-brand-sky/20 dark:fill-brand-sky/10"
+      />
+      {/* Ufuk çizgisi — su hattının nerede başladığı okunsun */}
+      <line
+        x1="0"
+        y1={SEA_TOP}
+        x2={W}
+        y2={SEA_TOP}
+        className="text-brand-blue/30 dark:text-brand-sky/25"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+
+      {/* Uzaktaki gemi — ters yönde, küçük ve soluk (derinlik) */}
+      <g className="landing-ship-back">
+        <g transform="translate(0 116) scale(0.55)" opacity="0.35">
+          <ContainerShip className="landing-bob" />
+        </g>
+      </g>
+
+      {/* Arka dalgalar — ufka yakın, gemilerin gerisinde */}
+      <g
+        className="text-brand-blue/25 dark:text-brand-sky/20"
+        stroke="currentColor"
+        fill="none"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      >
+        <g className="landing-wave">
+          <WaveLine y={162} width={W} opacity={0.7} />
+        </g>
+      </g>
+
+      {/* Ön plandaki gemi — su hattı (yerel y=44) sahnede y=186'ya denk gelir.
+          Köprüüstü kıçta çizili, yani gemi sola bakıyor; sağa gittiği için aynalanıyor. */}
+      <g className="landing-ship">
+        <g transform="translate(190 142) scale(-1 1)">
+          <ContainerShip className="landing-bob" />
+        </g>
+      </g>
+
+      {/* Ön dalgalar — GEMİDEN SONRA çiziliyor ki gövdenin önünden geçsinler.
+          Hepsi geminin arkasında kalırsa gemi suyun üstünde uçuyormuş gibi durur. */}
+      <g
+        className="text-brand-blue/35 dark:text-brand-sky/25"
+        stroke="currentColor"
+        fill="none"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      >
+        <g className="landing-wave">
+          <WaveLine y={194} width={W} />
+          <WaveLine y={204} width={W} opacity={0.7} />
+        </g>
+      </g>
+
+      {/* --- Ön plandaki rıhtım yolu --- */}
+      <rect
+        x="0"
+        y={ROAD_TOP}
+        width={W}
+        height={SCENE_H - ROAD_TOP}
+        className="fill-brand-navy/85 dark:fill-white/10"
+      />
+      {/* Şerit çizgisi — açık modda lacivert asfaltın üzerinde net okunmalı */}
+      <g className="text-white/70 dark:text-white/40" stroke="currentColor" strokeWidth="3" strokeDasharray="26 22">
+        <line x1="0" y1="227" x2={W} y2="227" />
+      </g>
+
+      {/* Kamyonet — tırla aynı şeritte, tekerlekleri aynı hizada ama daha yavaş */}
+      <g className="landing-van">
+        <g transform="translate(0 200)">
+          <Van />
+        </g>
+      </g>
+
+      {/* Tır — tekerlekler (yerel y=34) yol şeridine oturuyor */}
+      <g className="landing-truck">
+        <g transform="translate(0 197)">
+          <Truck />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
 export default function PortScene() {
   return (
     <div aria-hidden="true" className="pointer-events-none relative w-full select-none">
-      {/* Dar ekranda oran korunursa sahne 60 piksellik şeride iner; yükseklik sabit,
-          `slice` ile yanlar kırpılıyor — gemi ve tır görünür boyutta kalıyor. */}
-      <svg
-        viewBox={`0 0 1440 ${SCENE_H}`}
-        className="h-[150px] w-full sm:h-[190px] lg:h-[240px]"
-        preserveAspectRatio="xMidYMax slice"
-      >
-        {/* --- Rıhtım zemini: vinçlerin ve trenin üzerinde durduğu şerit --- */}
-        <rect
-          x="0"
-          y={RAIL_Y - 22}
-          width="1440"
-          height={QUAY - (RAIL_Y - 22)}
-          className="fill-brand-navy/[0.07] dark:fill-white/[0.05]"
-        />
-
-        {/* --- Rıhtım: vinçler ve istif, hepsi QUAY hattına oturuyor --- */}
-        <g className="text-brand-navy/25 dark:text-white/15">
-          <GantryCrane x={40} scale={0.95} opacity={0.75} />
-          <GantryCrane x={196} scale={1.1} />
-          <GantryCrane x={1180} scale={0.85} opacity={0.6} />
-        </g>
-
-        {/* Demiryolu hattı — travers + iki ray */}
-        <g className="text-brand-navy/30 dark:text-white/20" stroke="currentColor">
-          <line
-            x1="0"
-            y1={RAIL_Y + 1.5}
-            x2="1440"
-            y2={RAIL_Y + 1.5}
-            strokeWidth="4"
-            strokeDasharray="4 11"
-            opacity="0.55"
-          />
-          <line x1="0" y1={RAIL_Y} x2="1440" y2={RAIL_Y} strokeWidth="1.5" />
-          <line x1="0" y1={RAIL_Y + 3} x2="1440" y2={RAIL_Y + 3} strokeWidth="1.5" />
-        </g>
-
-        {/* Tren — istiflerin ARKASINDAN geçiyor.
-            Yükleme sırasında öndeki istif eriyip arkasındaki dolu vagonları ortaya
-            çıkarıyor; boşaltmada da kutular trenin önünde birikiyor. */}
-        <g className="landing-train">
-          <g transform={`translate(0 ${RAIL_Y - 32})`}>
-            <FreightTrain />
-          </g>
-        </g>
-
-        {/* İstifler trenin ÖNÜNDE. Sağdaki trene yükleniyor, soldaki tren boşalttıkça
-            doluyor — tren sağdan geldiği için kaynak sağda, hedef solda. */}
-        <ContainerYard x={360} transfer="dest" />
-        <ContainerYard x={1010} transfer="source" />
-
-        {/* --- Gökyüzü ---
-            Vinç bomları sahnenin en üstüne kadar uzanıyor; uçak daha önce çizilseydi
-            (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
-            yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
-        <g className="landing-plane">
-          {/* Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor.
-              Sahnedeki diğer taşıtlar da tam opak. */}
-          <Plane />
-        </g>
-
-        {/* --- Deniz --- */}
-        <rect
-          x="0"
-          y={SEA_TOP}
-          width="1440"
-          height={ROAD_TOP - SEA_TOP}
-          className="fill-brand-sky/20 dark:fill-brand-sky/10"
-        />
-        {/* Ufuk çizgisi — su hattının nerede başladığı okunsun */}
-        <line
-          x1="0"
-          y1={SEA_TOP}
-          x2="1440"
-          y2={SEA_TOP}
-          className="text-brand-blue/30 dark:text-brand-sky/25"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-
-        {/* Uzaktaki gemi — ters yönde, küçük ve soluk (derinlik) */}
-        <g className="landing-ship-back">
-          <g transform="translate(0 116) scale(0.55)" opacity="0.35">
-            <ContainerShip className="landing-bob" />
-          </g>
-        </g>
-
-        {/* Arka dalgalar — ufka yakın, gemilerin gerisinde */}
-        <g
-          className="text-brand-blue/25 dark:text-brand-sky/20"
-          stroke="currentColor"
-          fill="none"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        >
-          <g className="landing-wave">
-            <WaveLine y={162} opacity={0.7} />
-          </g>
-        </g>
-
-        {/* Ön plandaki gemi — su hattı (yerel y=44) sahnede y=186'ya denk gelir.
-            Köprüüstü kıçta çizili, yani gemi sola bakıyor; sağa gittiği için aynalanıyor. */}
-        <g className="landing-ship">
-          <g transform="translate(190 142) scale(-1 1)">
-            <ContainerShip className="landing-bob" />
-          </g>
-        </g>
-
-        {/* Ön dalgalar — GEMİDEN SONRA çiziliyor ki gövdenin önünden geçsinler.
-            Hepsi geminin arkasında kalırsa gemi suyun üstünde uçuyormuş gibi durur. */}
-        <g
-          className="text-brand-blue/35 dark:text-brand-sky/25"
-          stroke="currentColor"
-          fill="none"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        >
-          <g className="landing-wave">
-            <WaveLine y={194} />
-            <WaveLine y={204} opacity={0.7} />
-          </g>
-        </g>
-
-        {/* --- Ön plandaki rıhtım yolu --- */}
-        <rect
-          x="0"
-          y={ROAD_TOP}
-          width="1440"
-          height={SCENE_H - ROAD_TOP}
-          className="fill-brand-navy/85 dark:fill-white/10"
-        />
-        <g className="text-white/30" stroke="currentColor" strokeWidth="3" strokeDasharray="26 22">
-          <line x1="0" y1="227" x2="1440" y2="227" />
-        </g>
-
-        {/* Kamyonet — tırla aynı şeritte, tekerlekleri aynı hizada ama daha yavaş */}
-        <g className="landing-van">
-          <g transform="translate(0 200)">
-            <Van />
-          </g>
-        </g>
-
-        {/* Tır — tekerlekler (yerel y=34) yol şeridine oturuyor */}
-        <g className="landing-truck">
-          <g transform="translate(0 197)">
-            <Truck />
-          </g>
-        </g>
-      </svg>
+      <Scene compact />
+      <Scene />
     </div>
   );
 }

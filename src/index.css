@@ -175,25 +175,28 @@ html:has(.landing-root) {
 /* Tanıtım sayfası — liman sahnesindeki taşıtlar.
    Ötelemeler SVG kullanıcı biriminde (viewBox koordinatı) verilir; yüzde kullanılırsa
    elemanın kendi bbox'ına göre çözülür ve sahne genişliğini kat etmez. */
+/* Hareket mesafeleri değişkenden okunuyor: sahnenin geniş ve dar (mobil) sürümleri aynı
+   keyframe'leri paylaşsın, yalnızca uç noktalar değişsin. Değerler `.landing-scene` ve
+   `.landing-scene-compact` üzerinde tanımlı. */
 @keyframes landing-sail {
-  from { transform: translateX(-260px); }
-  to   { transform: translateX(1620px); }
+  from { transform: translateX(var(--sail-from)); }
+  to   { transform: translateX(var(--sail-to)); }
 }
 
 @keyframes landing-sail-back {
-  from { transform: translateX(1500px); }
-  to   { transform: translateX(-240px); }
+  from { transform: translateX(var(--sail-back-from)); }
+  to   { transform: translateX(var(--sail-back-to)); }
 }
 
 @keyframes landing-drive {
-  from { transform: translateX(-160px); }
-  to   { transform: translateX(1560px); }
+  from { transform: translateX(var(--drive-from)); }
+  to   { transform: translateX(var(--drive-to)); }
 }
 
 /* Kamyonet — tırla aynı yönde ama daha yavaş, aynı anda ekranda olmasınlar diye */
 @keyframes landing-drive-slow {
-  from { transform: translateX(-220px); }
-  to   { transform: translateX(1540px); }
+  from { transform: translateX(var(--drive-slow-from)); }
+  to   { transform: translateX(var(--drive-slow-to)); }
 }
 
 /* Rıhtım treni — sağdan girer, SAĞDAKİ istiften yüklenir, sola gider, SOLDAKİ istife
@@ -203,42 +206,64 @@ html:has(.landing-root) {
    cubic-bezier bunu veremiyor (bkz. landing-berth'teki aynı not). */
 @keyframes landing-railyard {
   0% {
-    transform: translateX(1500px);
+    transform: translateX(var(--rail-in));
     animation-timing-function: linear;
   }
   17% {
-    transform: translateX(984px);
+    transform: translateX(calc(var(--rail-load) + var(--rail-ramp)));
     animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
   }
   23% {
-    transform: translateX(894px); /* sağdaki istifte duruş — yükleme */
+    transform: translateX(var(--rail-load)); /* sağdaki istifte duruş — yükleme */
   }
   35% {
-    transform: translateX(894px);
+    transform: translateX(var(--rail-load));
     animation-timing-function: cubic-bezier(0.5, 0, 1, 1); /* yavaşça kalkar */
   }
   41% {
-    transform: translateX(804px);
+    transform: translateX(calc(var(--rail-load) - var(--rail-ramp)));
     animation-timing-function: linear;
   }
   56% {
-    transform: translateX(334px);
+    transform: translateX(calc(var(--rail-unload) + var(--rail-ramp)));
     animation-timing-function: cubic-bezier(0, 0, 0.5, 1);
   }
   62% {
-    transform: translateX(244px); /* soldaki istifte duruş — boşaltma */
+    transform: translateX(var(--rail-unload)); /* soldaki istifte duruş — boşaltma */
   }
   74% {
-    transform: translateX(244px);
+    transform: translateX(var(--rail-unload));
     animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
   }
   80% {
-    transform: translateX(154px);
+    transform: translateX(calc(var(--rail-unload) - var(--rail-ramp)));
     animation-timing-function: linear;
   }
   96%, 100% {
-    transform: translateX(-400px); /* sahne dışı */
+    transform: translateX(var(--rail-out)); /* sahne dışı */
   }
+}
+
+/* --- Sahnenin geniş ve dar sürümleri için hareket uçları ---
+   Dar sürüm ayrı bir viewBox (560 birim) kullanıyor; mesafeler ona göre. */
+.landing-scene {
+  --sail-from: -260px;      --sail-to: 1620px;
+  --sail-back-from: 1500px; --sail-back-to: -240px;
+  --drive-from: -160px;     --drive-to: 1560px;
+  --drive-slow-from: -220px;--drive-slow-to: 1540px;
+  --fly-from: -140px;       --fly-to: 1560px;
+  --rail-in: 1500px; --rail-load: 894px; --rail-unload: 244px;
+  --rail-out: -400px; --rail-ramp: 90px;
+}
+
+.landing-scene-compact {
+  --sail-from: -210px;      --sail-to: 760px;
+  --sail-back-from: 700px;  --sail-back-to: -200px;
+  --drive-from: -120px;     --drive-to: 700px;
+  --drive-slow-from: -170px;--drive-slow-to: 690px;
+  --fly-from: -110px;       --fly-to: 690px;
+  --rail-in: 620px; --rail-load: 258px; --rail-unload: 3px;
+  --rail-out: -280px; --rail-ramp: 55px;
 }
 
 /* Duruş pencereleri: yükleme %23-35, boşaltma %62-74.
@@ -265,8 +290,8 @@ html:has(.landing-root) {
 }
 
 @keyframes landing-fly {
-  from { transform: translate(-140px, 26px); }
-  to   { transform: translate(1560px, -22px); }
+  from { transform: translate(var(--fly-from), 26px); }
+  to   { transform: translate(var(--fly-to), -22px); }
 }
 
 @keyframes landing-bob {
