@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Yalnızca herkese açık sayfalar. Uygulama rotaları (dashboard, transactions, ...)
+  kimlik doğrulaması gerektirir ve robots.txt içinde kapalıdır; buraya eklenmemeli.
+  Yeni bir public sayfa açıldığında bu dosya da güncellenmeli.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://gumruk.io/</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://gumruk.io/kullanim-kosullari</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://gumruk.io/gizlilik</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

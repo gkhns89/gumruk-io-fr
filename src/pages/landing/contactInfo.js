@@ -4,8 +4,9 @@
  * Sistemdeki iletişim bilgileri (`/api/contact`) kimlik doğrulaması ister, bu yüzden public
  * sayfada kullanılamıyor — buradaki değerler elle tutuluyor.
  *
- * TODO: Aşağıdaki değerler yer tutucudur, yayına çıkmadan önce gerçek bilgilerle değiştirilmeli.
- * E-posta adresi gumruk.io alan adı canlıya alındıktan sonra kesinleşecek.
+ * Değerler onaylandı (14.08.2026). `iletisim@gumruk.io` kutusunun, alan adı devredildiğinde
+ * posta tarafında da açılması gerekiyor — aksi hâlde "Demo Talep Et" bağlantısı çalışan bir
+ * adrese gitmez.
  */
 export const CONTACT = {
   email: "iletisim@gumruk.io",

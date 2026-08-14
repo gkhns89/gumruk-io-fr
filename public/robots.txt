@@ -1,12 +1,37 @@
-# robots.txt - Gümrük Takip Sistemi
+# robots.txt — Gümrük.io
+# Yalnızca tanıtım ve yasal sayfalar dizine eklenir. Uygulama rotaları kimlik doğrulaması
+# istese de SPA olduğu için tarayıcıya kabuk HTML döner; boş sayfaların dizine girmemesi
+# adına açıkça kapatıldı.
+
 User-agent: *
-Disallow: /uploads/
+
+# Herkese açık sayfalar
+Allow: /$
+Allow: /kullanim-kosullari
+Allow: /gizlilik
+Allow: /login
+Allow: /og-image.png
+
+# Uygulama içi rotalar
+Disallow: /dashboard
+Disallow: /transactions
+Disallow: /cargo
+Disallow: /warehouse
+Disallow: /shipping
+Disallow: /news
+Disallow: /announcements
+Disallow: /profile
+Disallow: /settings
+Disallow: /company-settings
+Disallow: /session-management
+Disallow: /contact
+Disallow: /help
+Disallow: /management/
+Disallow: /payment/
+
+# Sunucu tarafı ve yüklenen dosyalar
 Disallow: /api/
+Disallow: /uploads/
 Disallow: /agreements/
 
-# Sadece public sayfaları izin ver
-Allow: /
-Allow: /login
-
-# Sitemap (production'da güncellenecek)
-# Sitemap: https://aacc.gokhan.codes/sitemap.xml
+Sitemap: https://gumruk.io/sitemap.xml

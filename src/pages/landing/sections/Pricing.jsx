@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PLANS, INCLUDED_FEATURES, formatTRY, yearlySavingRatio } from "../pricingPlans";
+import { PLANS, INCLUDED_FEATURES, formatTRY, yearlySaving, freeMonths } from "../pricingPlans";
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
@@ -49,12 +49,16 @@ export default function Pricing() {
           >
             Yıllık
           </span>
+          {/* Üç planda da aynı: yıllık ödeme 10 aylık bedele denk geliyor */}
+          <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300">
+            {freeMonths(PLANS[0])} ay bedava
+          </span>
         </div>
 
         {/* Planlar */}
         <div className="mt-12 grid gap-6 lg:grid-cols-4">
           {PLANS.map((plan) => {
-            const saving = yearlySavingRatio(plan);
+            const saving = yearlySaving(plan);
             return (
               <div
                 key={plan.id}
@@ -86,7 +90,7 @@ export default function Pricing() {
                   </div>
                   {yearly && saving > 0 && (
                     <span className="mt-2 inline-block rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300">
-                      %{saving} tasarruf
+                      Aylık ödemeye göre {formatTRY(saving)} tasarruf
                     </span>
                   )}
                 </div>

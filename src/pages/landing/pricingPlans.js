@@ -6,7 +6,12 @@
  * API erişilemediğinde fallback olarak kullanılabilir.
  *
  * Kaynak: Yönetim > Plan Yönetimi (SUPER_ADMIN). Sistemdeki değerlerle senkron tutulmalı.
- * Son güncelleme: 12 Ağustos 2026.
+ * Son güncelleme: 14 Ağustos 2026.
+ *
+ * FİYAT KURALI — "yıllık = 10 aylık ödeme" (2 ay bedava, %16,7 indirim).
+ * Üç planda da birebir tutuyor: 7.500×10=75.000 · 10.000×10=100.000 · 17.500×10=175.000.
+ * Yeni plan eklerken veya fiyat değiştirirken bu oranı bozmayın; kartlardaki tasarruf
+ * rozetleri hesaplanarak yazılıyor, tutarsızlık doğrudan sayfaya yansır.
  *
  * NOT: "Developer Partner" planı bu listede yok — partner anlaşmasına özel, kamuya açık paket
  * değil. Kredi birim fiyatı da bilerek gösterilmiyor (bkz. sağlayıcı adı gizleme kararı).
@@ -50,7 +55,9 @@ export const PLANS = [
     id: "enterprise",
     name: "Enterprise",
     description: "Büyük gümrük müşavirlikleri için kurumsal çözüm",
-    monthlyPrice: 15000,
+    // 15.000 → 17.500: yıllık fiyat 175.000'de kalırken indirim oranı diğer planlarla
+    // eşitlendi (önceden %3'tü, yan yana duran rozetlerde göze batıyordu).
+    monthlyPrice: 17500,
     yearlyPrice: 175000,
     userLimit: 50,
     clientLimit: 200,
@@ -61,8 +68,17 @@ export const PLANS = [
 
 export const formatTRY = (value) => `₺${Number(value).toLocaleString("tr-TR")}`;
 
-/** Yıllık ödemede kaç ay bedava geliyor — kart üstündeki rozet için */
+/** Yıllık ödemede cepte kalan tutar — kart üstündeki rozet için */
+export const yearlySaving = (plan) => Math.max(0, plan.monthlyPrice * 12 - plan.yearlyPrice);
+
+/** Aynı tasarrufun yüzde karşılığı */
 export const yearlySavingRatio = (plan) => {
   const full = plan.monthlyPrice * 12;
-  return full > 0 ? Math.round(((full - plan.yearlyPrice) / full) * 100) : 0;
+  return full > 0 ? Math.round((yearlySaving(plan) / full) * 100) : 0;
 };
+
+/** Yıllık ödemenin kaç aylık bedele denk geldiği — "2 ay bedava" ifadesinin kaynağı */
+export const freeMonths = (plan) =>
+  plan.monthlyPrice > 0
+    ? Math.round((plan.monthlyPrice * 12 - plan.yearlyPrice) / plan.monthlyPrice)
+    : 0;
