@@ -17,16 +17,27 @@
  * değil. Kredi birim fiyatı da bilerek gösterilmiyor (bkz. sağlayıcı adı gizleme kararı).
  */
 
-// Her planda tüm modüller var; planlar yalnızca kullanıcı ve müşteri firma limitiyle ayrışıyor.
+// Abonelik bedeline dahil olan modüller — hepsi her planda açık.
 export const INCLUDED_FEATURES = [
   "İthalat ve ihracat işlem takibi",
-  "Canlı konteyner ve yük takibi",
   "Antrepo giriş/çıkış takibi",
   "Kurye ve evrak teslim takibi",
   "Vekalet ve müşteri firma yönetimi",
   "Raporlama ve cari hesap takibi",
   "Anlık bildirim ve duyurular",
 ];
+
+/**
+ * Abonelik bedeline DAHİL OLMAYAN, kullanım başına ücretlendirilen özellikler.
+ *
+ * Canlı konteyner takibi kredi bazlıdır: kredi birim fiyatı plana göre değişir ve satın
+ * alma anındaki TCMB kuruyla ₺'ye çevrilir (bkz. Yönetim > Plan Yönetimi). Bu yüzden
+ * "her planda dahil" listesinde gösterilemez — birim fiyat bilinçli olarak yazılmıyor.
+ */
+export const USAGE_BASED = {
+  title: "Canlı konteyner ve yük takibi",
+  note: "Tüm planlarda kullanılabilir. Sorgu başına kredi ile ücretlendirilir; birim fiyat planınıza göre değişir ve teklifte belirtilir.",
+};
 
 export const PLANS = [
   {

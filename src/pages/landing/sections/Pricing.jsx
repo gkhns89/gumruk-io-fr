@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { PLANS, INCLUDED_FEATURES, formatTRY, yearlySaving, freeMonths } from "../pricingPlans";
+import {
+  PLANS,
+  INCLUDED_FEATURES,
+  USAGE_BASED,
+  formatTRY,
+  yearlySaving,
+  freeMonths,
+} from "../pricingPlans";
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
@@ -16,8 +23,8 @@ export default function Pricing() {
             Ofisinizin ölçeğine göre net fiyat
           </h2>
           <p className="mt-4 text-lg text-text-secondary">
-            Tüm planlarda sistemin tamamı açık. Planlar yalnızca kullanıcı ve müşteri firma
-            limitiyle ayrışıyor — kullanmadığınız modül için ödeme yapmazsınız.
+            Tüm modüller her planda açık; planlar kullanıcı ve müşteri firma limitiyle ayrışıyor.
+            Yalnızca canlı konteyner takibi kullandığınız kadar ayrıca ücretlendirilir.
           </p>
         </div>
 
@@ -122,6 +129,21 @@ export default function Pricing() {
                   ))}
                 </ul>
 
+                {/* Abonelik bedeline dahil DEĞİL — dahil olanlardan görsel olarak ayrı durmalı */}
+                <div className="mt-5 rounded-xl border border-dashed border-gray-300 p-3.5 dark:border-white/20">
+                  <div className="flex items-start gap-2.5">
+                    <span className="material-symbols-outlined mt-px text-[18px] text-text-secondary">
+                      add_circle
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-text-main">{USAGE_BASED.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+                        {USAGE_BASED.note}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <a
                   href="#iletisim"
                   className={`mt-7 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
@@ -150,6 +172,7 @@ export default function Pricing() {
               <ul className="mt-6 space-y-2.5 text-sm">
                 {[
                   "Sınırsız kullanıcı ve müşteri firma",
+                  "Konteyner takip kullanımı teklifte belirlenir",
                   "Kuruma özel entegrasyon geliştirme",
                   "Özel eğitim ve kurulum desteği",
                   "Öncelikli teknik destek",
@@ -174,8 +197,9 @@ export default function Pricing() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-text-secondary">
+        <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-text-secondary">
           Fiyatlara KDV dahil değildir. Yıllık ödemede sözleşme süresi boyunca fiyat sabitlenir.
+          Konteyner takip kredileri satın alma anındaki TCMB kuruyla ₺'ye çevrilir.
         </p>
       </div>
     </section>

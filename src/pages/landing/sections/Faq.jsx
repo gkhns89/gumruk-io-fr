@@ -19,6 +19,10 @@ const QUESTIONS = [
     a: "İlgili gümrük dosyasına konteyner numarasını girmeniz yeterli. Sistem seferi izler; konum, uğranan limanlar ve tahmini varış tarihi dosyanın altında güncellenir. Ayrı bir yerde takip yapmanız gerekmez.",
   },
   {
+    q: "Konteyner takibi abonelik fiyatına dahil mi?",
+    a: "Hayır. Konteyner takibi tüm planlarda kullanılabilir ancak kullandığınız kadar, sorgu başına kredi ile ücretlendirilir; abonelik bedeline dahil değildir. Kredi birim fiyatı planınıza göre değişir ve satın alma anındaki TCMB kuruyla ₺'ye çevrilir. Takip etmediğiniz bir yük için ödeme yapmazsınız.",
+  },
+  {
     q: "Kullanıcı veya müşteri firma limitim dolarsa ne olur?",
     a: "Planınızı istediğiniz zaman üst pakete yükseltebilirsiniz. İhtiyacınız hazır paketlerin dışındaysa kurumsal kapsamda birlikte belirleriz.",
   },
