@@ -9,7 +9,7 @@ import { LEGAL } from "./legalInfo";
  * içindeki yer tutucular doldurulmalı.
  *
  * Ödeme kısıtlama eşikleri uydurma değil, sistemdeki gerçek davranıştan alındı:
- * aacc-tracker `BrokerSubscription.getRestrictionLevel()`. Kod değişirse burası da
+ * gumruk-io-back `BrokerSubscription.getRestrictionLevel()`. Kod değişirse burası da
  * güncellenmeli — aksi halde sözleşme metni sistemle çelişir.
  */
 export default function TermsPage() {
