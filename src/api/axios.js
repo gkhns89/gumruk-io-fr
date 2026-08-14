@@ -5,7 +5,7 @@ let bffUrl = "";
 // 1. VERCEL / PRODUCTION KONTROLÜ
 if (import.meta.env.PROD) {
   // Vercel'deki canlı ortamda VITE_API_BASE_URL değişkenini okur, yoksa fallback olarak senin domaini yazar.
-  bffUrl = import.meta.env.VITE_API_BASE_URL || "https://api-aacc.gokhan.codes/api";
+  bffUrl = import.meta.env.VITE_API_BASE_URL || "https://api.gumruk.io/api";
 } else {
   // 2. LOKAL GELİŞTİRME / ARKADAŞINLA EV TESTİ ORTAMI
   const currentHost = window.location.hostname;
