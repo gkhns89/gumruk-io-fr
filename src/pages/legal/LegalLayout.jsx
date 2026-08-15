@@ -55,11 +55,6 @@ export function DefList({ rows }) {
 }
 
 export default function LegalLayout({ title, intro, children }) {
-  // Diğer yasal sayfadan gelindiğinde sayfa ortasında açılmasın
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [title]);
-
   // Yer tutucularla yayına çıkmayı önlemek için geliştirme uyarısı
   useEffect(() => {
     if (import.meta.env.DEV && hasPlaceholders()) {

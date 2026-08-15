@@ -1,6 +1,7 @@
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
+import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./components/Dashboard";
 import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
 import CargoTrackingPage from "./components/cargo/CargoTrackingPage";  // ✅ YÜK TAKİP
@@ -116,6 +117,7 @@ function PaymentRestrictionModalController() {
 export default function App() {
   return (
     <>
+    <ScrollToTop />
     <PaymentRestrictionModalController />
     <Routes>
       <Route 
