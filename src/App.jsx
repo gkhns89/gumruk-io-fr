@@ -1,51 +1,54 @@
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./components/Login";
 import ScrollToTop from "./components/ScrollToTop";
-import Dashboard from "./components/Dashboard";
-import TransactionsPage from "./components/transactions/TransactionsPage";  // ✅ YENİ
-import CargoTrackingPage from "./components/cargo/CargoTrackingPage";  // ✅ YÜK TAKİP
-import AgreementsPage from "./pages/management/AgreementsPage";  // ✅ YÖNETİM
-import ClientsPage from "./pages/management/ClientsPage";  // ✅ YÖNETİM
-import EmployeesPage from "./pages/management/EmployeesPage";  // ✅ YÖNETİM
-import CouriersManagementPage from "./pages/management/CouriersManagementPage";  // ✅ KURYE YÖNETİMİ
-import NewsPage from "./pages/NewsPage";  // ✅ HABERLER
-import WarehousePage from "./pages/WarehousePage";
-import ShippingPage from "./pages/ShippingPage";
-import AnnouncementsPage from "./pages/AnnouncementsPage";
-import ProfilePage from "./pages/ProfilePage";
-import SettingsPage from "./pages/SettingsPage";
-import CompanySettingsPage from "./pages/CompanySettingsPage";
-import ContactPage from "./pages/ContactPage";
-import HelpPage from "./pages/HelpPage";
-import ReportsPage from "./pages/management/ReportsPage";
-import SessionManagement from "./pages/SessionManagement";  // ✅ SESSION YÖNETİMİ
-import PaymentSubmitPage from "./pages/payment/PaymentSubmitPage";
-import PaymentManagementPage from "./pages/management/PaymentManagementPage";
-import BrokerSubscriptionsPage from "./pages/management/BrokerSubscriptionsPage";
-import AddonCatalogPage from "./pages/management/AddonCatalogPage";
-import PlanManagementPage from "./pages/management/PlanManagementPage";
-import FeedbackTasksPage from "./pages/management/FeedbackTasksPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { useAuth } from "./hooks/useAuth";
 
-// Tanıtım ve yasal sayfalar ana bundle'a girmesin — ziyaretçi uygulama kodunun tamamını indirmemeli
+/**
+ * TÜM sayfalar rota bazında ayrı chunk'a alınıyor.
+ *
+ * Sebep tanıtım sayfası: statik import edildiklerinde ziyaretçi paneli hiç görmeden
+ * uygulamanın tamamını (2,5 MB, içinde maplibre-gl) indiriyordu. Bu, Core Web Vitals
+ * üzerinden arama sıralamasını da düşürüyor.
+ *
+ * KURAL: buraya yeni bir sayfa eklerken `lazy()` kullanın; statik `import` yazmak
+ * o sayfanın tüm bağımlılıklarını ana bundle'a geri taşır.
+ */
 const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
 const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
+const Login = lazy(() => import("./components/Login"));
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const TransactionsPage = lazy(() => import("./components/transactions/TransactionsPage"));
+const CargoTrackingPage = lazy(() => import("./components/cargo/CargoTrackingPage"));
+const AgreementsPage = lazy(() => import("./pages/management/AgreementsPage"));
+const ClientsPage = lazy(() => import("./pages/management/ClientsPage"));
+const EmployeesPage = lazy(() => import("./pages/management/EmployeesPage"));
+const CouriersManagementPage = lazy(() => import("./pages/management/CouriersManagementPage"));
+const NewsPage = lazy(() => import("./pages/NewsPage"));
+const WarehousePage = lazy(() => import("./pages/WarehousePage"));
+const ShippingPage = lazy(() => import("./pages/ShippingPage"));
+const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const CompanySettingsPage = lazy(() => import("./pages/CompanySettingsPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
+const ReportsPage = lazy(() => import("./pages/management/ReportsPage"));
+const SessionManagement = lazy(() => import("./pages/SessionManagement"));
+const PaymentSubmitPage = lazy(() => import("./pages/payment/PaymentSubmitPage"));
+const PaymentManagementPage = lazy(() => import("./pages/management/PaymentManagementPage"));
+const BrokerSubscriptionsPage = lazy(() => import("./pages/management/BrokerSubscriptionsPage"));
+const AddonCatalogPage = lazy(() => import("./pages/management/AddonCatalogPage"));
+const PlanManagementPage = lazy(() => import("./pages/management/PlanManagementPage"));
+const FeedbackTasksPage = lazy(() => import("./pages/management/FeedbackTasksPage"));
 
-// Giriş gerektirmeyen, ayrı chunk'tan gelen sayfalar için ortak sarmalayıcı
-function PublicPage({ element }) {
+/** Chunk inerken gösterilen ekran — tema rengine uyar, ani beyaz parlama olmaz */
+function RouteFallback() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-navy">
-          <p className="text-text-secondary">Yükleniyor...</p>
-        </div>
-      }
-    >
-      {element}
-    </Suspense>
+    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-navy">
+      <p className="text-text-secondary">Yükleniyor...</p>
+    </div>
   );
 }
 
@@ -120,6 +123,9 @@ export default function App() {
     <>
     <ScrollToTop />
     <PaymentRestrictionModalController />
+    {/* Tek bir Suspense tüm rotaları kapsıyor; her rota kendi chunk'ını indirirken
+        aynı ekranı gösteriyor. Rota bazlı ayrı sarmalayıcıya gerek yok. */}
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       <Route 
         path="/login" 
@@ -369,14 +375,12 @@ export default function App() {
       />
 
       {/* Tanıtım ve yasal sayfalar — public, PublicRoute ile sarmalanmaz */}
-      <Route path="/" element={<PublicPage element={<LandingPage />} />} />
-      <Route
-        path="/kullanim-kosullari"
-        element={<PublicPage element={<TermsPage />} />}
-      />
-      <Route path="/gizlilik" element={<PublicPage element={<PrivacyPage />} />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/kullanim-kosullari" element={<TermsPage />} />
+      <Route path="/gizlilik" element={<PrivacyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
     </>
   );
 }
