@@ -27,7 +27,6 @@ import AddonCatalogPage from "./pages/management/AddonCatalogPage";
 import PlanManagementPage from "./pages/management/PlanManagementPage";
 import FeedbackTasksPage from "./pages/management/FeedbackTasksPage";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
-import { usePaymentRestriction } from "./context/PaymentRestrictionProvider";
 import { useAuth } from "./hooks/useAuth";
 
 // Tanıtım ve yasal sayfalar ana bundle'a girmesin — ziyaretçi uygulama kodunun tamamını indirmemeli
@@ -91,7 +90,6 @@ function PublicRoute({ children }) {
 }
 
 function PaymentRestrictionModalController() {
-  const { restrictionLevel, daysOverdue, isWarning, isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
   const [modal, setModal] = useState(null);
 
   // 403 PAYMENT_RESTRICTION hatası geldiğinde modal aç

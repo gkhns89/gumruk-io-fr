@@ -1,7 +1,7 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
 
-const safeArrayConversion = (data, context = 'data') => {
+const safeArrayConversion = (data) => {
   if (Array.isArray(data)) return data;
   if (data === null || data === undefined) return [];
   if (typeof data === 'object') {
@@ -22,7 +22,7 @@ export const warehouseService = {
   getAll: async () => {
     try {
       const response = await axiosInstance.get('/warehouse');
-      return { success: true, data: safeArrayConversion(response.data, 'WarehouseDeclarations') };
+      return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getAll', error);
       return { success: false, error: error.response?.data?.error || 'Antrepo kayıtları alınamadı' };
@@ -44,7 +44,7 @@ export const warehouseService = {
   getRecent: async () => {
     try {
       const response = await axiosInstance.get('/warehouse/recent');
-      return { success: true, data: safeArrayConversion(response.data, 'RecentWarehouseDeclarations') };
+      return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getRecent', error);
       return { success: false, error: error.response?.data?.error || 'Son antrepo kayıtları alınamadı' };
@@ -54,7 +54,7 @@ export const warehouseService = {
   getTransfers: async (id) => {
     try {
       const response = await axiosInstance.get(`/warehouse/${id}/transfers`);
-      return { success: true, data: safeArrayConversion(response.data, 'WarehouseTransfers') };
+      return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getTransfers', error);
       return { success: false, error: error.response?.data?.error || 'Aktarım geçmişi alınamadı' };
