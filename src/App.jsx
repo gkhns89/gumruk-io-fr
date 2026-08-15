@@ -65,10 +65,13 @@ function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role kontrolü - eğer belirli bir rol gerekiyorsa ve kullanıcının rolü uyuşmuyorsa
-  if (requiredRole && user?.globalRole !== requiredRole) {
-    console.warn(`Yetkisiz erişim: ${user?.globalRole} kullanıcısı ${requiredRole} gerekli sayfaya erişmeye çalıştı`);
-    return <Navigate to="/dashboard" replace />;
+  // Role kontrolü - tek rol ya da rol listesi verilebilir
+  if (requiredRole) {
+    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!allowedRoles.includes(user?.globalRole)) {
+      console.warn(`Yetkisiz erişim: ${user?.globalRole} kullanıcısı ${allowedRoles.join(' veya ')} gerekli sayfaya erişmeye çalıştı`);
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;
@@ -179,7 +182,7 @@ export default function App() {
       <Route
         path="/management/employees"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole={["SUPER_ADMIN", "BROKER_ADMIN"]}>
             <EmployeesPage />
           </ProtectedRoute>
         }

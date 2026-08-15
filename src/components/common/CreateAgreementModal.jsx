@@ -3,7 +3,7 @@ import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { companyService } from '../../api/companyService';
 import { configService } from '../../api/configService';
 import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 
 const CreateAgreementModal = ({
   isOpen,
@@ -39,7 +39,6 @@ const CreateAgreementModal = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   // Firma listesini yükle (sadece showClientSelector true ise)
   useEffect(() => {
@@ -83,7 +82,6 @@ const CreateAgreementModal = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
   };
 
   const handleFileChange = (e) => {
@@ -98,14 +96,13 @@ const CreateAgreementModal = ({
     if (uploadConfig) {
       const validation = configService.validateFile(file, uploadConfig);
       if (!validation.valid) {
-        setError(validation.error);
+        showError(validation.error);
         e.target.value = ''; // Input'u temizle
         return;
       }
     }
 
     setFormData(prev => ({ ...prev, document: file }));
-    setError('');
   };
 
   // Dosya yükleme kısıtlamalarını göster
@@ -163,7 +160,6 @@ const CreateAgreementModal = ({
                     setSelectedClientId(clientId);
                     const client = availableClients.find(c => c.id === clientId);
                     setSelectedClientName(client?.name || '');
-                    setError('');
                   }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
@@ -199,7 +195,7 @@ const CreateAgreementModal = ({
             <button
               onClick={() => {
                 if (!canProceed) {
-                  setError('Lütfen önce bir müşteri firma seçin');
+                  showError('Lütfen önce bir müşteri firma seçin');
                   return;
                 }
                 setMode('quick');
@@ -228,7 +224,7 @@ const CreateAgreementModal = ({
             <button
               onClick={() => {
                 if (!canProceed) {
-                  setError('Lütfen önce bir müşteri firma seçin');
+                  showError('Lütfen önce bir müşteri firma seçin');
                   return;
                 }
                 setMode('wizard');
@@ -264,17 +260,16 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.document) {
-        setError('Vekalet belgesi seçmelisiniz');
+        showError('Vekalet belgesi seçmelisiniz');
         return;
       }
 
       if (!formData.startDate || !formData.endDate) {
-        setError('Başlangıç ve bitiş tarihleri zorunludur');
+        showError('Başlangıç ve bitiş tarihleri zorunludur');
         return;
       }
 
       setLoading(true);
-      setError('');
 
       try {
         const formDataToSend = new FormData();
@@ -294,10 +289,10 @@ const CreateAgreementModal = ({
           onSuccess();
           onClose();
         } else {
-          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (quick mode)');
+          handleApiResponse(result, null, null, 'Vekaletname oluşturma (quick mode)');
         }
       } catch (err) {
-        handleError(err, setError, 'Vekaletname oluşturma (quick mode)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (quick mode)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
@@ -417,7 +412,6 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       setLoading(true);
-      setError('');
 
       try {
         const result = await agencyAgreementService.createAgreement({
@@ -430,10 +424,10 @@ const CreateAgreementModal = ({
           setCreatedAgreementId(result.data.agreementId);
           setWizardStep(2);
         } else {
-          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (step 1)');
+          handleApiResponse(result, null, null, 'Vekaletname oluşturma (step 1)');
         }
       } catch (err) {
-        handleError(err, setError, 'Vekaletname oluşturma (step 1)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (step 1)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
@@ -515,12 +509,11 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.document) {
-        setError('Lütfen bir belge seçin');
+        showError('Lütfen bir belge seçin');
         return;
       }
 
       setLoading(true);
-      setError('');
 
       try {
         const result = await agencyAgreementService.uploadDocument(
@@ -531,10 +524,10 @@ const CreateAgreementModal = ({
         if (result.success) {
           setWizardStep(3);
         } else {
-          handleApiResponse(result, null, setError, 'Vekaletname belgesi yükleme');
+          handleApiResponse(result, null, null, 'Vekaletname belgesi yükleme');
         }
       } catch (err) {
-        handleError(err, setError, 'Vekaletname belgesi yükleme', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname belgesi yükleme', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }
@@ -622,12 +615,11 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.startDate || !formData.endDate) {
-        setError('Başlangıç ve bitiş tarihleri zorunludur');
+        showError('Başlangıç ve bitiş tarihleri zorunludur');
         return;
       }
 
       setLoading(true);
-      setError('');
 
       try {
         const result = await agencyAgreementService.activateAgreement(
@@ -644,10 +636,10 @@ const CreateAgreementModal = ({
           onSuccess();
           onClose();
         } else {
-          handleApiResponse(result, null, setError, 'Vekaletname oluşturma (wizard complete)');
+          handleApiResponse(result, null, null, 'Vekaletname oluşturma (wizard complete)');
         }
       } catch (err) {
-        handleError(err, setError, 'Vekaletname oluşturma (wizard complete)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (wizard complete)', 'Beklenmeyen bir hata oluştu');
       } finally {
         setLoading(false);
       }

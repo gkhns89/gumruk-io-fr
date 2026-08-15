@@ -5,12 +5,10 @@ import { showSuccess } from '../../utils/toastUtils';
 
 export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [reason, setReason] = useState("");
 
   const handleDelete = async () => {
     setLoading(true);
-    setError("");
 
     try {
       // İşlemi iptal et (silme yerine)
@@ -20,10 +18,10 @@ export default function DeleteConfirmModal({ transaction, onClose, onSuccess }) 
         showSuccess('İşlem başarıyla silindi!');
         onSuccess();
       } else {
-        handleApiResponse(result, null, setError, 'transaction cancellation');
+        handleApiResponse(result, null, null, 'transaction cancellation');
       }
     } catch (err) {
-      handleError(err, setError, 'transaction cancellation', 'İşlem iptal edilirken beklenmeyen bir hata oluştu.');
+      handleError(err, null, 'transaction cancellation', 'İşlem iptal edilirken beklenmeyen bir hata oluştu.');
     } finally {
       setLoading(false);
     }

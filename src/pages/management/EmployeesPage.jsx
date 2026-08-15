@@ -15,8 +15,6 @@ import { handleError, handleApiResponse } from '../../utils/errorUtils';
 const EmployeesPage = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
-  const isBrokerAdmin = user?.globalRole === 'BROKER_ADMIN';
-  const canManageEmployees = isSuperAdmin || isBrokerAdmin;
 
   // SUPER_ADMIN: broker seçim state'leri
   const [brokers, setBrokers] = useState([]);

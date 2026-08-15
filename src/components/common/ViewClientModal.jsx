@@ -3,7 +3,7 @@ import { companyService } from '../../api/companyService';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { toUpperCase } from '../../utils/textUtils';
 import { getCurrentLocale } from '../../locales';
-import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 
 /**
@@ -29,7 +29,6 @@ export default function ViewClientModal({
   const locale = getCurrentLocale();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
     name: client?.name || '',
@@ -54,7 +53,6 @@ export default function ViewClientModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -70,10 +68,10 @@ export default function ViewClientModal({
         setIsEditing(false);
         onClose();
       } else {
-        handleApiResponse(result, null, setError, 'ViewClientModal - updateClientCompany');
+        handleApiResponse(result, null, null, 'ViewClientModal - updateClientCompany');
       }
     } catch (err) {
-      handleError(err, setError, 'ViewClientModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
+      handleError(err, null, 'ViewClientModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -81,7 +79,6 @@ export default function ViewClientModal({
 
   const handleClose = () => {
     setIsEditing(false);
-    setError('');
     setFormData({
       name: client?.name || '',
       shortName: client?.shortName || '',

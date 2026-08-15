@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { configService } from '../../api/configService';
-import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
-import { showSuccess } from '../../utils/toastUtils';
+import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { showSuccess, showError } from '../../utils/toastUtils';
 
 /**
  * Vekalet Düzenleme Modalı
@@ -31,7 +31,6 @@ export default function EditAgreementModal({
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadConfig, setUploadConfig] = useState(null);
 
@@ -46,7 +45,6 @@ export default function EditAgreementModal({
       });
       // Modal her açıldığında state'i temizle
       setSelectedFile(null);
-      setError('');
       setUploadProgress(0);
     }
   }, [agreement, isOpen]);
@@ -67,7 +65,6 @@ export default function EditAgreementModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     setUploadProgress(0);
 
@@ -86,7 +83,7 @@ export default function EditAgreementModal({
       );
 
       if (!result.success) {
-        handleApiResponse(result, null, setError, 'EditAgreementModal - updateAgreement');
+        handleApiResponse(result, null, null, 'EditAgreementModal - updateAgreement');
         setLoading(false);
         return;
       }
@@ -100,7 +97,7 @@ export default function EditAgreementModal({
         );
 
         if (!uploadResult.success) {
-          handleApiResponse(uploadResult, null, setError, 'EditAgreementModal - uploadDocument');
+          handleApiResponse(uploadResult, null, null, 'EditAgreementModal - uploadDocument');
           setLoading(false);
           return;
         }
@@ -112,7 +109,7 @@ export default function EditAgreementModal({
       onSuccess();
       onClose();
     } catch (err) {
-      handleError(err, setError, 'EditAgreementModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
+      handleError(err, null, 'EditAgreementModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -131,7 +128,8 @@ export default function EditAgreementModal({
     if (uploadConfig) {
       const validation = configService.validateFile(file, uploadConfig);
       if (!validation.valid) {
-        setError(validation.error);
+        // Dosya sessizce temizleniyordu; kullanıcı nedenini görmeli
+        showError(validation.error);
         e.target.value = ''; // ÖNEMLİ: Input'u temizle
         setSelectedFile(null);
         return;
@@ -139,7 +137,6 @@ export default function EditAgreementModal({
     }
 
     setSelectedFile(file);
-    setError('');
   };
 
   // Dosya yükleme kısıtlamalarını göster

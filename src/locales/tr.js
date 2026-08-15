@@ -226,7 +226,6 @@ export const tr = {
     enterCustomsName: "Gümrük adı girin",
     enterContainerAmount: "Kap miktarı girin",
     enterSender: "Gönderici girin",
-    enterWeight: "Kilo girin",
     enterTax: "Vergi girin",
     enterGuaranteeAmount: "Teminat girin",
     enterImportProcessingTime: "İşlem süresi girin",
