@@ -16,6 +16,8 @@ export default function TermsPage() {
   return (
     <LegalLayout
       title="Kullanım Koşulları"
+      path="/kullanim-kosullari"
+      description="Gümrük.io gümrük takip sisteminin kullanım koşulları: abonelik, ödeme, erişim kısıtlaması, sorumluluk ve fesih hükümleri."
       intro={`Bu koşullar, ${LEGAL.operator} tarafından işletilen ${LEGAL.brand} gümrük takip sisteminin kullanımına ilişkin tarafların hak ve yükümlülüklerini düzenler. Sisteme kullanıcı hesabıyla giriş yapmanız, bu koşulları kabul ettiğiniz anlamına gelir.`}
     >
       <Section no={1} title="Taraflar">

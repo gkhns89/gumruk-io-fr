@@ -7,16 +7,24 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gümrük.io | All about customs clearance - G.Codes</title>
-
-    <!-- Arama motoru ve sosyal paylaşım.
-         NOT: og:url ve og:image mutlak adres ister; gumruk.io yayına alınmadan önce
-         paylaşım önizlemesi çalışmaz. Alan adı canlıya çıkınca doğrulanmalı. -->
+    <!-- Başlık ve açıklama tanıtım sayfasına göre yazılı; bunlar varsayılan.
+         Yasal sayfalar `useDocumentHead` ile kendi başlığını yazıyor (src/utils/seo.js).
+         Anahtar kelime seçimi: "gümrük müşavirliği" + "takip programı" — hedef kitlenin
+         aradığı ifadeler. Marka adı sonda, çünkü henüz aranan bir marka değil. -->
+    <title>Gümrük Müşavirliği Takip Programı | Gümrük.io</title>
     <meta
       name="description"
-      content="Gümrük müşavirlikleri için uçtan uca takip sistemi. İthalat ve ihracat işlemleri, antrepo, kurye evrakı, canlı konteyner takibi ve raporlama tek ekranda."
+      content="İthalat, ihracat, antrepo, kurye ve canlı konteyner takibi tek ekranda. Gümrük müşavirlikleri için vekalet, raporlama ve cari hesap takibi dahil."
     />
     <link rel="canonical" href="https://gumruk.io/" />
+
+    <!-- max-image-preview:large olmadan Google sonuçlarda büyük görsel göstermez -->
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="Gökhan Şişman" />
+    <meta name="theme-color" content="#0a1f44" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Gümrük.io" />
@@ -28,6 +36,7 @@
       content="Gümrük müşavirlikleri için uçtan uca takip sistemi. İthalat ve ihracat işlemleri, antrepo, kurye evrakı, canlı konteyner takibi ve raporlama tek ekranda."
     />
     <meta property="og:image" content="https://gumruk.io/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Gümrük.io — Gümrük Takip Sistemi" />
@@ -39,6 +48,57 @@
       content="Gümrük müşavirlikleri için uçtan uca takip sistemi. İthalat, ihracat, antrepo, kurye ve canlı konteyner takibi."
     />
     <meta name="twitter:image" content="https://gumruk.io/og-image.png" />
+
+    <!-- Yapısal veri — marka ve site kimliği.
+         Burada yalnızca DEĞİŞMEYEN bilgiler var. Fiyat ve SSS şemaları çalışma anında
+         `src/utils/seo.js` üzerinden, tek kaynaktan (pricingPlans.js / Faq.jsx) üretiliyor;
+         buraya kopyalanırsa iki yer birbirinden kayar.
+         Puan/yorum (aggregateRating, review) BİLEREK yok — gerçek değerlendirme olmadan
+         eklenmesi Google'ın spam politikasına aykırı ve manuel yaptırım sebebi. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://gumruk.io/#organization",
+            "name": "Gümrük.io",
+            "url": "https://gumruk.io/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://gumruk.io/apple-touch-icon.png",
+              "width": 180,
+              "height": 180
+            },
+            "image": "https://gumruk.io/og-image.png",
+            "description": "Gümrük müşavirlikleri için ithalat, ihracat, antrepo, kurye ve konteyner takibini tek ekranda toplayan takip yazılımı.",
+            "founder": {
+              "@type": "Person",
+              "name": "Gökhan Şişman"
+            },
+            "areaServed": {
+              "@type": "Country",
+              "name": "Türkiye"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "sales",
+              "email": "iletisim@gumruk.io",
+              "telephone": "+90-541-935-55-89",
+              "availableLanguage": ["tr"]
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://gumruk.io/#website",
+            "url": "https://gumruk.io/",
+            "name": "Gümrük.io",
+            "inLanguage": "tr-TR",
+            "publisher": { "@id": "https://gumruk.io/#organization" }
+          }
+        ]
+      }
+    </script>
 
         <!-- Material Symbols -->
     <link

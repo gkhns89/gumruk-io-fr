@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import CookieConsent from "../landing/sections/CookieConsent";
 import { LEGAL, hasPlaceholders } from "./legalInfo";
+import { applyDocumentHead, injectJsonLd, breadcrumbSchema } from "../../utils/seo";
 import emblemLight from "../../assets/brand/emblem-light.png";
 import emblemDark from "../../assets/brand/emblem-dark.png";
 
@@ -54,7 +55,17 @@ export function DefList({ rows }) {
   );
 }
 
-export default function LegalLayout({ title, intro, children }) {
+export default function LegalLayout({ title, intro, path, description, children }) {
+  // Kendi başlığını yazmazsa Google bu sayfayı tanıtım sayfasıyla aynı başlıkla listeler
+  useEffect(() => {
+    applyDocumentHead({
+      title: `${title} | Gümrük.io`,
+      description,
+      path,
+    });
+    return injectJsonLd("ld-breadcrumb", breadcrumbSchema(title, path));
+  }, [title, description, path]);
+
   // Yer tutucularla yayına çıkmayı önlemek için geliştirme uyarısı
   useEffect(() => {
     if (import.meta.env.DEV && hasPlaceholders()) {

@@ -16,6 +16,8 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title="Gizlilik Politikası ve Aydınlatma Metni"
+      path="/gizlilik"
+      description="Gümrük.io'da işlenen kişisel veriler, işleme amaçları, aktarım, çerez kullanımı ve KVKK kapsamındaki haklarınız."
       intro={`Bu metin, ${LEGAL.brand} kullanılırken işlenen kişisel verilere ilişkin olarak 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında hazırlanmıştır.`}
     >
       <Section no={1} title="Veri sorumlusu">
