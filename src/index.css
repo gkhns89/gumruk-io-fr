@@ -472,6 +472,49 @@ html:has(.landing-root) {
   }
 }
 
+/* Giriş ekranı — tırın gümrük bariyerinden geçişi (bkz. LoginScene.jsx).
+   Tır 13sn'lik turda x=-70'ten 360'a gidiyor; bariyerdeki x=236'ya turun ~%71'inde
+   varıyor, bu yüzden kol %62-%84 arasında açık duruyor. */
+@keyframes login-drive {
+  from { transform: translateX(-70px); }
+  to   { transform: translateX(360px); }
+}
+
+@keyframes login-gate {
+  0%, 55%   { transform: rotate(0deg); }
+  62%, 84%  { transform: rotate(-60deg); }
+  92%, 100% { transform: rotate(0deg); }
+}
+
+@keyframes login-road-dash {
+  to { stroke-dashoffset: -32; }
+}
+
+@keyframes login-lamp {
+  0%, 54%, 100% { opacity: 0.25; }
+  60%, 86%      { opacity: 1; }
+}
+
+.login-truck { animation: login-drive 13s linear infinite; }
+.login-road  { animation: login-road-dash 1.6s linear infinite; }
+.login-lamp  { animation: login-lamp 13s ease-in-out infinite; }
+
+/* Kol sol ucundan dönsün: fill-box + left center */
+.login-gate {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: login-gate 13s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-truck,
+  .login-road,
+  .login-lamp,
+  .login-gate {
+    animation: none;
+  }
+}
+
 /* CurrencyTicker now uses a stack-based slide (transform driven from React
    state, transition handled inline) so it no longer needs a keyframe. */
 

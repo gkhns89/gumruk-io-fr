@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "./common/ThemeToggle";
+import LoginScene from "./LoginScene";
 import { getLoginProfile } from "../utils/imageUtils";
 import lockupLight from "../assets/brand/lockup-light.png";
 import lockupDark from "../assets/brand/lockup-dark.png";
@@ -65,7 +66,6 @@ export default function Login() {
               alt="Gümrük.io"
               className="hidden h-9 w-auto flex-shrink-0 dark:block"
             />
-            <p className="text-xs text-text-secondary hidden sm:block">Gümrük Takip Sistemi</p>
           </Link>
 
           {/* Tema Toggle */}
@@ -80,16 +80,7 @@ export default function Login() {
 
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-4">
-            <img
-              src={lockupLight}
-              alt="Gümrük.io"
-              className="h-12 sm:h-14 w-auto flex-shrink-0 dark:hidden"
-            />
-            <img
-              src={lockupDark}
-              alt="Gümrük.io"
-              className="hidden h-12 sm:h-14 w-auto flex-shrink-0 dark:block"
-            />
+            <LoginScene />
             <div>
               <p className="text-text-main text-3xl font-bold leading-tight tracking-tight">
                 Sisteme Giriş
@@ -140,10 +131,10 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Email</p>
+              <p className="text-text-main text-sm font-medium pb-2">E-Posta</p>
               <input
                 type="email"
-                placeholder="ornek@email.com"
+                placeholder="ornek@firma.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
