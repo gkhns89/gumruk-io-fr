@@ -20,6 +20,12 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Tanıtım sayfasında aşağı inip "Sisteme Giriş"e basıldığında React Router kaydırma
+  // konumunu koruyor; sayfa ortadan açılmasın diye başa alıyoruz (bkz. LegalLayout).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Mail değişince (kısa debounce) bu makinedeki localStorage'dan profil ara
   useEffect(() => {
     const t = setTimeout(() => {
