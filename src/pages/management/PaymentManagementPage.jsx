@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { paymentService } from '../../api/paymentService';
-import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { gRadarCreditService } from '../../api/gRadarCreditService';
 import MainLayout from '../../components/layout/MainLayout';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
@@ -137,7 +137,7 @@ export default function PaymentManagementPage() {
   const TABS = [
     { key: 'pending', label: 'Bekleyen Ödemeler', icon: 'pending' },
     { key: 'all', label: 'Tüm Ödemeler', icon: 'receipt_long' },
-    { key: 'shipsgo', label: 'ShipsGo Satın Almaları', icon: 'travel_explore' },
+    { key: 'g-radar', label: 'G-Radar Satın Almaları', icon: 'travel_explore' },
     { key: 'methods', label: 'Banka Hesapları', icon: 'account_balance' },
   ];
 
@@ -317,8 +317,8 @@ export default function PaymentManagementPage() {
                   <PaymentTable data={filteredAllPayments} />
                 </>
               )}
-              {activeTab === 'shipsgo' && (
-                <ShipsGoApprovalsPanel onChange={load} />
+              {activeTab === 'g-radar' && (
+                <GRadarApprovalsPanel onChange={load} />
               )}
               {activeTab === 'methods' && (
                 <div className="space-y-4">
@@ -393,13 +393,13 @@ export default function PaymentManagementPage() {
 }
 
 /**
- * SuperAdmin approval queue for broker-submitted ShipsGo credit transfers.
+ * SuperAdmin approval queue for broker-submitted G-Radar credit transfers.
  * Shows pending purchases with the broker, credit count, computed TL price,
  * the broker's bank-transfer reference and any note. Approve / reject buttons
  * trigger the Phase-5 endpoints which re-run the master-pool guard and
  * (on approval) write the new lot + ledger row in a single transaction.
  */
-function ShipsGoApprovalsPanel({ onChange }) {
+function GRadarApprovalsPanel({ onChange }) {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rejectingId, setRejectingId] = useState(null);
@@ -407,7 +407,7 @@ function ShipsGoApprovalsPanel({ onChange }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await shipsGoCreditService.listPendingPurchases();
+    const res = await gRadarCreditService.listPendingPurchases();
     setLoading(false);
     if (res.success) {
       setPurchases(res.data?.purchases || []);
@@ -419,13 +419,13 @@ function ShipsGoApprovalsPanel({ onChange }) {
   useEffect(() => { load(); }, [load]);
 
   const handleApprove = async (id) => {
-    const res = await shipsGoCreditService.approvePurchase(id);
+    const res = await gRadarCreditService.approvePurchase(id);
     if (res.success) {
       showSuccess('Satın alma onaylandı, krediler brokere eklendi');
       load();
       onChange?.();
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
-      showError('Master ShipsGo havuzunda yeterli kredi yok. Önce ShipsGo tarafından paket yükleyin.');
+      showError('Master G-Radar havuzunda yeterli kredi yok. Önce G-Radar tarafından paket yükleyin.');
     } else {
       showError(res.error);
     }
@@ -436,7 +436,7 @@ function ShipsGoApprovalsPanel({ onChange }) {
       showError('Red gerekçesi zorunludur');
       return;
     }
-    const res = await shipsGoCreditService.rejectPurchase(id, rejectReason.trim());
+    const res = await gRadarCreditService.rejectPurchase(id, rejectReason.trim());
     if (res.success) {
       showSuccess('Satın alma reddedildi');
       setRejectingId(null);
@@ -458,7 +458,7 @@ function ShipsGoApprovalsPanel({ onChange }) {
         <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-2 block">
           inbox
         </span>
-        <p className="text-text-secondary text-sm">Bekleyen ShipsGo satın alması yok</p>
+        <p className="text-text-secondary text-sm">Bekleyen G-Radar satın alması yok</p>
       </div>
     );
   }

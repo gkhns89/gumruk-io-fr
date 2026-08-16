@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { companyService } from '../../api/companyService';
+import SectorSelect from './SectorSelect';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getCurrentLocale } from '../../locales';
@@ -20,7 +21,8 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
   const [formData, setFormData] = useState({
     name: '',
     shortName: '',
-    description: ''
+    description: '',
+    sectorIds: []
   });
 
   const [loading, setLoading] = useState(false);
@@ -50,7 +52,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
         onSuccess(result.data);
 
         // Reset form and close
-        setFormData({ name: '', shortName: '', description: '' });
+        setFormData({ name: '', shortName: '', description: '', sectorIds: [] });
         onClose();
       } else {
         // API error - show as toast
@@ -145,6 +147,21 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
               />
               <p className="mt-1 text-xs text-text-secondary">
                 Belgelerde ve raporlarda kullanılacak kısa ad
+              </p>
+            </div>
+
+            {/* Sektör - Optional, duyuru hedeflemesi için */}
+            <div>
+              <label className="block text-sm font-medium text-text-main mb-2">
+                Sektör (İsteğe Bağlı)
+              </label>
+              <SectorSelect
+                value={formData.sectorIds}
+                onChange={(sectorIds) => setFormData(prev => ({ ...prev, sectorIds }))}
+                disabled={loading}
+              />
+              <p className="mt-2 text-xs text-text-secondary">
+                Duyuruları sektöre göre hedefleyebilmek için kullanılır. Birden fazla seçilebilir.
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { shipsGoService } from '../../api/shipsGoService';
+import { gRadarService } from '../../api/gRadarService';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -19,21 +19,21 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const canEditVehicleType = isAdmin && !isReadOnly;
   const canEditClientCompany = isAdmin && !isReadOnly;
 
-  // ===== ShipsGo override tracking =====
-  // Server keeps the authoritative list in cargo.shipsGoManuallyOverriddenFields;
-  // we mirror it locally so the "ShipsGo'ya bırak" reset button can update the
+  // ===== G-Radar override tracking =====
+  // Server keeps the authoritative list in cargo.gRadarManuallyOverriddenFields;
+  // we mirror it locally so the "G-Radar'a bırak" reset button can update the
   // UI immediately when the user releases a field.
-  const [overrideList, setOverrideList] = useState(cargo.shipsGoManuallyOverriddenFields || []);
-  const shipsGoActive = !!cargo.shipsGoEnabled && !!cargo.shipsGoTrackingId;
+  const [overrideList, setOverrideList] = useState(cargo.gRadarManuallyOverriddenFields || []);
+  const gRadarActive = !!cargo.gRadarEnabled && !!cargo.gRadarTrackingId;
   const isFieldOverridden = (fieldName) => overrideList.includes(fieldName);
 
-  // ===== ShipsGo request history (banner state) =====
+  // ===== G-Radar request history (banner state) =====
   const [requestHistory, setRequestHistory] = useState([]);
   const [reRequestNotes, setReRequestNotes] = useState('');
   const [reRequesting, setReRequesting] = useState(false);
 
   const loadRequests = useCallback(async () => {
-    const res = await shipsGoService.listCargoRequests(cargo.id);
+    const res = await gRadarService.listCargoRequests(cargo.id);
     if (res.success) setRequestHistory(res.data?.requests || []);
   }, [cargo.id]);
 
@@ -44,13 +44,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   const handleCancelMyRequest = async (requestId) => {
     const ok = await confirmDialog({
-      title: 'ShipsGo talebini iptal et',
-      message: 'Bekleyen ShipsGo entegrasyon talebinizi iptal etmek istiyor musunuz?',
+      title: 'G-Radar talebini iptal et',
+      message: 'Bekleyen G-Radar entegrasyon talebinizi iptal etmek istiyor musunuz?',
       intent: 'warning',
       confirmText: 'Talebi iptal et',
     });
     if (!ok) return;
-    const res = await shipsGoService.cancelRequest(requestId);
+    const res = await gRadarService.cancelRequest(requestId);
     if (res.success) {
       showSuccess('Talep iptal edildi');
       loadRequests();
@@ -61,7 +61,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   const handleReRequest = async () => {
     setReRequesting(true);
-    const res = await shipsGoService.requestEnable(cargo.id, { notes: reRequestNotes.trim() || null });
+    const res = await gRadarService.requestEnable(cargo.id, { notes: reRequestNotes.trim() || null });
     setReRequesting(false);
     if (res.success) {
       showSuccess('Yeni talep gönderildi');
@@ -74,31 +74,31 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   };
 
   // Direct enable for BROKER_ADMIN / SUPER_ADMIN — the "modal-side" twin of
-  // the table's ShipsGo'yu Aç cell. No credit cost; the user can fetch the
+  // the table's G-Radar'ı Aç cell. No credit cost; the user can fetch the
   // tracking data afterwards from the cargo list.
   const [enablingNow, setEnablingNow] = useState(false);
   const handleEnableNow = async () => {
     const ok = await confirmDialog({
-      title: 'ShipsGo entegrasyonunu aç',
-      message: 'Bu yük için ShipsGo entegrasyonu aktive edilecek.',
+      title: 'G-Radar entegrasyonunu aç',
+      message: 'Bu yük için G-Radar entegrasyonu aktive edilecek.',
       details: [
         'Bu adımda kredi tüketilmez.',
         'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
       ],
       intent: 'primary',
       icon: 'travel_explore',
-      confirmText: 'ShipsGo\'yu aç',
+      confirmText: 'G-Radar\'ı aç',
     });
     if (!ok) return;
     setEnablingNow(true);
-    const res = await shipsGoService.enable(cargo.id);
+    const res = await gRadarService.enable(cargo.id);
     setEnablingNow(false);
     if (res.success) {
-      showSuccess('ShipsGo entegrasyonu açıldı');
+      showSuccess('G-Radar entegrasyonu açıldı');
       onSuccess?.();
       onClose?.();
     } else {
-      showError(res.error || 'ShipsGo açılamadı');
+      showError(res.error || 'G-Radar açılamadı');
     }
   };
 
@@ -109,21 +109,21 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     };
     const label = labels[fieldName] || fieldName;
     const ok = await confirmDialog({
-      title: `${label} alanını ShipsGo'ya bırak`,
-      message: `${label} alanını yeniden ShipsGo kontrolüne vermek istiyor musunuz?`,
+      title: `${label} alanını G-Radar'a bırak`,
+      message: `${label} alanını yeniden G-Radar kontrolüne vermek istiyor musunuz?`,
       details: [
-        'Bir sonraki güncellemede alan ShipsGo değeriyle değişir',
+        'Bir sonraki güncellemede alan G-Radar değeriyle değişir',
         'Manuel kilit kaldırılır',
       ],
       intent: 'primary',
       icon: 'restart_alt',
-      confirmText: 'ShipsGo\'ya bırak',
+      confirmText: 'G-Radar\'a bırak',
     });
     if (!ok) return;
-    const res = await shipsGoService.resetOverride(cargo.id, fieldName);
+    const res = await gRadarService.resetOverride(cargo.id, fieldName);
     if (res.success) {
       setOverrideList(prev => prev.filter(f => f !== fieldName));
-      showSuccess(`${labels[fieldName] || fieldName} ShipsGo kontrolüne bırakıldı`);
+      showSuccess(`${labels[fieldName] || fieldName} G-Radar kontrolüne bırakıldı`);
       // Tell the parent to re-read so the just-resynced value shows up.
       onSuccess?.();
     } else {
@@ -511,12 +511,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-background-dark transition-colors duration-300">
-          {/* ShipsGo request status banner */}
-          <ShipsGoRequestBanner
+          {/* G-Radar request status banner */}
+          <GRadarRequestBanner
             latest={latestRequest}
             currentUserId={currentUser?.id}
-            shipsGoEnabled={!!cargo.shipsGoEnabled}
-            shipsGoTrackingId={cargo.shipsGoTrackingId}
+            gRadarEnabled={!!cargo.gRadarEnabled}
+            gRadarTrackingId={cargo.gRadarTrackingId}
             vehicleType={cargo.vehicleType}
             cargoStatus={cargo.status}
             isAdmin={isAdmin}
@@ -1130,8 +1130,8 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               <div>
                 <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
                   <span>Tahmini Varış Tarihi (ETA)</span>
-                  <ShipsGoFieldBadge
-                    shipsGoActive={shipsGoActive}
+                  <GRadarFieldBadge
+                    gRadarActive={gRadarActive}
                     overridden={isFieldOverridden('estimatedArrivalDate')}
                     canManage={isAdmin && !isReadOnly}
                     onReset={() => handleResetOverride('estimatedArrivalDate')}
@@ -1215,8 +1215,8 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             <div className="p-4">
               <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
                 <span>Varış Tarihi</span>
-                <ShipsGoFieldBadge
-                  shipsGoActive={shipsGoActive}
+                <GRadarFieldBadge
+                  gRadarActive={gRadarActive}
                   overridden={isFieldOverridden('cargoArrivalDate')}
                   canManage={isAdmin && !isReadOnly}
                   onReset={() => handleResetOverride('cargoArrivalDate')}
@@ -1439,16 +1439,16 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 }
 
 /**
- * Compact inline indicator next to ShipsGo-managed cargo fields.
+ * Compact inline indicator next to G-Radar-managed cargo fields.
  *
  * Three states:
- *  - ShipsGo not active: badge hidden (nothing to communicate).
+ *  - G-Radar not active: badge hidden (nothing to communicate).
  *  - Active & user has manually overridden the field: 🔒 pill with a
- *    one-click "↺ ShipsGo'ya bırak" reset button (BROKER_ADMIN /
+ *    one-click "↺ G-Radar'a bırak" reset button (BROKER_ADMIN /
  *    SUPER_ADMIN only). Clicking it confirms, calls /reset-override,
  *    and removes the field from the local override list so the badge
  *    updates immediately.
- *  - Active & ShipsGo currently owns the field: a small "ShipsGo
+ *  - Active & G-Radar currently owns the field: a small "G-Radar
  *    güncelliyor" tag — same shape so the label height does not jump
  *    between rows.
  *
@@ -1457,32 +1457,32 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
  * component would just couple them through props.
  */
 /**
- * In-modal banner reflecting the latest ShipsGo enable-request on the cargo.
+ * In-modal banner reflecting the latest G-Radar enable-request on the cargo.
  * Three states matter:
  *  - PENDING (the request is sitting in some BROKER_ADMIN's queue): blue
  *    info banner. The original requester sees a "Talebi iptal et" button.
  *  - REJECTED: red banner quoting the admin's reason. A "Tekrar Talep Et"
  *    affordance lets the user file a fresh request (with a fresh note).
- *  - APPROVED but ShipsGo isn't actually active anymore (rare; admin
+ *  - APPROVED but G-Radar isn't actually active anymore (rare; admin
  *    disabled afterwards): green hint nudging the user to re-request.
- *  - APPROVED and ShipsGo still active, or CANCELLED, or nothing: no banner.
+ *  - APPROVED and G-Radar still active, or CANCELLED, or nothing: no banner.
  */
-function ShipsGoRequestBanner({
-  latest, currentUserId, shipsGoEnabled, shipsGoTrackingId,
+function GRadarRequestBanner({
+  latest, currentUserId, gRadarEnabled, gRadarTrackingId,
   vehicleType, cargoStatus, isAdmin, isReadOnly,
   onCancel, reRequestNotes, setReRequestNotes, onReRequest, reRequesting,
   onEnableNow, enablingNow,
 }) {
-  const supportsShipsGo = vehicleType === 'SHIP' || vehicleType === 'AIRPLANE';
+  const supportsGRadar = vehicleType === 'SHIP' || vehicleType === 'AIRPLANE';
   const isCompleted = cargoStatus === 'COMPLETED';
   const noActiveRequest = !latest || latest.status === 'CANCELLED';
 
-  // "ShipsGo is off, nothing pending, can still be turned on" — show a
+  // "G-Radar is off, nothing pending, can still be turned on" — show a
   // call-to-action so the user has a way to enable from inside the modal
   // (mirrors the table cell). Skipped for read-only viewers and for cargo
   // already wired up (active or with a tracking ID waiting on fetch).
-  if (supportsShipsGo && !isCompleted && !isReadOnly && !shipsGoEnabled
-      && !shipsGoTrackingId && noActiveRequest) {
+  if (supportsGRadar && !isCompleted && !isReadOnly && !gRadarEnabled
+      && !gRadarTrackingId && noActiveRequest) {
     if (isAdmin) {
       return (
         <div className="mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 p-4">
@@ -1490,7 +1490,7 @@ function ShipsGoRequestBanner({
             <div className="flex-1 min-w-[200px]">
               <p className="text-sm font-semibold text-text-main flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
-                ShipsGo entegrasyonu bu yük için kapalı
+                G-Radar entegrasyonu bu yük için kapalı
               </p>
               <p className="text-xs text-text-secondary mt-1">
                 Açtığınızda kredi tüketilmez. Açtıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).
@@ -1502,7 +1502,7 @@ function ShipsGoRequestBanner({
               disabled={enablingNow}
               className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
             >
-              {enablingNow ? 'Açılıyor...' : 'ShipsGo\'yu Aç'}
+              {enablingNow ? 'Açılıyor...' : 'G-Radar\'ı Aç'}
             </button>
           </div>
         </div>
@@ -1513,7 +1513,7 @@ function ShipsGoRequestBanner({
       <div className="mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 p-4">
         <p className="text-sm font-semibold text-text-main flex items-center gap-2">
           <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
-          ShipsGo entegrasyonu bu yük için kapalı
+          G-Radar entegrasyonu bu yük için kapalı
         </p>
         <p className="text-xs text-text-secondary mt-1">
           Açma yetkisi yöneticinizde — talep gönderebilirsiniz.
@@ -1561,7 +1561,7 @@ function ShipsGoRequestBanner({
           <div className="flex-1 min-w-[200px]">
             <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-base">schedule</span>
-              ShipsGo entegrasyon talebiniz yöneticinizin onayını bekliyor
+              G-Radar entegrasyon talebiniz yöneticinizin onayını bekliyor
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
               Talep tarihi: {new Date(latest.requestedAt).toLocaleString('tr-TR')}
@@ -1587,7 +1587,7 @@ function ShipsGoRequestBanner({
       <div className="mb-4 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4">
         <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
           <span className="material-symbols-outlined text-base">cancel</span>
-          ShipsGo entegrasyon talebiniz reddedildi
+          G-Radar entegrasyon talebiniz reddedildi
         </p>
         {latest.rejectionReason && (
           <p className="text-xs text-red-700 dark:text-red-400 mt-1 italic">
@@ -1623,12 +1623,12 @@ function ShipsGoRequestBanner({
     );
   }
 
-  if (latest.status === 'APPROVED' && !shipsGoEnabled) {
+  if (latest.status === 'APPROVED' && !gRadarEnabled) {
     return (
       <div className="mb-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
           <span className="material-symbols-outlined text-base">check_circle</span>
-          ShipsGo talebiniz onaylandı ama bu yük için entegrasyon kapalı
+          G-Radar talebiniz onaylandı ama bu yük için entegrasyon kapalı
         </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
           Yeniden açmak için yeni bir talep gönderebilirsiniz.
@@ -1657,13 +1657,13 @@ function ShipsGoRequestBanner({
   return null;
 }
 
-function ShipsGoFieldBadge({ shipsGoActive, overridden, canManage, onReset }) {
-  if (!shipsGoActive) return null;
+function GRadarFieldBadge({ gRadarActive, overridden, canManage, onReset }) {
+  if (!gRadarActive) return null;
   if (overridden) {
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[11px] font-medium"
-        title="Manuel olarak girildi — ShipsGo bu alanı güncellemiyor"
+        title="Manuel olarak girildi — G-Radar bu alanı güncellemiyor"
       >
         <span className="material-symbols-outlined text-sm">lock</span>
         Manuel
@@ -1672,10 +1672,10 @@ function ShipsGoFieldBadge({ shipsGoActive, overridden, canManage, onReset }) {
             type="button"
             onClick={onReset}
             className="ml-1 inline-flex items-center gap-0.5 hover:opacity-80 transition-opacity"
-            title="Alanı tekrar ShipsGo kontrolüne bırak"
+            title="Alanı tekrar G-Radar kontrolüne bırak"
           >
             <span className="material-symbols-outlined text-sm">restart_alt</span>
-            ShipsGo'ya bırak
+            G-Radar'a bırak
           </button>
         )}
       </span>
@@ -1684,10 +1684,10 @@ function ShipsGoFieldBadge({ shipsGoActive, overridden, canManage, onReset }) {
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium"
-      title="Bu alan ShipsGo tarafından güncelleniyor — değiştirirseniz manuel kontrole alınır"
+      title="Bu alan G-Radar tarafından güncelleniyor — değiştirirseniz manuel kontrole alınır"
     >
       <span className="material-symbols-outlined text-sm">travel_explore</span>
-      ShipsGo güncelliyor
+      G-Radar güncelliyor
     </span>
   );
 }

@@ -2,26 +2,26 @@ import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
 
 /**
- * Frontend wrapper around the /api/shipsgo credit endpoints (Phase 5 backend).
+ * Frontend wrapper around the /api/g-radar credit endpoints (Phase 5 backend).
  *
  * Every method returns { success, data } on the happy path and
  * { success: false, error, code? } on failure, mirroring the pattern used by
  * the other services in this directory. The optional `code` carries the
  * machine-readable response codes the backend emits — currently
- * MASTER_POOL_UNAVAILABLE (409) and INSUFFICIENT_SHIPSGO_CREDITS (402) — so
+ * MASTER_POOL_UNAVAILABLE (409) and INSUFFICIENT_GRADAR_CREDITS (402) — so
  * UI components can show specific guidance without parsing error strings.
  */
-export const shipsGoCreditService = {
+export const gRadarCreditService = {
   // ---- Broker-self reads ----
   getMyWallet: async () => {
     try {
-      const res = await axiosInstance.get('/shipsgo/my-wallet');
+      const res = await axiosInstance.get('/g-radar/my-wallet');
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - getMyWallet', error);
+      logError('GRadarCreditService - getMyWallet', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'ShipsGo kredisi bilgisi alınamadı',
+        error: error.response?.data?.error || 'G-Radar kredisi bilgisi alınamadı',
       };
     }
   },
@@ -29,10 +29,10 @@ export const shipsGoCreditService = {
   /** Live price preview — no credits consumed. Safe to call as the user types. */
   getQuote: async (credits) => {
     try {
-      const res = await axiosInstance.get('/shipsgo/quote', { params: { credits } });
+      const res = await axiosInstance.get('/g-radar/quote', { params: { credits } });
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - getQuote', error);
+      logError('GRadarCreditService - getQuote', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Fiyat hesaplanamadı',
@@ -43,13 +43,13 @@ export const shipsGoCreditService = {
   // ---- Purchase ----
   purchaseFromBalance: async ({ creditAmount, notes }) => {
     try {
-      const res = await axiosInstance.post('/shipsgo/purchase/balance', {
+      const res = await axiosInstance.post('/g-radar/purchase/balance', {
         creditAmount,
         notes,
       });
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - purchaseFromBalance', error);
+      logError('GRadarCreditService - purchaseFromBalance', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Satın alma başarısız',
@@ -60,14 +60,14 @@ export const shipsGoCreditService = {
 
   purchaseByTransfer: async ({ creditAmount, referenceNumber, notes }) => {
     try {
-      const res = await axiosInstance.post('/shipsgo/purchase/transfer', {
+      const res = await axiosInstance.post('/g-radar/purchase/transfer', {
         creditAmount,
         referenceNumber,
         notes,
       });
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - purchaseByTransfer', error);
+      logError('GRadarCreditService - purchaseByTransfer', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Havale bildirimi gönderilemedi',
@@ -78,10 +78,10 @@ export const shipsGoCreditService = {
   // ---- SuperAdmin ----
   listPendingPurchases: async () => {
     try {
-      const res = await axiosInstance.get('/shipsgo/purchases/pending');
+      const res = await axiosInstance.get('/g-radar/purchases/pending');
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - listPendingPurchases', error);
+      logError('GRadarCreditService - listPendingPurchases', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Bekleyen ödemeler alınamadı',
@@ -91,10 +91,10 @@ export const shipsGoCreditService = {
 
   approvePurchase: async (purchaseId) => {
     try {
-      const res = await axiosInstance.post(`/shipsgo/purchases/${purchaseId}/approve`);
+      const res = await axiosInstance.post(`/g-radar/purchases/${purchaseId}/approve`);
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - approvePurchase', error);
+      logError('GRadarCreditService - approvePurchase', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Onay başarısız',
@@ -105,10 +105,10 @@ export const shipsGoCreditService = {
 
   rejectPurchase: async (purchaseId, reason) => {
     try {
-      const res = await axiosInstance.post(`/shipsgo/purchases/${purchaseId}/reject`, { reason });
+      const res = await axiosInstance.post(`/g-radar/purchases/${purchaseId}/reject`, { reason });
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - rejectPurchase', error);
+      logError('GRadarCreditService - rejectPurchase', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Red başarısız',
@@ -119,12 +119,12 @@ export const shipsGoCreditService = {
   adminGrant: async (brokerCompanyId, { credits, notes }) => {
     try {
       const res = await axiosInstance.post(
-        `/shipsgo/wallets/${brokerCompanyId}/admin-grant`,
+        `/g-radar/wallets/${brokerCompanyId}/admin-grant`,
         { credits, notes },
       );
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - adminGrant', error);
+      logError('GRadarCreditService - adminGrant', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Kredi tanımlanamadı',
@@ -134,17 +134,17 @@ export const shipsGoCreditService = {
   },
 
   // SuperAdmin reconciliation — FIFO-debits credits from a broker's wallet.
-  // Used when local wallet drifts from upstream ShipsGo (e.g. an old timing
+  // Used when local wallet drifts from upstream G-Radar (e.g. an old timing
   // bug burned a master credit but didn't debit the broker).
   adminDebit: async (brokerCompanyId, { credits, notes }) => {
     try {
       const res = await axiosInstance.post(
-        `/shipsgo/wallets/${brokerCompanyId}/admin-debit`,
+        `/g-radar/wallets/${brokerCompanyId}/admin-debit`,
         { credits, notes },
       );
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - adminDebit', error);
+      logError('GRadarCreditService - adminDebit', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Kredi eksiltilemedi',
@@ -154,32 +154,32 @@ export const shipsGoCreditService = {
   },
 
   /**
-   * SuperAdmin per-broker ShipsGo toggle. Persists the new state, fires the
+   * SuperAdmin per-broker G-Radar toggle. Persists the new state, fires the
    * matching notification on the backend and returns the fresh wallet so
    * BrokerSubscriptionsPage can update without a separate reload.
    */
   setBrokerEnabled: async (brokerCompanyId, enabled) => {
     try {
       const res = await axiosInstance.patch(
-        `/shipsgo/brokers/${brokerCompanyId}/enabled`,
+        `/g-radar/brokers/${brokerCompanyId}/enabled`,
         { enabled },
       );
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - setBrokerEnabled', error);
+      logError('GRadarCreditService - setBrokerEnabled', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'ShipsGo durumu güncellenemedi',
+        error: error.response?.data?.error || 'G-Radar durumu güncellenemedi',
       };
     }
   },
 
   getBrokerWallet: async (brokerCompanyId) => {
     try {
-      const res = await axiosInstance.get(`/shipsgo/wallets/${brokerCompanyId}`);
+      const res = await axiosInstance.get(`/g-radar/wallets/${brokerCompanyId}`);
       return { success: true, data: res.data };
     } catch (error) {
-      logError('ShipsGoCreditService - getBrokerWallet', error);
+      logError('GRadarCreditService - getBrokerWallet', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Cüzdan bilgisi alınamadı',

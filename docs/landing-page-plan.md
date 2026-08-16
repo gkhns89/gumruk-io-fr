@@ -108,11 +108,11 @@ Tasarıma başlamadan netleşmesi gerekenler:
 - [ ] Dil: sadece Türkçe mi, TR/EN mi? (Not: `index.html` `lang="tr"` + `translate="no"`,
       Chrome'un otomatik çevirisini kapatmak için bilerek eklenmiş — i18n açılırsa gözden geçirilmeli)
 - [ ] Ekran görüntüleri gerçek sistemden mi, mockup mı? Gerçekse müşteri verisi maskelenmeli
-- [ ] ShipsGo haritası pazarlamanın görsel parçası olarak konumlanıyor — landing'de öne çıkar mı?
+- [ ] G-Radar haritası pazarlamanın görsel parçası olarak konumlanıyor — landing'de öne çıkar mı?
 - [ ] Demo talebi / iletişim formu olacak mı, olacaksa nereye düşecek?
 
 ## İlgili
 
-- ShipsGo entegrasyonu tamamlandı (Haziran 2026, Faz 3–17b); harita MapLibre + MapTiler ile canlı
+- G-Radar entegrasyonu tamamlandı (Haziran 2026, Faz 3–17b); harita MapLibre + MapTiler ile canlı
 - GET-APP entegrasyonu henüz başlamadı
 - ToS ve Gizlilik Politikası hazırlanmadı — landing page yayına çıkarsa bunlara link gerekecek

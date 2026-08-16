@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { shipsGoService } from '../../api/shipsGoService';
+import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 
 /**
- * Header bell + popover that lists PENDING ShipsGo enable requests.
+ * Header bell + popover that lists PENDING G-Radar enable requests.
  *  - BROKER_ADMIN: requests for their own broker, with approve / reject
  *    actions. They are the audience the original notification flow
  *    targets, so the badge is the active to-do indicator.
@@ -18,7 +18,7 @@ import { showSuccess, showError } from '../../utils/toastUtils';
  */
 const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
-export default function ShipsGoRequestsBell() {
+export default function GRadarRequestsBell() {
   const { user } = useAuth();
   const isEligible = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
@@ -34,7 +34,7 @@ export default function ShipsGoRequestsBell() {
   const load = useCallback(async () => {
     if (!isEligible) return;
     setLoading(true);
-    const res = await shipsGoService.listPendingRequests();
+    const res = await gRadarService.listPendingRequests();
     setLoading(false);
     if (res.success) {
       setRequests(res.data?.requests || []);
@@ -77,7 +77,7 @@ export default function ShipsGoRequestsBell() {
 
   const approve = async (id, fetchImmediately) => {
     setActingId(id);
-    const res = await shipsGoService.approveRequest(id, { fetchImmediately });
+    const res = await gRadarService.approveRequest(id, { fetchImmediately });
     setActingId(null);
     if (res.success) {
       showSuccess(res.data?.message || 'Talep onaylandı');
@@ -93,7 +93,7 @@ export default function ShipsGoRequestsBell() {
       return;
     }
     setActingId(id);
-    const res = await shipsGoService.rejectRequest(id, rejectReason.trim());
+    const res = await gRadarService.rejectRequest(id, rejectReason.trim());
     setActingId(null);
     if (res.success) {
       showSuccess('Talep reddedildi');
@@ -112,8 +112,8 @@ export default function ShipsGoRequestsBell() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="ShipsGo Talepleri"
-        aria-label="ShipsGo Talepleri"
+        title="G-Radar Talepleri"
+        aria-label="G-Radar Talepleri"
       >
         <span className="material-symbols-outlined text-text-secondary">travel_explore</span>
         {count > 0 && (
@@ -128,7 +128,7 @@ export default function ShipsGoRequestsBell() {
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-background-dark">
             <h3 className="font-semibold text-text-main text-sm flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-base">travel_explore</span>
-              ShipsGo Talepleri
+              G-Radar Talepleri
             </h3>
             <button
               onClick={load}
@@ -215,7 +215,7 @@ export default function ShipsGoRequestsBell() {
                         onClick={() => approve(r.id, false)}
                         disabled={actingId === r.id}
                         className="flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
-                        title="Talebi onayla — ShipsGo aktif edilir ama bilgi çekilmez (kredi düşmez)"
+                        title="Talebi onayla — G-Radar aktif edilir ama bilgi çekilmez (kredi düşmez)"
                       >
                         <span className="material-symbols-outlined text-sm">check</span>
                         Onayla
@@ -224,7 +224,7 @@ export default function ShipsGoRequestsBell() {
                         onClick={() => approve(r.id, true)}
                         disabled={actingId === r.id}
                         className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary hover:opacity-90 text-white rounded-lg font-medium disabled:opacity-50"
-                        title="Talebi onayla ve hemen ShipsGo'dan bilgileri çek (1 kredi düşer)"
+                        title="Talebi onayla ve hemen G-Radar'dan bilgileri çek (1 kredi düşer)"
                       >
                         <span className="material-symbols-outlined text-sm">download</span>
                         Onayla + Bilgileri Getir (1 kredi)

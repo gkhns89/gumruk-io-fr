@@ -11,7 +11,7 @@ const EMPTY_FORM = {
   maxClientCompanies: '',
   monthlyPrice: '',
   yearlyPrice: '',
-  shipsGoPricePerCreditUsd: '',
+  gRadarPricePerCreditUsd: '',
 };
 
 const fmtPrice = (v) =>
@@ -55,7 +55,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
           maxClientCompanies: String(plan.maxClientCompanies ?? ''),
           monthlyPrice: String(plan.monthlyPrice ?? ''),
           yearlyPrice: String(plan.yearlyPrice ?? ''),
-          shipsGoPricePerCreditUsd: String(plan.shipsGoPricePerCreditUsd ?? ''),
+          gRadarPricePerCreditUsd: String(plan.gRadarPricePerCreditUsd ?? ''),
         }
       : EMPTY_FORM
   );
@@ -79,11 +79,11 @@ function PlanFormModal({ plan, onClose, onSaved }) {
         maxClientCompanies: Number(form.maxClientCompanies),
         monthlyPrice: form.monthlyPrice ? Number(form.monthlyPrice) : null,
         yearlyPrice: form.yearlyPrice ? Number(form.yearlyPrice) : null,
-        // ShipsGo kredi başı USD ücreti. Boş gönderirsek bu plan ShipsGo'yu
-        // hiç desteklemiyor demek; brokerlar satın alma sayfasında "ShipsGo
+        // G-Radar kredi başı USD ücreti. Boş gönderirsek bu plan G-Radar'ı
+        // hiç desteklemiyor demek; brokerlar satın alma sayfasında "G-Radar
         // bu plana dahil değil" mesajı görür.
-        shipsGoPricePerCreditUsd: form.shipsGoPricePerCreditUsd
-          ? Number(form.shipsGoPricePerCreditUsd)
+        gRadarPricePerCreditUsd: form.gRadarPricePerCreditUsd
+          ? Number(form.gRadarPricePerCreditUsd)
           : null,
       };
       if (plan) {
@@ -175,16 +175,16 @@ function PlanFormModal({ plan, onClose, onSaved }) {
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-text-secondary">
-              ShipsGo — Kredi Başı USD Fiyatı
+              G-Radar — Kredi Başı USD Fiyatı
             </span>
             <input
-              type="number" min="0" step="0.01" value={form.shipsGoPricePerCreditUsd}
-              onChange={set('shipsGoPricePerCreditUsd')}
+              type="number" min="0" step="0.01" value={form.gRadarPricePerCreditUsd}
+              onChange={set('gRadarPricePerCreditUsd')}
               placeholder="örn. 2.50"
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
             <span className="text-[11px] text-text-secondary">
-              Boş bırakırsanız bu plan ShipsGo'yu desteklemez. Satın alma anında güncel TCMB kuruyla ₺'ye çevrilir.
+              Boş bırakırsanız bu plan G-Radar'ı desteklemez. Satın alma anında güncel TCMB kuruyla ₺'ye çevrilir.
             </span>
           </label>
         </div>
@@ -364,10 +364,10 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
           <p className={`text-base font-bold ${accent.icon}`}>{fmtPrice(plan.yearlyPrice)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">ShipsGo/kr.</p>
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">G-Radar/kr.</p>
           <p className={`text-base font-bold ${accent.icon}`}>
-            {plan.shipsGoPricePerCreditUsd != null && Number(plan.shipsGoPricePerCreditUsd) > 0
-              ? `$${Number(plan.shipsGoPricePerCreditUsd).toFixed(2)}`
+            {plan.gRadarPricePerCreditUsd != null && Number(plan.gRadarPricePerCreditUsd) > 0
+              ? `$${Number(plan.gRadarPricePerCreditUsd).toFixed(2)}`
               : '—'}
           </p>
         </div>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { companyService } from '../../api/companyService';
+import SectorSelect from './SectorSelect';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { toUpperCase } from '../../utils/textUtils';
 import { getCurrentLocale } from '../../locales';
@@ -33,8 +34,22 @@ export default function ViewClientModal({
   const [formData, setFormData] = useState({
     name: client?.name || '',
     shortName: client?.shortName || '',
-    description: client?.description || ''
+    description: client?.description || '',
+    sectorIds: []
   });
+
+  // Modal mount'ta kalıp farklı müşterilerle yeniden açıldığı için formu
+  // prop değişiminde tazelemek gerekiyor; yoksa düzenleme ekranı bir önceki
+  // müşterinin bilgileriyle açılıyor.
+  useEffect(() => {
+    setFormData({
+      name: client?.name || '',
+      shortName: client?.shortName || '',
+      description: client?.description || '',
+      sectorIds: (client?.sectors || []).map(s => s.id)
+    });
+    setIsEditing(false);
+  }, [client]);
 
   if (!isOpen || !client) return null;
 
@@ -59,7 +74,8 @@ export default function ViewClientModal({
       const result = await companyService.updateClientCompany(client.id, {
         name: toUpperCase(formData.name, locale),
         shortName: toUpperCase(formData.shortName, locale),
-        description: formData.description
+        description: formData.description,
+        sectorIds: formData.sectorIds
       });
 
       if (result.success) {
@@ -82,7 +98,8 @@ export default function ViewClientModal({
     setFormData({
       name: client?.name || '',
       shortName: client?.shortName || '',
-      description: client?.description || ''
+      description: client?.description || '',
+      sectorIds: (client?.sectors || []).map(s => s.id)
     });
     onClose();
   };
@@ -155,6 +172,18 @@ export default function ViewClientModal({
                     />
                   </div>
 
+                  {/* Sektör */}
+                  <div>
+                    <label className="block text-sm font-medium text-text-main mb-2">
+                      Sektör
+                    </label>
+                    <SectorSelect
+                      value={formData.sectorIds}
+                      onChange={(sectorIds) => setFormData(prev => ({ ...prev, sectorIds }))}
+                      disabled={loading}
+                    />
+                  </div>
+
                   {/* Açıklama */}
                   <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
@@ -218,6 +247,27 @@ export default function ViewClientModal({
                     </p>
                   </div>
 
+                  {/* Sektör */}
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                      Sektör
+                    </label>
+                    {client.sectors?.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {client.sectors.map(sector => (
+                          <span
+                            key={sector.id}
+                            className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-primary/10 dark:bg-primary/20 text-primary"
+                          >
+                            {sector.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-base text-text-main">-</p>
+                    )}
+                  </div>
+
                   {/* Açıklama */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
@@ -226,6 +276,31 @@ export default function ViewClientModal({
                     <p className="text-base text-text-main">
                       {client.description || '-'}
                     </p>
+                  </div>
+
+                  {/* Giriş Hesabı */}
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                      Giriş Hesabı
+                    </label>
+                    {client.account ? (
+                      <div className="mt-1">
+                        <p className="text-base font-medium text-text-main break-all">
+                          {client.account.email}
+                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                            client.account.isActive
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          {client.account.isActive ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-base text-text-main">Hesap açılmamış</p>
+                    )}
                   </div>
 
                   {/* Oluşturulma Tarihi */}

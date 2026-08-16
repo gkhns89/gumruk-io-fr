@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from 'react-router-dom';
 import { paymentService } from '../../api/paymentService';
-import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { gRadarCreditService } from '../../api/gRadarCreditService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getBalanceTransactionType } from '../../utils/constants';
 
 const STATUS_BADGE = {
   PENDING_REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700',
@@ -96,12 +97,12 @@ export default function PaymentSubmitPage() {
     }
   }, [location.state, dataLoading]);
 
-  // Hesabım > ShipsGo Kredim "Satın Al" butonu /payment/submit?tab=shipsgo'ya
+  // Hesabım > G-Radar Kredim "Satın Al" butonu /payment/submit?tab=g-radar'ya
   // yönlendirir; bu effect bu tabı otomatik açar.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const requestedTab = params.get('tab');
-    if (requestedTab === 'shipsgo') setTab('shipsgo');
+    if (requestedTab === 'g-radar') setTab('g-radar');
   }, [location.search]);
 
   // Seçilebilir ödeme dönemlerini hesapla (vadesi geçmiş + yaklaşan)
@@ -402,15 +403,15 @@ export default function PaymentSubmitPage() {
                 </button>
                 {user?.globalRole === 'BROKER_ADMIN' && (
                   <button
-                    onClick={() => setTab('shipsgo')}
+                    onClick={() => setTab('g-radar')}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors ${
-                      tab === 'shipsgo'
+                      tab === 'g-radar'
                         ? 'text-primary border-b-2 border-primary bg-primary/5'
                         : 'text-text-secondary hover:text-text-main hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                   >
                     <span className="material-symbols-outlined text-xl">travel_explore</span>
-                    ShipsGo Kredisi
+                    G-Radar Kredisi
                   </button>
                 )}
               </div>
@@ -784,8 +785,11 @@ export default function PaymentSubmitPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
                           {balanceHistory.map(tx => {
-                            const isCredit = tx.transactionType === 'CREDIT';
-                            const typeLabel = tx.transactionType === 'CREDIT' ? 'Kredi' : tx.transactionType === 'ADDON_DEBIT' ? 'Ek Ödeme' : 'Dönem Ödemesi';
+                            const txType = getBalanceTransactionType(tx.transactionType);
+                            const isCredit = txType?.isCredit ?? false;
+                            // Tanınmayan tür gelirse ham değeri göster — yanlış
+                            // bir etiketle göstermektense okunmamış görünsün.
+                            const typeLabel = txType?.label ?? tx.transactionType;
                             const amountColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                             return (
                               <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -809,9 +813,9 @@ export default function PaymentSubmitPage() {
                 </div>
               )}
 
-              {/* ── TAB: ShipsGo Kredisi (BROKER_ADMIN only) ───────────── */}
-              {tab === 'shipsgo' && user?.globalRole === 'BROKER_ADMIN' && (
-                <ShipsGoPurchaseTab
+              {/* ── TAB: G-Radar Kredisi (BROKER_ADMIN only) ───────────── */}
+              {tab === 'g-radar' && user?.globalRole === 'BROKER_ADMIN' && (
+                <GRadarPurchaseTab
                   currentBalanceTry={subscriptionStatus?.balance ?? 0}
                 />
               )}
@@ -825,7 +829,7 @@ export default function PaymentSubmitPage() {
 }
 
 /**
- * "ShipsGo Kredisi" tab body. Lets a BROKER_ADMIN choose a credit amount,
+ * "G-Radar Kredisi" tab body. Lets a BROKER_ADMIN choose a credit amount,
  * see the live TL price (USD × TCMB rate), and either pay from their
  * subscription balance immediately or submit a bank-transfer notification
  * that SuperAdmin will approve.
@@ -833,7 +837,7 @@ export default function PaymentSubmitPage() {
  * Master pool failures surface as a clear "destekle iletişime geçin" message —
  * the broker never sees the upstream credit figure.
  */
-function ShipsGoPurchaseTab({ currentBalanceTry }) {
+function GRadarPurchaseTab({ currentBalanceTry }) {
   const [credits, setCredits] = React.useState(10);
   const [quote, setQuote] = React.useState(null);
   const [quoteLoading, setQuoteLoading] = React.useState(false);
@@ -843,18 +847,18 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
   const [submitting, setSubmitting] = React.useState(false);
 
   // Mount-time opt-in check so we can swap the whole tab for a friendly
-  // empty state when the SuperAdmin hasn't enabled ShipsGo for this broker.
-  // Without this the user would hit the "ShipsGo entegrasyonu bu firmaya
+  // empty state when the SuperAdmin hasn't enabled G-Radar for this broker.
+  // Without this the user would hit the "G-Radar entegrasyonu bu firmaya
   // tanımlanmamış" error only after first typing into the credit field.
   const [optedOut, setOptedOut] = React.useState(false);
   const [optInChecked, setOptInChecked] = React.useState(false);
   React.useEffect(() => {
     let alive = true;
     (async () => {
-      const res = await shipsGoCreditService.getMyWallet();
+      const res = await gRadarCreditService.getMyWallet();
       if (!alive) return;
       if (res.success) {
-        setOptedOut(res.data?.shipsgoEnabled === false);
+        setOptedOut(res.data?.gRadarEnabled === false);
       }
       setOptInChecked(true);
     })();
@@ -871,7 +875,7 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
     setQuoteLoading(true);
     setQuoteError(null);
     const handle = setTimeout(async () => {
-      const res = await shipsGoCreditService.getQuote(credits);
+      const res = await gRadarCreditService.getQuote(credits);
       if (!alive) return;
       setQuoteLoading(false);
       if (res.success) {
@@ -889,7 +893,7 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
   const handlePayFromBalance = async () => {
     if (!quote) return;
     setSubmitting(true);
-    const res = await shipsGoCreditService.purchaseFromBalance({
+    const res = await gRadarCreditService.purchaseFromBalance({
       creditAmount: credits, notes,
     });
     setSubmitting(false);
@@ -900,7 +904,7 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
       window.location.reload();
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
       showError(
-        'ShipsGo kredisi şu anda satın alınamıyor. Lütfen yöneticiyle iletişime geçin. ' +
+        'G-Radar kredisi şu anda satın alınamıyor. Lütfen yöneticiyle iletişime geçin. ' +
         'Bakiyenizden hiçbir kesinti yapılmadı.'
       );
     } else {
@@ -915,7 +919,7 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
       return;
     }
     setSubmitting(true);
-    const res = await shipsGoCreditService.purchaseByTransfer({
+    const res = await gRadarCreditService.purchaseByTransfer({
       creditAmount: credits, referenceNumber: referenceNumber.trim(), notes,
     });
     setSubmitting(false);
@@ -936,10 +940,10 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
             lock
           </span>
           <h3 className="text-base font-semibold text-yellow-800 dark:text-yellow-300">
-            ShipsGo entegrasyonu hesabınıza tanımlanmamış
+            G-Radar entegrasyonu hesabınıza tanımlanmamış
           </h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-2">
-            Yöneticinizle iletişime geçerek bu firmaya ShipsGo entegrasyonunu
+            Yöneticinizle iletişime geçerek bu firmaya G-Radar entegrasyonunu
             tanımlatabilirsiniz. Tanımlandıktan sonra buradan kredi satın
             alabilirsiniz.
           </p>
@@ -953,10 +957,10 @@ function ShipsGoPurchaseTab({ currentBalanceTry }) {
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
         <h2 className="text-base font-semibold text-text-main flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">travel_explore</span>
-          ShipsGo Kredisi Satın Al
+          G-Radar Kredisi Satın Al
         </h2>
         <p className="text-xs text-text-secondary mt-1">
-          Her ShipsGo kredisi bir gemi veya uçak yükünün takibe alınmasında
+          Her G-Radar kredisi bir gemi veya uçak yükünün takibe alınmasında
           kullanılır. Krediler 1 yıl geçerlidir ve en eski lot önce harcanır.
         </p>
       </div>

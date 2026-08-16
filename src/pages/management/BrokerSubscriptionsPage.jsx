@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { addonService } from '../../api/addonService';
-import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { gRadarCreditService } from '../../api/gRadarCreditService';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { paymentService } from '../../api/paymentService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getBalanceTransactionType } from '../../utils/constants';
 
 const RESTRICTION_CONFIG = {
   NONE:         { label: 'Aktif',        icon: 'check_circle', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -29,12 +30,12 @@ export default function BrokerSubscriptionsPage() {
   const [editForms, setEditForms] = useState({}); // { brokerId: formData }
   const [saving, setSaving] = useState({});
   const [creditForms, setCreditForms] = useState({}); // { brokerId: {amount, note} }
-  const [shipsGoGrantForms, setShipsGoGrantForms] = useState({}); // { brokerId: {credits, notes} }
-  const [grantingShipsGo, setGrantingShipsGo] = useState({}); // { brokerId: bool }
-  const [shipsGoDebitForms, setShipsGoDebitForms] = useState({}); // { brokerId: {credits, notes} }
-  const [debitingShipsGo, setDebitingShipsGo] = useState({}); // { brokerId: bool }
-  const [togglingShipsGo, setTogglingShipsGo] = useState({}); // { brokerId: bool }
-  const [shipsGoWallets, setShipsGoWallets] = useState({}); // { brokerId: walletView }
+  const [gRadarGrantForms, setGRadarGrantForms] = useState({}); // { brokerId: {credits, notes} }
+  const [grantingGRadar, setGrantingGRadar] = useState({}); // { brokerId: bool }
+  const [gRadarDebitForms, setGRadarDebitForms] = useState({}); // { brokerId: {credits, notes} }
+  const [debitingGRadar, setDebitingGRadar] = useState({}); // { brokerId: bool }
+  const [togglingGRadar, setTogglingGRadar] = useState({}); // { brokerId: bool }
+  const [gRadarWallets, setGRadarWallets] = useState({}); // { brokerId: walletView }
   const [addingCredit, setAddingCredit] = useState({});
 
   // Balance history state
@@ -206,9 +207,9 @@ export default function BrokerSubscriptionsPage() {
       loadBalanceHistory(id);
     }
 
-    // ShipsGo cüzdanını yükle (plan ShipsGo'ya açık olmasa bile read endpoint çalışır)
-    if (!shipsGoWallets[id]) {
-      loadShipsGoWallet(id);
+    // G-Radar cüzdanını yükle (plan G-Radar'a açık olmasa bile read endpoint çalışır)
+    if (!gRadarWallets[id]) {
+      loadGRadarWallet(id);
     }
 
     // Kullanıcıları yükle
@@ -267,26 +268,26 @@ export default function BrokerSubscriptionsPage() {
     }
   }, []);
 
-  const handleShipsGoGrantFormChange = (brokerId, field, value) => {
-    setShipsGoGrantForms(prev => ({
+  const handleGRadarGrantFormChange = (brokerId, field, value) => {
+    setGRadarGrantForms(prev => ({
       ...prev,
       [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value },
     }));
   };
 
-  const loadShipsGoWallet = useCallback(async (brokerId) => {
-    const res = await shipsGoCreditService.getBrokerWallet(brokerId);
+  const loadGRadarWallet = useCallback(async (brokerId) => {
+    const res = await gRadarCreditService.getBrokerWallet(brokerId);
     if (res.success) {
-      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data }));
+      setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data }));
     }
   }, []);
 
-  const handleToggleShipsGoEnabled = async (brokerId, nextEnabled) => {
+  const handleToggleGRadarEnabled = async (brokerId, nextEnabled) => {
     // Disabling is destructive enough that we confirm; activating is one tap.
     if (!nextEnabled) {
       const ok = await confirmDialog({
-        title: 'ShipsGo entegrasyonunu kapat',
-        message: 'Bu firma için ShipsGo entegrasyonunu kapatmak üzeresiniz.',
+        title: 'G-Radar entegrasyonunu kapat',
+        message: 'Bu firma için G-Radar entegrasyonunu kapatmak üzeresiniz.',
         details: [
           'Mevcut kredisi korunur',
           'Yeni satın alma, sorgu ve talepler engellenir',
@@ -297,54 +298,54 @@ export default function BrokerSubscriptionsPage() {
       });
       if (!ok) return;
     }
-    setTogglingShipsGo(prev => ({ ...prev, [brokerId]: true }));
-    const res = await shipsGoCreditService.setBrokerEnabled(brokerId, nextEnabled);
-    setTogglingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    setTogglingGRadar(prev => ({ ...prev, [brokerId]: true }));
+    const res = await gRadarCreditService.setBrokerEnabled(brokerId, nextEnabled);
+    setTogglingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
-      showSuccess(res.data?.message || (nextEnabled ? 'ShipsGo açıldı' : 'ShipsGo kapatıldı'));
+      showSuccess(res.data?.message || (nextEnabled ? 'G-Radar açıldı' : 'G-Radar kapatıldı'));
       if (res.data?.wallet) {
-        setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+        setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
       } else {
-        loadShipsGoWallet(brokerId);
+        loadGRadarWallet(brokerId);
       }
     } else {
       showError(res.error);
     }
   };
 
-  const handleGrantShipsGo = async (brokerId) => {
-    const form = shipsGoGrantForms[brokerId] ?? {};
+  const handleGrantGRadar = async (brokerId) => {
+    const form = gRadarGrantForms[brokerId] ?? {};
     const credits = parseInt(form.credits, 10);
     if (!credits || credits < 1 || credits > 100) {
       showError('Kredi miktarı 1-100 arası olmalıdır');
       return;
     }
-    setGrantingShipsGo(prev => ({ ...prev, [brokerId]: true }));
-    const res = await shipsGoCreditService.adminGrant(brokerId, {
+    setGrantingGRadar(prev => ({ ...prev, [brokerId]: true }));
+    const res = await gRadarCreditService.adminGrant(brokerId, {
       credits,
       notes: form.notes ?? '',
     });
-    setGrantingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    setGrantingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
-      showSuccess(`${credits} ShipsGo kredisi brokere tanımlandı`);
-      setShipsGoGrantForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
-      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+      showSuccess(`${credits} G-Radar kredisi brokere tanımlandı`);
+      setGRadarGrantForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
+      setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
-      showError('Master havuzda yeterli kredi yok. Önce ShipsGo hesabınıza paket yükleyin.');
+      showError('Master havuzda yeterli kredi yok. Önce G-Radar hesabınıza paket yükleyin.');
     } else {
       showError(res.error);
     }
   };
 
-  const handleShipsGoDebitFormChange = (brokerId, field, value) => {
-    setShipsGoDebitForms(prev => ({
+  const handleGRadarDebitFormChange = (brokerId, field, value) => {
+    setGRadarDebitForms(prev => ({
       ...prev,
       [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value },
     }));
   };
 
-  const handleDebitShipsGo = async (brokerId) => {
-    const form = shipsGoDebitForms[brokerId] ?? {};
+  const handleDebitGRadar = async (brokerId) => {
+    const form = gRadarDebitForms[brokerId] ?? {};
     const credits = parseInt(form.credits, 10);
     if (!credits || credits < 1) {
       showError('Eksiltilecek kredi 1 veya daha büyük olmalı');
@@ -361,7 +362,7 @@ export default function BrokerSubscriptionsPage() {
       details: [
         'Bu işlem geri alınamaz — ledger\'a ADMIN_DEBIT olarak kaydedilir.',
         'Brokere bildirim gönderilir.',
-        'Sadece upstream ShipsGo ile cüzdan arasında drift varsa kullanılmalı.',
+        'Sadece upstream G-Radar ile cüzdan arasında drift varsa kullanılmalı.',
       ],
       intent: 'warning',
       icon: 'remove_circle',
@@ -369,13 +370,13 @@ export default function BrokerSubscriptionsPage() {
     });
     if (!ok) return;
 
-    setDebitingShipsGo(prev => ({ ...prev, [brokerId]: true }));
-    const res = await shipsGoCreditService.adminDebit(brokerId, { credits, notes });
-    setDebitingShipsGo(prev => ({ ...prev, [brokerId]: false }));
+    setDebitingGRadar(prev => ({ ...prev, [brokerId]: true }));
+    const res = await gRadarCreditService.adminDebit(brokerId, { credits, notes });
+    setDebitingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
       showSuccess(`${credits} kredi cüzdandan eksiltildi`);
-      setShipsGoDebitForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
-      setShipsGoWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
+      setGRadarDebitForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
+      setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
     } else if (res.code === 'INSUFFICIENT_WALLET') {
       showError(res.error || 'Cüzdanda yeterli kredi yok');
     } else {
@@ -591,7 +592,7 @@ export default function BrokerSubscriptionsPage() {
                             )}
                           </div>
 
-                          {/* ShipsGo Kredisi Tanımla (Admin Grant) */}
+                          {/* G-Radar Kredisi Tanımla (Admin Grant) */}
                           <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-4 transition-colors">
                             {/* Master per-broker toggle — gates everything below it */}
                             <div className="mb-3 pb-3 border-b border-purple-200/60 dark:border-purple-800/60">
@@ -599,27 +600,27 @@ export default function BrokerSubscriptionsPage() {
                                 <div>
                                   <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
                                     <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">travel_explore</span>
-                                    ShipsGo Entegrasyonu
+                                    G-Radar Entegrasyonu
                                   </h3>
                                   <p className="text-xs text-text-secondary mt-0.5">
-                                    {shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                    {gRadarWallets[broker.brokerId]?.gRadarEnabled
                                       ? 'Bu firma için aktif — kredi satın alma ve talepler açık.'
                                       : 'Bu firma için kapalı — mevcut bakiye saklı, ancak yeni işlemler engellenmiş.'}
                                   </p>
                                 </div>
                                 <label className="inline-flex items-center gap-2 cursor-pointer">
                                   <span className={`text-xs font-medium ${
-                                    shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                    gRadarWallets[broker.brokerId]?.gRadarEnabled
                                       ? 'text-green-700 dark:text-green-400'
                                       : 'text-gray-500 dark:text-gray-400'
                                   }`}>
-                                    {shipsGoWallets[broker.brokerId]?.shipsgoEnabled ? 'Açık' : 'Kapalı'}
+                                    {gRadarWallets[broker.brokerId]?.gRadarEnabled ? 'Açık' : 'Kapalı'}
                                   </span>
                                   <input
                                     type="checkbox"
-                                    checked={!!shipsGoWallets[broker.brokerId]?.shipsgoEnabled}
-                                    disabled={togglingShipsGo[broker.brokerId] || !shipsGoWallets[broker.brokerId]}
-                                    onChange={(e) => handleToggleShipsGoEnabled(broker.brokerId, e.target.checked)}
+                                    checked={!!gRadarWallets[broker.brokerId]?.gRadarEnabled}
+                                    disabled={togglingGRadar[broker.brokerId] || !gRadarWallets[broker.brokerId]}
+                                    onChange={(e) => handleToggleGRadarEnabled(broker.brokerId, e.target.checked)}
                                     className="h-5 w-9 rounded-full accent-purple-600 disabled:opacity-50"
                                   />
                                 </label>
@@ -631,11 +632,11 @@ export default function BrokerSubscriptionsPage() {
                                 Kredi Tanımla
                                 <span className="text-xs font-normal text-text-secondary">(1-100 kredi, master havuzdan düşülür)</span>
                               </h3>
-                              {shipsGoWallets[broker.brokerId] && (
+                              {gRadarWallets[broker.brokerId] && (
                                 <div className="text-xs text-purple-700 dark:text-purple-400 font-medium">
-                                  Mevcut bakiye: {shipsGoWallets[broker.brokerId].currentCredits ?? 0} kredi
+                                  Mevcut bakiye: {gRadarWallets[broker.brokerId].currentCredits ?? 0} kredi
                                   <span className="text-text-secondary ml-2">
-                                    (Toplam alınan: {shipsGoWallets[broker.brokerId].lifetimePurchased ?? 0}, kullanılan: {shipsGoWallets[broker.brokerId].lifetimeConsumed ?? 0})
+                                    (Toplam alınan: {gRadarWallets[broker.brokerId].lifetimePurchased ?? 0}, kullanılan: {gRadarWallets[broker.brokerId].lifetimeConsumed ?? 0})
                                   </span>
                                 </div>
                               )}
@@ -645,8 +646,8 @@ export default function BrokerSubscriptionsPage() {
                                 <span className="text-xs font-medium text-text-secondary">Kredi *</span>
                                 <input
                                   type="number" min="1" max="100"
-                                  value={shipsGoGrantForms[broker.brokerId]?.credits ?? ''}
-                                  onChange={e => handleShipsGoGrantFormChange(broker.brokerId, 'credits', e.target.value)}
+                                  value={gRadarGrantForms[broker.brokerId]?.credits ?? ''}
+                                  onChange={e => handleGRadarGrantFormChange(broker.brokerId, 'credits', e.target.value)}
                                   placeholder="örn. 50"
                                   className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                                 />
@@ -655,28 +656,28 @@ export default function BrokerSubscriptionsPage() {
                                 <span className="text-xs font-medium text-text-secondary">Not</span>
                                 <input
                                   type="text"
-                                  value={shipsGoGrantForms[broker.brokerId]?.notes ?? ''}
-                                  onChange={e => handleShipsGoGrantFormChange(broker.brokerId, 'notes', e.target.value)}
+                                  value={gRadarGrantForms[broker.brokerId]?.notes ?? ''}
+                                  onChange={e => handleGRadarGrantFormChange(broker.brokerId, 'notes', e.target.value)}
                                   placeholder="örn. Sözleşme ile birlikte tanımlandı"
                                   className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                                 />
                               </div>
                               <div className="flex items-end">
                                 <button
-                                  onClick={() => handleGrantShipsGo(broker.brokerId)}
+                                  onClick={() => handleGrantGRadar(broker.brokerId)}
                                   disabled={
-                                    grantingShipsGo[broker.brokerId]
-                                    || !shipsGoWallets[broker.brokerId]?.shipsgoEnabled
+                                    grantingGRadar[broker.brokerId]
+                                    || !gRadarWallets[broker.brokerId]?.gRadarEnabled
                                   }
                                   title={
-                                    !shipsGoWallets[broker.brokerId]?.shipsgoEnabled
-                                      ? 'Önce ShipsGo entegrasyonunu açın'
+                                    !gRadarWallets[broker.brokerId]?.gRadarEnabled
+                                      ? 'Önce G-Radar entegrasyonunu açın'
                                       : undefined
                                   }
                                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                 >
                                   <span className="material-symbols-outlined text-base">add</span>
-                                  {grantingShipsGo[broker.brokerId] ? 'Tanımlanıyor...' : 'Kredi Tanımla'}
+                                  {grantingGRadar[broker.brokerId] ? 'Tanımlanıyor...' : 'Kredi Tanımla'}
                                 </button>
                               </div>
                             </div>
@@ -693,7 +694,7 @@ export default function BrokerSubscriptionsPage() {
                                 <span className="material-symbols-outlined text-sm text-amber-600 dark:text-amber-400">remove_circle</span>
                                 Kredi Eksilt (Düzeltme)
                                 <span className="text-[11px] font-normal text-text-secondary">
-                                  Upstream ShipsGo ile cüzdan arasında drift varsa kullanın
+                                  Upstream G-Radar ile cüzdan arasında drift varsa kullanın
                                 </span>
                               </h4>
                               <div className="flex flex-col sm:flex-row gap-3">
@@ -701,8 +702,8 @@ export default function BrokerSubscriptionsPage() {
                                   <span className="text-xs font-medium text-text-secondary">Eksilt *</span>
                                   <input
                                     type="number" min="1"
-                                    value={shipsGoDebitForms[broker.brokerId]?.credits ?? ''}
-                                    onChange={e => handleShipsGoDebitFormChange(broker.brokerId, 'credits', e.target.value)}
+                                    value={gRadarDebitForms[broker.brokerId]?.credits ?? ''}
+                                    onChange={e => handleGRadarDebitFormChange(broker.brokerId, 'credits', e.target.value)}
                                     placeholder="örn. 1"
                                     className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
                                   />
@@ -711,28 +712,28 @@ export default function BrokerSubscriptionsPage() {
                                   <span className="text-xs font-medium text-text-secondary">Neden *</span>
                                   <input
                                     type="text"
-                                    value={shipsGoDebitForms[broker.brokerId]?.notes ?? ''}
-                                    onChange={e => handleShipsGoDebitFormChange(broker.brokerId, 'notes', e.target.value)}
-                                    placeholder="örn. ShipsGo timing bug — kayıp kredi düzeltmesi"
+                                    value={gRadarDebitForms[broker.brokerId]?.notes ?? ''}
+                                    onChange={e => handleGRadarDebitFormChange(broker.brokerId, 'notes', e.target.value)}
+                                    placeholder="örn. G-Radar timing bug — kayıp kredi düzeltmesi"
                                     className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
                                   />
                                 </div>
                                 <div className="flex items-end">
                                   <button
-                                    onClick={() => handleDebitShipsGo(broker.brokerId)}
+                                    onClick={() => handleDebitGRadar(broker.brokerId)}
                                     disabled={
-                                      debitingShipsGo[broker.brokerId]
-                                      || (shipsGoWallets[broker.brokerId]?.currentCredits ?? 0) < 1
+                                      debitingGRadar[broker.brokerId]
+                                      || (gRadarWallets[broker.brokerId]?.currentCredits ?? 0) < 1
                                     }
                                     title={
-                                      (shipsGoWallets[broker.brokerId]?.currentCredits ?? 0) < 1
+                                      (gRadarWallets[broker.brokerId]?.currentCredits ?? 0) < 1
                                         ? 'Eksiltilecek kredi yok'
                                         : undefined
                                     }
                                     className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                   >
                                     <span className="material-symbols-outlined text-base">remove</span>
-                                    {debitingShipsGo[broker.brokerId] ? 'Eksiltiliyor...' : 'Kredi Eksilt'}
+                                    {debitingGRadar[broker.brokerId] ? 'Eksiltiliyor...' : 'Kredi Eksilt'}
                                   </button>
                                 </div>
                               </div>
@@ -763,8 +764,11 @@ export default function BrokerSubscriptionsPage() {
                                   </thead>
                                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
                                     {balanceHistory[broker.brokerId].map(tx => {
-                                      const isCredit = tx.transactionType === 'CREDIT';
-                                      const typeLabel = tx.transactionType === 'CREDIT' ? 'Kredi' : tx.transactionType === 'ADDON_DEBIT' ? 'Ek Ödeme' : 'Dönem';
+                                      const txType = getBalanceTransactionType(tx.transactionType);
+                                      const isCredit = txType?.isCredit ?? false;
+                                      // Dar sütun — kısa etiket. Tanınmayan tür
+                                      // gelirse ham değer gösterilir.
+                                      const typeLabel = txType?.shortLabel ?? tx.transactionType;
                                       const typeColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                                       return (
                                         <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">

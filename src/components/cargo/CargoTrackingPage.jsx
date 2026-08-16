@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
 import { cargoService } from '../../api/cargoService';
-import { shipsGoService } from '../../api/shipsGoService';
+import { gRadarService } from '../../api/gRadarService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -14,7 +14,7 @@ import AddCargoModal from './AddCargoModal';
 import EditCargoModal from './EditCargoModal';
 import CargoDetailModal from '../common/CargoDetailModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
-import ShipsGoDetailsDrawer from './ShipsGoDetailsDrawer';
+import GRadarDetailsDrawer from './GRadarDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
 
 export default function CargoTrackingPage() {
@@ -63,47 +63,47 @@ export default function CargoTrackingPage() {
   // Permissions
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
-  const canManageShipsGo = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
+  const canManageGRadar = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const isClientUser = user?.globalRole === 'CLIENT_USER';
 
-  // ShipsGo per-cargo actions
-  const [fetchingShipsGo, setFetchingShipsGo] = useState({}); // { cargoId: bool }
-  const [enablingShipsGo, setEnablingShipsGo] = useState({}); // { cargoId: bool } — also covers request submissions
-  const [shipsGoDrawerCargo, setShipsGoDrawerCargo] = useState(null);
-  const handleShipsGoDetails = (cargoItem) => setShipsGoDrawerCargo(cargoItem);
-  const handleShipsGoEnable = async (cargoItem) => {
+  // G-Radar per-cargo actions
+  const [fetchingGRadar, setFetchingGRadar] = useState({}); // { cargoId: bool }
+  const [enablingGRadar, setEnablingGRadar] = useState({}); // { cargoId: bool } — also covers request submissions
+  const [gRadarDrawerCargo, setGRadarDrawerCargo] = useState(null);
+  const handleGRadarDetails = (cargoItem) => setGRadarDrawerCargo(cargoItem);
+  const handleGRadarEnable = async (cargoItem) => {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'ShipsGo entegrasyonunu aç',
-      message: `${identifier || 'Bu yük'} için ShipsGo entegrasyonu aktive edilecek.`,
+      title: 'G-Radar entegrasyonunu aç',
+      message: `${identifier || 'Bu yük'} için G-Radar entegrasyonu aktive edilecek.`,
       details: [
         'Bu adımda kredi tüketilmez.',
         'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
       ],
       intent: 'primary',
       icon: 'travel_explore',
-      confirmText: 'ShipsGo\'yu aç',
+      confirmText: 'G-Radar\'ı aç',
     });
     if (!ok) return;
-    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
-    const res = await shipsGoService.enable(cargoItem.id);
-    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await gRadarService.enable(cargoItem.id);
+    setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
-      showSuccess('ShipsGo entegrasyonu açıldı');
+      showSuccess('G-Radar entegrasyonu açıldı');
       loadData();
     } else {
-      showError(res.error || 'ShipsGo açılamadı');
+      showError(res.error || 'G-Radar açılamadı');
     }
   };
-  const handleShipsGoRequest = async (cargoItem) => {
+  const handleGRadarRequest = async (cargoItem) => {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'ShipsGo entegrasyonu talep et',
-      message: `${identifier || 'Bu yük'} için yöneticinizden ShipsGo entegrasyonunu açmasını talep edeceksiniz.`,
+      title: 'G-Radar entegrasyonu talep et',
+      message: `${identifier || 'Bu yük'} için yöneticinizden G-Radar entegrasyonunu açmasını talep edeceksiniz.`,
       details: [
         'Yöneticiniz onayladığında bildirim alacaksınız.',
         'Talep oluşturulduğunda kredi tüketilmez.',
@@ -113,9 +113,9 @@ export default function CargoTrackingPage() {
       confirmText: 'Talep gönder',
     });
     if (!ok) return;
-    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
-    const res = await shipsGoService.requestEnable(cargoItem.id, {});
-    setEnablingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await gRadarService.requestEnable(cargoItem.id, {});
+    setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
       showSuccess('Talep gönderildi — yöneticiniz onayladığında bildirim alacaksınız');
       loadData();
@@ -123,27 +123,27 @@ export default function CargoTrackingPage() {
       showError(res.error || 'Talep gönderilemedi');
     }
   };
-  const handleShipsGoFetch = async (cargoItem) => {
+  const handleGRadarFetch = async (cargoItem) => {
     const identifier = cargoItem.vehicleType === 'AIRPLANE'
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'ShipsGo bilgileri çekilecek',
-      message: `${identifier || 'Bu yük'} için ShipsGo'dan tracking bilgileri çekilecek.`,
-      details: ['Bu işlem 1 ShipsGo kredisi kullanır.'],
+      title: 'G-Radar bilgileri çekilecek',
+      message: `${identifier || 'Bu yük'} için G-Radar'dan tracking bilgileri çekilecek.`,
+      details: ['Bu işlem 1 G-Radar kredisi kullanır.'],
       intent: 'primary',
       icon: 'download',
       confirmText: 'Çek (1 kredi)',
     });
     if (!ok) return;
-    setFetchingShipsGo(prev => ({ ...prev, [cargoItem.id]: true }));
-    const res = await shipsGoService.fetch(cargoItem.id);
-    setFetchingShipsGo(prev => ({ ...prev, [cargoItem.id]: false }));
+    setFetchingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
+    const res = await gRadarService.fetch(cargoItem.id);
+    setFetchingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
-      showSuccess('ShipsGo verileri yüke işlendi');
+      showSuccess('G-Radar verileri yüke işlendi');
       loadData();
     } else {
-      showError(res.error || 'ShipsGo verileri çekilemedi');
+      showError(res.error || 'G-Radar verileri çekilemedi');
     }
   };
   const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
@@ -639,13 +639,13 @@ export default function CargoTrackingPage() {
             selectedVehicleType={selectedVehicleType}
             scrollHeight={tableScrollHeight}
             onScroll={handleTableScroll}
-            canManageShipsGo={canManageShipsGo}
-            onShipsGoFetch={handleShipsGoFetch}
-            onShipsGoEnable={handleShipsGoEnable}
-            onShipsGoRequest={handleShipsGoRequest}
-            onShipsGoDetails={handleShipsGoDetails}
-            fetchingShipsGo={fetchingShipsGo}
-            enablingShipsGo={enablingShipsGo}
+            canManageGRadar={canManageGRadar}
+            onGRadarFetch={handleGRadarFetch}
+            onGRadarEnable={handleGRadarEnable}
+            onGRadarRequest={handleGRadarRequest}
+            onGRadarDetails={handleGRadarDetails}
+            fetchingGRadar={fetchingGRadar}
+            enablingGRadar={enablingGRadar}
           />
         </div>
         </div>
@@ -789,9 +789,9 @@ export default function CargoTrackingPage() {
         />
       )}
 
-      <ShipsGoDetailsDrawer
-        cargo={shipsGoDrawerCargo}
-        onClose={() => setShipsGoDrawerCargo(null)}
+      <GRadarDetailsDrawer
+        cargo={gRadarDrawerCargo}
+        onClose={() => setGRadarDrawerCargo(null)}
         canRefresh
       />
     </MainLayout>

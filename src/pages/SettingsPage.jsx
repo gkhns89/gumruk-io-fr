@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../components/layout/MainLayout';
+import SectorSettingsCard from '../components/settings/SectorSettingsCard';
 import { useAuth } from '../hooks/useAuth';
 import { feedbackService } from '../api/feedbackService';
 import { contactService } from '../api/contactService';
-import { shipsGoService } from '../api/shipsGoService';
+import { gRadarService } from '../api/gRadarService';
 import { showSuccess, showError } from '../utils/toastUtils';
 import { confirmDialog } from '../utils/confirmDialog';
 
@@ -31,28 +32,28 @@ const SettingsPage = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [registeringWebhook, setRegisteringWebhook] = useState(false);
 
-  // ShipsGo Master Config state
-  const [shipsGoConfig, setShipsGoConfig] = useState(null);
-  const [shipsGoForm, setShipsGoForm] = useState({
+  // G-Radar Master Config state
+  const [gRadarConfig, setGRadarConfig] = useState(null);
+  const [gRadarForm, setGRadarForm] = useState({
     apiToken: '', webhookSecret: '', webhookUrl: '', active: false, reservedCredits: 10,
   });
-  const [shipsGoSaving, setShipsGoSaving] = useState(false);
-  const [shipsGoTesting, setShipsGoTesting] = useState(false);
-  const [shipsGoRefreshing, setShipsGoRefreshing] = useState(false);
-  const [shipsGoRefreshIdentifier, setShipsGoRefreshIdentifier] = useState('');
-  const [shipsGoRefreshType, setShipsGoRefreshType] = useState('AUTO');
+  const [gRadarSaving, setGRadarSaving] = useState(false);
+  const [gRadarTesting, setGRadarTesting] = useState(false);
+  const [gRadarRefreshing, setGRadarRefreshing] = useState(false);
+  const [gRadarRefreshIdentifier, setGRadarRefreshIdentifier] = useState('');
+  const [gRadarRefreshType, setGRadarRefreshType] = useState('AUTO');
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
     loadData();
-    loadShipsGoConfig();
+    loadGRadarConfig();
   }, [isSuperAdmin]);
 
-  const loadShipsGoConfig = async () => {
-    const res = await shipsGoService.getMasterConfig();
+  const loadGRadarConfig = async () => {
+    const res = await gRadarService.getMasterConfig();
     if (res.success) {
-      setShipsGoConfig(res.data);
-      setShipsGoForm({
+      setGRadarConfig(res.data);
+      setGRadarForm({
         apiToken: '', webhookSecret: '',
         webhookUrl: res.data?.webhookUrl || '',
         active: !!res.data?.active,
@@ -61,70 +62,70 @@ const SettingsPage = () => {
     }
   };
 
-  const handleSaveShipsGoConfig = async () => {
-    const reservedNum = Number(shipsGoForm.reservedCredits);
+  const handleSaveGRadarConfig = async () => {
+    const reservedNum = Number(gRadarForm.reservedCredits);
     if (!Number.isInteger(reservedNum) || reservedNum < 0) {
       showError('Güvenlik sınırı kredisi 0 veya pozitif tamsayı olmalı');
       return;
     }
-    setShipsGoSaving(true);
+    setGRadarSaving(true);
     const payload = {
-      webhookUrl: shipsGoForm.webhookUrl,
-      active: shipsGoForm.active,
+      webhookUrl: gRadarForm.webhookUrl,
+      active: gRadarForm.active,
       reservedCredits: reservedNum,
     };
-    if (shipsGoForm.apiToken.trim()) payload.apiToken = shipsGoForm.apiToken.trim();
-    if (shipsGoForm.webhookSecret.trim()) payload.webhookSecret = shipsGoForm.webhookSecret.trim();
+    if (gRadarForm.apiToken.trim()) payload.apiToken = gRadarForm.apiToken.trim();
+    if (gRadarForm.webhookSecret.trim()) payload.webhookSecret = gRadarForm.webhookSecret.trim();
 
-    const res = await shipsGoService.updateMasterConfig(payload);
-    setShipsGoSaving(false);
+    const res = await gRadarService.updateMasterConfig(payload);
+    setGRadarSaving(false);
     if (res.success) {
-      showSuccess(res.data?.message || 'ShipsGo konfigürasyonu güncellendi');
-      setShipsGoForm(prev => ({ ...prev, apiToken: '', webhookSecret: '' }));
-      loadShipsGoConfig();
+      showSuccess(res.data?.message || 'G-Radar konfigürasyonu güncellendi');
+      setGRadarForm(prev => ({ ...prev, apiToken: '', webhookSecret: '' }));
+      loadGRadarConfig();
     } else {
       showError(res.error);
     }
   };
 
-  const handleRefreshShipsGoBalance = async () => {
-    setShipsGoRefreshing(true);
-    const identifier = shipsGoRefreshIdentifier.trim();
+  const handleRefreshGRadarBalance = async () => {
+    setGRadarRefreshing(true);
+    const identifier = gRadarRefreshIdentifier.trim();
     // If admin typed something, send it + the explicit type (or let backend
     // auto-detect when type=AUTO). Empty input falls back to auto-pick from
     // existing cargo.
-    const res = await shipsGoService.refreshMasterBalance(
-      identifier ? { identifier, type: shipsGoRefreshType === 'AUTO' ? null : shipsGoRefreshType } : {}
+    const res = await gRadarService.refreshMasterBalance(
+      identifier ? { identifier, type: gRadarRefreshType === 'AUTO' ? null : gRadarRefreshType } : {}
     );
-    setShipsGoRefreshing(false);
+    setGRadarRefreshing(false);
     if (!res.success) {
       showError(res.error);
       return;
     }
     showSuccess(res.data?.message || 'Master bakiyesi güncellendi');
-    setShipsGoRefreshIdentifier('');
-    loadShipsGoConfig();
+    setGRadarRefreshIdentifier('');
+    loadGRadarConfig();
   };
 
-  const handleTestShipsGoConnection = async () => {
-    setShipsGoTesting(true);
-    const res = await shipsGoService.testMasterConnection();
-    setShipsGoTesting(false);
+  const handleTestGRadarConnection = async () => {
+    setGRadarTesting(true);
+    const res = await gRadarService.testMasterConnection();
+    setGRadarTesting(false);
     if (!res.success) {
       showError(res.error);
       return;
     }
     if (res.data?.success) {
-      showSuccess(res.data.message || 'ShipsGo bağlantısı başarılı');
-      // The probe reads X-Shipsgo-Credits-Remaining off the response; if
-      // ShipsGo sent it we just learned the real master pool size. Refresh
+      showSuccess(res.data.message || 'G-Radar bağlantısı başarılı');
+      // The probe reads the remaining-credits header off the response; if
+      // G-Radar sent it we just learned the real master pool size. Refresh
       // the master config card so the cached number reflects upstream
       // immediately instead of waiting for the next page reload.
       if (res.data.masterCreditsRemaining != null) {
-        loadShipsGoConfig();
+        loadGRadarConfig();
       }
     } else {
-      showError(res.data?.message || 'ShipsGo bağlantısı başarısız');
+      showError(res.data?.message || 'G-Radar bağlantısı başarısız');
     }
   };
 
@@ -547,22 +548,22 @@ const SettingsPage = () => {
                 </div>
               </div>
 
-              {/* ShipsGo Master Konfigürasyon */}
+              {/* G-Radar Master Konfigürasyon */}
               <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">travel_explore</span>
                   <div className="flex-1">
-                    <h2 className="font-semibold text-text-main">ShipsGo Entegrasyonu (Master)</h2>
+                    <h2 className="font-semibold text-text-main">G-Radar Entegrasyonu (Master)</h2>
                     <p className="text-xs text-text-secondary mt-0.5">
                       Geliştirici hesabınızın API token'ı ve webhook ayarları. Tüm brokerlar bu hesap üzerinden çalışır.
                     </p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    shipsGoConfig?.active
+                    gRadarConfig?.active
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                       : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                   }`}>
-                    {shipsGoConfig?.active ? 'Aktif' : 'Pasif'}
+                    {gRadarConfig?.active ? 'Aktif' : 'Pasif'}
                   </span>
                 </div>
                 <div className="p-6 space-y-5">
@@ -575,20 +576,20 @@ const SettingsPage = () => {
                           Master Havuz Bakiyesi
                         </h3>
                         <p className="text-xs text-text-secondary mt-0.5">
-                          ShipsGo hesabınızda kalan kredi. Brokerlara hiçbir yerde gösterilmez.
+                          G-Radar hesabınızda kalan kredi. Brokerlara hiçbir yerde gösterilmez.
                         </p>
                       </div>
                       <div className="text-right">
                         <div className={`text-3xl font-bold ${
-                          (shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50
+                          (gRadarConfig?.lastKnownMasterCredits ?? 0) < 50
                             ? 'text-red-600 dark:text-red-400'
                             : 'text-purple-700 dark:text-purple-300'
                         }`}>
-                          {shipsGoConfig?.lastKnownMasterCredits ?? '—'} kredi
+                          {gRadarConfig?.lastKnownMasterCredits ?? '—'} kredi
                         </div>
-                        {shipsGoConfig?.lastCreditCheckAt && (
+                        {gRadarConfig?.lastCreditCheckAt && (
                           <p className="text-[11px] text-text-secondary mt-0.5">
-                            Son güncelleme: {new Date(shipsGoConfig.lastCreditCheckAt).toLocaleString('tr-TR')}
+                            Son güncelleme: {new Date(gRadarConfig.lastCreditCheckAt).toLocaleString('tr-TR')}
                           </p>
                         )}
                       </div>
@@ -600,17 +601,17 @@ const SettingsPage = () => {
                         <div className="text-xs text-text-secondary">
                           Brokerlara tanımlı toplam:
                           <strong className="text-text-main ml-1">
-                            {shipsGoConfig?.totalAssignedCredits ?? 0} kredi
+                            {gRadarConfig?.totalAssignedCredits ?? 0} kredi
                           </strong>
-                          {(shipsGoConfig?.walletsWithCreditsCount ?? 0) > 0 && (
+                          {(gRadarConfig?.walletsWithCreditsCount ?? 0) > 0 && (
                             <span className="ml-1 opacity-70">
-                              ({shipsGoConfig.walletsWithCreditsCount} firma)
+                              ({gRadarConfig.walletsWithCreditsCount} firma)
                             </span>
                           )}
-                          {shipsGoConfig?.lastKnownMasterCredits != null && (
+                          {gRadarConfig?.lastKnownMasterCredits != null && (
                             <span className="block mt-0.5 opacity-80">
                               Kullanılabilir alan: <strong>
-                                {Math.max(0, (shipsGoConfig.lastKnownMasterCredits ?? 0) - (shipsGoConfig.totalAssignedCredits ?? 0) - (shipsGoConfig.reservedCredits ?? 0))}
+                                {Math.max(0, (gRadarConfig.lastKnownMasterCredits ?? 0) - (gRadarConfig.totalAssignedCredits ?? 0) - (gRadarConfig.reservedCredits ?? 0))}
                               </strong> kredi
                               <span className="opacity-60"> (master − tanımlı − güvenlik sınırı)</span>
                             </span>
@@ -619,22 +620,22 @@ const SettingsPage = () => {
                       </div>
 
                       {/* Manual identifier override — user can paste any AWB/B/L/
-                          container that ShipsGo already knows about (e.g. an old
+                          container that G-Radar already knows about (e.g. an old
                           dashboard query) to force a fresh balance read without
                           relying on auto-pick. */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <input
                           type="text"
-                          value={shipsGoRefreshIdentifier}
-                          onChange={(e) => setShipsGoRefreshIdentifier(e.target.value)}
+                          value={gRadarRefreshIdentifier}
+                          onChange={(e) => setGRadarRefreshIdentifier(e.target.value)}
                           placeholder="Var olan AWB / B/L / konteyner (opsiyonel)"
                           className="flex-1 min-w-[200px] rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                         <select
-                          value={shipsGoRefreshType}
-                          onChange={(e) => setShipsGoRefreshType(e.target.value)}
-                          disabled={!shipsGoRefreshIdentifier.trim()}
-                          title={!shipsGoRefreshIdentifier.trim() ? 'Önce bir kimlik girin' : 'Kimlik tipi — Otomatik bırakırsanız format otomatik tahmin edilir (B/L varsayılan)'}
+                          value={gRadarRefreshType}
+                          onChange={(e) => setGRadarRefreshType(e.target.value)}
+                          disabled={!gRadarRefreshIdentifier.trim()}
+                          title={!gRadarRefreshIdentifier.trim() ? 'Önce bir kimlik girin' : 'Kimlik tipi — Otomatik bırakırsanız format otomatik tahmin edilir (B/L varsayılan)'}
                           className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                         >
                           <option value="AUTO">Otomatik</option>
@@ -643,29 +644,29 @@ const SettingsPage = () => {
                           <option value="CONTAINER">Konteyner (deniz)</option>
                         </select>
                         <button
-                          onClick={handleRefreshShipsGoBalance}
-                          disabled={shipsGoRefreshing || !shipsGoConfig?.apiTokenConfigured}
+                          onClick={handleRefreshGRadarBalance}
+                          disabled={gRadarRefreshing || !gRadarConfig?.apiTokenConfigured}
                           title={
-                            !shipsGoConfig?.apiTokenConfigured
+                            !gRadarConfig?.apiTokenConfigured
                               ? 'Önce API token kaydedin'
-                              : shipsGoRefreshIdentifier.trim()
-                                ? 'Girdiğiniz kimlikle idempotent POST atar — ShipsGo 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
+                              : gRadarRefreshIdentifier.trim()
+                                ? 'Girdiğiniz kimlikle idempotent POST atar — G-Radar 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
                                 : 'Otomatik: en son kayıtlı hava/deniz kargosunu kullanır — kredi tüketilmez'
                           }
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-40"
                         >
-                          <span className={`material-symbols-outlined text-sm ${shipsGoRefreshing ? 'animate-spin' : ''}`}>
-                            {shipsGoRefreshing ? 'refresh' : 'sync'}
+                          <span className={`material-symbols-outlined text-sm ${gRadarRefreshing ? 'animate-spin' : ''}`}>
+                            {gRadarRefreshing ? 'refresh' : 'sync'}
                           </span>
-                          {shipsGoRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
+                          {gRadarRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
                         </button>
                       </div>
                     </div>
 
-                    {(shipsGoConfig?.lastKnownMasterCredits ?? 0) < 50 && shipsGoConfig?.lastKnownMasterCredits != null && (
+                    {(gRadarConfig?.lastKnownMasterCredits ?? 0) < 50 && gRadarConfig?.lastKnownMasterCredits != null && (
                       <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
                         <span className="material-symbols-outlined text-base">warning</span>
-                        Master kredi tükeniyor — ShipsGo'dan paket yükleyin.
+                        Master kredi tükeniyor — G-Radar'dan paket yükleyin.
                       </p>
                     )}
                   </div>
@@ -673,8 +674,8 @@ const SettingsPage = () => {
                   {/* API Token */}
                   <label className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-text-secondary">API Token (X-Shipsgo-User-Token)</span>
-                      {shipsGoConfig?.apiTokenConfigured && (
+                      <span className="text-xs font-medium text-text-secondary">API Token</span>
+                      {gRadarConfig?.apiTokenConfigured && (
                         <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
                           Kayıtlı
@@ -683,9 +684,9 @@ const SettingsPage = () => {
                     </div>
                     <input
                       type="password"
-                      value={shipsGoForm.apiToken}
-                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, apiToken: e.target.value }))}
-                      placeholder={shipsGoConfig?.apiTokenConfigured ? '*** (değiştirmek için yeni token girin)' : 'ShipsGo API token'}
+                      value={gRadarForm.apiToken}
+                      onChange={(e) => setGRadarForm(prev => ({ ...prev, apiToken: e.target.value }))}
+                      placeholder={gRadarConfig?.apiTokenConfigured ? '*** (değiştirmek için yeni token girin)' : 'G-Radar API token'}
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-[11px] text-text-secondary">Boş bırakırsanız mevcut token korunur. AES ile şifrelenerek saklanır.</span>
@@ -696,13 +697,13 @@ const SettingsPage = () => {
                     <span className="text-xs font-medium text-text-secondary">Webhook URL</span>
                     <input
                       type="text"
-                      value={shipsGoForm.webhookUrl}
-                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
-                      placeholder="https://backend.example.com/api/webhooks/shipsgo"
+                      value={gRadarForm.webhookUrl}
+                      onChange={(e) => setGRadarForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
+                      placeholder="https://backend.example.com/api/webhooks/g-radar"
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-[11px] text-text-secondary">
-                      Bu URL'i ShipsGo dashboard'una (air + ocean ayrı) manuel olarak eklemeniz gerekir.
+                      Bu URL'i G-Radar dashboard'una (air + ocean ayrı) manuel olarak eklemeniz gerekir.
                     </span>
                   </label>
 
@@ -710,7 +711,7 @@ const SettingsPage = () => {
                   <label className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-text-secondary">Webhook Secret (HMAC-SHA256)</span>
-                      {shipsGoConfig?.webhookSecretConfigured && (
+                      {gRadarConfig?.webhookSecretConfigured && (
                         <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
                           Kayıtlı
@@ -719,25 +720,25 @@ const SettingsPage = () => {
                     </div>
                     <input
                       type="password"
-                      value={shipsGoForm.webhookSecret}
-                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, webhookSecret: e.target.value }))}
-                      placeholder={shipsGoConfig?.webhookSecretConfigured ? '*** (değiştirmek için yeni secret girin)' : 'Webhook HMAC secret'}
+                      value={gRadarForm.webhookSecret}
+                      onChange={(e) => setGRadarForm(prev => ({ ...prev, webhookSecret: e.target.value }))}
+                      placeholder={gRadarConfig?.webhookSecretConfigured ? '*** (değiştirmek için yeni secret girin)' : 'Webhook HMAC secret'}
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <span className="text-[11px] text-text-secondary">ShipsGo'nun X-Shipsgo-Webhook-Signature header'ını doğrulamak için kullanılır.</span>
+                    <span className="text-[11px] text-text-secondary">G-Radar'ın gönderdiği webhook imza header'ını doğrulamak için kullanılır.</span>
                   </label>
 
                   {/* Active toggle */}
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={shipsGoForm.active}
-                      onChange={(e) => setShipsGoForm(prev => ({ ...prev, active: e.target.checked }))}
+                      checked={gRadarForm.active}
+                      onChange={(e) => setGRadarForm(prev => ({ ...prev, active: e.target.checked }))}
                       className="rounded"
                     />
                     <div>
                       <span className="text-sm font-medium text-text-main">Entegrasyonu Aktif Et</span>
-                      <p className="text-xs text-text-secondary">Kapalı iken hiçbir broker ShipsGo işlemi yapamaz.</p>
+                      <p className="text-xs text-text-secondary">Kapalı iken hiçbir broker G-Radar işlemi yapamaz.</p>
                     </div>
                   </label>
 
@@ -749,8 +750,8 @@ const SettingsPage = () => {
                         type="number"
                         min="0"
                         step="1"
-                        value={shipsGoForm.reservedCredits}
-                        onChange={(e) => setShipsGoForm(prev => ({ ...prev, reservedCredits: e.target.value }))}
+                        value={gRadarForm.reservedCredits}
+                        onChange={(e) => setGRadarForm(prev => ({ ...prev, reservedCredits: e.target.value }))}
                         className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <span className="text-xs text-text-secondary">kredi</span>
@@ -761,40 +762,43 @@ const SettingsPage = () => {
                   </label>
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                    {shipsGoConfig?.updatedAt && (
+                    {gRadarConfig?.updatedAt && (
                       <p className="text-xs text-text-secondary">
-                        Son güncelleme: {new Date(shipsGoConfig.updatedAt).toLocaleString('tr-TR')}
-                        {shipsGoConfig.updatedByEmail && ` — ${shipsGoConfig.updatedByEmail}`}
+                        Son güncelleme: {new Date(gRadarConfig.updatedAt).toLocaleString('tr-TR')}
+                        {gRadarConfig.updatedByEmail && ` — ${gRadarConfig.updatedByEmail}`}
                       </p>
                     )}
                     <div className="ml-auto flex items-center gap-2">
                       <button
-                        onClick={handleTestShipsGoConnection}
-                        disabled={shipsGoTesting || !shipsGoConfig?.apiTokenConfigured}
+                        onClick={handleTestGRadarConnection}
+                        disabled={gRadarTesting || !gRadarConfig?.apiTokenConfigured}
                         title={
-                          !shipsGoConfig?.apiTokenConfigured
+                          !gRadarConfig?.apiTokenConfigured
                             ? 'Önce API token kaydedin'
-                            : 'Configured token ile ShipsGo\'ya kısa bir GET atar — kredi tüketmez'
+                            : 'Configured token ile G-Radar\'a kısa bir GET atar — kredi tüketmez'
                         }
                         className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main rounded-lg text-sm font-medium hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
                       >
-                        <span className={`material-symbols-outlined text-base ${shipsGoTesting ? 'animate-spin' : ''}`}>
-                          {shipsGoTesting ? 'refresh' : 'cable'}
+                        <span className={`material-symbols-outlined text-base ${gRadarTesting ? 'animate-spin' : ''}`}>
+                          {gRadarTesting ? 'refresh' : 'cable'}
                         </span>
-                        {shipsGoTesting ? 'Test ediliyor...' : 'Bağlantıyı Test Et'}
+                        {gRadarTesting ? 'Test ediliyor...' : 'Bağlantıyı Test Et'}
                       </button>
                       <button
-                        onClick={handleSaveShipsGoConfig}
-                        disabled={shipsGoSaving}
+                        onClick={handleSaveGRadarConfig}
+                        disabled={gRadarSaving}
                         className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-base">save</span>
-                        {shipsGoSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                        {gRadarSaving ? 'Kaydediliyor...' : 'Kaydet'}
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Sektör Kataloğu Yönetim Kartı */}
+              <SectorSettingsCard />
 
               {/* İletişim Bilgileri Yönetim Kartı */}
               <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">

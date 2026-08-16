@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../api/userService';
-import { shipsGoCreditService } from '../api/shipsGoCreditService';
+import { gRadarCreditService } from '../api/gRadarCreditService';
 import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 import ImageUploadField from '../components/common/ImageUploadField';
 
@@ -92,7 +92,7 @@ export default function ProfilePage() {
       { id: 'security', label: 'Güvenlik', icon: 'lock' },
     ];
     if (isBrokerAdmin) {
-      t.push({ id: 'shipsgo', label: 'ShipsGo Kredim', icon: 'travel_explore' });
+      t.push({ id: 'g-radar', label: 'G-Radar Kredim', icon: 'travel_explore' });
     }
     return t;
   }, [isBrokerAdmin]);
@@ -110,14 +110,14 @@ export default function ProfilePage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
-  // ShipsGo Kredim state
+  // G-Radar Kredim state
   const [wallet, setWallet] = useState(null);
   const [walletLoading, setWalletLoading] = useState(false);
 
   const loadWallet = useCallback(async () => {
     if (!isBrokerAdmin) return;
     setWalletLoading(true);
-    const res = await shipsGoCreditService.getMyWallet();
+    const res = await gRadarCreditService.getMyWallet();
     setWalletLoading(false);
     if (res.success) {
       setWallet(res.data);
@@ -125,7 +125,7 @@ export default function ProfilePage() {
   }, [isBrokerAdmin]);
 
   useEffect(() => {
-    if (activeTab === 'shipsgo') loadWallet();
+    if (activeTab === 'g-radar') loadWallet();
   }, [activeTab, loadWallet]);
 
   const strength = useMemo(() => passwordStrength(newPassword), [newPassword]);
@@ -435,13 +435,13 @@ export default function ProfilePage() {
               </form>
             )}
 
-            {/* ShipsGo Kredim tab — BROKER_ADMIN only */}
-            {activeTab === 'shipsgo' && isBrokerAdmin && (
-              <ShipsGoWalletTab
+            {/* G-Radar Kredim tab — BROKER_ADMIN only */}
+            {activeTab === 'g-radar' && isBrokerAdmin && (
+              <GRadarWalletTab
                 wallet={wallet}
                 loading={walletLoading}
                 onRefresh={loadWallet}
-                onPurchase={() => navigate('/payment/submit?tab=shipsgo')}
+                onPurchase={() => navigate('/payment/submit?tab=g-radar')}
               />
             )}
           </div>
@@ -452,18 +452,18 @@ export default function ProfilePage() {
 }
 
 /**
- * "Hesabım > ShipsGo Kredim" tab body.
+ * "Hesabım > G-Radar Kredim" tab body.
  * Surfaces current credits, lifetime stats and the FIFO-ordered active lots
  * so the user can see which credits will expire first. Older lots are
  * highlighted as their lifetime gets thinner.
  */
-function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
+function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
   const stats = wallet || {};
   const lots = stats.activeLots || [];
   // Backend may omit the flag for back-compat — treat undefined as enabled so
   // we don't accidentally show the empty state for older payloads. Only an
   // explicit false locks the broker out.
-  const optedOut = stats.shipsgoEnabled === false;
+  const optedOut = stats.gRadarEnabled === false;
 
   return (
     <div className="space-y-6">
@@ -471,7 +471,7 @@ function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
       <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-text-main">ShipsGo Kredisi</h2>
+            <h2 className="text-lg font-semibold text-text-main">G-Radar Kredisi</h2>
             <p className="text-xs text-text-secondary mt-1">
               Kredileriniz yüklendikleri tarihten itibaren 1 yıl geçerlidir
               ve en eski (yakında dolacak) lot önce harcanır.
@@ -502,10 +502,10 @@ function ShipsGoWalletTab({ wallet, loading, onRefresh, onPurchase }) {
           <div className="mt-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
             <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-base">info</span>
-              ShipsGo entegrasyonu hesabınıza tanımlanmamış
+              G-Radar entegrasyonu hesabınıza tanımlanmamış
             </p>
             <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-              Yöneticinizle iletişime geçerek bu firmaya ShipsGo entegrasyonunu
+              Yöneticinizle iletişime geçerek bu firmaya G-Radar entegrasyonunu
               tanımlatabilirsiniz. Tanımlanırsa mevcut bakiyeniz kullanılabilir
               olur.
             </p>

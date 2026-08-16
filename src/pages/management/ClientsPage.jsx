@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { companyService } from '../../api/companyService';
+import { sectorService } from '../../api/sectorService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddClientModal from '../../components/common/AddClientModal';
+import ClientAccountModal from '../../components/common/ClientAccountModal';
 import ViewClientModal from '../../components/common/ViewClientModal';
 import EditAgreementModal from '../../components/common/EditAgreementModal';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';
@@ -15,6 +17,8 @@ const PAGE_SIZE = 10;
 const ClientsPage = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+  // Giriş hesabı açmak backend'de de yalnızca bu iki role açık
+  const canManageAccounts = isSuperAdmin || user?.globalRole === 'BROKER_ADMIN';
 
   // SUPER_ADMIN: broker seçim state'leri
   const [brokers, setBrokers] = useState([]);
@@ -26,8 +30,11 @@ const ClientsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('');
+  const [sectors, setSectors] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditAgreementModal, setShowEditAgreementModal] = useState(false);
   const [showCreateAgreementModal, setShowCreateAgreementModal] = useState(false);
@@ -78,18 +85,30 @@ const ClientsPage = () => {
     loadClients();
   }, [loadClients]);
 
+  // Sektör filtresi seçenekleri — katalog listeden bağımsız, tam liste gelsin
+  useEffect(() => {
+    sectorService.getSectors().then(result => {
+      if (result.success) setSectors(result.data);
+    });
+  }, []);
+
   const handleClientCreated = () => {
     loadClients();
   };
 
-  const filteredClients = clients.filter(client =>
-    !searchTerm ||
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.shortName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = !searchTerm ||
+      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.shortName?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Arama/firma değişince ilk sayfaya dön
-  useEffect(() => { setPage(1); }, [searchTerm, brokerCompanyId]);
+    const matchesSector = !sectorFilter ||
+      client.sectors?.some(sector => String(sector.id) === sectorFilter);
+
+    return matchesSearch && matchesSector;
+  });
+
+  // Arama/filtre/firma değişince ilk sayfaya dön
+  useEffect(() => { setPage(1); }, [searchTerm, sectorFilter, brokerCompanyId]);
 
   const pagedClients = filteredClients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -225,22 +244,45 @@ const ClientsPage = () => {
             {/* Seçim yapıldıysa veya broker kullanıcısıysa içerik */}
             {(!isSuperAdmin || selectedBroker) && (
               <>
-                {/* Search */}
+                {/* Search + sektör filtresi */}
                 <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 transition-colors">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Müşteri Ara
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      search
-                    </span>
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Firma adı veya kısa adı ile ara..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Müşteri Ara
+                      </label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                          search
+                        </span>
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          placeholder="Firma adı veya kısa adı ile ara..."
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="sector-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Sektör
+                      </label>
+                      <select
+                        id="sector-filter"
+                        value={sectorFilter}
+                        onChange={(e) => setSectorFilter(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors cursor-pointer"
+                      >
+                        <option value="">Tüm sektörler</option>
+                        {sectors.map(sector => (
+                          <option key={sector.id} value={String(sector.id)}>
+                            {sector.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -271,16 +313,16 @@ const ClientsPage = () => {
                       corporate_fare
                     </span>
                     <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                      {searchTerm
+                      {searchTerm || sectorFilter
                         ? 'Arama kriterine uygun müşteri bulunamadı'
                         : 'Henüz müşteri firmanız bulunmuyor'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                      {searchTerm
-                        ? 'Farklı anahtar kelimeler deneyerek arama yapabilirsiniz'
+                      {searchTerm || sectorFilter
+                        ? 'Farklı anahtar kelimeler veya sektör seçerek arama yapabilirsiniz'
                         : 'Yeni müşteri eklemek için "Yeni Müşteri Ekle" butonuna tıklayın'}
                     </p>
-                    {!searchTerm && (
+                    {!searchTerm && !sectorFilter && (
                       <button
                         onClick={() => setShowCreateModal(true)}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -301,6 +343,7 @@ const ClientsPage = () => {
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">Müşteri Firma</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Vekalet Durumu</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Giriş Hesabı</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Başlangıç</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Bitiş</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">İşlemler</th>
@@ -340,6 +383,18 @@ const ClientsPage = () => {
                                           {client.shortName}
                                         </div>
                                       )}
+                                      {client.sectors?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {client.sectors.map(sector => (
+                                            <span
+                                              key={sector.id}
+                                              className="inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full bg-primary/10 dark:bg-primary/20 text-primary"
+                                            >
+                                              {sector.name}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </td>
@@ -360,6 +415,25 @@ const ClientsPage = () => {
                                     )}
                                   </div>
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {client.account ? (
+                                    <div className="min-w-0 max-w-[28ch]">
+                                      <div className="text-sm text-text-main truncate" title={client.account.email}>
+                                        {client.account.email}
+                                      </div>
+                                      {!client.account.isActive && (
+                                        <span className="inline-flex mt-1 px-2 py-0.5 text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                          Pasif
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-sm text-text-secondary">
+                                      <span className="material-symbols-outlined text-base">person_off</span>
+                                      Hesap yok
+                                    </span>
+                                  )}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                                   {client.agreementStartDate ? new Date(client.agreementStartDate).toLocaleDateString('tr-TR') : '-'}
                                 </td>
@@ -376,6 +450,18 @@ const ClientsPage = () => {
                                       <span className="material-symbols-outlined text-lg">visibility</span>
                                       Detay
                                     </button>
+                                    {canManageAccounts && (
+                                      <button
+                                        onClick={() => { setSelectedClient(client); setShowAccountModal(true); }}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                        title={client.account ? 'Giriş hesabını düzenle' : 'Giriş hesabı oluştur'}
+                                      >
+                                        <span className="material-symbols-outlined text-lg">
+                                          {client.account ? 'manage_accounts' : 'person_add'}
+                                        </span>
+                                        {client.account ? 'Hesap' : 'Hesap Aç'}
+                                      </button>
+                                    )}
                                     {!hasAgreement && (
                                       <button
                                         onClick={() => { setSelectedClient(client); setShowCreateAgreementModal(true); }}
@@ -414,6 +500,17 @@ const ClientsPage = () => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={handleClientCreated}
           brokerCompanyId={brokerCompanyId}
+        />
+
+        {/* Client Login Account Modal */}
+        <ClientAccountModal
+          isOpen={showAccountModal}
+          onClose={() => {
+            setShowAccountModal(false);
+            setSelectedClient(null);
+          }}
+          client={selectedClient}
+          onSuccess={loadClients}
         />
 
         {/* View Client Modal */}

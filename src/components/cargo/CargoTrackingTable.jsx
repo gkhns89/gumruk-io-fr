@@ -1,6 +1,7 @@
 import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType } from '../../utils/constants';
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
 import { getCostBreakdown, calculateTotalCosts } from '../../utils/costsUtils';
+import { gRadarStatusInfo } from '../../utils/gRadarLabels';
 import { getCurrentLanguage } from '../../locales';
 
 export default function CargoTrackingTable({
@@ -16,13 +17,13 @@ export default function CargoTrackingTable({
   selectedVehicleType = "",
   scrollHeight = null,
   onScroll = null,
-  canManageShipsGo = false,
-  onShipsGoFetch,
-  onShipsGoEnable,
-  onShipsGoRequest,
-  onShipsGoDetails,
-  fetchingShipsGo = {},
-  enablingShipsGo = {},
+  canManageGRadar = false,
+  onGRadarFetch,
+  onGRadarEnable,
+  onGRadarRequest,
+  onGRadarDetails,
+  fetchingGRadar = {},
+  enablingGRadar = {},
 }) {
   const { containerRef: edgeScrollRef, scrollDirection } = useEdgeScroll({
     edgeZoneWidth: 25,
@@ -34,7 +35,7 @@ export default function CargoTrackingTable({
     const baseColumns = [
       "status",
       "vehicleType",
-      "shipsgo",
+      "g-radar",
       "estimatedArrivalDate",
       "buyerCompany",
       "senderCompany",
@@ -180,8 +181,8 @@ export default function CargoTrackingTable({
               {visibleColumns.includes("vehicleType") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Araç Tipi</th>
               )}
-              {visibleColumns.includes("shipsgo") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ShipsGo</th>
+              {visibleColumns.includes("g-radar") && (
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">G-Radar</th>
               )}
               {visibleColumns.includes("estimatedArrivalDate") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ETA</th>
@@ -260,18 +261,18 @@ export default function CargoTrackingTable({
                       </div>
                     </td>
                   )}
-                  {visibleColumns.includes("shipsgo") && (
+                  {visibleColumns.includes("g-radar") && (
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <ShipsGoStatusCell
+                      <GRadarStatusCell
                         cargoItem={cargoItem}
-                        canManage={canManageShipsGo}
+                        canManage={canManageGRadar}
                         isReadOnly={isReadOnly}
-                        fetching={!!fetchingShipsGo[cargoItem.id]}
-                        enabling={!!enablingShipsGo[cargoItem.id]}
-                        onFetch={() => onShipsGoFetch?.(cargoItem)}
-                        onEnable={() => onShipsGoEnable?.(cargoItem)}
-                        onRequest={() => onShipsGoRequest?.(cargoItem)}
-                        onOpenDetails={() => onShipsGoDetails?.(cargoItem)}
+                        fetching={!!fetchingGRadar[cargoItem.id]}
+                        enabling={!!enablingGRadar[cargoItem.id]}
+                        onFetch={() => onGRadarFetch?.(cargoItem)}
+                        onEnable={() => onGRadarEnable?.(cargoItem)}
+                        onRequest={() => onGRadarRequest?.(cargoItem)}
+                        onOpenDetails={() => onGRadarDetails?.(cargoItem)}
                       />
                     </td>
                   )}
@@ -514,19 +515,19 @@ export default function CargoTrackingTable({
 }
 
 /**
- * Per-row ShipsGo status display with the three states from the plan:
- *  - TRUCK or COMPLETED cargo → dash (ShipsGo doesn't apply).
- *  - shipsGoEnabled=false → muted "Kapalı" pill.
- *  - shipsGoEnabled=true && shipsGoTrackingId=null → "Bilgileri Getir"
+ * Per-row G-Radar status display with the three states from the plan:
+ *  - TRUCK or COMPLETED cargo → dash (G-Radar doesn't apply).
+ *  - gRadarEnabled=false → muted "Kapalı" pill.
+ *  - gRadarEnabled=true && gRadarTrackingId=null → "Bilgileri Getir"
  *    action button (only clickable by BROKER_ADMIN / SUPER_ADMIN; spent
  *    1 credit per click, confirmed in the parent).
- *  - shipsGoEnabled=true && shipsGoTrackingId set → green dot + last-sync
+ *  - gRadarEnabled=true && gRadarTrackingId set → green dot + last-sync
  *    tooltip indicating live tracking.
  *
  * Click handlers stopPropagation so the row click (which opens the edit
  * modal) doesn't fire when the user is operating the cell.
  */
-function ShipsGoStatusCell({
+function GRadarStatusCell({
   cargoItem, canManage, isReadOnly,
   fetching, enabling,
   onFetch, onEnable, onRequest, onOpenDetails,
@@ -534,22 +535,22 @@ function ShipsGoStatusCell({
   const vt = cargoItem.vehicleType;
 
   // Defensive debug: when the user reports "buttons don't react", the most
-  // common cause is the cargo payload missing shipsGoEnabled / shipsGoTrackingId
+  // common cause is the cargo payload missing gRadarEnabled / gRadarTrackingId
   // — the cell then falls through to the "Kapalı" span (not a button), so
   // clicking does nothing. Log once per cargo so we can spot it in dev tools
   // without flooding the console.
-  if (typeof window !== 'undefined' && !window.__shipsGoCellDebugged) {
-    window.__shipsGoCellDebugged = new Set();
+  if (typeof window !== 'undefined' && !window.__gRadarCellDebugged) {
+    window.__gRadarCellDebugged = new Set();
   }
   if (typeof window !== 'undefined'
       && (vt === 'SHIP' || vt === 'AIRPLANE')
-      && !window.__shipsGoCellDebugged.has(cargoItem.id)) {
-    window.__shipsGoCellDebugged.add(cargoItem.id);
-    console.debug('[ShipsGoCell]', cargoItem.id, {
+      && !window.__gRadarCellDebugged.has(cargoItem.id)) {
+    window.__gRadarCellDebugged.add(cargoItem.id);
+    console.debug('[GRadarCell]', cargoItem.id, {
       vehicleType: vt,
       status: cargoItem.status,
-      shipsGoEnabled: cargoItem.shipsGoEnabled,
-      shipsGoTrackingId: cargoItem.shipsGoTrackingId,
+      gRadarEnabled: cargoItem.gRadarEnabled,
+      gRadarTrackingId: cargoItem.gRadarTrackingId,
       canManage,
       isReadOnly,
     });
@@ -559,7 +560,7 @@ function ShipsGoStatusCell({
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
-        title="ShipsGo sadece gemi ve uçak yüklerini takip eder — bu araç tipi için kullanılamaz"
+        title="G-Radar sadece gemi ve uçak yüklerini takip eder — bu araç tipi için kullanılamaz"
       >
         <span className="material-symbols-outlined text-sm">block</span>
         Kullanılamaz
@@ -567,13 +568,13 @@ function ShipsGoStatusCell({
     );
   }
   if (cargoItem.status === 'COMPLETED') {
-    if (cargoItem.shipsGoTrackingId) {
+    if (cargoItem.gRadarTrackingId) {
       return (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenDetails?.(); }}
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-colors"
-          title="Yük tamamlandı — ShipsGo'nun son senkron ettiği veriyi görüntüleyin"
+          title="Yük tamamlandı — G-Radar'ın son senkron ettiği veriyi görüntüleyin"
         >
           <span className="material-symbols-outlined text-sm">history</span>
           Geçmişi Göster
@@ -583,14 +584,14 @@ function ShipsGoStatusCell({
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
-        title="Bu yük tamamlandı ve ShipsGo'dan hiç senkron edilmedi — geçmiş veri yok"
+        title="Bu yük tamamlandı ve G-Radar'dan hiç senkron edilmedi — geçmiş veri yok"
       >
         <span className="material-symbols-outlined text-sm">block</span>
         Kullanılamaz
       </span>
     );
   }
-  if (!cargoItem.shipsGoEnabled) {
+  if (!cargoItem.gRadarEnabled) {
     // Read-only viewers (CLIENT_USER / payment-frozen) get the muted pill.
     if (isReadOnly) {
       return (
@@ -607,11 +608,11 @@ function ShipsGoStatusCell({
           type="button"
           onClick={(e) => { e.stopPropagation(); onEnable?.(); }}
           disabled={enabling}
-          title="ShipsGo entegrasyonunu bu yük için aç — bu adımda kredi tüketilmez"
+          title="G-Radar entegrasyonunu bu yük için aç — bu adımda kredi tüketilmez"
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-primary/10 dark:bg-gray-700 dark:hover:bg-primary/20 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary text-xs font-medium transition-colors disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-sm">toggle_off</span>
-          {enabling ? 'Açılıyor...' : 'ShipsGo\'yu Aç'}
+          {enabling ? 'Açılıyor...' : 'G-Radar\'ı Aç'}
         </button>
       );
     }
@@ -621,7 +622,7 @@ function ShipsGoStatusCell({
         type="button"
         onClick={(e) => { e.stopPropagation(); onRequest?.(); }}
         disabled={enabling}
-        title="Yöneticinizden ShipsGo entegrasyonunu açmasını talep edin"
+        title="Yöneticinizden G-Radar entegrasyonunu açmasını talep edin"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-blue-50 dark:bg-gray-700 dark:hover:bg-blue-900/30 text-gray-600 hover:text-blue-700 dark:text-gray-300 dark:hover:text-blue-300 text-xs font-medium transition-colors disabled:opacity-50"
       >
         <span className="material-symbols-outlined text-sm">send</span>
@@ -629,7 +630,7 @@ function ShipsGoStatusCell({
       </button>
     );
   }
-  if (!cargoItem.shipsGoTrackingId) {
+  if (!cargoItem.gRadarTrackingId) {
     if (!canManage || isReadOnly) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs">
@@ -642,7 +643,7 @@ function ShipsGoStatusCell({
         type="button"
         onClick={(e) => { e.stopPropagation(); onFetch?.(); }}
         disabled={fetching}
-        title="ShipsGo'dan bilgileri çek (1 kredi)"
+        title="G-Radar'dan bilgileri çek (1 kredi)"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors disabled:opacity-50"
       >
         <span className="material-symbols-outlined text-sm">download</span>
@@ -650,10 +651,16 @@ function ShipsGoStatusCell({
       </button>
     );
   }
-  // shipsGoEnabled + trackingId set → live, clickable to open the drawer
-  const tooltip = cargoItem.shipsGoLastSyncAt
-    ? `Son sync: ${new Date(cargoItem.shipsGoLastSyncAt).toLocaleString('tr-TR')} — detay için tıkla`
-    : 'ShipsGo aktif — detay için tıkla';
+  // gRadarEnabled + trackingId set → live, clickable to open the drawer.
+  // Rozette ham "Aktif" yerine yükün gerçek durumunu Türkçe gösteriyoruz —
+  // kullanıcı listeden ayrılmadan "nerede" sorusunun cevabını görsün.
+  const statusInfo = gRadarStatusInfo(cargoItem.gRadarStatus);
+  const syncNote = cargoItem.gRadarLastSyncAt
+    ? `Son sync: ${new Date(cargoItem.gRadarLastSyncAt).toLocaleString('tr-TR')}`
+    : 'G-Radar aktif';
+  const tooltip = statusInfo
+    ? `${statusInfo.label} (${statusInfo.raw}) — ${syncNote} — detay için tıkla`
+    : `${syncNote} — detay için tıkla`;
   return (
     <button
       type="button"
@@ -662,7 +669,7 @@ function ShipsGoStatusCell({
       className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
     >
       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-      Aktif
+      {statusInfo?.short || 'Aktif'}
       <span className="material-symbols-outlined text-sm">open_in_new</span>
     </button>
   );

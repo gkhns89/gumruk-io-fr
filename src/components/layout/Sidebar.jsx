@@ -44,7 +44,7 @@ export default function Sidebar() {
   ];
 
   // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler.
-  // Ayarlar sayfası tamamen SUPER_ADMIN'e ait (ClickUp + ShipsGo master config);
+  // Ayarlar sayfası tamamen SUPER_ADMIN'e ait (ClickUp + G-Radar master config);
   // diğer rollerin orada zaten yetkili oldukları hiçbir alan yok, bu yüzden
   // menü öğesini de hiç göstermiyoruz.
   const otherMenuItems = [

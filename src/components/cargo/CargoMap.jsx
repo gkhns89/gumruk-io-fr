@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /**
- * Compact MapLibre map for the ShipsGo drawer. Renders a cargo's route
+ * Compact MapLibre map for the G-Radar drawer. Renders a cargo's route
  * GeoJSON (line + origin / destination / current markers) and auto-fits
  * the view to the route's bounding box.
  *
@@ -122,7 +122,7 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
             Harita verisi henüz çekilmedi
           </p>
           <p className="text-[11px] text-text-secondary mt-0.5 opacity-70">
-            ShipsGo'dan rota bilgisi geldiğinde burada görünecek.
+            G-Radar'dan rota bilgisi geldiğinde burada görünecek.
           </p>
         </div>
       </div>
@@ -162,7 +162,7 @@ function parseGeoJson(raw) {
 /**
  * The map renders against a fixed "kind"-based feature shape (route /
  * origin / destination / current — see DataInitializer's seed payload).
- * ShipsGo's live geojson uses a different vocabulary: status=PAST | CURRENT
+ * G-Radar's live geojson uses a different vocabulary: status=PAST | CURRENT
  * | FUTURE, with the vessel's live position buried inside the LineString's
  * properties.current.coordinates. This walks an arbitrary upstream payload
  * and emits a FeatureCollection in our internal shape so the rest of the
@@ -181,7 +181,7 @@ function normalizeToInternalShape(fc) {
         geometry: f.geometry,
         properties: { kind: 'route' },
       });
-      // ShipsGo embeds the live vessel position inside the LineString feature
+      // G-Radar embeds the live vessel position inside the LineString feature
       // (`properties.current.coordinates`). Lift it out as its own point so
       // the pulsing marker layer picks it up.
       const cur = props.current?.coordinates;
@@ -206,7 +206,7 @@ function normalizeToInternalShape(fc) {
       continue;
     }
 
-    // ShipsGo native shape: status-driven role + label from location.name.
+    // G-Radar native shape: status-driven role + label from location.name.
     const status = props.status;
     if (status === 'PAST') {
       features.push({

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
-import { shipsGoService } from '../../api/shipsGoService';
-import { shipsGoCreditService } from '../../api/shipsGoCreditService';
+import { gRadarService } from '../../api/gRadarService';
+import { gRadarCreditService } from '../../api/gRadarCreditService';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { gRadarStatusInfo } from '../../utils/gRadarLabels';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import AddClientModal from '../common/AddClientModal';
@@ -86,43 +87,43 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
-  // ===== ShipsGo preview state =====
+  // ===== G-Radar preview state =====
   // BROKER_ADMIN (and SUPER_ADMIN) may flip the switch ON and pre-populate the
   // form by spending 1 credit. The trackingId is held in state until either
   // the cargo is saved (claimPreview) or the modal is dismissed (abandonPreview).
   const isBrokerAdmin = currentUser?.globalRole === 'BROKER_ADMIN' || isSuperAdmin;
-  const [shipsGoEnabled, setShipsGoEnabled] = useState(false);
-  const [shipsGoTrackingId, setShipsGoTrackingId] = useState(null);
-  const [shipsGoPreviewing, setShipsGoPreviewing] = useState(false);
+  const [gRadarEnabled, setGRadarEnabled] = useState(false);
+  const [gRadarTrackingId, setGRadarTrackingId] = useState(null);
+  const [gRadarPreviewing, setGRadarPreviewing] = useState(false);
   // Tracks whether the user changed any auto-populated field after a successful
   // preview — those fields get pushed back to the server as manual overrides.
-  const [shipsGoPopulatedSnapshot, setShipsGoPopulatedSnapshot] = useState(null);
+  const [gRadarPopulatedSnapshot, setGRadarPopulatedSnapshot] = useState(null);
 
   // BROKER_USER request path: cannot flip the switch, but can file an
   // enable request that a BROKER_ADMIN approves. The two states below
-  // travel to the backend in the same POST /cargo body as `requestShipsGoEnable`
-  // and `shipsGoRequestNotes`.
-  const [requestShipsGoEnable, setRequestShipsGoEnable] = useState(false);
-  const [shipsGoRequestNotes, setShipsGoRequestNotes] = useState('');
+  // travel to the backend in the same POST /cargo body as `requestGRadarEnable`
+  // and `gRadarRequestNotes`.
+  const [requestGRadarEnable, setRequestGRadarEnable] = useState(false);
+  const [gRadarRequestNotes, setGRadarRequestNotes] = useState('');
 
-  const isShipsGoCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
+  const isGRadarCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
 
   // Per-broker opt-in. Same default-true semantics as ProfilePage: only an
   // explicit false locks the UX, missing/older payloads behave as before.
-  const [shipsGoOptedOut, setShipsGoOptedOut] = useState(false);
+  const [gRadarOptedOut, setGRadarOptedOut] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
-      const res = await shipsGoCreditService.getMyWallet();
+      const res = await gRadarCreditService.getMyWallet();
       if (alive && res.success) {
-        setShipsGoOptedOut(res.data?.shipsgoEnabled === false);
+        setGRadarOptedOut(res.data?.gRadarEnabled === false);
       }
     })();
     return () => { alive = false; };
   }, []);
 
   // Identifier ready = identifier(s) the upstream endpoint needs are filled out.
-  // For AIR this is the AWB and it must match ShipsGo's regex; for OCEAN at
+  // For AIR this is the AWB and it must match G-Radar's regex; for OCEAN at
   // least one of container/BL must be filled. We re-check on every render so
   // the "Bilgileri Getir" button enables / disables exactly when it should.
   const awbValid = /^[0-9]{3}-?[0-9]{8}$/.test((formData.consignmentNumber || '').trim());
@@ -133,39 +134,39 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       || (formData.containerNumbers && formData.containerNumbers.length > 0)
     ));
 
-  const handleShipsGoPreview = async () => {
-    if (!isShipsGoCompatible || !identifierReady) return;
+  const handleGRadarPreview = async () => {
+    if (!isGRadarCompatible || !identifierReady) return;
     const identifier = formData.vehicleType === 'AIRPLANE'
       ? formData.consignmentNumber
       : (formData.billOfLading || formData.containerNumbers[0]);
     const ok = await confirmDialog({
-      title: 'ShipsGo bilgileri çekilecek',
-      message: `${identifier} için ShipsGo'dan tracking bilgileri çekilecek ve form alanlarına yansıtılacak.`,
-      details: ['Bu işlem 1 ShipsGo kredisi kullanır.'],
+      title: 'G-Radar bilgileri çekilecek',
+      message: `${identifier} için G-Radar'dan tracking bilgileri çekilecek ve form alanlarına yansıtılacak.`,
+      details: ['Bu işlem 1 G-Radar kredisi kullanır.'],
       intent: 'primary',
       icon: 'download',
       confirmText: 'Çek (1 kredi)',
     });
     if (!ok) return;
 
-    setShipsGoPreviewing(true);
-    const res = await shipsGoService.preview({
+    setGRadarPreviewing(true);
+    const res = await gRadarService.preview({
       vehicleType: formData.vehicleType,
       awbNumber: formData.consignmentNumber || null,
       containerNumber: formData.containerNumbers?.[0] || null,
       billOfLading: formData.billOfLading || null,
     });
-    setShipsGoPreviewing(false);
+    setGRadarPreviewing(false);
 
     if (!res.success) {
-      showError(res.error || 'ShipsGo önizleme alınamadı');
+      showError(res.error || 'G-Radar önizleme alınamadı');
       return;
     }
 
-    const trackingId = res.data?.shipsGoTrackingId;
+    const trackingId = res.data?.gRadarTrackingId;
     const populated = res.data?.populatedFields || {};
-    setShipsGoTrackingId(trackingId);
-    setShipsGoPopulatedSnapshot(populated);
+    setGRadarTrackingId(trackingId);
+    setGRadarPopulatedSnapshot(populated);
 
     // Push the populated fields straight onto the form so the user sees them.
     // Only the fields the modal actually renders (ETA today; vessel etc. live
@@ -175,22 +176,22 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       estimatedArrivalDate: populated.estimatedArrivalDate
         ? String(populated.estimatedArrivalDate).substring(0, 10)
         : prev.estimatedArrivalDate,
-      carrierName: populated.shipsGoCarrier || prev.carrierName,
+      carrierName: populated.gRadarCarrier || prev.carrierName,
     }));
 
     showSuccess(
       res.data?.alreadyExisted
-        ? 'ShipsGo: Bu yük zaten takipte (kredi düşülmedi). Form dolduruldu.'
-        : 'ShipsGo bilgileri form alanlarına yansıtıldı.'
+        ? 'G-Radar: Bu yük zaten takipte (kredi düşülmedi). Form dolduruldu.'
+        : 'G-Radar bilgileri form alanlarına yansıtıldı.'
     );
   };
 
   // Releases the upstream shipment if the user closes the modal without saving
   // (orphan protection from the plan). Best-effort: we don't block close on a
   // network failure here.
-  const abandonShipsGoIfNeeded = () => {
-    if (shipsGoTrackingId && formData.vehicleType) {
-      shipsGoService.abandonPreview(shipsGoTrackingId, formData.vehicleType);
+  const abandonGRadarIfNeeded = () => {
+    if (gRadarTrackingId && formData.vehicleType) {
+      gRadarService.abandonPreview(gRadarTrackingId, formData.vehicleType);
     }
   };
 
@@ -612,17 +613,17 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         lokalAmount: transformedData.lokalAmount ? parseFloat(transformedData.lokalAmount) : null,
         depositoAmount: transformedData.depositoAmount ? parseFloat(transformedData.depositoAmount) : null,
         ordinoAmount: transformedData.ordinoAmount ? parseFloat(transformedData.ordinoAmount) : null,
-        // ShipsGo: if the user previewed, the trackingId is reused (no new
+        // G-Radar: if the user previewed, the trackingId is reused (no new
         // credit). If they only flipped the switch on without previewing,
         // backend goes the markEnabled path (Path B) where the broker can
         // run "Bilgileri Getir" from the table afterwards.
-        shipsGoEnabled: shipsGoEnabled && isShipsGoCompatible,
-        shipsGoTrackingId: shipsGoTrackingId ? String(shipsGoTrackingId) : null,
+        gRadarEnabled: gRadarEnabled && isGRadarCompatible,
+        gRadarTrackingId: gRadarTrackingId ? String(gRadarTrackingId) : null,
         // BROKER_USER path: ask a BROKER_ADMIN to enable later. Backend
-        // creates a PENDING ShipsGoEnableRequest and surfaces it in the
+        // creates a PENDING GRadarEnableRequest and surfaces it in the
         // admin's pending-requests popover.
-        requestShipsGoEnable: requestShipsGoEnable && isShipsGoCompatible && !isBrokerAdmin,
-        shipsGoRequestNotes: shipsGoRequestNotes?.trim() || null,
+        requestGRadarEnable: requestGRadarEnable && isGRadarCompatible && !isBrokerAdmin,
+        gRadarRequestNotes: gRadarRequestNotes?.trim() || null,
       };
 
       const result = await cargoService.createCargo(dataToSend);
@@ -630,7 +631,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       if (result.success) {
         showSuccess('Yük kaydı başarıyla oluşturuldu!');
         // Cargo committed — don't release the upstream shipment on the way out.
-        setShipsGoTrackingId(null);
+        setGRadarTrackingId(null);
         onSuccess();
       } else {
         handleApiResponse(result, null, setError, 'cargo creation');
@@ -650,10 +651,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   const visibleFields = getVisibleFields();
 
-  // Close wrapper that also releases an in-flight ShipsGo preview so we never
+  // Close wrapper that also releases an in-flight G-Radar preview so we never
   // leave an orphan tracking on the upstream account (plan: orphan protection).
   const handleCloseWithCleanup = () => {
-    abandonShipsGoIfNeeded();
+    abandonGRadarIfNeeded();
     onClose();
   };
 
@@ -667,17 +668,17 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, shipsGoTrackingId]);
+  }, [onClose, gRadarTrackingId]);
 
   // Tab-close / page-leave: best-effort release via sendBeacon. The browser
   // tears down React state before this fires, so use the value we already
   // captured in the dependency closure above.
   useEffect(() => {
-    const onUnload = () => abandonShipsGoIfNeeded();
+    const onUnload = () => abandonGRadarIfNeeded();
     window.addEventListener('beforeunload', onUnload);
     return () => window.removeEventListener('beforeunload', onUnload);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shipsGoTrackingId, formData.vehicleType]);
+  }, [gRadarTrackingId, formData.vehicleType]);
 
   return (
     <div
@@ -1132,35 +1133,35 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                     </div>
                   )}
 
-                  {/* ShipsGo Entegrasyonu — sadece SHIP/AIRPLANE */}
-                  {isShipsGoCompatible && shipsGoOptedOut && (
+                  {/* G-Radar Entegrasyonu — sadece SHIP/AIRPLANE */}
+                  {isGRadarCompatible && gRadarOptedOut && (
                     <div className="md:col-span-2 mt-2 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
                       <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
                         <span className="material-symbols-outlined text-base">lock</span>
-                        ShipsGo entegrasyonu firmanıza tanımlanmamış
+                        G-Radar entegrasyonu firmanıza tanımlanmamış
                       </p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                        Yöneticinizle iletişime geçerek bu firmaya ShipsGo
+                        Yöneticinizle iletişime geçerek bu firmaya G-Radar
                         entegrasyonunu tanımlatabilirsiniz. Yük kaydını yine
                         de manuel doldurarak oluşturabilirsiniz.
                       </p>
                     </div>
                   )}
-                  {isShipsGoCompatible && !shipsGoOptedOut && (
+                  {isGRadarCompatible && !gRadarOptedOut && (
                     <div className="md:col-span-2 mt-2 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={shipsGoEnabled}
+                          checked={gRadarEnabled}
                           disabled={!isBrokerAdmin}
                           onChange={(e) => {
-                            setShipsGoEnabled(e.target.checked);
+                            setGRadarEnabled(e.target.checked);
                             // Switch off → release the upstream shipment if we
                             // already previewed one.
-                            if (!e.target.checked && shipsGoTrackingId) {
-                              abandonShipsGoIfNeeded();
-                              setShipsGoTrackingId(null);
-                              setShipsGoPopulatedSnapshot(null);
+                            if (!e.target.checked && gRadarTrackingId) {
+                              abandonGRadarIfNeeded();
+                              setGRadarTrackingId(null);
+                              setGRadarPopulatedSnapshot(null);
                             }
                           }}
                           className="mt-1 rounded"
@@ -1168,31 +1169,31 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                         <div className="flex-1">
                           <span className="text-sm font-semibold text-text-main flex items-center gap-2">
                             <span className="material-symbols-outlined text-base text-primary">travel_explore</span>
-                            ShipsGo ile otomatik takip et
+                            G-Radar ile otomatik takip et
                           </span>
                           {!isBrokerAdmin ? (
                             <div className="mt-2 space-y-2">
                               <p className="text-xs text-text-secondary">
-                                Sadece broker yöneticileri ShipsGo entegrasyonunu açabilir.
+                                Sadece broker yöneticileri G-Radar entegrasyonunu açabilir.
                                 Aşağıdaki kutuyu işaretlerseniz yöneticinize bir onay talebi gönderilir.
                               </p>
                               <label className="flex items-start gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={requestShipsGoEnable}
-                                  onChange={(e) => setRequestShipsGoEnable(e.target.checked)}
+                                  checked={requestGRadarEnable}
+                                  onChange={(e) => setRequestGRadarEnable(e.target.checked)}
                                   className="mt-0.5 rounded"
                                 />
                                 <span className="text-sm font-medium text-text-main">
-                                  🔔 Yöneticiden ShipsGo talep et
+                                  🔔 Yöneticiden G-Radar talep et
                                 </span>
                               </label>
-                              {requestShipsGoEnable && (
+                              {requestGRadarEnable && (
                                 <textarea
                                   rows={2}
                                   maxLength={500}
-                                  value={shipsGoRequestNotes}
-                                  onChange={(e) => setShipsGoRequestNotes(e.target.value)}
+                                  value={gRadarRequestNotes}
+                                  onChange={(e) => setGRadarRequestNotes(e.target.value)}
                                   placeholder="Yöneticinize iletmek istediğiniz not (opsiyonel) — örn. müşteri acil takip istiyor"
                                   className="w-full rounded-lg border border-primary/30 dark:border-primary/40 bg-white dark:bg-gray-700 text-text-main text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
@@ -1207,30 +1208,31 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                         </div>
                       </label>
 
-                      {shipsGoEnabled && isBrokerAdmin && (
+                      {gRadarEnabled && isBrokerAdmin && (
                         <div className="mt-3 flex items-center gap-3 flex-wrap">
-                          {!shipsGoTrackingId ? (
+                          {!gRadarTrackingId ? (
                             <button
                               type="button"
-                              onClick={handleShipsGoPreview}
-                              disabled={!identifierReady || shipsGoPreviewing}
+                              onClick={handleGRadarPreview}
+                              disabled={!identifierReady || gRadarPreviewing}
                               title={
                                 !identifierReady
                                   ? formData.vehicleType === 'AIRPLANE'
                                       ? 'Geçerli AWB girin (örn. 618-12345678)'
                                       : 'Konteyner veya konşimento numarası girin'
-                                  : '1 kredi kullanarak ShipsGo\'dan bilgileri çek'
+                                  : '1 kredi kullanarak G-Radar\'dan bilgileri çek'
                               }
                               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <span className="material-symbols-outlined text-base">download</span>
-                              {shipsGoPreviewing ? 'Bilgi çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
+                              {gRadarPreviewing ? 'Bilgi çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
                             </button>
                           ) : (
                             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
                               <span className="material-symbols-outlined text-sm">check_circle</span>
-                              Bilgiler getirildi {shipsGoPopulatedSnapshot?.shipsGoStatus
-                                ? `(${shipsGoPopulatedSnapshot.shipsGoStatus})`
+                              Bilgiler getirildi {gRadarPopulatedSnapshot?.gRadarStatus
+                                ? `(${gRadarStatusInfo(gRadarPopulatedSnapshot.gRadarStatus)?.label
+                                    ?? gRadarPopulatedSnapshot.gRadarStatus})`
                                 : ''}
                             </span>
                           )}

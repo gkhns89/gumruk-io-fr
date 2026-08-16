@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import NewsSlider from "./NewsSlider";
 import CurrencyTicker from "../common/CurrencyTicker";
 import NotificationCenter from "./NotificationCenter";
-import ShipsGoRequestsBell from "../shipsgo/ShipsGoRequestsBell";
+import GRadarRequestsBell from "../gradar/GRadarRequestsBell";
 import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
@@ -309,8 +309,8 @@ export default function Header() {
           {/* Notifications */}
           <NotificationCenter />
 
-          {/* ShipsGo enable requests (BROKER_ADMIN / SUPER_ADMIN only) */}
-          <ShipsGoRequestsBell />
+          {/* G-Radar enable requests (BROKER_ADMIN / SUPER_ADMIN only) */}
+          <GRadarRequestsBell />
 
           {/* Feedback Butonu - SUPER_ADMIN görmez */}
           {clickUpActive && !isSuperAdmin && (

@@ -316,6 +316,38 @@ export const getDocumentDeliveryType = (value) => {
 };
 
 /**
+ * Bakiye hareketi türleri (backend: BalanceTransactionType).
+ *
+ * `isCredit` bakiyeye giriş mi çıkış mı olduğunu söyler — tutarın rengini ve
+ * başındaki + işaretini bu belirliyor.
+ *
+ * Not: G-Radar kredisi satın alma, backend'de enum sabiti olarak hâlâ
+ * SHIPSGO_CREDIT_PURCHASE; dışarıya @JsonProperty ile GRADAR_CREDIT_PURCHASE
+ * adıyla çıkıyor. Buradaki `value` dış addır.
+ */
+export const BALANCE_TRANSACTION_TYPES = [
+  { value: 'CREDIT', label: 'Kredi', shortLabel: 'Kredi', isCredit: true },
+  { value: 'ADDON_DEBIT', label: 'Ek Ödeme', shortLabel: 'Ek Ödeme', isCredit: false },
+  { value: 'PERIOD_DEBIT', label: 'Dönem Ödemesi', shortLabel: 'Dönem', isCredit: false },
+  { value: 'GRADAR_CREDIT_PURCHASE', label: 'G-Radar Kredisi', shortLabel: 'G-Radar', isCredit: false },
+];
+
+/**
+ * Bakiye hareketi türünü değere göre bul.
+ *
+ * Tanınmayan bir tür gelirse null döner — çağıran tarafın ham değeri
+ * göstermesi, onu var olan bir türmüş gibi etiketlemesinden iyidir.
+ * (Eskiden burada iç içe ternary'nin son dalı catch-all'du ve listede olmayan
+ * her tür "Dönem Ödemesi" diye etiketleniyordu.)
+ *
+ * @param {string} value - Transaction type değeri
+ * @returns {Object|null} Tür objesi
+ */
+export const getBalanceTransactionType = (value) => {
+  return BALANCE_TRANSACTION_TYPES.find((t) => t.value === value) || null;
+};
+
+/**
  * Para Birimleri
  * Currency options for costs
  */

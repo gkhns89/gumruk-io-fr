@@ -1,20 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
-import { shipsGoService } from '../../api/shipsGoService';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import {
+  extractMovementGroups,
+  countMovements,
+  gRadarStatusInfo,
+} from '../../utils/gRadarLabels';
 import CargoMap from './CargoMap';
 
 /**
- * Slide-in panel that shows the live ShipsGo data for a single cargo.
+ * Slide-in panel that shows the live G-Radar data for a single cargo.
  *
- * Reads everything from the cached GET /api/shipsgo/cargo/{id}/details so
+ * Reads everything from the cached GET /api/g-radar/cargo/{id}/details so
  * opening the drawer never costs a credit. The "Yenile" button hits POST
  * /refresh which is also free — it just asks the backend to re-pull from
- * ShipsGo right now instead of waiting for the next sync cycle.
+ * G-Radar right now instead of waiting for the next sync cycle.
  *
  * Open / close is driven by the parent via the `cargo` prop: passing null
  * closes (with the slide-out animation falling through naturally).
  */
-export default function ShipsGoDetailsDrawer({
+export default function GRadarDetailsDrawer({
   cargo,
   onClose,
   canRefresh = true,
@@ -27,13 +32,13 @@ export default function ShipsGoDetailsDrawer({
   const load = useCallback(async (cargoId) => {
     if (!cargoId) return;
     setLoading(true);
-    const res = await shipsGoService.getCargoDetails(cargoId);
+    const res = await gRadarService.getCargoDetails(cargoId);
     setLoading(false);
     if (res.success) {
       setDetails(res.data);
     } else {
       setDetails(null);
-      showError(res.error || 'ShipsGo bilgileri alınamadı');
+      showError(res.error || 'G-Radar bilgileri alınamadı');
     }
   }, []);
 
@@ -58,26 +63,24 @@ export default function ShipsGoDetailsDrawer({
   const handleRefresh = async () => {
     if (!cargo?.id) return;
     setRefreshing(true);
-    const res = await shipsGoService.refresh(cargo.id);
+    const res = await gRadarService.refresh(cargo.id);
     setRefreshing(false);
     if (res.success) {
-      showSuccess('ShipsGo verileri yenilendi');
+      showSuccess('G-Radar verileri yenilendi');
       load(cargo.id);
     } else {
       showError(res.error || 'Yenileme başarısız');
     }
   };
 
-  const movements = (() => {
-    if (!details?.routeJson) return [];
-    try {
-      const parsed = JSON.parse(details.routeJson);
-      const list = parsed?.movements || [];
-      return Array.isArray(list) ? list : [];
-    } catch {
-      return [];
-    }
-  })();
+  // Hareket geçmişi iki ayrı şemadan geliyor (hava: düz movements, deniz:
+  // containers[].movements) — normalize katmanı ikisini tek biçime indiriyor.
+  const movementGroups = useMemo(
+    () => extractMovementGroups(details?.routeJson),
+    [details?.routeJson],
+  );
+  const movementCount = countMovements(movementGroups);
+  const statusInfo = gRadarStatusInfo(details?.gRadarStatus);
 
   return (
     <>
@@ -100,7 +103,7 @@ export default function ShipsGoDetailsDrawer({
           <div className="flex items-center gap-2 min-w-0">
             <span className="material-symbols-outlined text-primary text-2xl">travel_explore</span>
             <div className="min-w-0">
-              <h3 className="text-base font-semibold text-text-main truncate">ShipsGo Detayı</h3>
+              <h3 className="text-base font-semibold text-text-main truncate">G-Radar Detayı</h3>
               <p className="text-xs text-text-secondary truncate">
                 {details?.identifier || '—'}
               </p>
@@ -122,16 +125,16 @@ export default function ShipsGoDetailsDrawer({
             </div>
           ) : !details ? (
             <p className="text-center text-text-secondary text-sm py-10 px-5">
-              ShipsGo bilgisi bulunamadı.
+              G-Radar bilgisi bulunamadı.
             </p>
-          ) : !details.shipsGoEnabled ? (
+          ) : !details.gRadarEnabled ? (
             <p className="text-center text-text-secondary text-sm py-10 px-5">
-              Bu yük için ShipsGo entegrasyonu açık değil.
+              Bu yük için G-Radar entegrasyonu açık değil.
             </p>
-          ) : !details.shipsGoTrackingId ? (
+          ) : !details.gRadarTrackingId ? (
             <div className="m-5 rounded-xl border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                ShipsGo bu yük için açık ancak henüz veri çekilmedi.
+                G-Radar bu yük için açık ancak henüz veri çekilmedi.
                 Liste üzerinde "Bilgileri Getir" butonunu kullanın.
               </p>
             </div>
@@ -154,10 +157,10 @@ export default function ShipsGoDetailsDrawer({
                   <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg flex-shrink-0">history</span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Tamamlanmış yük — geçmiş ShipsGo verisi
+                      Tamamlanmış yük — geçmiş G-Radar verisi
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      ShipsGo bu yük için senkronu durdurdu. Aşağıdakiler son senkronlanan kayıttır; yeni güncelleme alınmaz.
+                      G-Radar bu yük için senkronu durdurdu. Aşağıdakiler son senkronlanan kayıttır; yeni güncelleme alınmaz.
                     </p>
                   </div>
                 </div>
@@ -166,11 +169,23 @@ export default function ShipsGoDetailsDrawer({
               {/* Status header */}
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">ShipsGo Durumu</p>
-                    <p className="text-xl font-bold text-text-main">
-                      {details.shipsGoStatus || '—'}
+                  <div className="min-w-0">
+                    <p className="text-xs text-text-secondary uppercase tracking-wide">G-Radar Durumu</p>
+                    <p className="text-xl font-bold text-text-main flex items-center gap-2">
+                      {statusInfo?.icon && (
+                        <span className={`material-symbols-outlined text-2xl ${statusToneText(statusInfo.tone)}`}>
+                          {statusInfo.icon}
+                        </span>
+                      )}
+                      {statusInfo?.label || '—'}
                     </p>
+                    {/* Ham kodu da bırakıyoruz: sağlayıcıyla konuşurken ya da
+                        sözlükte olmayan yeni bir kod geldiğinde referans lazım. */}
+                    {statusInfo && (
+                      <p className="text-[11px] text-text-secondary mt-0.5 font-mono">
+                        {statusInfo.raw}
+                      </p>
+                    )}
                   </div>
                   {details.lastSyncAt && (
                     <div className="text-right">
@@ -186,7 +201,7 @@ export default function ShipsGoDetailsDrawer({
               {/* Key facts grid */}
               <div className="grid grid-cols-2 gap-3">
                 <Fact label="Gemi / Uçuş" value={details.vesselName} icon="directions_boat" />
-                <Fact label="Taşıyıcı" value={details.shipsGoCarrier} icon="local_shipping" />
+                <Fact label="Taşıyıcı" value={details.gRadarCarrier} icon="local_shipping" />
                 <Fact label="Mevcut Konum" value={details.currentLocation} icon="my_location" full />
                 <Fact
                   label="ETA"
@@ -211,7 +226,7 @@ export default function ShipsGoDetailsDrawer({
                   <p className="text-xs text-yellow-800 dark:text-yellow-300 flex items-center gap-1">
                     <span className="material-symbols-outlined text-base">lock</span>
                     <span>
-                      Manuel girilen alanlar (ShipsGo güncellemiyor):
+                      Manuel girilen alanlar (G-Radar güncellemiyor):
                       {' '}
                       <strong>{details.manuallyOverriddenFields.map(humanFieldName).join(', ')}</strong>
                     </span>
@@ -219,18 +234,37 @@ export default function ShipsGoDetailsDrawer({
                 </div>
               )}
 
-              {/* Movements timeline */}
-              {movements.length > 0 && (
+              {/* Yük geçmişi — sağlayıcı panelindeki gibi kronolojik sırada
+                  (çıkıştan varışa), gerçekleşen ve tahmini olaylar ayrı
+                  gösteriliyor. Deniz yüklerinde her konteyner kendi başlığı
+                  altında; çok konteynerli yükte hangi kutunun nerede olduğu
+                  karışmasın. */}
+              {movementCount > 0 ? (
                 <div>
-                  <h4 className="text-sm font-semibold text-text-main mb-2 flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-primary">timeline</span>
-                    Hareketler
+                    Yük Geçmişi
+                    <span className="text-xs font-normal text-text-secondary">
+                      ({movementCount} hareket)
+                    </span>
                   </h4>
-                  <div className="space-y-2">
-                    {movements.slice().reverse().map((mv, idx) => (
-                      <MovementRow key={idx} movement={mv} />
+                  <div className="space-y-5">
+                    {movementGroups.map((group, groupIdx) => (
+                      <MovementGroup
+                        key={group.containerNumber || groupIdx}
+                        group={group}
+                        showHeader={movementGroups.length > 1 || !!group.containerNumber}
+                      />
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 text-center">
+                  <span className="material-symbols-outlined text-2xl text-text-secondary">timeline</span>
+                  <p className="text-sm text-text-secondary mt-1">Henüz hareket kaydı yok.</p>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Taşıyıcı ilk hareketi bildirdiğinde burada listelenir — "Yenile" ile kontrol edebilirsiniz.
+                  </p>
                 </div>
               )}
               </div>
@@ -241,12 +275,12 @@ export default function ShipsGoDetailsDrawer({
         <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
           <p className="text-[11px] text-text-secondary">
             {details?.status === 'COMPLETED'
-              ? 'Tamamlanmış yüklerde ShipsGo senkronu durur.'
+              ? 'Tamamlanmış yüklerde G-Radar senkronu durur.'
               : 'Yenileme ücretsizdir — kredi tüketmez.'}
           </p>
           <button
             onClick={handleRefresh}
-            disabled={refreshing || !canRefresh || !details?.shipsGoTrackingId || details?.status === 'COMPLETED'}
+            disabled={refreshing || !canRefresh || !details?.gRadarTrackingId || details?.status === 'COMPLETED'}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
           >
             <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
@@ -274,25 +308,110 @@ function Fact({ label, value, icon, highlight, full }) {
   );
 }
 
-function MovementRow({ movement }) {
-  const ts = movement?.timestamp || movement?.date || movement?.event_date;
-  const event = movement?.event || movement?.status;
-  const location = movement?.location;
+/** Durum tonunu metin rengine çevirir (rozet ve başlık ikonu paylaşıyor). */
+function statusToneText(tone) {
+  switch (tone) {
+    case 'active': return 'text-primary';
+    case 'success': return 'text-green-600 dark:text-green-400';
+    case 'warn': return 'text-yellow-600 dark:text-yellow-400';
+    case 'info': return 'text-blue-600 dark:text-blue-400';
+    default: return 'text-text-secondary';
+  }
+}
+
+/**
+ * Tek konteynerin (ya da hava yükünün) hareket listesi. Son gerçekleşen
+ * hareket "şu an burada" olarak vurgulanıyor — panelde de kullanıcının ilk
+ * aradığı bilgi bu.
+ */
+function MovementGroup({ group, showHeader }) {
+  const lastActualIndex = group.movements.reduce(
+    (found, mv, idx) => (mv.actual ? idx : found),
+    -1,
+  );
+
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2">
-      <span className="mt-1 w-2 h-2 rounded-full bg-primary flex-shrink-0"></span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-text-main truncate">{event || 'Hareket'}</p>
-        {location && (
-          <p className="text-xs text-text-secondary truncate">{location}</p>
+    <div>
+      {showHeader && group.containerNumber && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="material-symbols-outlined text-sm text-text-secondary">inventory_2</span>
+          <span className="text-xs font-semibold text-text-main font-mono">
+            {group.containerNumber}
+          </span>
+        </div>
+      )}
+      <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-3">
+        {group.movements.map((mv, idx) => (
+          <MovementRow
+            key={mv.key}
+            movement={mv}
+            isCurrent={idx === lastActualIndex}
+          />
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/**
+ * Tek hareket satırı. Gerçekleşen olay dolu nokta ve normal metinle;
+ * tahmini olay içi boş nokta, soluk metin ve "tahmini" etiketiyle çiziliyor —
+ * kullanıcı henüz olmamış bir olayı olmuş sanmasın.
+ */
+function MovementRow({ movement, isCurrent }) {
+  const { eventLabel, location, vehicle, voyage, timestamp, actual } = movement;
+
+  return (
+    <li className="ml-4">
+      <span
+        className={`absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full border-2 ${
+          isCurrent
+            ? 'bg-primary border-primary ring-4 ring-primary/20'
+            : actual
+              ? 'bg-primary/70 border-primary/70'
+              : 'bg-white dark:bg-background-dark border-gray-300 dark:border-gray-600'
+        }`}
+        aria-hidden="true"
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm font-medium ${actual ? 'text-text-main' : 'text-text-secondary'}`}>
+            {eventLabel}
+            {!actual && (
+              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
+                tahmini
+              </span>
+            )}
+            {isCurrent && (
+              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                şu an
+              </span>
+            )}
+          </p>
+          {location && (
+            <p className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+              <span className="material-symbols-outlined text-[13px]">place</span>
+              <span className="truncate">{location}</span>
+            </p>
+          )}
+          {(vehicle || voyage) && (
+            <p className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+              <span className="material-symbols-outlined text-[13px]">navigation</span>
+              <span className="truncate">
+                {vehicle}
+                {vehicle && voyage ? ' · ' : ''}
+                {voyage ? `Sefer ${voyage}` : ''}
+              </span>
+            </p>
+          )}
+        </div>
+        {timestamp && (
+          <p className={`text-xs whitespace-nowrap ${actual ? 'text-text-secondary' : 'text-text-secondary/70'}`}>
+            {timestamp.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+          </p>
         )}
       </div>
-      {ts && (
-        <p className="text-xs text-text-secondary whitespace-nowrap">
-          {new Date(ts).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
-        </p>
-      )}
-    </div>
+    </li>
   );
 }
 
@@ -302,9 +421,9 @@ function humanFieldName(field) {
     cargoArrivalDate: 'Varış Tarihi',
     vesselName: 'Gemi/Uçuş',
     currentLocation: 'Mevcut Konum',
-    shipsGoStatus: 'Durum',
-    shipsGoCarrier: 'Taşıyıcı',
-    shipsGoRouteJson: 'Rota',
+    gRadarStatus: 'Durum',
+    gRadarCarrier: 'Taşıyıcı',
+    gRadarRouteJson: 'Rota',
   };
   return labels[field] || field;
 }
