@@ -50,7 +50,20 @@ const STATUS_LABELS = {
  * sözlükten karşılanıyor çünkü normalize anahtar ikisini de tek biçime indiriyor.
  */
 const EVENT_LABELS = {
-  // Deniz — konteyner hareketleri
+  // Deniz — sağlayıcının kısa kodları.
+  // LOAD / DEPA / ARRV / DISC canlı veride birebir görüldü (17.08.2026).
+  LOAD: 'Gemiye yüklendi',
+  DEPA: 'Gemi limandan ayrıldı',
+  ARRV: 'Gemi limana vardı',
+  DISC: 'Gemiden indirildi',
+  // Aşağıdakiler aynı 4 harfli aileden çıkarım — henüz canlı veride
+  // görülmedi. Panelde farklı bir karşılığını görürsen düzeltilmeli.
+  PICK: 'Boş konteyner teslim alındı',
+  RETU: 'Boş konteyner iade edildi',
+  GTIN: 'Terminale giriş yapıldı',
+  GTOT: 'Terminalden çıkış yapıldı',
+
+  // Deniz — açık yazılmış konteyner hareketleri
   EMPTY_TO_SHIPPER: 'Boş konteyner göndericiye verildi',
   EMPTY_PICKUP: 'Boş konteyner teslim alındı',
   GATE_IN: 'Terminale giriş yapıldı',
@@ -147,31 +160,58 @@ function pick(source, ...keys) {
   return null;
 }
 
-/** location hem düz metin hem { name, country } nesnesi olarak gelebiliyor. */
-function readLocation(value) {
-  if (!value) return null;
+/**
+ * Bir değeri gösterilebilir metne indirir.
+ *
+ * Sağlayıcı iç içe nesneler gönderiyor ve derinlik alandan alana değişiyor:
+ * location bazen "NINGBO", bazen { name: "NINGBO", country: "China" }, bazen
+ * de { name: "NINGBO", country: { name: "China", code: "CN" } }. Ham değeri
+ * doğrudan şablona gömmek bu son durumda ekrana "[object Object]" basıyordu.
+ *
+ * Nesneden okunabilir bir ad çıkaramazsa null döner — ekranda çöp göstermek
+ * yerine o parçayı hiç göstermemek daha iyi.
+ */
+function readText(value, depth = 0) {
+  if (value === null || value === undefined) return null;
   if (typeof value === 'string') return value.trim() || null;
-  if (typeof value === 'object') {
-    const name = pick(value, 'name', 'location', 'city', 'port', 'code');
-    const country = pick(value, 'country', 'country_name', 'country_code');
-    if (name && country && !String(name).includes(String(country))) {
-      return `${name}, ${country}`;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) {
+    // Dizi geldiyse ilk okunabilir öğeyi al (ör. birden çok isim varyantı).
+    for (const item of value) {
+      const text = readText(item, depth + 1);
+      if (text) return text;
     }
-    return name ? String(name) : null;
+    return null;
+  }
+  if (typeof value === 'object') {
+    if (depth > 2) return null; // sonsuz iç içe geçmeye karşı emniyet
+    const nested = pick(value, 'name', 'value', 'label', 'description', 'code', 'iso', 'iata');
+    return nested === null ? null : readText(nested, depth + 1);
   }
   return null;
 }
 
+/** location: düz metin ya da { name, country } — country'nin kendisi de nesne olabilir. */
+function readLocation(value) {
+  const direct = typeof value === 'string' ? readText(value) : null;
+  if (direct) return direct;
+  if (!value || typeof value !== 'object') return null;
+
+  const name = readText(pick(value, 'name', 'location', 'city', 'port', 'code'));
+  const country = readText(pick(value, 'country', 'country_name', 'country_code'));
+  if (!name) return country;
+  // "ISTANBUL (AMBARLI), Türkiye" — ülke adı zaten yer adının içindeyse tekrarlama.
+  if (country && !name.toLocaleUpperCase('tr').includes(country.toLocaleUpperCase('tr'))) {
+    return `${name}, ${country}`;
+  }
+  return name;
+}
+
 /** vessel: { name, imo } / flight: "TK1979" — ikisi de tek alana iniyor. */
 function readVehicle(movement) {
-  const vessel = movement?.vessel;
-  if (vessel && typeof vessel === 'object') {
-    const name = pick(vessel, 'name', 'vessel_name');
-    if (name) return String(name);
-  }
-  if (typeof vessel === 'string' && vessel.trim()) return vessel.trim();
-  const flight = pick(movement, 'flight', 'flight_number', 'flight_no', 'vessel_name');
-  return flight ? String(flight) : null;
+  const vessel = readText(movement?.vessel);
+  if (vessel) return vessel;
+  return readText(pick(movement, 'flight', 'flight_number', 'flight_no', 'vessel_name'));
 }
 
 /**
@@ -183,9 +223,18 @@ export function parseGRadarDate(value) {
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const text = String(value).trim();
   if (!text) return null;
-  const iso = /^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}/.test(text)
-    ? text.replace(' ', 'T')
-    : text;
+
+  let iso = text;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    // Yalnızca gün geldi. Böyle bir metni new Date() UTC gece yarısı sayar;
+    // UTC'nin gerisindeki bir saat diliminde tarih bir gün geriye kayar.
+    // Saati açıkça vererek yerel gece yarısına sabitliyoruz.
+    iso = `${text}T00:00:00`;
+  } else if (/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}/.test(text)) {
+    // Sağlayıcı "YYYY-MM-DD HH:mm:ss" gönderiyor (arada T yok). Chrome bunu
+    // yutuyor ama Safari NaN döndürüyor, o yüzden ayracı elle düzeltiyoruz.
+    iso = text.replace(' ', 'T');
+  }
   const parsed = new Date(iso);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -202,9 +251,19 @@ function normalizeMovement(raw, index) {
 
   const event = pick(raw, 'event', 'event_name', 'description', 'movement', 'status_description');
   const rawStatus = pick(raw, 'status', 'event_status', 'type');
-  const timestamp = parseGRadarDate(
-    pick(raw, 'timestamp', 'date', 'event_date', 'datetime', 'time', 'actual_date', 'estimated_date'),
+
+  // Ham tarih metnini saklıyoruz: sağlayıcı kimi alanlarda yalnızca gün
+  // (2026-07-07), kimi alanlarda gün + saat gönderiyor. Ayrımı bilmeden
+  // biçimlendirirsek olmayan bir saati varmış gibi gösteririz — gün bilgisi
+  // saat 00:00 diye ekrana basılır ve kullanıcı bunu gerçek sanır.
+  const rawTimestamp = pick(
+    raw, 'timestamp', 'date', 'event_date', 'datetime', 'time', 'actual_date', 'estimated_date',
   );
+  const rawTimestampText = rawTimestamp === null ? null : String(rawTimestamp).trim();
+  const timestamp = parseGRadarDate(rawTimestamp);
+  // Saat bileşeni gerçekten var mı? (00:00 da geçerli bir saattir — burada
+  // aranan, metinde saat alanının bulunup bulunmadığı.)
+  const hasTime = !!rawTimestampText && /\d{1,2}:\d{2}/.test(rawTimestampText);
 
   const statusKey = normalizeKey(rawStatus);
   let actual;
@@ -228,11 +287,39 @@ function normalizeMovement(raw, index) {
     eventLabel: gRadarEventLabel(eventSource) ?? 'Hareket',
     location: readLocation(pick(raw, 'location', 'port', 'place', 'city')),
     vehicle: readVehicle(raw),
-    voyage: pick(raw, 'voyage', 'voyage_number', 'voyage_no'),
+    voyage: readText(pick(raw, 'voyage', 'voyage_number', 'voyage_no')),
     timestamp,
+    rawTimestamp: rawTimestampText,
+    hasTime,
     actual,
     raw,
   };
+}
+
+/**
+ * Hiçbir şeyi ayırt etmeyen saatleri gizler.
+ *
+ * Taşıyıcılar deniz hareketlerini çoğu zaman gün hassasiyetinde bildiriyor,
+ * ama sağlayıcı yine de saat alanını dolduruyor. Sonuç canlı veride şöyle
+ * görünüyordu: yükleme ve kalkış aynı dakikada, varış ve tahliye aynı
+ * dakikada. Gemi yüklenip aynı dakikada kalkmaz — o saat gerçek bir olay
+ * anı değil, dolgu değer.
+ *
+ * Kural: bir grupta aynı zaman damgası birden fazla harekette geçiyorsa, o
+ * damga olayları birbirinden ayırmıyor demektir; saat gösterilmez, yalnızca
+ * gün yazılır. Hava hareketlerinde damgalar gerçekten farklı olduğu için
+ * (kalkış 23:50, iniş 08:40) saat olduğu gibi kalır.
+ *
+ * Ham değer her hâlükârda `rawTimestamp` içinde duruyor — arayüz onu
+ * tooltip'te gösteriyor, yani hiçbir bilgi kaybolmuyor.
+ */
+function suppressAmbiguousTimes(movements) {
+  const stamps = movements
+    .filter((mv) => mv.timestamp && mv.hasTime)
+    .map((mv) => mv.timestamp.getTime());
+  const allDistinct = new Set(stamps).size === stamps.length;
+  if (allDistinct) return movements;
+  return movements.map((mv) => (mv.hasTime ? { ...mv, hasTime: false } : mv));
 }
 
 /** Zaman sırasına dizer; tarihsizler sırayı bozmasın diye sona düşer. */
@@ -270,9 +357,9 @@ export function extractMovementGroups(routeJson) {
 
   // Hava: düz movements listesi
   if (Array.isArray(parsed.movements) && parsed.movements.length > 0) {
-    const movements = sortChronologically(
+    const movements = suppressAmbiguousTimes(sortChronologically(
       parsed.movements.map(normalizeMovement).filter(Boolean),
-    );
+    ));
     if (movements.length > 0) groups.push({ containerNumber: null, movements });
   }
 
@@ -281,7 +368,9 @@ export function extractMovementGroups(routeJson) {
     parsed.containers.forEach((container, containerIndex) => {
       if (!container || typeof container !== 'object') return;
       const list = Array.isArray(container.movements) ? container.movements : [];
-      const movements = sortChronologically(list.map(normalizeMovement).filter(Boolean));
+      const movements = suppressAmbiguousTimes(
+        sortChronologically(list.map(normalizeMovement).filter(Boolean)),
+      );
       if (movements.length === 0) return;
       groups.push({
         containerNumber: pick(container, 'container_number', 'number', 'containerNumber', 'name')

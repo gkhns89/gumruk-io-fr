@@ -248,7 +248,9 @@ export default function GRadarDetailsDrawer({
                       ({movementCount} hareket)
                     </span>
                   </h4>
-                  <div className="space-y-5">
+                  {/* Gruplar artık kendi çerçevesi olan katlanır kutular —
+                      aralarındaki boşluk buna göre daraltıldı. */}
+                  <div className="space-y-2">
                     {movementGroups.map((group, groupIdx) => (
                       <MovementGroup
                         key={group.containerNumber || groupIdx}
@@ -319,36 +321,120 @@ function statusToneText(tone) {
   }
 }
 
+/** Tarihi kaynakta saat varsa saatle, yoksa yalnızca gün olarak yazar. */
+function formatMovementDate(movement) {
+  if (!movement?.timestamp) return null;
+  return movement.hasTime
+    ? movement.timestamp.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })
+    : movement.timestamp.toLocaleDateString('tr-TR');
+}
+
 /**
- * Tek konteynerin (ya da hava yükünün) hareket listesi. Son gerçekleşen
- * hareket "şu an burada" olarak vurgulanıyor — panelde de kullanıcının ilk
- * aradığı bilgi bu.
+ * Tek konteynerin (ya da hava yükünün) hareket listesi.
+ *
+ * Varsayılan olarak kapalı ve yalnızca son durumu gösteriyor — kullanıcının
+ * ilk aradığı bilgi bu, geri kalan geçmiş paneli gereksiz uzatıyordu. Başlığa
+ * basınca tüm hareketler aşağı doğru açılıyor.
+ *
+ * Açılma animasyonu grid-rows 0fr → 1fr ile yapılıyor: max-height tahmin
+ * etmeye gerek kalmadan gerçek yüksekliğe yumuşak geçiş sağlıyor, hareket
+ * sayısı konteynerden konteynere değiştiği için bu önemli.
  */
 function MovementGroup({ group, showHeader }) {
+  const [expanded, setExpanded] = useState(false);
+
   const lastActualIndex = group.movements.reduce(
     (found, mv, idx) => (mv.actual ? idx : found),
     -1,
   );
+  // "Son durum": son gerçekleşen hareket. Hiçbiri gerçekleşmemişse (yük daha
+  // yola çıkmamış, hepsi tahmini) ilk hareketi gösteriyoruz — boş bırakmaktansa
+  // "sırada ne var" bilgisi işe yarar.
+  const currentIndex = lastActualIndex >= 0 ? lastActualIndex : 0;
+  const current = group.movements[currentIndex];
+  const total = group.movements.length;
+  const currentDate = formatMovementDate(current);
 
   return (
-    <div>
-      {showHeader && group.containerNumber && (
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="material-symbols-outlined text-sm text-text-secondary">inventory_2</span>
-          <span className="text-xs font-semibold text-text-main font-mono">
-            {group.containerNumber}
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        aria-expanded={expanded}
+        className="w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+      >
+        <span
+          className={`mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 border-2 ${
+            current?.actual
+              ? 'bg-primary border-primary ring-4 ring-primary/20'
+              : 'bg-white dark:bg-background-dark border-gray-300 dark:border-gray-600'
+          }`}
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          {showHeader && group.containerNumber && (
+            <p className="text-[11px] font-mono text-text-secondary flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px]">inventory_2</span>
+              {group.containerNumber}
+            </p>
+          )}
+          <p className={`text-sm font-medium ${current?.actual ? 'text-text-main' : 'text-text-secondary'}`}>
+            {current?.eventLabel ?? 'Hareket'}
+            {current && !current.actual && (
+              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
+                tahmini
+              </span>
+            )}
+          </p>
+          {current?.location && (
+            <p className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+              <span className="material-symbols-outlined text-[13px]">place</span>
+              <span className="truncate">{current.location}</span>
+            </p>
+          )}
+          <p className="text-[11px] text-text-secondary mt-1">
+            {expanded ? 'Geçmişi gizle' : `Tüm geçmişi göster (${total} hareket)`}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          {currentDate && (
+            <span
+              className="text-xs text-text-secondary whitespace-nowrap"
+              title={current?.rawTimestamp ? `G-Radar'dan gelen ham değer: ${current.rawTimestamp}` : undefined}
+            >
+              {currentDate}
+            </span>
+          )}
+          <span
+            className={`material-symbols-outlined text-base text-text-secondary transition-transform duration-300 ${
+              expanded ? 'rotate-180' : ''
+            }`}
+          >
+            expand_more
           </span>
         </div>
-      )}
-      <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-3">
-        {group.movements.map((mv, idx) => (
-          <MovementRow
-            key={mv.key}
-            movement={mv}
-            isCurrent={idx === lastActualIndex}
-          />
-        ))}
-      </ol>
+      </button>
+
+      <div
+        // Kapalıyken içerik DOM'da duruyor (animasyon için gerekli) ama ekran
+        // okuyucuya sunulmuyor — yoksa görünmeyen onlarca hareket okunurdu.
+        aria-hidden={!expanded}
+        className={`grid transition-all duration-300 ease-out ${
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-5 mr-3 mb-3 mt-1 space-y-3">
+            {group.movements.map((mv, idx) => (
+              <MovementRow
+                key={mv.key}
+                movement={mv}
+                isCurrent={idx === currentIndex}
+              />
+            ))}
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }
@@ -359,7 +445,8 @@ function MovementGroup({ group, showHeader }) {
  * kullanıcı henüz olmamış bir olayı olmuş sanmasın.
  */
 function MovementRow({ movement, isCurrent }) {
-  const { eventLabel, location, vehicle, voyage, timestamp, actual } = movement;
+  const { eventLabel, location, vehicle, voyage, timestamp, rawTimestamp, actual } = movement;
+  const formattedDate = formatMovementDate(movement);
 
   return (
     <li className="ml-4">
@@ -406,8 +493,14 @@ function MovementRow({ movement, isCurrent }) {
           )}
         </div>
         {timestamp && (
-          <p className={`text-xs whitespace-nowrap ${actual ? 'text-text-secondary' : 'text-text-secondary/70'}`}>
-            {timestamp.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+          // Saat yalnızca kaynakta gerçekten varsa gösteriliyor (bkz.
+          // formatMovementDate). title: sağlayıcının gönderdiği ham metin —
+          // "bu saat doğru mu" sorusu çıktığında üzerine gelip bakılabilsin.
+          <p
+            className={`text-xs whitespace-nowrap ${actual ? 'text-text-secondary' : 'text-text-secondary/70'}`}
+            title={rawTimestamp ? `G-Radar'dan gelen ham değer: ${rawTimestamp}` : undefined}
+          >
+            {formattedDate}
           </p>
         )}
       </div>
