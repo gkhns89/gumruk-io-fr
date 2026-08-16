@@ -6,6 +6,8 @@ import { LEGAL, hasPlaceholders } from "./legalInfo";
 import { applyDocumentHead, injectJsonLd, breadcrumbSchema } from "../../utils/seo";
 import emblemLight from "../../assets/brand/emblem-light.png";
 import emblemDark from "../../assets/brand/emblem-dark.png";
+import lockupLight from "../../assets/brand/lockup-light.png";
+import lockupDark from "../../assets/brand/lockup-dark.png";
 
 /**
  * Yasal sayfaların ortak çerçevesi.
@@ -79,11 +81,15 @@ export default function LegalLayout({ title, intro, path, description, children 
     <div className="landing-root min-h-screen bg-white transition-colors duration-300 dark:bg-brand-navy">
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-brand-navy/85">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={emblemLight} alt="" className="h-9 w-9 dark:hidden" />
-            <img src={emblemDark} alt="" className="hidden h-9 w-9 dark:block" />
-            <span className="font-brand text-lg font-bold text-brand-navy dark:text-white">
-              {LEGAL.brand}
+          {/* Tanıtım sayfasının header'ıyla aynı: dar ekranda amblem, sm ve üstünde lockup */}
+          <Link to="/" className="flex items-center" title={LEGAL.brand}>
+            <span className="sm:hidden">
+              <img src={emblemLight} alt={LEGAL.brand} className="h-9 w-9 dark:hidden" />
+              <img src={emblemDark} alt={LEGAL.brand} className="hidden h-9 w-9 dark:block" />
+            </span>
+            <span className="hidden sm:block">
+              <img src={lockupLight} alt={LEGAL.brand} className="h-8 w-auto dark:hidden" />
+              <img src={lockupDark} alt={LEGAL.brand} className="hidden h-8 w-auto dark:block" />
             </span>
           </Link>
 

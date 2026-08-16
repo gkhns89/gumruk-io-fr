@@ -4,6 +4,8 @@ import { useAuth } from "../../../hooks/useAuth";
 import ThemeToggle from "../../../components/common/ThemeToggle";
 import emblemLight from "../../../assets/brand/emblem-light.png";
 import emblemDark from "../../../assets/brand/emblem-dark.png";
+import lockupLight from "../../../assets/brand/lockup-light.png";
+import lockupDark from "../../../assets/brand/lockup-dark.png";
 
 const NAV_LINKS = [
   { href: "#ozellikler", label: "Özellikler" },
@@ -26,12 +28,21 @@ export default function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200/80 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-brand-navy/85">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-        {/* Logo */}
-        <a href="#hero" className="flex items-center gap-3">
-          <img src={emblemLight} alt="Gümrük.io" className="h-9 w-9 flex-shrink-0 dark:hidden" />
-          <img src={emblemDark} alt="Gümrük.io" className="hidden h-9 w-9 flex-shrink-0 dark:block" />
-          <span className="font-brand text-lg font-bold text-brand-navy dark:text-white">
-            Gümrük.io
+        {/* Logo — uygulama header'ıyla aynı desen: dar ekranda amblem, sm ve üstünde
+            amblem + kelime markasını birlikte taşıyan lockup. Yazı ayrı <span> olarak
+            değil görselin içinde; iki yerde farklı yazı tipi/aralık oluşmasın diye. */}
+        <a href="#hero" className="flex items-center" title="Gümrük.io">
+          <span className="sm:hidden">
+            <img src={emblemLight} alt="Gümrük.io" className="h-9 w-9 dark:hidden" />
+            <img src={emblemDark} alt="Gümrük.io" className="hidden h-9 w-9 dark:block" />
+          </span>
+          <span className="hidden sm:block">
+            <img src={lockupLight} alt="Gümrük.io" className="h-8 w-auto lg:h-9 dark:hidden" />
+            <img
+              src={lockupDark}
+              alt="Gümrük.io"
+              className="hidden h-8 w-auto lg:h-9 dark:block"
+            />
           </span>
         </a>
 

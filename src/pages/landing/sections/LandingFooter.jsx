@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { CONTACT } from "../contactInfo";
-import emblemLight from "../../../assets/brand/emblem-light.png";
-import emblemDark from "../../../assets/brand/emblem-dark.png";
+import lockupLight from "../../../assets/brand/lockup-light.png";
+import lockupDark from "../../../assets/brand/lockup-dark.png";
 
 const COLUMNS = [
   {
@@ -34,12 +34,10 @@ export default function LandingFooter() {
         <div className="grid gap-10 md:grid-cols-4">
           {/* Marka */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3">
-              <img src={emblemLight} alt="Gümrük.io" className="h-9 w-9 dark:hidden" />
-              <img src={emblemDark} alt="Gümrük.io" className="hidden h-9 w-9 dark:block" />
-              <span className="font-brand text-lg font-bold text-brand-navy dark:text-white">
-                Gümrük.io
-              </span>
+            {/* Footer'da yer bol — her ekranda kelime markası (lockup) */}
+            <div className="flex items-center">
+              <img src={lockupLight} alt="Gümrük.io" className="h-9 w-auto dark:hidden" />
+              <img src={lockupDark} alt="Gümrük.io" className="hidden h-9 w-auto dark:block" />
             </div>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-text-secondary">
               Gümrük müşavirlikleri için uçtan uca takip sistemi. Beyannameden antrepoya, kurye
