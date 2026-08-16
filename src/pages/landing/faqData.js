@@ -24,12 +24,12 @@ export const QUESTIONS = [
     a: "Her müşteri firmayla olan vekalet ilişkiniz sistemde kayıtlı tutulur; başlangıç ve bitiş tarihleriyle birlikte listelenir ve kalan gün sayısı otomatik hesaplanır. Süresi dolmak üzere olan vekaletler listede öne çıkar, böylece süresi geçmiş bir vekaletle işlem yapma riski ortadan kalkar.",
   },
   {
-    q: "Konteyner takibi nasıl çalışıyor?",
-    a: "İlgili gümrük dosyasına konteyner numarasını girmeniz yeterli. Sistem seferi izler; konum, uğranan limanlar ve tahmini varış tarihi dosyanın altında güncellenir. Ayrı bir yerde takip yapmanız gerekmez.",
+    q: "G-Radar nedir, yük takibi nasıl çalışıyor?",
+    a: "G-Radar, Gümrük.io içindeki canlı yük takip özelliğidir. İlgili gümrük dosyasına deniz taşımasında konteyner numarasını, hava taşımasında hava konşimento (AWB) numarasını girmeniz yeterli. Sistem seferi izler; konum, uğranan limanlar veya uçuş durumu ve tahmini varış tarihi dosyanın altında güncellenir. Ayrı bir yerde takip yapmanız gerekmez.",
   },
   {
-    q: "Konteyner takibi abonelik fiyatına dahil mi?",
-    a: "Hayır. Konteyner takibi tüm planlarda kullanılabilir ancak kullandığınız kadar, sorgu başına kredi ile ücretlendirilir; abonelik bedeline dahil değildir. Kredi birim fiyatı planınıza göre değişir ve satın alma anındaki TCMB kuruyla ₺'ye çevrilir. Takip etmediğiniz bir yük için ödeme yapmazsınız.",
+    q: "G-Radar abonelik fiyatına dahil mi?",
+    a: "Hayır. G-Radar tüm planlarda kullanılabilir ancak kullandığınız kadar, sorgu başına kredi ile ücretlendirilir; abonelik bedeline dahil değildir. Kredi birim fiyatı planınıza göre değişir ve satın alma anındaki TCMB kuruyla ₺'ye çevrilir. Takip etmediğiniz bir yük için ödeme yapmazsınız.",
   },
   {
     q: "Kullanıcı veya müşteri firma limitim dolarsa ne olur?",

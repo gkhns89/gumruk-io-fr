@@ -10,8 +10,8 @@ const FEATURES = [
   },
   {
     icon: "public",
-    title: "Yük Takip",
-    text: "Konteynerlerinizin son konumu, uğradığı limanlar ve tahmini varış tarihi canlı haritada. Gemi hareket ettikçe kayıt kendini günceller, müşteriyi aramaya gerek kalmaz.",
+    title: "G-Radar ile yük takibi",
+    text: "Konteyner numarasını ya da hava konşimentosunu girin; son konum, uğranan limanlar ve tahmini varış tarihi canlı haritada belirsin. Sefer ilerledikçe kayıt kendini günceller, müşteriyi aramaya gerek kalmaz.",
     // Abonelik bedeline dahil değil — Fiyatlandırma ve SSS ile tutarlı kalmalı
     note: "Kullanım başına ücretlendirilir",
   },

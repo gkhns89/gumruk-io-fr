@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 // Sahte sefer verisi — gerçek müşteri/sefer kaydı değil.
-// Not: takip sağlayıcısının adı bilinçli olarak hiçbir yerde geçmiyor.
+// "G-Radar" bizim özellik adımız; arkasındaki servis sağlayıcının adı hiçbir yerde geçmez.
 const TIMELINE = [
   { label: "Yükleme", place: "Shanghai", date: "22 Tem", state: "done" },
   { label: "Aktarma", place: "Singapur", date: "03 Ağu", state: "done" },
@@ -19,6 +19,11 @@ const BULLETS = [
     icon: "schedule",
     title: "Güncellenen varış tahmini",
     text: "ETA değiştiğinde kayıt kendi kendine güncellenir; müşteriye verdiğiniz tarih hep güncel kalır.",
+  },
+  {
+    icon: "flight",
+    title: "Deniz ve hava birlikte",
+    text: "Konteyner numarasıyla deniz seferini, hava konşimentosuyla (AWB) uçuşu aynı ekrandan izleyin.",
   },
   {
     icon: "link",
@@ -82,14 +87,16 @@ export default function LiveTracking() {
         {/* Sol: anlatım */}
         <div>
           <span className="text-sm font-semibold tracking-wide text-brand-blue uppercase dark:text-brand-sky">
-            Canlı Takip
+            G-Radar · Canlı Takip
           </span>
           <h2 className="font-brand mt-3 text-3xl font-extrabold text-brand-navy sm:text-4xl dark:text-white">
             "Yük nerede?" sorusuna telefon açmadan cevap
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-text-secondary">
-            Konteyner numarasını girin, gerisini sistem takip etsin. Gemi hareket ettikçe konum ve
-            varış tahmini kendini günceller — müşteriniz aradığında ekranı açıp okumanız yeterli.
+            Konteyner numarasını ya da hava konşimentosunu girin, gerisini{" "}
+            <strong className="font-semibold text-text-main">G-Radar</strong> takip etsin. Sefer
+            ilerledikçe konum ve varış tahmini kendini günceller — müşteriniz aradığında ekranı
+            açıp okumanız yeterli.
           </p>
 
           <ul className="mt-9 space-y-6">

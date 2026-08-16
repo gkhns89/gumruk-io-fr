@@ -24,7 +24,7 @@ export default function Pricing() {
           </h2>
           <p className="mt-4 text-lg text-text-secondary">
             Tüm modüller her planda açık; planlar kullanıcı ve müşteri firma limitiyle ayrışıyor.
-            Yalnızca canlı konteyner takibi kullandığınız kadar ayrıca ücretlendirilir.
+            Yalnızca G-Radar canlı yük takibi kullandığınız kadar ayrıca ücretlendirilir.
           </p>
         </div>
 
@@ -173,7 +173,7 @@ export default function Pricing() {
               <ul className="mt-6 space-y-2.5 text-sm">
                 {[
                   "Sınırsız kullanıcı ve müşteri firma",
-                  "Konteyner takip kullanımı teklifte belirlenir",
+                  "G-Radar kullanımı teklifte belirlenir",
                   "Kuruma özel entegrasyon geliştirme",
                   "Özel eğitim ve kurulum desteği",
                   "Öncelikli teknik destek",
@@ -200,7 +200,7 @@ export default function Pricing() {
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-text-secondary">
           Fiyatlara KDV dahil değildir. Yıllık ödemede sözleşme süresi boyunca fiyat sabitlenir.
-          Konteyner takip kredileri satın alma anındaki TCMB kuruyla ₺'ye çevrilir.
+          G-Radar kredileri satın alma anındaki TCMB kuruyla ₺'ye çevrilir.
         </p>
       </div>
     </section>

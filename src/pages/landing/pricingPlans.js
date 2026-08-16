@@ -30,13 +30,15 @@ export const INCLUDED_FEATURES = [
 /**
  * Abonelik bedeline DAHİL OLMAYAN, kullanım başına ücretlendirilen özellikler.
  *
- * Canlı konteyner takibi kredi bazlıdır: kredi birim fiyatı plana göre değişir ve satın
- * alma anındaki TCMB kuruyla ₺'ye çevrilir (bkz. Yönetim > Plan Yönetimi). Bu yüzden
- * "her planda dahil" listesinde gösterilemez — birim fiyat bilinçli olarak yazılmıyor.
+ * G-Radar kredi bazlıdır: kredi birim fiyatı plana göre değişir ve satın alma anındaki
+ * TCMB kuruyla ₺'ye çevrilir (bkz. Yönetim > Plan Yönetimi). Bu yüzden "her planda dahil"
+ * listesinde gösterilemez — birim fiyat bilinçli olarak yazılmıyor.
+ *
+ * "G-Radar" bizim özellik adımız; arkasındaki servis sağlayıcının adı hiçbir yerde geçmez.
  */
 export const USAGE_BASED = {
-  title: "Canlı konteyner ve yük takibi",
-  note: "Tüm planlarda kullanılabilir. Sorgu başına kredi ile ücretlendirilir; birim fiyat planınıza göre değişir ve teklifte belirtilir.",
+  title: "G-Radar canlı yük takibi",
+  note: "Deniz ve hava taşımaları için tüm planlarda kullanılabilir. Sorgu başına kredi ile ücretlendirilir; birim fiyat planınıza göre değişir ve teklifte belirtilir.",
 };
 
 export const PLANS = [

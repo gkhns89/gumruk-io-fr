@@ -75,7 +75,15 @@ export function softwareApplicationSchema(plans) {
     inLanguage: "tr-TR",
     url: `${SITE}/`,
     description:
-      "Gümrük müşavirlikleri için ithalat ve ihracat işlem takibi, antrepo, kurye evrak takibi, canlı konteyner takibi, vekalet yönetimi ve raporlama.",
+      "Gümrük müşavirlikleri için ithalat ve ihracat işlem takibi, antrepo, kurye evrak takibi, G-Radar ile deniz ve hava yükü canlı takibi, vekalet yönetimi ve raporlama.",
+    featureList: [
+      "İthalat ve ihracat işlem takibi",
+      "Antrepo giriş ve çıkış takibi",
+      "G-Radar canlı yük takibi (konteyner ve hava konşimentosu)",
+      "Kurye ve evrak teslim takibi",
+      "Vekalet ve müşteri firma yönetimi",
+      "Raporlama ve cari hesap takibi",
+    ],
     publisher: { "@id": `${SITE}/#organization` },
     // Fiyatlar KDV hariç; aylık abonelik bedeli. Kullanım başına ücretlenen konteyner
     // takibi burada yok — sabit bir tutarı olmadığı için offer olarak verilemez.

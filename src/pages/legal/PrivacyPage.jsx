@@ -112,8 +112,8 @@ export default function PrivacyPage() {
               desc: "Uygulama ve veritabanı, yurt dışında yerleşik bulut altyapı sağlayıcılarında barındırılır.",
             },
             {
-              term: "Konteyner takip servisi",
-              desc: "Yük takibi için yurt dışında yerleşik bir takip servisinden yararlanılır. Bu servise yalnızca konteyner ve sefer numarası gibi taşımaya ilişkin bilgiler iletilir; kişisel veri aktarılmaz.",
+              term: "Yük takibi (G-Radar)",
+              desc: "G-Radar özelliği, yurt dışında yerleşik bir taşıma takip servisinden beslenir. Bu servise yalnızca konteyner numarası veya hava konşimento numarası gibi taşımaya ilişkin bilgiler iletilir; kişisel veri aktarılmaz.",
             },
             {
               term: "Harita servisi",

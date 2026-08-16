@@ -14,8 +14,10 @@ import React from "react";
  *       <g transform="translate(0 138)">      ← yalnızca konum
  * Aksi halde tüm taşıtlar y=0'a yığılır.
  *
- * NOT: Kamyon ve uçak burada tamamen dekoratiftir. Sistem konteyner/deniz seferini takip eder;
- * kara ve hava için canlı takip iddiası taşımaz, bu yüzden hiçbirine etiket/başlık verilmiyor.
+ * NOT: G-Radar deniz VE hava taşımasını takip ediyor (bkz. AddCargoModal `isGRadarCompatible`),
+ * yani gemi ve uçak sahnede gerçek bir yeteneği temsil ediyor. Kara taşıması takip edilmiyor —
+ * tır ve kamyonet dekoratif. Yine de hiçbirine etiket/başlık verilmiyor: sahne bir özellik
+ * listesi değil. Kara takibi eklenirse bu not güncellensin.
  */
 
 /* Sahnenin dikey düzeni (viewBox birimi) */
