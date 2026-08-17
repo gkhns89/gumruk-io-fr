@@ -87,25 +87,33 @@ export default function CargoVehicleMarker({
         </div>
       )}
 
-      {isAir ? (
-        <svg
-          viewBox="0 0 104 32"
-          className="gradar-marker__art gradar-marker__art--air"
-          style={{ transform: `rotate(${planeRotation}deg)` }}
-          aria-hidden="true"
-        >
-          <Plane />
-        </svg>
-      ) : (
-        <svg
-          viewBox="0 0 190 70"
-          className="gradar-marker__art gradar-marker__art--sea"
-          style={{ transform: `scaleX(${shipFlip})` }}
-          aria-hidden="true"
-        >
-          <ContainerShip />
-        </svg>
-      )}
+      {/* Yönelme ayrı bir katmanda: CSS animasyonundaki `transform`, elemanın
+          inline `transform`'unu tamamen ezer. Dönüş/aynalama dışta durunca
+          animasyon içeride serbest kalıyor — ve bonus olarak hareket aracın
+          KENDİ eksenine göre oluyor, yani uçağın "ileri"si gerçekten burnunun
+          baktığı yön. */}
+      <div
+        className="gradar-marker__orient"
+        style={{ transform: isAir ? `rotate(${planeRotation}deg)` : `scaleX(${shipFlip})` }}
+      >
+        {isAir ? (
+          <svg
+            viewBox="0 0 104 32"
+            className="gradar-marker__art gradar-marker__art--air"
+            aria-hidden="true"
+          >
+            <Plane />
+          </svg>
+        ) : (
+          <svg
+            viewBox="0 0 190 70"
+            className="gradar-marker__art gradar-marker__art--sea"
+            aria-hidden="true"
+          >
+            <ContainerShip />
+          </svg>
+        )}
+      </div>
 
       {/* Limanda / inişte: hareket yerine sabit bir halka — "buraya vardı". */}
       {motion === 'arrived' && <span className="gradar-marker__berth" aria-hidden="true" />}

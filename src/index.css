@@ -180,9 +180,18 @@ html {
 .gradar-marker__art--sea { width: 80px; }
 .gradar-marker__art--air { width: 58px; }
 
-/* Yolda: gemi dalgada sallanır, uçak hafifçe süzülür. */
+/* Yönelme katmanı: dönüş ve aynalama burada, animasyon içerideki çizimde.
+   İkisi aynı elemanda olamaz — CSS animasyonu inline transform'u eziyor. */
+.gradar-marker__orient {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Yolda: gemi dalgada sallanır, uçak burnu yönünde ileri geri süzülür.
+   Hareketler aracın kendi ekseninde, çünkü yönelme dıştaki katmanda. */
 .is-moving .gradar-marker__art--sea { animation: gradar-bob 4.5s ease-in-out infinite; }
-.is-moving .gradar-marker__art--air { animation: gradar-float 5s ease-in-out infinite; }
+.is-moving .gradar-marker__art--air { animation: gradar-cruise 3.4s ease-in-out infinite; }
 
 /* Gidiş yönü oku. Kapsayıcı pusula açısına döner; ok kendi içinde hep yukarı
    bakar, böylece dönme merkezi aracın konumu olur ve ok aracın "önünde" kalır. */
@@ -228,20 +237,13 @@ html {
   50%      { transform: translateY(2px)  rotate(1.5deg);  }
 }
 
-/* Aynalanmış gemi (batıya gidiş) kendi scaleX'ini inline stille taşıyor;
-   animasyon transform'u onu ezeceği için aynalamayı burada tekrarlıyoruz. */
-.is-moving .gradar-marker__art--sea[style*="scaleX(-1)"] {
-  animation-name: gradar-bob-flipped;
-}
-
-@keyframes gradar-bob-flipped {
-  0%, 100% { transform: scaleX(-1) translateY(-2px) rotate(1.5deg); }
-  50%      { transform: scaleX(-1) translateY(2px)  rotate(-1.5deg); }
-}
-
-@keyframes gradar-float {
-  0%, 100% { opacity: 1;    }
-  50%      { opacity: 0.72; }
+/* Uçak: burnu yönünde ileri geri süzülüş + hafif yalpalama. Önceden yalnızca
+   saydamlık değişiyordu, yani aslında hiç hareket etmiyordu — uçağın
+   hareketsiz göründüğü şikâyeti buydu. translateX aracın kendi ekseninde
+   olduğu için "ileri" gerçekten burnunun baktığı yön. */
+@keyframes gradar-cruise {
+  0%, 100% { transform: translateX(-3px) rotate(-1deg); }
+  50%      { transform: translateX(5px)  rotate(1deg);  }
 }
 
 @keyframes gradar-heading {
