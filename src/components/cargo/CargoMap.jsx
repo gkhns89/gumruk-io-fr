@@ -106,13 +106,12 @@ export default function CargoMap({
 
       // Point markers — placed manually so we can use HTML/CSS pins instead
       // of MapLibre's symbol layer (no sprite sheet wrangling).
-      // Şu anki konum için gemi/uçak çizimi kullanılıyor; yönü rotanın o
-      // noktadaki parçasından hesaplanıyor.
+      // Şu anki konum için gemi/uçak çizimi kullanılıyor; yön oku varışa bakıyor.
       rootsRef.current = addPinMarkers(map, parsed, {
         vehicleType,
         status,
         vesselLabel,
-        bearing: bearingAtCurrent(parsed),
+        bearing: bearingToDestination(parsed),
       });
 
       // Canlı konum yoksa (araç işaretçisi de çizilmiyor) rotanın tamamını
@@ -359,17 +358,22 @@ function normalizeToInternalShape(fc) {
   //      da tahliye edilmiş yüklerde tipik olarak vermiyor) araç büsbütün
   //      kaybolmasın diye. Bu, limana varan geminin limanda görünmesini
   //      sağlayan yedek.
-  const explicitCurrent = routePoints.find((p) => p.status === 'CURRENT');
-  const lastReached = [...routePoints].reverse()
-    .find((p) => p.status === 'CURRENT' || p.status === 'PAST');
-  const here = currentFromLine || explicitCurrent?.coordinates || lastReached?.coordinates;
+  const currentIndex = routePoints.findIndex((p) => p.status === 'CURRENT');
+  let lastReachedIndex = -1;
+  routePoints.forEach((p, i) => {
+    if (p.status === 'CURRENT' || p.status === 'PAST') lastReachedIndex = i;
+  });
+
+  const here = currentFromLine
+    || (currentIndex >= 0 ? routePoints[currentIndex].coordinates : null)
+    || (lastReachedIndex >= 0 ? routePoints[lastReachedIndex].coordinates : null);
 
   const alreadyHasCurrent = features.some((f) => f.properties?.kind === 'current');
   if (here && !alreadyHasCurrent) {
     features.push({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: here },
-      properties: { kind: 'current', label: vesselName || 'Şu an' },
+      properties: { kind: 'current', label: vesselName || '' },
     });
   }
 
@@ -405,31 +409,24 @@ function computeBounds(fc) {
 }
 
 /**
- * Rotanın, aracın bulunduğu noktadaki gidiş açısı (pusula derecesi).
+ * Aracın bulunduğu noktadan VARIŞ noktasına olan pusula açısı.
  *
- * Rota çizgisinin araca en yakın parçası bulunup o parçanın yönü alınıyor —
- * "şu an nereye doğru gidiyor" sorusunun cevabı bu. Rota tek noktadan
- * ibaretse ya da canlı konum yoksa null döner; o durumda arayüz ok
- * göstermiyor, çünkü rastgele yöne bakan bir ok yön bilgisi olmamasından
- * daha kötü.
+ * Rotanın teğeti bilerek kullanılmıyor. Yükün o anki seyir yönü aktarma
+ * limanlarında bambaşka yerlere sapıyor (Uzakdoğu hattında gemi bir süre
+ * güneye gider), ve haritaya bakan kişinin okumak istediği o değil: "yük
+ * nereye gidiyor". Varışa bakan ok bu soruyu doğrudan yanıtlıyor ve rota
+ * kıvrıldıkça oynamıyor.
+ *
+ * Varış yoksa ya da araç zaten varışın üstündeyse null döner; o durumda ok
+ * hiç çizilmiyor — rastgele yöne bakan bir ok, yön bilgisi olmamasından daha
+ * kötü.
  */
-function bearingAtCurrent(fc) {
-  const route = fc.features.find((f) => f.geometry?.type === 'LineString');
-  const current = fc.features.find((f) => f.properties?.kind === 'current');
-  const coords = route?.geometry?.coordinates;
-  const here = current?.geometry?.coordinates;
-  if (!Array.isArray(coords) || coords.length < 2 || !Array.isArray(here)) return null;
-
-  let bestIndex = 0;
-  let bestDistance = Infinity;
-  for (let i = 0; i < coords.length - 1; i += 1) {
-    const d = squaredDistanceToSegment(here, coords[i], coords[i + 1]);
-    if (d < bestDistance) {
-      bestDistance = d;
-      bestIndex = i;
-    }
-  }
-  return bearingBetween(coords[bestIndex], coords[bestIndex + 1]);
+function bearingToDestination(fc) {
+  const here = fc.features.find((f) => f.properties?.kind === 'current')?.geometry?.coordinates;
+  const target = fc.features.find((f) => f.properties?.kind === 'destination')?.geometry?.coordinates;
+  if (!Array.isArray(here) || !Array.isArray(target)) return null;
+  if (here[0] === target[0] && here[1] === target[1]) return null;
+  return bearingBetween(here, target);
 }
 
 const toRadians = (deg) => (deg * Math.PI) / 180;
@@ -443,24 +440,6 @@ function bearingBetween([lon1, lat1], [lon2, lat2]) {
   const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   const deg = (Math.atan2(y, x) * 180) / Math.PI;
   return (deg + 360) % 360;
-}
-
-/**
- * Noktanın parçaya uzaklığının karesi. Yalnızca "hangi parça daha yakın"
- * karşılaştırması için kullanıldığından karekök alınmıyor; boylam farkı
- * enleme göre daraldığı için cos(lat) ile ölçekleniyor.
- */
-function squaredDistanceToSegment(point, a, b) {
-  const scale = Math.cos(toRadians(point[1])) || 1;
-  const px = (point[0] - a[0]) * scale;
-  const py = point[1] - a[1];
-  const bx = (b[0] - a[0]) * scale;
-  const by = b[1] - a[1];
-  const lengthSq = bx * bx + by * by;
-  const t = lengthSq ? Math.max(0, Math.min(1, (px * bx + py * by) / lengthSq)) : 0;
-  const dx = px - bx * t;
-  const dy = py - by * t;
-  return dx * dx + dy * dy;
 }
 
 /**
@@ -485,9 +464,10 @@ function addPinMarkers(map, fc, vehicle) {
           vehicleType={vehicle.vehicleType}
           status={vehicle.status}
           bearing={vehicle.bearing}
-          // Gemi adı ve sefer numarası hareket kayıtlarından geliyor; yoksa
-          // geojson'un kendi etiketine düşüyoruz.
-          label={vehicle.vesselLabel || label}
+          // Yalnızca sefer numarası (hareket kayıtlarından geliyor). Geojson'un
+          // kendi etiketine düşmüyoruz: orada gemi adı var ve bilerek
+          // gösterilmiyor.
+          label={vehicle.vesselLabel}
         />,
       );
       roots.push(root);

@@ -98,10 +98,10 @@ export default function GRadarDetailsDrawer({
     return { vehicle, voyage };
   }, [movementGroups]);
 
-  // Harita etiketi: "WAN HAI 721 · Sefer W027"
-  const mapLabel = [voyageInfo.vehicle || details?.vesselName, voyageInfo.voyage && `Sefer ${voyageInfo.voyage}`]
-    .filter(Boolean)
-    .join(' · ') || null;
+  // Harita etiketi yalnızca sefer numarası. Gemi adı buradan çıkarıldı: zaten
+  // hemen altındaki künye kutusunda ve hareket satırlarında yazıyor, haritada
+  // tekrarlayınca etiket uzuyor ve yön okunun üstüne biniyordu.
+  const mapLabel = voyageInfo.voyage ? `Sefer ${voyageInfo.voyage}` : null;
 
   return (
     <>
@@ -229,11 +229,9 @@ export default function GRadarDetailsDrawer({
                   icon="directions_boat"
                 />
                 <Fact label="Taşıyıcı" value={details.gRadarCarrier} icon="local_shipping" />
-                {/* Sefer numarası yalnızca hareket kayıtlarında var; boşsa
-                    kutuyu hiç açmıyoruz, "—" ile yer kaplamasın. */}
-                {voyageInfo.voyage && (
-                  <Fact label="Sefer No" value={voyageInfo.voyage} icon="tag" />
-                )}
+                {/* Sefer numarası künyede değil, haritadaki araç etiketinde
+                    duruyor — orada gemiyle birlikte okunuyor ve künyeyi
+                    gereksiz uzatmıyor. */}
                 <Fact label="Mevcut Konum" value={details.currentLocation} icon="my_location" full />
                 <Fact
                   label="ETA"

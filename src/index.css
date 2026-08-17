@@ -148,12 +148,12 @@ html {
   pointer-events: none; /* harita sürüklemesini engellemesin */
 }
 
-/* Etiket aracın ALTINDA. 50% + 26px, geminin alt kenarının (yarı yükseklik
-   ~15px) hemen altına denk geliyor; sahnenin dibine yapıştırmak aracı
-   etiketten kopuk gösteriyordu. */
+/* Etiket aracın ALTINDA ve yön okunun erişemeyeceği kadar uzakta.
+   Ok merkeze en fazla 60px uzanıyor (bkz. --arrow); güneyi gösterdiğinde
+   etiketin üstüne biniyordu. 64px, çakışmayı kesen en yakın mesafe. */
 .gradar-marker__label {
   position: absolute;
-  top: calc(50% + 26px);
+  top: calc(50% + 64px);
   left: 50%;
   transform: translateX(-50%);
   max-width: 180px;

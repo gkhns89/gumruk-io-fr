@@ -53,8 +53,9 @@ export default function CargoVehicleMarker({
   const isAir = vehicleType === 'AIRPLANE';
   const moving = motion === 'moving';
 
-  // Rota yönü bilinmiyorsa (tek noktalı rota, bozuk geometri) ok gösterilmez —
-  // rastgele bir yöne bakan ok, yön bilgisi olmamasından daha kötü.
+  // Varış yönü bilinmiyorsa (araç zaten hedefte, tek noktalı rota, bozuk
+  // geometri) ok gösterilmez — rastgele bir yöne bakan ok, yön bilgisi
+  // olmamasından daha kötü.
   const hasBearing = typeof bearing === 'number' && Number.isFinite(bearing);
   const showArrow = moving && hasBearing;
 
@@ -72,7 +73,10 @@ export default function CargoVehicleMarker({
   // yukarısına kaydırıyordu. Bu hâliyle araç tam koordinatın üstünde duruyor.
   return (
     <div className={`gradar-marker ${moving ? 'is-moving' : ''}`}>
-      {/* Gidiş yönü oku — aracın önünde, rotanın açısında duruyor.
+      {/* Gidiş yönü oku — VARIŞ NOKTASINA bakıyor, rotanın o andaki kıvrımına
+          değil: aktarma limanına doğru sapan bir ok, "yük nereye gidiyor"
+          sorusunu yanıtlamak yerine karıştırıyor. Açı serbest (yuvalara
+          kilitlenmiyor), aracın çevresinde tam hedefin bulunduğu yöne dönüyor.
           Konumlandırma dönmüş bir kapsayıcı üzerinden yapılıyor: kapsayıcı
           pusula açısına dönüyor, ok da onun içinde sabit yukarı bakıyor. */}
       {showArrow && (
