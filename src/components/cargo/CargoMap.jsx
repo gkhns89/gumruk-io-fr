@@ -37,9 +37,6 @@ export default function CargoMap({
 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  // Araç işaretçisi React ile çiziliyor ama MapLibre marker'ı imperatif —
-  // açtığımız root'ları harita yıkılırken kapatmak için tutuyoruz.
-  const rootsRef = useRef([]);
   // Görünüm düğmesinin, efekt yeniden çalışmadan geometriye erişmesi için.
   const geometryRef = useRef(null);
   const [error, setError] = useState(null);
@@ -58,6 +55,19 @@ export default function CargoMap({
     const styleUrl = apiKey
       ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`
       : 'https://tiles.openfreemap.org/styles/liberty';
+
+    // Araç işaretçisi React ile çiziliyor ama MapLibre marker'ı imperatif, o
+    // yüzden açtığımız root'ları kapatmak bize kalıyor. Liste bilerek EFEKTE
+    // ÖZEL bir yerel değişken; ref olamaz.
+    //
+    // Ref olduğunda şu kırılıyordu: atama asenkron `load` olayının içinde
+    // yapılıyor, ref ise bütün efekt çalıştırmaları arasında paylaşılıyor.
+    // StrictMode her efekti iki kez çalıştırdığı için iki tur iç içe giriyor,
+    // birinin handler'ı diğerinin listesini eziyor ve temizlik EKRANDAKİ
+    // root'u kapatıp yenisini kaçırıyor — araç kayboluyor, pinler kalıyor
+    // (onlar React'siz). Production'da StrictMode olmadığı için yalnızca
+    // localhost'ta görülüyordu.
+    let markerRoots = [];
 
     let map;
     try {
@@ -113,7 +123,7 @@ export default function CargoMap({
       // Point markers — placed manually so we can use HTML/CSS pins instead
       // of MapLibre's symbol layer (no sprite sheet wrangling).
       // Şu anki konum için gemi/uçak çizimi kullanılıyor; yön oku varışa bakıyor.
-      rootsRef.current = addPinMarkers(map, parsed, {
+      markerRoots = addPinMarkers(map, parsed, {
         vehicleType,
         status,
         vesselLabel,
@@ -137,9 +147,10 @@ export default function CargoMap({
 
     return () => {
       // React root'unu senkron kapatmak "already rendering" uyarısı veriyor;
-      // mikro göreve atıp bu render'ın dışına çıkarıyoruz.
-      const roots = rootsRef.current;
-      rootsRef.current = [];
+      // mikro göreve atıp bu render'ın dışına çıkarıyoruz. Kapatılan liste bu
+      // efekt çalıştırmasının kendi listesi — başka bir turunkine dokunmuyor.
+      const roots = markerRoots;
+      markerRoots = [];
       queueMicrotask(() => roots.forEach((root) => root.unmount()));
       map.remove();
       mapRef.current = null;
