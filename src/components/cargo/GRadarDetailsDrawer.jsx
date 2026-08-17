@@ -6,6 +6,7 @@ import {
   countMovements,
   gRadarStatusInfo,
 } from '../../utils/gRadarLabels';
+import { describeLivePosition } from '../../utils/gRadarRoute';
 import CargoMap from './CargoMap';
 
 /**
@@ -102,6 +103,17 @@ export default function GRadarDetailsDrawer({
   // hemen altındaki künye kutusunda ve hareket satırlarında yazıyor, haritada
   // tekrarlayınca etiket uzuyor ve yön okunun üstüne biniyordu.
   const mapLabel = voyageInfo.voyage ? `Sefer ${voyageInfo.voyage}` : null;
+
+  // Konum tarifi doğrudan haritadaki canlı koordinattan üretiliyor.
+  // details.currentLocation ise sağlayıcının son HAREKET kaydından geliyor ve
+  // yalnızca yeni hareket işlendiğinde değişiyor — gemi günlerce yol aldığı
+  // hâlde metin aynı limanı göstermeye devam edebiliyor. İkisi ayrıldı:
+  // koordinattan gelen bilgi asıl değer, sağlayıcının bildirdiği son konum
+  // altında ikincil satır olarak duruyor.
+  const livePosition = useMemo(
+    () => describeLivePosition(details?.geoJson),
+    [details?.geoJson],
+  );
 
   return (
     <>
@@ -232,7 +244,17 @@ export default function GRadarDetailsDrawer({
                 {/* Sefer numarası künyede değil, haritadaki araç etiketinde
                     duruyor — orada gemiyle birlikte okunuyor ve künyeyi
                     gereksiz uzatmıyor. */}
-                <Fact label="Mevcut Konum" value={details.currentLocation} icon="my_location" full />
+                <Fact
+                  label="Mevcut Konum"
+                  value={livePosition?.summary || details.currentLocation}
+                  hint={[
+                    livePosition?.remainingText,
+                    livePosition?.legText ? livePosition.coordinateText : null,
+                    details.currentLocation ? `Son bildirilen: ${details.currentLocation}` : null,
+                  ].filter(Boolean).join(' · ')}
+                  icon="my_location"
+                  full
+                />
                 <Fact
                   label="ETA"
                   value={details.estimatedArrivalDate
@@ -324,7 +346,7 @@ export default function GRadarDetailsDrawer({
   );
 }
 
-function Fact({ label, value, icon, highlight, full }) {
+function Fact({ label, value, icon, highlight, full, hint }) {
   return (
     <div className={`${full ? 'col-span-2' : ''} rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50`}>
       <div className="flex items-center gap-1.5 mb-1">
@@ -336,6 +358,11 @@ function Fact({ label, value, icon, highlight, full }) {
       <p className={`text-sm font-medium break-words ${highlight ? 'text-primary' : 'text-text-main'}`}>
         {value || '—'}
       </p>
+      {/* İkincil satır — ana değeri destekleyen ama onunla yarışmayan bilgi
+          (kalan mesafe, koordinat, sağlayıcının bildirdiği son konum). */}
+      {hint && (
+        <p className="text-[11px] text-text-secondary mt-1 break-words">{hint}</p>
+      )}
     </div>
   );
 }
