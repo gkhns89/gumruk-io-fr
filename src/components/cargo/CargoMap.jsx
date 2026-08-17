@@ -276,16 +276,34 @@ function parseGeoJson(raw) {
 
 /**
  * The map renders against a fixed "kind"-based feature shape (route /
- * origin / destination / current — see DataInitializer's seed payload).
- * G-Radar's live geojson uses a different vocabulary: status=PAST | CURRENT
- * | FUTURE, with the vessel's live position buried inside the LineString's
- * properties.current.coordinates. This walks an arbitrary upstream payload
- * and emits a FeatureCollection in our internal shape so the rest of the
- * component stays simple — and the demo seed payloads keep rendering
- * without touching anything.
+ * origin / destination / waypoint / current — see DataInitializer's seed
+ * payload). G-Radar's live geojson uses a different vocabulary:
+ * status=PAST | CURRENT | FUTURE, with the vessel's live position sometimes
+ * buried inside the LineString's properties.current.coordinates. This walks
+ * an arbitrary upstream payload and emits a FeatureCollection in our internal
+ * shape so the rest of the component stays simple — and the demo seed
+ * payloads keep rendering without touching anything.
+ *
+ * Rol ataması SIRAYA göre yapılıyor, duruma göre değil. Önceki hâli
+ * status=PAST'ı çıkış, status=FUTURE'ı varış sayıyordu ve iki şey birden
+ * bozuluyordu:
+ *
+ *   - status=CURRENT olan nokta hiçbir kovaya girmiyordu, yani haritadan
+ *     tamamen düşüyordu. Gemi limana vardığında varış noktasının durumu
+ *     CURRENT'a döndüğü için varış işareti kayboluyordu.
+ *   - Yük tahliye edilip her nokta PAST olduğunda hepsi "çıkış" sayılıyor ve
+ *     harita baştan sona yeşil pinle doluyordu.
+ *
+ * Sırayla bakınca ilk nokta çıkış, son nokta varış — yükün nerede olduğundan
+ * bağımsız olarak doğru. Durum yalnızca aracın nerede olduğunu belirlemek
+ * için kullanılıyor.
  */
 function normalizeToInternalShape(fc) {
   const features = [];
+  const routePoints = [];
+  let currentFromLine = null;
+  let vesselName = null;
+
   for (const f of fc.features) {
     if (!f?.geometry) continue;
     const props = f.properties || {};
@@ -296,47 +314,65 @@ function normalizeToInternalShape(fc) {
         geometry: f.geometry,
         properties: { kind: 'route' },
       });
-      // G-Radar embeds the live vessel position inside the LineString feature
-      // (`properties.current.coordinates`). Lift it out as its own point so
-      // the pulsing marker layer picks it up.
+      // G-Radar canlı konumu bazen LineString'in içine gömüyor.
       const cur = props.current?.coordinates;
-      if (Array.isArray(cur) && cur.length >= 2) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: cur },
-          properties: {
-            kind: 'current',
-            label: props.vessel?.name || 'Şu an',
-          },
-        });
-      }
+      if (Array.isArray(cur) && cur.length >= 2) currentFromLine = cur;
+      if (props.vessel?.name) vesselName = props.vessel.name;
       continue;
     }
 
     if (f.geometry.type !== 'Point') continue;
 
-    // Already in our internal shape — passthrough.
+    // Already in our internal shape — passthrough (demo seed).
     if (props.kind === 'origin' || props.kind === 'destination' || props.kind === 'current') {
       features.push(f);
       continue;
     }
 
-    // G-Radar native shape: status-driven role + label from location.name.
-    const status = props.status;
-    if (status === 'PAST') {
-      features.push({
-        type: 'Feature',
-        geometry: f.geometry,
-        properties: { kind: 'origin', label: props.location?.name || 'Çıkış' },
-      });
-    } else if (status === 'FUTURE') {
-      features.push({
-        type: 'Feature',
-        geometry: f.geometry,
-        properties: { kind: 'destination', label: props.location?.name || 'Varış' },
-      });
-    }
+    routePoints.push({
+      coordinates: f.geometry.coordinates,
+      status: String(props.status || '').trim().toUpperCase(),
+      label: props.location?.name || null,
+    });
   }
+
+  routePoints.forEach((point, index) => {
+    const isFirst = index === 0;
+    const isLast = index === routePoints.length - 1;
+    // Tek noktalı rotada o nokta varış sayılıyor: elde tek bir liman varsa
+    // orası yükün gittiği yerdir, çıktığı yer değil.
+    const kind = isLast ? 'destination' : (isFirst ? 'origin' : 'waypoint');
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: point.coordinates },
+      properties: {
+        kind,
+        label: point.label || (kind === 'destination' ? 'Varış' : kind === 'origin' ? 'Çıkış' : ''),
+      },
+    });
+  });
+
+  // Aracın konumu, en güvenilirden en zayıfa doğru:
+  //   1) LineString'e gömülü canlı konum
+  //   2) durumu CURRENT olan nokta
+  //   3) ulaşılmış son nokta — sağlayıcı canlı konum vermediğinde (varmış ya
+  //      da tahliye edilmiş yüklerde tipik olarak vermiyor) araç büsbütün
+  //      kaybolmasın diye. Bu, limana varan geminin limanda görünmesini
+  //      sağlayan yedek.
+  const explicitCurrent = routePoints.find((p) => p.status === 'CURRENT');
+  const lastReached = [...routePoints].reverse()
+    .find((p) => p.status === 'CURRENT' || p.status === 'PAST');
+  const here = currentFromLine || explicitCurrent?.coordinates || lastReached?.coordinates;
+
+  const alreadyHasCurrent = features.some((f) => f.properties?.kind === 'current');
+  if (here && !alreadyHasCurrent) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: here },
+      properties: { kind: 'current', label: vesselName || 'Şu an' },
+    });
+  }
+
   return { type: 'FeatureCollection', features };
 }
 
@@ -464,7 +500,9 @@ function addPinMarkers(map, fc, vehicle) {
     const el = document.createElement('div');
     el.className = 'cargo-map-pin';
     el.innerHTML = pinHtml(kind, label);
-    new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    // Çıkış/varış pinleri aşağı sivriliyor, ucu noktaya oturmalı; ara durak
+    // ise sade bir daire, ortasından hizalanıyor.
+    new maplibregl.Marker({ element: el, anchor: kind === 'waypoint' ? 'center' : 'bottom' })
       .setLngLat(f.geometry.coordinates)
       .setPopup(label ? new maplibregl.Popup({ offset: 18, closeButton: false }).setText(label) : null)
       .addTo(map);
@@ -494,11 +532,12 @@ function pinHtml(kind, label) {
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #ef4444;"></div>
       </div>`;
   }
-  // Canlı konum buraya düşmez — o artık CargoVehicleMarker ile React
-  // tarafında çiziliyor (bkz. addPinMarkers). Tanınmayan bir tür gelirse
-  // sade bir nokta bırakıyoruz ki işaretçi büsbütün kaybolmasın.
+  // Ara duraklar (aktarma limanları) — küçük ve sessiz. Adları yalnızca
+  // üstlerine gelince görünsün, yoksa uzun rotalarda harita etiketle doluyor.
+  // Canlı konum buraya düşmez; o CargoVehicleMarker ile React tarafında
+  // çiziliyor (bkz. addPinMarkers).
   return `
-    <div style="position:relative;width:12px;height:12px;">
-      <div style="position:absolute;inset:0;border-radius:50%;background:#2563eb;box-shadow:0 0 0 3px #fff,0 1px 3px rgba(0,0,0,0.4);"></div>
+    <div title="${safeLabel}" style="position:relative;width:10px;height:10px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 2px #fff,0 1px 2px rgba(0,0,0,0.35);"></div>
     </div>`;
 }
