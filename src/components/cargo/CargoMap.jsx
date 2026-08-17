@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import CargoVehicleMarker from './CargoVehicleMarker';
 
 /**
  * Compact MapLibre map for the G-Radar drawer. Renders a cargo's route
@@ -20,12 +22,28 @@ import 'maplibre-gl/dist/maplibre-gl.css';
  * instead of an empty map — important because the drawer always shows a map
  * slot at the top, even when nothing was synced yet.
  */
-export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
+export default function CargoMap({
+  geoJson,
+  vehicleType,
+  status,
+  vesselLabel,
+  height = 320,
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  // Araç işaretçisi React ile çiziliyor ama MapLibre marker'ı imperatif —
+  // açtığımız root'ları harita yıkılırken kapatmak için tutuyoruz.
+  const rootsRef = useRef([]);
+  // Görünüm düğmesinin, efekt yeniden çalışmadan geometriye erişmesi için.
+  const geometryRef = useRef(null);
   const [error, setError] = useState(null);
+  const [view, setView] = useState('vehicle');
 
   const parsed = parseGeoJson(geoJson);
+  const vehiclePosition = parsed
+    ? parsed.features.find((f) => f.properties?.kind === 'current')?.geometry?.coordinates
+    : null;
+  geometryRef.current = parsed;
 
   useEffect(() => {
     if (!containerRef.current || !parsed) return undefined;
@@ -41,7 +59,11 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
         container: containerRef.current,
         style: styleUrl,
         center: pickCenter(parsed),
-        zoom: 3,
+        // Canlı konum varsa doğrudan araca yakınlaşıyoruz. Öncesinde rotanın
+        // tamamı sığdırılıyordu; Uzakdoğu–Akdeniz gibi bir hatta sınırlar
+        // devasa olduğu için zoom 2-3'e düşüyor ve araç nokta kadar kalıyordu.
+        // Rotanın bütününe "Rotanın tamamı" düğmesiyle dönülüyor.
+        zoom: vehiclePosition ? VEHICLE_ZOOM : 3,
         attributionControl: { compact: true },
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -51,6 +73,9 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
     }
 
     mapRef.current = map;
+    // Harita yeniden kurulduğunda (yeni veri, "Yenile") açılış görünümü yine
+    // araç oluyor; düğme etiketi buna göre sıfırlanmalı.
+    setView('vehicle');
 
     map.on('load', () => {
       map.addSource('cargo-route', { type: 'geojson', data: parsed });
@@ -81,13 +106,19 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
 
       // Point markers — placed manually so we can use HTML/CSS pins instead
       // of MapLibre's symbol layer (no sprite sheet wrangling).
-      addPinMarkers(map, parsed);
+      // Şu anki konum için gemi/uçak çizimi kullanılıyor; yönü rotanın o
+      // noktadaki parçasından hesaplanıyor.
+      rootsRef.current = addPinMarkers(map, parsed, {
+        vehicleType,
+        status,
+        vesselLabel,
+        bearing: bearingAtCurrent(parsed),
+      });
 
-      // Auto-fit to the whole route with a generous pad so the markers don't
-      // sit on the very edge of the canvas.
-      const bounds = computeBounds(parsed);
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 40, duration: 0, maxZoom: 6 });
+      // Canlı konum yoksa (araç işaretçisi de çizilmiyor) rotanın tamamını
+      // sığdırmak hâlâ en anlamlı açılış — gösterilecek başka bir şey yok.
+      if (!vehiclePosition) {
+        fitRoute(map, parsed, 0);
       }
     });
 
@@ -100,13 +131,34 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
     });
 
     return () => {
+      // React root'unu senkron kapatmak "already rendering" uyarısı veriyor;
+      // mikro göreve atıp bu render'ın dışına çıkarıyoruz.
+      const roots = rootsRef.current;
+      rootsRef.current = [];
+      queueMicrotask(() => roots.forEach((root) => root.unmount()));
       map.remove();
       mapRef.current = null;
     };
     // We deliberately depend on the stringified geojson; parsed is rebuilt
     // every render which would otherwise trigger an infinite remount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoJson, vehicleType]);
+  }, [geoJson, vehicleType, status, vesselLabel]);
+
+  /** Araca yakın görünüm ile rotanın tamamı arasında gidip gelir. */
+  const toggleView = () => {
+    const map = mapRef.current;
+    const fc = geometryRef.current;
+    if (!map || !fc) return;
+
+    if (view === 'vehicle') {
+      fitRoute(map, fc, 600);
+      setView('route');
+    } else {
+      const here = fc.features.find((f) => f.properties?.kind === 'current')?.geometry?.coordinates;
+      if (here) map.flyTo({ center: here, zoom: VEHICLE_ZOOM, duration: 600 });
+      setView('vehicle');
+    }
+  };
 
   if (!parsed) {
     return (
@@ -132,6 +184,23 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
   return (
     <div className="relative border-b border-gray-200 dark:border-gray-700" style={{ height }}>
       <div ref={containerRef} className="w-full h-full" />
+
+      {/* Görünüm geçişi — açılış araca yakın olduğu için rotanın bütününe
+          dönmenin tek tıklık bir yolu olmalı. Canlı konum yoksa zaten rota
+          görünümündeyiz, düğme gösterilmiyor. */}
+      {vehiclePosition && (
+        <button
+          type="button"
+          onClick={toggleView}
+          className="absolute top-2 left-2 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/95 dark:bg-gray-800/95 border border-gray-300 dark:border-gray-600 text-xs font-medium text-text-main shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-colors"
+        >
+          <span className="material-symbols-outlined text-sm">
+            {view === 'vehicle' ? 'zoom_out_map' : 'my_location'}
+          </span>
+          {view === 'vehicle' ? 'Rotanın tamamı' : 'Araca dön'}
+        </button>
+      )}
+
       {error && (
         <div className="absolute inset-x-0 bottom-0 bg-red-50/95 dark:bg-red-900/40 border-t border-red-200 dark:border-red-800 px-3 py-1.5">
           <p className="text-[11px] text-red-700 dark:text-red-300 truncate">
@@ -146,6 +215,52 @@ export default function CargoMap({ geoJson, vehicleType, height = 320 }) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Açılıştaki yakınlık. 6 bilinçli bir orta yol: daha yakını açık denizde
+ * referanssız mavi bir alan bırakıyor (kıyı çizgisi kadraja girmiyor), daha
+ * uzağı ise kullanıcının şikâyet ettiği "araç nokta kadar" görünümüne dönüyor.
+ */
+const VEHICLE_ZOOM = 6;
+
+/**
+ * Rota görünümünün nefes payı.
+ *
+ * padding: araç işaretçisi 120px genişliğinde ve merkezinden konumlanıyor,
+ * yani her yöne 60px taşıyor. Daha dar bir pay işaretçiyi kadrajın kenarında
+ * kırpıyor.
+ *
+ * slack: sığdırma matematiği rotayı kadraja "tam" oturtuyor; çıkış ve varış
+ * pinleri kenara yapışık kalıyor ve görüntü sıkışık duruyor. Bir zoom seviyesi
+ * geri alınca içerik rahat nefes alıyor.
+ */
+const ROUTE_PADDING = 64;
+const ROUTE_ZOOM_SLACK = 1;
+const ROUTE_MAX_ZOOM = 6;
+
+/**
+ * Rotanın tamamını, bir seviye esneklik payıyla kadraja oturtur.
+ *
+ * fitBounds tek başına payı veremiyor (maxZoom sadece üst sınır koyuyor), o
+ * yüzden önce kamera hesaplanıp zoom'dan pay düşülüyor. cameraForBounds
+ * bozuk/tekil geometride null dönebiliyor — o durumda düz fitBounds'a
+ * düşüyoruz.
+ */
+function fitRoute(map, fc, duration) {
+  const bounds = computeBounds(fc);
+  if (!bounds) return;
+
+  const camera = map.cameraForBounds(bounds, { padding: ROUTE_PADDING });
+  if (camera && Number.isFinite(camera.zoom)) {
+    map.easeTo({
+      center: camera.center,
+      zoom: Math.max(1, Math.min(ROUTE_MAX_ZOOM, camera.zoom - ROUTE_ZOOM_SLACK)),
+      duration,
+    });
+    return;
+  }
+  map.fitBounds(bounds, { padding: ROUTE_PADDING, maxZoom: ROUTE_MAX_ZOOM, duration });
+}
 
 function parseGeoJson(raw) {
   if (!raw) return null;
@@ -253,11 +368,99 @@ function computeBounds(fc) {
   return [[minLon, minLat], [maxLon, maxLat]];
 }
 
-function addPinMarkers(map, fc) {
+/**
+ * Rotanın, aracın bulunduğu noktadaki gidiş açısı (pusula derecesi).
+ *
+ * Rota çizgisinin araca en yakın parçası bulunup o parçanın yönü alınıyor —
+ * "şu an nereye doğru gidiyor" sorusunun cevabı bu. Rota tek noktadan
+ * ibaretse ya da canlı konum yoksa null döner; o durumda arayüz ok
+ * göstermiyor, çünkü rastgele yöne bakan bir ok yön bilgisi olmamasından
+ * daha kötü.
+ */
+function bearingAtCurrent(fc) {
+  const route = fc.features.find((f) => f.geometry?.type === 'LineString');
+  const current = fc.features.find((f) => f.properties?.kind === 'current');
+  const coords = route?.geometry?.coordinates;
+  const here = current?.geometry?.coordinates;
+  if (!Array.isArray(coords) || coords.length < 2 || !Array.isArray(here)) return null;
+
+  let bestIndex = 0;
+  let bestDistance = Infinity;
+  for (let i = 0; i < coords.length - 1; i += 1) {
+    const d = squaredDistanceToSegment(here, coords[i], coords[i + 1]);
+    if (d < bestDistance) {
+      bestDistance = d;
+      bestIndex = i;
+    }
+  }
+  return bearingBetween(coords[bestIndex], coords[bestIndex + 1]);
+}
+
+const toRadians = (deg) => (deg * Math.PI) / 180;
+
+/** İki nokta arasındaki başlangıç pusula açısı (0 = kuzey, saat yönünde). */
+function bearingBetween([lon1, lat1], [lon2, lat2]) {
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δλ = toRadians(lon2 - lon1);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const deg = (Math.atan2(y, x) * 180) / Math.PI;
+  return (deg + 360) % 360;
+}
+
+/**
+ * Noktanın parçaya uzaklığının karesi. Yalnızca "hangi parça daha yakın"
+ * karşılaştırması için kullanıldığından karekök alınmıyor; boylam farkı
+ * enleme göre daraldığı için cos(lat) ile ölçekleniyor.
+ */
+function squaredDistanceToSegment(point, a, b) {
+  const scale = Math.cos(toRadians(point[1])) || 1;
+  const px = (point[0] - a[0]) * scale;
+  const py = point[1] - a[1];
+  const bx = (b[0] - a[0]) * scale;
+  const by = b[1] - a[1];
+  const lengthSq = bx * bx + by * by;
+  const t = lengthSq ? Math.max(0, Math.min(1, (px * bx + py * by) / lengthSq)) : 0;
+  const dx = px - bx * t;
+  const dy = py - by * t;
+  return dx * dx + dy * dy;
+}
+
+/**
+ * Noktaları haritaya yerleştirir. Çıkış / varış hâlâ basit HTML pin; canlı
+ * konum ise React ile çizilen araç işaretçisi (gemi ya da uçak).
+ *
+ * Geri dönen dizi, açılan React root'larını içeriyor — harita yıkılırken
+ * kapatılmaları gerekiyor.
+ */
+function addPinMarkers(map, fc, vehicle) {
+  const roots = [];
   for (const f of fc.features) {
     if (f.geometry?.type !== 'Point') continue;
     const kind = f.properties?.kind;
     const label = f.properties?.label || '';
+
+    if (kind === 'current') {
+      const el = document.createElement('div');
+      const root = createRoot(el);
+      root.render(
+        <CargoVehicleMarker
+          vehicleType={vehicle.vehicleType}
+          status={vehicle.status}
+          bearing={vehicle.bearing}
+          // Gemi adı ve sefer numarası hareket kayıtlarından geliyor; yoksa
+          // geojson'un kendi etiketine düşüyoruz.
+          label={vehicle.vesselLabel || label}
+        />,
+      );
+      roots.push(root);
+      new maplibregl.Marker({ element: el, anchor: 'center' })
+        .setLngLat(f.geometry.coordinates)
+        .addTo(map);
+      continue;
+    }
+
     const el = document.createElement('div');
     el.className = 'cargo-map-pin';
     el.innerHTML = pinHtml(kind, label);
@@ -266,6 +469,7 @@ function addPinMarkers(map, fc) {
       .setPopup(label ? new maplibregl.Popup({ offset: 18, closeButton: false }).setText(label) : null)
       .addTo(map);
   }
+  return roots;
 }
 
 function pinHtml(kind, label) {
@@ -290,15 +494,11 @@ function pinHtml(kind, label) {
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #ef4444;"></div>
       </div>`;
   }
-  // current — animated pulse
+  // Canlı konum buraya düşmez — o artık CargoVehicleMarker ile React
+  // tarafında çiziliyor (bkz. addPinMarkers). Tanınmayan bir tür gelirse
+  // sade bir nokta bırakıyoruz ki işaretçi büsbütün kaybolmasın.
   return `
-    <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
-      <div style="background:#2563eb;color:#fff;font-size:10px;padding:2px 6px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.3);margin-bottom:2px;">
-        ${safeLabel || 'Şu an'}
-      </div>
-      <div style="position:relative;width:14px;height:14px;">
-        <div style="position:absolute;inset:0;border-radius:50%;background:#2563eb;box-shadow:0 0 0 3px #fff,0 1px 3px rgba(0,0,0,0.4);"></div>
-        <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(37,99,235,0.35);animation:cargo-pulse 1.6s ease-out infinite;"></div>
-      </div>
+    <div style="position:relative;width:12px;height:12px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:#2563eb;box-shadow:0 0 0 3px #fff,0 1px 3px rgba(0,0,0,0.4);"></div>
     </div>`;
 }

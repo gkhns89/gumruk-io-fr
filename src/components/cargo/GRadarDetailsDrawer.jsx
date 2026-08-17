@@ -82,6 +82,27 @@ export default function GRadarDetailsDrawer({
   const movementCount = countMovements(movementGroups);
   const statusInfo = gRadarStatusInfo(details?.gRadarStatus);
 
+  // Gemi/uçuş adı ve sefer numarası hareket kayıtlarının içinde geliyor —
+  // cargo üzerinde ayrı bir alan yok. En son gerçekleşen hareketten okuyup
+  // hem haritadaki etikete hem de künye kutusuna veriyoruz.
+  const voyageInfo = useMemo(() => {
+    let vehicle = null;
+    let voyage = null;
+    for (const group of movementGroups) {
+      for (const mv of group.movements) {
+        if (!mv.actual) continue;
+        if (mv.vehicle) vehicle = mv.vehicle;
+        if (mv.voyage) voyage = mv.voyage;
+      }
+    }
+    return { vehicle, voyage };
+  }, [movementGroups]);
+
+  // Harita etiketi: "WAN HAI 721 · Sefer W027"
+  const mapLabel = [voyageInfo.vehicle || details?.vesselName, voyageInfo.voyage && `Sefer ${voyageInfo.voyage}`]
+    .filter(Boolean)
+    .join(' · ') || null;
+
   return (
     <>
       {/* Backdrop */}
@@ -145,6 +166,8 @@ export default function GRadarDetailsDrawer({
               <CargoMap
                 geoJson={details.geoJson}
                 vehicleType={details.vehicleType}
+                status={details.gRadarStatus}
+                vesselLabel={mapLabel}
                 height={320}
               />
 
@@ -200,8 +223,17 @@ export default function GRadarDetailsDrawer({
 
               {/* Key facts grid */}
               <div className="grid grid-cols-2 gap-3">
-                <Fact label="Gemi / Uçuş" value={details.vesselName} icon="directions_boat" />
+                <Fact
+                  label="Gemi / Uçuş"
+                  value={voyageInfo.vehicle || details.vesselName}
+                  icon="directions_boat"
+                />
                 <Fact label="Taşıyıcı" value={details.gRadarCarrier} icon="local_shipping" />
+                {/* Sefer numarası yalnızca hareket kayıtlarında var; boşsa
+                    kutuyu hiç açmıyoruz, "—" ile yer kaplamasın. */}
+                {voyageInfo.voyage && (
+                  <Fact label="Sefer No" value={voyageInfo.voyage} icon="tag" />
+                )}
                 <Fact label="Mevcut Konum" value={details.currentLocation} icon="my_location" full />
                 <Fact
                   label="ETA"

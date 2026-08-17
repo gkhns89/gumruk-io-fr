@@ -126,6 +126,137 @@ html {
   100% { transform: scale(1.8); opacity: 0;    }
 }
 
+/* --- G-Radar haritası: canlı konum işaretçisi (bkz. CargoVehicleMarker.jsx) ---
+   Yükün şu anki konumunda jenerik bir nokta yerine tanıtım sayfasındaki gemi /
+   uçak çizimi duruyor. Hareket yükün durumuna bağlı: yoldaki araç sallanıyor ve
+   önünde gidiş yönünü gösteren bir ok atıyor, varmış olan araç sabit duruyor. */
+
+/* İşaretçi kutusu kare: ok merkez etrafında döndüğü için genişlik = yükseklik
+   olmalı, yoksa doğu-batı ile kuzey-güney yönlerinde farklı uzaklıkta duruyor.
+   Ölçüler birbirine bağlı — bkz. --arrow altındaki not.
+
+   Kutuda yalnızca araç akışta; etiket mutlak konumlu. Böylece MapLibre'nin
+   'center' çapası tam aracın ortasına denk geliyor ve araç koordinatın
+   üstünde duruyor. */
+.gradar-marker {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* harita sürüklemesini engellemesin */
+}
+
+/* Etiket aracın ALTINDA. 50% + 26px, geminin alt kenarının (yarı yükseklik
+   ~15px) hemen altına denk geliyor; sahnenin dibine yapıştırmak aracı
+   etiketten kopuk gösteriyordu. */
+.gradar-marker__label {
+  position: absolute;
+  top: calc(50% + 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 180px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.gradar-marker__art {
+  /* Beyaz kontur: açık deniz ve koyu kara döşemelerinin ikisinde de okunur.
+     Araç büyüdükçe kontur da kalınlaştı, yoksa oransal olarak inceliyor. */
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 1px 3px rgb(0 0 0 / 0.45));
+}
+
+/* Gemi 80px → yarı genişliği 40px. Ok tabanının tam bu mesafede durması
+   gerekiyor (aşağıya bak), o yüzden bu iki değer birlikte değiştirilmeli. */
+.gradar-marker__art--sea { width: 80px; }
+.gradar-marker__art--air { width: 58px; }
+
+/* Yolda: gemi dalgada sallanır, uçak hafifçe süzülür. */
+.is-moving .gradar-marker__art--sea { animation: gradar-bob 4.5s ease-in-out infinite; }
+.is-moving .gradar-marker__art--air { animation: gradar-float 5s ease-in-out infinite; }
+
+/* Gidiş yönü oku. Kapsayıcı pusula açısına döner; ok kendi içinde hep yukarı
+   bakar, böylece dönme merkezi aracın konumu olur ve ok aracın "önünde" kalır. */
+.gradar-marker__heading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: #2563eb;
+}
+
+/* Okun merkeze uzaklığı üç ölçüye bağlı:
+     tabanı  = sahne/2 − margin-top − yükseklik = 60 − 0 − 20 = 40px
+     ucu     = sahne/2 − margin-top            = 60px
+   Taban tam olarak geminin yarı genişliğine (40px) oturuyor: doğu-batı
+   yönlerinde ok gemiye değiyor ama üstüne binmiyor. Bu üç değerden birini
+   değiştirirsen diğerlerini de gözden geçir. */
+.gradar-marker__arrow {
+  width: 20px;
+  height: 20px;
+  margin-top: 0;
+  filter: drop-shadow(0 0 2px #fff);
+  animation: gradar-heading 2.2s ease-in-out infinite;
+}
+
+/* Varış: hareket yerine sabit bir demirleme halkası. Gövdenin hemen altında
+   (50% + 10px) duruyor — daha aşağısı etiketin üstüne biniyor. */
+.gradar-marker__berth {
+  position: absolute;
+  top: calc(50% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  background: rgb(16 185 129 / 0.18);
+}
+
+@keyframes gradar-bob {
+  0%, 100% { transform: translateY(-2px) rotate(-1.5deg); }
+  50%      { transform: translateY(2px)  rotate(1.5deg);  }
+}
+
+/* Aynalanmış gemi (batıya gidiş) kendi scaleX'ini inline stille taşıyor;
+   animasyon transform'u onu ezeceği için aynalamayı burada tekrarlıyoruz. */
+.is-moving .gradar-marker__art--sea[style*="scaleX(-1)"] {
+  animation-name: gradar-bob-flipped;
+}
+
+@keyframes gradar-bob-flipped {
+  0%, 100% { transform: scaleX(-1) translateY(-2px) rotate(1.5deg); }
+  50%      { transform: scaleX(-1) translateY(2px)  rotate(-1.5deg); }
+}
+
+@keyframes gradar-float {
+  0%, 100% { opacity: 1;    }
+  50%      { opacity: 0.72; }
+}
+
+@keyframes gradar-heading {
+  0%, 100% { opacity: 0.35; transform: translateY(3px);  }
+  50%      { opacity: 1;    transform: translateY(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradar-marker__art--sea,
+  .gradar-marker__art--air,
+  .gradar-marker__arrow {
+    animation: none;
+  }
+}
+
 /* --- Tanıtım ve yasal sayfaların ortak davranışı (.landing-root) --- */
 
 /* Sticky header çapa hedeflerinin üstünü kapatmasın. Bölüm bazlı değil kök seviyede
