@@ -96,7 +96,6 @@ export default function CargoVehicleMarker({
   vehicleType,
   status,
   bearing,     // 0-360, kuzeyden saat yönünde; yön bilinmiyorsa null
-  label,
 }) {
   const motion = motionFor(status, vehicleType);
   const isAir = vehicleType === 'AIRPLANE';
@@ -119,9 +118,9 @@ export default function CargoVehicleMarker({
   // SVG dönüşüne çevirmek için 90° geri alıyoruz.
   const planeRotation = hasBearing ? bearing - 90 : 0;
 
-  // Etiket akışta değil, mutlak konumlu: aksi hâlde işaretçi kutusunu
-  // uzatıyor ve MapLibre'nin 'center' çapası aracı koordinatın biraz
-  // yukarısına kaydırıyordu. Bu hâliyle araç tam koordinatın üstünde duruyor.
+  // Kutuda yalnızca araç var; MapLibre'nin 'center' çapası tam aracın
+  // ortasına denk geliyor, yani araç koordinatın üstünde duruyor. Sefer
+  // bilgisi haritanın köşesinde (bkz. CargoMap).
   return (
     <div className={`gradar-marker gradar-marker--${motion}`}>
 
@@ -184,10 +183,6 @@ export default function CargoVehicleMarker({
           bir yeşil elipsti; şimdi gemiden aşağı sarkan gerçek bir çapa var ve
           suda hafifçe salınıyor. Uçakta karşılığı park işareti. */}
       {atRest && (isAir ? <ParkedMark /> : <AnchorMark />)}
-
-      {/* Etiket en sonda: DOM sırası boyama sırası, yani güneye bakan bir okla
-          çakışırsa etiket üstte kalıyor ve okunur oluyor. */}
-      {label && <span className="gradar-marker__label">{label}</span>}
     </div>
   );
 }

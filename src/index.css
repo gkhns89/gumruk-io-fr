@@ -148,27 +148,6 @@ html {
   pointer-events: none; /* harita sürüklemesini engellemesin */
 }
 
-/* Etiket aracın ALTINDA ve yön okunun erişemeyeceği kadar uzakta.
-   Ok merkeze en fazla 60px uzanıyor (bkz. --arrow); güneyi gösterdiğinde
-   etiketin üstüne biniyordu. 64px, çakışmayı kesen en yakın mesafe. */
-.gradar-marker__label {
-  position: absolute;
-  top: calc(50% + 64px);
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 180px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #2563eb;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
-}
-
 .gradar-marker__art {
   /* Beyaz kontur: açık deniz ve koyu kara döşemelerinin ikisinde de okunur.
      Araç büyüdükçe kontur da kalınlaştı, yoksa oransal olarak inceliyor. */

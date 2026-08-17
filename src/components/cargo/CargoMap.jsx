@@ -126,7 +126,6 @@ export default function CargoMap({
       markerRoots = addPinMarkers(map, parsed, {
         vehicleType,
         status,
-        vesselLabel,
         bearing: bearingToDestination(parsed),
       });
 
@@ -158,7 +157,7 @@ export default function CargoMap({
     // We deliberately depend on the stringified geojson; parsed is rebuilt
     // every render which would otherwise trigger an infinite remount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoJson, vehicleType, status, vesselLabel]);
+  }, [geoJson, vehicleType, status]);
 
   /** Araca yakın görünüm ile rotanın tamamı arasında gidip gelir. */
   const toggleView = () => {
@@ -215,6 +214,19 @@ export default function CargoMap({
           </span>
           {view === 'vehicle' ? 'Rotanın tamamı' : 'Araca dön'}
         </button>
+      )}
+
+      {/* Sefer bilgisi haritanın sol alt köşesinde sabit duruyor. Aracın
+          altında yüzerken yön okuyla yer kavgası ediyor ve okun açısına göre
+          her seferinde başka yere düşüyordu; köşede durağan ve her zaman
+          okunur. Haritada tek araç olduğu için hangi seferi anlattığı da
+          belirsiz kalmıyor. Sol alt boş: yakınlaştırma sağ üstte, görünüm
+          düğmesi sol üstte, atıf sağ altta. */}
+      {vesselLabel && (
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-text-main shadow-sm backdrop-blur-sm">
+          <span className="material-symbols-outlined text-[13px] text-primary">tag</span>
+          {vesselLabel}
+        </div>
       )}
 
       {error && (
@@ -297,14 +309,11 @@ function addPinMarkers(map, fc, vehicle) {
       const el = document.createElement('div');
       const root = createRoot(el);
       root.render(
+        // Sefer bilgisi artık işaretçide değil, haritanın sol alt köşesinde.
         <CargoVehicleMarker
           vehicleType={vehicle.vehicleType}
           status={vehicle.status}
           bearing={vehicle.bearing}
-          // Yalnızca sefer numarası (hareket kayıtlarından geliyor). Geojson'un
-          // kendi etiketine düşmüyoruz: orada gemi adı var ve bilerek
-          // gösterilmiyor.
-          label={vehicle.vesselLabel}
         />,
       );
       roots.push(root);
