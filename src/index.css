@@ -140,8 +140,8 @@ html {
    üstünde duruyor. */
 .gradar-marker {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 132px;
+  height: 132px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,27 +224,35 @@ html {
 }
 
 /* Gidiş yönü oku. Kapsayıcı pusula açısına döner; ok kendi içinde hep yukarı
-   bakar, böylece dönme merkezi aracın konumu olur ve ok aracın "önünde" kalır. */
+   bakar, böylece dönme merkezi aracın konumu olur ve ok aracın "önünde" kalır.
+
+   Renk YEŞİL, mavi değil: rota çizgisi gemide #2563eb, yani ok tam olarak aynı
+   maviydi ve çizginin üstüne geldiğinde kayboluyordu. Yeşil hem rotadan hem
+   araçtan ayrışıyor; çıkış pininin (#10b981) ve çapanın (#0f766e) yeşilinden
+   de bir tık farklı ki üçü karışmasın. */
 .gradar-marker__heading {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  color: #2563eb;
+  color: #16a34a;
 }
 
 /* Okun merkeze uzaklığı üç ölçüye bağlı:
-     tabanı  = sahne/2 − margin-top − yükseklik = 60 − 0 − 20 = 40px
-     ucu     = sahne/2 − margin-top            = 60px
+     tabanı  = sahne/2 − margin-top − yükseklik = 66 − 0 − 26 = 40px
+     ucu     = sahne/2 − margin-top            = 66px
    Taban tam olarak geminin yarı genişliğine (40px) oturuyor: doğu-batı
-   yönlerinde ok gemiye değiyor ama üstüne binmiyor. Bu üç değerden birini
-   değiştirirsen diğerlerini de gözden geçir. */
+   yönlerinde ok gemiye değiyor ama üstüne binmiyor. Ok büyütülürken sahne de
+   (.gradar-marker) birlikte büyütüldü, yoksa taban içeri kayıp geminin üstüne
+   biniyordu. Bu üç değerden birini değiştirirsen diğerlerini de gözden geçir. */
 .gradar-marker__arrow {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   margin-top: 0;
-  filter: drop-shadow(0 0 2px #fff);
+  /* Kontur kalın: ok küçük bir üçgen, koyu deniz üstünde kenarı olmadan
+     eriyip gidiyor. */
+  filter: drop-shadow(0 0 2.5px #fff) drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
   animation: gradar-heading 2.2s ease-in-out infinite;
 }
 
@@ -287,9 +295,11 @@ html {
   100% { opacity: 0; }
 }
 
+/* Nabız artık tamamen sönmüyor: en düşük noktada bile ok net okunuyor,
+   yalnızca hafifçe nefes alıp ileri geri gidiyor. */
 @keyframes gradar-heading {
-  0%, 100% { opacity: 0.35; transform: translateY(3px);  }
-  50%      { opacity: 1;    transform: translateY(-1px); }
+  0%, 100% { opacity: 0.7; transform: translateY(3px);  }
+  50%      { opacity: 1;   transform: translateY(-2px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
