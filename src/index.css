@@ -190,8 +190,59 @@ html {
 
 /* Yolda: gemi dalgada sallanır, uçak burnu yönünde ileri geri süzülür.
    Hareketler aracın kendi ekseninde, çünkü yönelme dıştaki katmanda. */
-.is-moving .gradar-marker__art--sea { animation: gradar-bob 4.5s ease-in-out infinite; }
-.is-moving .gradar-marker__art--air { animation: gradar-cruise 3.4s ease-in-out infinite; }
+.gradar-marker--moving .gradar-marker__art--sea { animation: gradar-bob 4.5s ease-in-out infinite; }
+.gradar-marker--moving .gradar-marker__art--air { animation: gradar-cruise 3.4s ease-in-out infinite; }
+
+/* Henüz yola çıkmamış yük soluk duruyor — canlı takipteki bir araçla
+   karışmasın. */
+.gradar-marker--waiting .gradar-marker__art { opacity: 0.65; }
+
+/* Güverte yükü, yükün hangi aşamada olduğunu anlatıyor:
+     yükleme öncesi → boş güverte
+     yükleme        → konteynerler sırayla beliriyor
+     boşaltıldı     → güverte yeniden boş
+   Konteyner sırası VehicleArt'ta --container-index ile veriliyor. */
+.gradar-marker--waiting .vehicle-art__container,
+.gradar-marker--discharged .vehicle-art__container {
+  opacity: 0;
+}
+
+.gradar-marker--loading .vehicle-art__container {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: gradar-load 4.2s ease-out infinite backwards;
+  /* Gecikme sırayla artıyor: kutular teker teker iniyormuş gibi görünsün. */
+  animation-delay: calc(var(--container-index, 0) * 0.14s);
+}
+
+/* Uçakta güverte yok; yükün varlığını gövdenin doluluğu anlatıyor.
+   Kontur katmanı: CSS `fill`, çizimdeki fill ATTRIBUTE'unu ezer. */
+.gradar-marker__hull > g {
+  fill: none;
+  stroke: #1e4fd8;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+/* Dolgu katmanı yüklenirken yavaşça beliriyor — "içi doluyor" etkisi. */
+.gradar-marker--loading .gradar-marker__fill {
+  animation: gradar-fill 3.4s ease-in-out infinite backwards;
+}
+
+/* Duran araçtan aşağı sarkan çapa / park işareti. Üst ucu gövdenin arkasında
+   kalsın diye merkezin biraz altından başlıyor. Salınım zincirin asıldığı
+   noktadan, yani üstten dönüyor. */
+.gradar-marker__anchor {
+  position: absolute;
+  top: calc(50% + 4px);
+  left: 50%;
+  width: 22px;
+  margin-left: -11px;
+  color: #0f766e;
+  transform-origin: top center;
+  filter: drop-shadow(0 0 2px #fff);
+  animation: gradar-sway 5.5s ease-in-out infinite;
+}
 
 /* Gidiş yönü oku. Kapsayıcı pusula açısına döner; ok kendi içinde hep yukarı
    bakar, böylece dönme merkezi aracın konumu olur ve ok aracın "önünde" kalır. */
@@ -218,19 +269,6 @@ html {
   animation: gradar-heading 2.2s ease-in-out infinite;
 }
 
-/* Varış: hareket yerine sabit bir demirleme halkası. Gövdenin hemen altında
-   (50% + 10px) duruyor — daha aşağısı etiketin üstüne biniyor. */
-.gradar-marker__berth {
-  position: absolute;
-  top: calc(50% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 38px;
-  height: 11px;
-  border-radius: 50%;
-  border: 2px solid #10b981;
-  background: rgb(16 185 129 / 0.18);
-}
 
 @keyframes gradar-bob {
   0%, 100% { transform: translateY(-2px) rotate(-1.5deg); }
@@ -246,6 +284,30 @@ html {
   50%      { transform: translateX(5px)  rotate(1deg);  }
 }
 
+/* Çapa suda salınıyor — asıldığı üst noktadan, sarkaç gibi. */
+@keyframes gradar-sway {
+  0%, 100% { transform: rotate(-3.5deg); }
+  50%      { transform: rotate(3.5deg);  }
+}
+
+/* Konteynerler tek tek iniyor: kısa bir düşüşle beliriyor, tur boyunca
+   güvertede kalıyor, tur sonunda hep birlikte sıfırlanıp yükleme yeniden
+   başlıyor. */
+@keyframes gradar-load {
+  0%       { opacity: 0; transform: translateY(-6px); }
+  9%       { opacity: 1; transform: translateY(0);    }
+  88%      { opacity: 1; transform: translateY(0);    }
+  100%     { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Uçağın gövdesi doluyor, dolu kalıyor, sonra tur başa dönüyor. */
+@keyframes gradar-fill {
+  0%   { opacity: 0; }
+  60%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 @keyframes gradar-heading {
   0%, 100% { opacity: 0.35; transform: translateY(3px);  }
   50%      { opacity: 1;    transform: translateY(-1px); }
@@ -254,8 +316,19 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .gradar-marker__art--sea,
   .gradar-marker__art--air,
-  .gradar-marker__arrow {
+  .gradar-marker__arrow,
+  .gradar-marker__anchor {
     animation: none;
+  }
+  /* Yükleme animasyonu kapanınca yük görünür kalmalı: animasyonlar backwards
+     ile başlıyor, kaldırılmazsa güverte ve uçak gövdesi boş donardı. */
+  .gradar-marker--loading .vehicle-art__container {
+    animation: none;
+    opacity: 0.9;
+  }
+  .gradar-marker--loading .gradar-marker__fill {
+    animation: none;
+    opacity: 1;
   }
 }
 

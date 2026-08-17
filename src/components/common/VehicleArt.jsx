@@ -30,23 +30,31 @@ export function ContainerShip({ className = "" }) {
     { x: 114, colors: ["#38bdf8", "#1e4fd8", "#0a1f44"] },
   ];
 
+  // Güverte yükü düz bir listeye açılıyor: her konteynerin sıra numarası
+  // `--container-index` olarak veriliyor. Tanıtım sahnesi bunu görmezden
+  // geliyor; harita işaretçisi yükleme animasyonunda kutuları tek tek
+  // belirtmek için kullanıyor (bkz. .gradar-marker--loading).
+  const containers = stacks.flatMap((stack) =>
+    stack.colors.map((color, i) => ({ x: stack.x, level: i, color })),
+  );
+
   return (
     <g className={className}>
       {/* Güverte yükü */}
-      {stacks.map((stack) =>
-        stack.colors.map((color, i) => (
-          <rect
-            key={`${stack.x}-${i}`}
-            x={stack.x}
-            y={44 - (i + 1) * 11}
-            width="21"
-            height="9"
-            rx="1"
-            fill={color}
-            opacity="0.9"
-          />
-        ))
-      )}
+      {containers.map((container, index) => (
+        <rect
+          key={`${container.x}-${container.level}`}
+          className="vehicle-art__container"
+          style={{ '--container-index': index }}
+          x={container.x}
+          y={44 - (container.level + 1) * 11}
+          width="21"
+          height="9"
+          rx="1"
+          fill={container.color}
+          opacity="0.9"
+        />
+      ))}
 
       {/* Köprüüstü ve baca */}
       <rect x="146" y="24" width="26" height="20" rx="2" fill="#0a1f44" />
