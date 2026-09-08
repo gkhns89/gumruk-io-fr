@@ -33,7 +33,7 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    const result = await login(email, password);
+    const result = await login(email, password, rememberMe);
 
     if (result.success) {
       sessionStorage.setItem('justLoggedIn', '1');

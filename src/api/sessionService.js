@@ -2,6 +2,23 @@ import axiosInstance from './axios';
 
 export const sessionService = {
   /**
+   * Oturum politikası bilgisi — token ömürleri ve tek oturum kuralı (SUPER_ADMIN only).
+   * Salt okunur; değerler backend ortam değişkenlerinden gelir.
+   */
+  getSessionPolicy: async () => {
+    try {
+      const response = await axiosInstance.get('/sessions/policy');
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.error('❌ Get session policy failed:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Oturum politikası yüklenemedi'
+      };
+    }
+  },
+
+  /**
    * Tüm aktif session'ları getir (SUPER_ADMIN only)
    */
   getAllActiveSessions: async () => {

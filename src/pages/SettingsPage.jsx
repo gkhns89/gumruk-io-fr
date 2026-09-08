@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { feedbackService } from '../api/feedbackService';
 import { contactService } from '../api/contactService';
 import { gRadarService } from '../api/gRadarService';
+import { sessionService } from '../api/sessionService';
 import { showSuccess, showError } from '../utils/toastUtils';
 import { confirmDialog } from '../utils/confirmDialog';
 
@@ -18,6 +19,20 @@ const TYPE_OPTIONS = [
 ];
 
 const EMPTY_CONTACT_FORM = { label: '', value: '', type: 'PHONE', isActive: true, sortOrder: 0 };
+
+/** Milisaniyeyi okunabilir süreye çevirir: 21600000 -> "6 saat" */
+const formatDuration = (ms) => {
+  if (!ms || ms < 0) return '-';
+  const totalMinutes = Math.floor(ms / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  const parts = [];
+  if (days) parts.push(`${days} gün`);
+  if (hours) parts.push(`${hours} saat`);
+  if (minutes) parts.push(`${minutes} dakika`);
+  return parts.length ? parts.join(' ') : `${ms} ms`;
+};
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -43,11 +58,20 @@ const SettingsPage = () => {
   const [gRadarRefreshIdentifier, setGRadarRefreshIdentifier] = useState('');
   const [gRadarRefreshType, setGRadarRefreshType] = useState('AUTO');
 
+  // Oturum politikası (salt okunur — backend ortam değişkenlerinden gelir)
+  const [sessionPolicy, setSessionPolicy] = useState(null);
+
   useEffect(() => {
     if (!isSuperAdmin) { setLoadingData(false); return; }
     loadData();
     loadGRadarConfig();
+    loadSessionPolicy();
   }, [isSuperAdmin]);
+
+  const loadSessionPolicy = async () => {
+    const res = await sessionService.getSessionPolicy();
+    if (res.success) setSessionPolicy(res.data);
+  };
 
   const loadGRadarConfig = async () => {
     const res = await gRadarService.getMasterConfig();
@@ -325,10 +349,88 @@ const SettingsPage = () => {
               <span className="material-symbols-outlined animate-spin text-primary text-[36px]">progress_activity</span>
             </div>
           ) : (
-            <div className="max-w-2xl space-y-6">
+            <div className="mx-auto w-full max-w-[1800px] columns-1 lg:columns-2 2xl:columns-3 gap-6">
+
+              {/* Oturum Politikası Kartı — salt okunur */}
+              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 break-inside-avoid">
+
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[22px] text-primary">schedule</span>
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-text-main">Oturum Politikası</h2>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Token ömürleri ve tek oturum kuralı — yalnızca bilgi
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-text-secondary flex-shrink-0">
+                    Salt okunur
+                  </span>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  {!sessionPolicy ? (
+                    <p className="text-sm text-text-secondary">Oturum politikası bilgisi alınamadı.</p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                          <p className="text-xs text-text-secondary">Normal giriş</p>
+                          <p className="text-xl font-bold text-text-main mt-1">
+                            {formatDuration(sessionPolicy.tokenExpirationMs)}
+                          </p>
+                          <p className="text-[11px] text-text-secondary mt-1">
+                            Beni Hatırla işaretlenmeden yapılan girişler
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                          <p className="text-xs text-text-secondary">Beni Hatırla ile giriş</p>
+                          <p className="text-xl font-bold text-text-main mt-1">
+                            {formatDuration(sessionPolicy.rememberMeExpirationMs)}
+                          </p>
+                          <p className="text-[11px] text-text-secondary mt-1">
+                            Login ekranındaki kutu işaretlendiğinde
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-[18px] text-text-secondary mt-0.5">devices</span>
+                          <div className="text-sm text-text-main">
+                            <span className="font-medium">Tek oturum:</span>{' '}
+                            {(sessionPolicy.singleSessionRoles || []).join(', ') || '-'}
+                            <p className="text-xs text-text-secondary mt-0.5">
+                              Bu roller başka bir cihazdan giriş yaptığında önceki oturum kapanır.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-[18px] text-text-secondary mt-0.5">group</span>
+                          <div className="text-sm text-text-main">
+                            <span className="font-medium">Çoklu oturum:</span>{' '}
+                            {(sessionPolicy.multiSessionRoles || []).join(', ') || '-'}
+                            <p className="text-xs text-text-secondary mt-0.5">
+                              Aynı anda birden fazla cihazdan giriş yapabilirler.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-xs text-text-secondary">
+                        <span className="material-symbols-outlined text-[16px] flex-shrink-0">info</span>
+                        <p>
+                          Bu değerler {sessionPolicy.source || 'ortam değişkenleri'} üzerinden yönetilir;
+                          değişiklik sunucunun yeniden başlatılmasını gerektirir. Token yenileme (refresh)
+                          yoktur — süre dolduğunda kullanıcı ekranda aktif olsa bile çıkış yapılır.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
 
               {/* ClickUp Entegrasyonu Kartı */}
-              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 break-inside-avoid">
 
                 {/* Kart Başlık */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
@@ -549,7 +651,7 @@ const SettingsPage = () => {
               </div>
 
               {/* G-Radar Master Konfigürasyon */}
-              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 break-inside-avoid">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">travel_explore</span>
                   <div className="flex-1">
@@ -798,10 +900,12 @@ const SettingsPage = () => {
               </div>
 
               {/* Sektör Kataloğu Yönetim Kartı */}
-              <SectorSettingsCard />
+              <div className="mb-6 break-inside-avoid">
+                <SectorSettingsCard />
+              </div>
 
               {/* İletişim Bilgileri Yönetim Kartı */}
-              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 break-inside-avoid">
 
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">

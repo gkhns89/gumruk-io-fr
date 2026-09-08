@@ -4,13 +4,14 @@ import { logError } from '../utils/errorUtils';
 
 export const authService = {
   // Login işlemi
-  login: async (email, password) => {
+  login: async (email, password, rememberMe = false) => {
     try {
-      console.log("🔐 Login isteği gönderiliyor...", { email });
-      
+      console.log("🔐 Login isteği gönderiliyor...", { email, rememberMe });
+
       const response = await axiosInstance.post('/auth/login-with-context', {
         email,
         password,
+        rememberMe,
       });
 
       console.log("✅ Login başarılı:", response.data);

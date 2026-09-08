@@ -115,8 +115,8 @@ export default function AuthProvider({ children }) {
     };
   }, [startTokenCheck, handleTokenExpired]);
 
-  const login = async (email, password) => {
-    const result = await authService.login(email, password);
+  const login = async (email, password, rememberMe = false) => {
+    const result = await authService.login(email, password, rememberMe);
 
     if (result.success) {
       setUser(result.data.user);
