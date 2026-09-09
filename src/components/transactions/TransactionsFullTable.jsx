@@ -32,6 +32,20 @@ const getStatusRowBgClass = (status) => {
   return "";
 };
 
+// Vergi ve teminat tek sütunda gösteriliyor — dolu olanların dökümü
+const getAmountBreakdown = (transaction) => {
+  const rows = [
+    { type: "Vergi", amount: transaction.tax },
+    { type: "Teminat", amount: transaction.guaranteeAmount },
+  ];
+  return rows
+    .filter(({ amount }) => amount)
+    .map(({ type, amount }) => ({ type, amount: Number(amount) }));
+};
+
+const formatAmount = (amount) =>
+  amount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+
 export default function TransactionsFullTable({
   transactions,
   loading,
@@ -203,8 +217,7 @@ export default function TransactionsFullTable({
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Hat</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kap</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kilo (Kg)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Vergi (TL)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Teminat (TL)</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Vergi / Teminat</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Durum</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Antrepo Varış</th>
                 <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Tescil Tarihi</th>
@@ -272,18 +285,37 @@ export default function TransactionsFullTable({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
                       {transaction.weight
-                        ? transaction.weight.toLocaleString("tr-TR", { minimumFractionDigits: 2 }, { maximumFractionDigits: 2 })
+                        ? transaction.weight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : "-"}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                      {transaction.tax
-                        ? transaction.tax.toLocaleString("tr-TR", { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 })
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
-                      {transaction.guaranteeAmount
-                        ? transaction.guaranteeAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2 }, { maximumFractionDigits: 4 })
-                        : "-"}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {(() => {
+                        const breakdown = getAmountBreakdown(transaction);
+                        if (breakdown.length === 0) return <span className="text-sm text-text-secondary">-</span>;
+                        const total = breakdown.reduce((sum, item) => sum + item.amount, 0);
+                        return (
+                          <div className="space-y-0.5">
+                            {breakdown.map((item) => (
+                              <div key={item.type} className="flex items-center gap-1.5">
+                                <span className="text-xs text-gray-400 dark:text-gray-500 w-[52px] shrink-0">{item.type}</span>
+                                <span className="text-xs font-semibold text-text-main dark:text-gray-300 tabular-nums">
+                                  {formatAmount(item.amount)}
+                                </span>
+                                <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">TL</span>
+                              </div>
+                            ))}
+                            {breakdown.length > 1 && (
+                              <div className="pt-1 mt-1 border-t border-gray-200 dark:border-gray-700 flex items-center gap-1.5">
+                                <span className="text-xs text-primary dark:text-primary-light w-[52px] shrink-0 font-medium">Toplam</span>
+                                <span className="text-xs font-bold text-primary dark:text-primary-light tabular-nums">
+                                  {formatAmount(total)}
+                                </span>
+                                <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light leading-none">TL</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full min-w-[140px] ${statusInfo.className}`}>
