@@ -35,7 +35,6 @@ export default function CargoTrackingTable({
     const baseColumns = [
       "status",
       "vehicleType",
-      "g-radar",
       "estimatedArrivalDate",
       "buyerCompany",
       "senderCompany",
@@ -56,6 +55,7 @@ export default function CargoTrackingTable({
     return [
       ...baseColumns,
       ...(vehicleColumns[selectedVehicleType] || vehicleColumns[""]),
+      "g-radar",
       "transportInfo",
       "documentReceiver",
       "documentDeliveryDate",
@@ -181,9 +181,6 @@ export default function CargoTrackingTable({
               {visibleColumns.includes("vehicleType") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Araç Tipi</th>
               )}
-              {visibleColumns.includes("g-radar") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">G-Radar</th>
-              )}
               {visibleColumns.includes("estimatedArrivalDate") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ETA</th>
               )}
@@ -219,6 +216,9 @@ export default function CargoTrackingTable({
               )}
               {visibleColumns.includes("consignmentNumber") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Konşimento</th>
+              )}
+              {visibleColumns.includes("g-radar") && (
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">G-Radar</th>
               )}
               {visibleColumns.includes("documentReceiver") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Evrak Teslim Alan</th>
@@ -259,21 +259,6 @@ export default function CargoTrackingTable({
                         <span className="material-symbols-outlined text-gray-600 dark:text-gray-400">{vehicleType?.icon}</span>
                         <span className="text-sm text-text-main dark:text-gray-300">{vehicleType?.displayName}</span>
                       </div>
-                    </td>
-                  )}
-                  {visibleColumns.includes("g-radar") && (
-                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <GRadarStatusCell
-                        cargoItem={cargoItem}
-                        canManage={canManageGRadar}
-                        isReadOnly={isReadOnly}
-                        fetching={!!fetchingGRadar[cargoItem.id]}
-                        enabling={!!enablingGRadar[cargoItem.id]}
-                        onFetch={() => onGRadarFetch?.(cargoItem)}
-                        onEnable={() => onGRadarEnable?.(cargoItem)}
-                        onRequest={() => onGRadarRequest?.(cargoItem)}
-                        onOpenDetails={() => onGRadarDetails?.(cargoItem)}
-                      />
                     </td>
                   )}
                   {visibleColumns.includes("estimatedArrivalDate") && (
@@ -446,6 +431,21 @@ export default function CargoTrackingTable({
                   )}
                   {visibleColumns.includes("consignmentNumber") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">{cargoItem.consignmentNumber || "-"}</td>
+                  )}
+                  {visibleColumns.includes("g-radar") && (
+                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <GRadarStatusCell
+                        cargoItem={cargoItem}
+                        canManage={canManageGRadar}
+                        isReadOnly={isReadOnly}
+                        fetching={!!fetchingGRadar[cargoItem.id]}
+                        enabling={!!enablingGRadar[cargoItem.id]}
+                        onFetch={() => onGRadarFetch?.(cargoItem)}
+                        onEnable={() => onGRadarEnable?.(cargoItem)}
+                        onRequest={() => onGRadarRequest?.(cargoItem)}
+                        onOpenDetails={() => onGRadarDetails?.(cargoItem)}
+                      />
+                    </td>
                   )}
                   {visibleColumns.includes("documentReceiver") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
