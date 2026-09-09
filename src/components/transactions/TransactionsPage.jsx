@@ -228,7 +228,10 @@ export default function TransactionsPage() {
         t.fileNo?.toLowerCase().includes(searchLower) ||
         t.declarationNumber?.toLowerCase().includes(searchLower) ||
         t.recipientName?.toLowerCase().includes(searchLower) ||
-        t.senderName?.toLowerCase().includes(searchLower)
+        t.senderName?.toLowerCase().includes(searchLower) ||
+        // Antrepodan aktarılan kayıtlar kaynak beyanname/dosya no ile de bulunsun
+        t.warehouseDeclarationNo?.toLowerCase().includes(searchLower) ||
+        t.warehouseFileNo?.toLowerCase().includes(searchLower)
       );
     }
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
+import { warehouseOriginLabel } from "../../utils/warehouseOrigin";
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -230,7 +231,17 @@ export default function TransactionsFullTable({
                   >
                     {/* İlk hücre: durum rengi burada */}
                     <td className={`px-4 py-3 whitespace-nowrap ${borderClass}`}>
-                      <span className="text-sm font-medium text-text-main">{transaction.fileNo}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-text-main">{transaction.fileNo}</span>
+                        {transaction.warehouseDeclarationId && (
+                          <span
+                            title={warehouseOriginLabel(transaction)}
+                            className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400 cursor-help"
+                          >
+                            warehouse
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                       {transaction.declarationNumber || "-"}

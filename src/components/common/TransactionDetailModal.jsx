@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { toast } from "react-toastify";
+import WarehouseTransferHistory from "../warehouse/WarehouseTransferHistory";
+import { isFromWarehouse, transferTypeLabel } from "../../utils/warehouseOrigin";
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -307,6 +309,49 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                 </div>
               )}
             </div>
+
+            {/* Antrepo Kaynağı — yalnızca Antrepo Takip'ten aktarılmış kayıtlarda */}
+            {isFromWarehouse(transaction) && (
+              <div className="mt-6 rounded-xl border border-emerald-200 dark:border-emerald-800 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-base">warehouse</span>
+                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wider">ANTREPO KAYNAĞI</span>
+                  {transferTypeLabel(transaction.warehouseTransferType) && (
+                    <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-white/70 dark:bg-black/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                      {transferTypeLabel(transaction.warehouseTransferType)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                  <div>
+                    <p className="text-xs text-text-secondary mb-0.5">Antrepo Dosya No</p>
+                    <p className="text-sm font-semibold font-mono text-text-main">
+                      {transaction.warehouseFileNo || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary mb-0.5">Ant. Beyanname No</p>
+                    <p className="text-sm font-semibold font-mono text-text-main">
+                      {transaction.warehouseDeclarationNo || '-'}
+                    </p>
+                  </div>
+                </div>
+
+                {transaction.warehouseDeclarationId && (
+                  <div className="border-t border-emerald-200 dark:border-emerald-800">
+                    <p className="px-4 pt-3 pb-1 text-xs font-semibold text-text-secondary tracking-wider">
+                      AYNI ANTREPO KAYDINDAN ÇIKAN DİĞER İŞLEMLER
+                    </p>
+                    <WarehouseTransferHistory
+                      declarationId={transaction.warehouseDeclarationId}
+                      excludeTransactionId={transaction.id}
+                      emptyText="Bu antrepo kaydından başka işlem oluşturulmamış."
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Gecikme Nedenleri */}
             {((delayReasons.arrivalToRegistration?.length > 0) || (delayReasons.registrationToClosure?.length > 0) || (delayReasons.closureToWithdrawal?.length > 0)) && (

@@ -202,7 +202,18 @@ export default function WarehouseTable({
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-text-main">
-                      {decl.fileNo}
+                      <div className="flex items-center gap-1.5">
+                        {decl.fileNo}
+                        {decl.transferredFileNos?.length > 0 && (
+                          <span
+                            title={`İşlem Takip'e aktarıldı: ${decl.transferredFileNos.join(", ")}`}
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-help"
+                          >
+                            <span className="material-symbols-outlined text-sm">swap_horiz</span>
+                            {decl.transferredFileNos.length}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">
                       {decl.declarationNo || "-"}

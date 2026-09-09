@@ -167,7 +167,9 @@ export default function WarehousePage() {
         d.declarationNo?.toLowerCase().includes(q) ||
         d.recipientName?.toLowerCase().includes(q) ||
         d.senderName?.toLowerCase().includes(q) ||
-        d.carrierName?.toLowerCase().includes(q)
+        d.carrierName?.toLowerCase().includes(q) ||
+        // Bu kayıttan doğmuş İşlem Takip dosya numarasıyla da aranabilsin
+        d.transferredFileNos?.some((fileNo) => fileNo.toLowerCase().includes(q))
       );
     }
     if (filters.declarationDateFrom) {

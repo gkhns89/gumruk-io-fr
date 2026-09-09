@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import WarehouseTransferHistory from "./WarehouseTransferHistory";
 
 const formatNum = (n, dec = 3) => {
   if (n == null) return "-";
@@ -51,6 +52,13 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
 
   const statusIsKapandi = declaration.status === "KAPANDI";
   const hasRemaining = declaration.remainingContainerAmount != null || declaration.remainingWeight != null;
+
+  // Antrepo listesi aktarım özetini de taşır; hiç aktarım yoksa geçmiş için
+  // boşuna istek atmıyoruz. Özeti taşımayan yerlerden (dashboard'daki son
+  // kayıtlar) açıldığında bilgi elimizde olmadığı için doğrudan soruyoruz.
+  const transferCount = declaration.transferredFileNos?.length;
+  const showTransferHistory =
+    transferCount === undefined ? statusIsKapandi : transferCount > 0;
 
   /* Resolve company names from multiple possible field patterns */
   const brokerName = resolveName(
@@ -208,6 +216,22 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
             <InfoRow label="Beyanname Tarihi" value={formatDate(declaration.declarationDate)} />
             <InfoRow label="Pul Ödeme Tarihi" value={formatDate(declaration.stampPaymentDate)} />
           </Section>
+
+          {/* Aktarım Geçmişi — hangi düşümden hangi İşlem Takip dosyası doğmuş */}
+          {showTransferHistory && (
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <span className="material-symbols-outlined text-primary text-base">swap_horiz</span>
+                <span className="text-xs font-semibold text-text-secondary tracking-wider">AKTARIM GEÇMİŞİ</span>
+                {transferCount > 0 && (
+                  <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+                    {transferCount} aktarım
+                  </span>
+                )}
+              </div>
+              <WarehouseTransferHistory declarationId={declaration.id} />
+            </div>
+          )}
 
           {/* Düşümlü aktarım notu */}
           {statusIsKapandi && hasRemaining && (

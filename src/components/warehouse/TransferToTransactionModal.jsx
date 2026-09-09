@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
+import WarehouseTransferHistory from "./WarehouseTransferHistory";
 
 const formatNum = (n, dec = 3) => {
   if (n == null) return "-";
@@ -12,6 +13,9 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString("tr-TR") : "-");
 export default function TransferToTransactionModal({ declaration, onClose, onSuccess }) {
   const effectiveContainer = declaration.remainingContainerAmount ?? declaration.containerAmount;
   const effectiveWeight    = declaration.remainingWeight          ?? declaration.weight;
+
+  // Liste yanıtındaki özet; ilk aktarımda geçmiş için boşuna istek atmıyoruz.
+  const previousTransferCount = declaration.transferredFileNos?.length ?? 0;
 
   const [transferType, setTransferType] = useState("FULL");
   const [fileNo, setFileNo] = useState("");
@@ -168,6 +172,20 @@ export default function TransferToTransactionModal({ declaration, onClose, onSuc
               </div>
             </div>
           </div>
+
+          {/* Önceki Aktarımlar — kalan stoktan yeni düşüm yaparken geçmiş görünsün */}
+          {previousTransferCount > 0 && (
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <span className="material-symbols-outlined text-text-secondary text-base">history</span>
+                <span className="text-xs font-semibold text-text-secondary tracking-wider">ÖNCEKİ AKTARIMLAR</span>
+                <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+                  {previousTransferCount} aktarım
+                </span>
+              </div>
+              <WarehouseTransferHistory declarationId={declaration.id} />
+            </div>
+          )}
 
           {/* Aktarım Tipi */}
           <div>
