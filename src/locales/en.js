@@ -393,6 +393,7 @@ export const en = {
     addonCatalog: "Service Catalog",
     plans: "Plans",
     feedbackTasks: "Feedback Tasks",
+    featureFlags: "Feature Flags",
   },
 
   // Sidebar and mobile menu
@@ -417,6 +418,47 @@ export const en = {
     title: "Language",
     description: "Interface language. The page reloads when you change it.",
     inProgress: "Translation is in progress; some screens may still appear in Turkish.",
+  },
+
+  // Feature flags (staged rollout)
+  featureFlags: {
+    title: "Feature Flags",
+    subtitle: "Try an updated feature with selected customs brokers first, then open it to everyone.",
+    newBadge: "New",
+    states: {
+      OFF: "Off",
+      PILOT: "Pilot",
+      ON: "On for Everyone",
+    },
+    stateHelp: {
+      OFF: "Nobody sees the new behaviour.",
+      PILOT: "Only the selected customs brokers, their linked clients and SUPER_ADMIN see it.",
+      ON: "All users see the new behaviour.",
+    },
+    pilotCompanies: "Pilot customs brokers",
+    noBrokers: "No customs brokers found",
+    pilotNeedsCompany: "Select at least one customs broker for a pilot",
+    save: "Save",
+    saving: "Saving...",
+    saved: "Flag updated",
+    loadError: "Could not load flags",
+    saveError: "Could not update the flag",
+    lastUpdated: "Last updated",
+    empty: "No flags defined",
+  },
+
+  // Courier stops
+  courierStops: {
+    stopType: "Stop",
+    customs: "Customs",
+    client: "Client Company",
+    selectClient: "Select a client company",
+    noClients: "No linked client companies",
+    clientsLoading: "Loading client companies...",
+    clientStops: "Client Companies",
+    selectAtLeastOneClient: "Select at least one client company",
+    selectedClients: "{{count}} client companies selected",
+    summaryClients: "{{days}} days × {{stops}} client companies × {{times}} times",
   },
 };
 

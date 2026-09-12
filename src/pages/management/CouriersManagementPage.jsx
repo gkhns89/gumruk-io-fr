@@ -272,6 +272,7 @@ export default function CouriersManagementPage() {
       {showEditModal && selectedCourier && (
         <EditCourierModal
           courier={selectedCourier}
+          brokerCompanyId={brokerCompanyId}
           onClose={() => { setShowEditModal(false); setSelectedCourier(null); }}
           onSuccess={() => { setShowEditModal(false); setSelectedCourier(null); loadCouriers(); }}
         />

@@ -42,6 +42,7 @@ const BrokerSubscriptionsPage = lazy(() => import("./pages/management/BrokerSubs
 const AddonCatalogPage = lazy(() => import("./pages/management/AddonCatalogPage"));
 const PlanManagementPage = lazy(() => import("./pages/management/PlanManagementPage"));
 const FeedbackTasksPage = lazy(() => import("./pages/management/FeedbackTasksPage"));
+const FeatureFlagsPage = lazy(() => import("./pages/management/FeatureFlagsPage"));
 
 /** Chunk inerken gösterilen ekran — tema rengine uyar, ani beyaz parlama olmaz */
 function RouteFallback() {
@@ -370,6 +371,16 @@ export default function App() {
         element={
           <ProtectedRoute requiredRole="SUPER_ADMIN">
             <FeedbackTasksPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Özellik Bayrakları — kademeli yayın (SUPER_ADMIN) */}
+      <Route
+        path="/management/feature-flags"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <FeatureFlagsPage />
           </ProtectedRoute>
         }
       />

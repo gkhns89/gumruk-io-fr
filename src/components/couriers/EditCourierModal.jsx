@@ -4,11 +4,27 @@ import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { DAY_OPTIONS } from '../../utils/constants';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
+import { useLinkedClients } from '../../hooks/useLinkedClients';
+import { t, getCurrentLocale } from '../../locales';
+import NewFeatureBadge from '../common/NewFeatureBadge';
 import BatchAddScheduleModal from './BatchAddScheduleModal';
 
-export default function EditCourierModal({ onClose, courier, onSuccess }) {
+// Durak adı: yeni kayıtlar stopName taşır; eski yanıtlarda yalnızca customs vardır.
+const stopNameOf = (schedule) => schedule.stopName || schedule.customs?.customsShortName || '';
+
+export default function EditCourierModal({ onClose, courier, onSuccess, brokerCompanyId }) {
   const [activeTab, setActiveTab] = useState('info'); // 'info' or 'schedules'
   const [showBatchModal, setShowBatchModal] = useState(false);
+
+  // Müşteri firması durağı — FEATURE_FLAGS.COURIER_CLIENT_STOPS (backend de ayrıca kontrol ediyor)
+  const { hasFeature, isPilotFeature } = useFeatureFlags();
+  const clientStopsEnabled = hasFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
+  const clientStopsPilot = isPilotFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
+  const [stopType, setStopType] = useState('CUSTOMS'); // 'CUSTOMS' | 'CLIENT'
+  const isClientStop = clientStopsEnabled && stopType === 'CLIENT';
+  const { clients: clientList, loading: loadingClients } = useLinkedClients(brokerCompanyId, clientStopsEnabled);
 
   // Courier Info Form
   const [formData, setFormData] = useState({
@@ -30,6 +46,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
   const [newSchedule, setNewSchedule] = useState({
     dayOfWeek: 1,
     customsId: '',
+    clientCompanyId: '',
     departureTime: '09:00',
     notes: ''
   });
@@ -147,8 +164,9 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
   };
 
   const handleAddSchedule = async () => {
-    if (!newSchedule.customsId) {
-      showError('Lütfen gümrük müdürlüğü seçin');
+    const stopId = isClientStop ? newSchedule.clientCompanyId : newSchedule.customsId;
+    if (!stopId) {
+      showError(isClientStop ? t('courierStops.selectClient') : 'Lütfen gümrük müdürlüğü seçin');
       return;
     }
 
@@ -160,7 +178,9 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     try {
       const result = await courierService.addSchedule(courier.id, {
         dayOfWeek: parseInt(newSchedule.dayOfWeek),
-        customsId: parseInt(newSchedule.customsId),
+        ...(isClientStop
+          ? { clientCompanyId: parseInt(stopId) }
+          : { customsId: parseInt(stopId) }),
         departureTime: newSchedule.departureTime,
         active: true,
         notes: newSchedule.notes.trim() || null
@@ -170,10 +190,11 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
         showSuccess('Kalkış saati eklendi');
         setSchedulesModified(true); // Mark as modified
         loadSchedules(); // Reload schedules
-        // Reset form
+        // Reset form (durak tipi korunur)
         setNewSchedule({
           dayOfWeek: 1,
           customsId: customsList.length > 0 ? customsList[0].id : '',
+          clientCompanyId: '',
           departureTime: '09:00',
           notes: ''
         });
@@ -220,7 +241,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     return timeString.substring(0, 5); // HH:mm:ss -> HH:mm
   };
 
-  // Group schedules by day and sort (time first, then customs name)
+  // Group schedules by day and sort (time first, then stop name)
   const schedulesByDay = schedules.reduce((acc, schedule) => {
     if (!acc[schedule.dayOfWeek]) {
       acc[schedule.dayOfWeek] = [];
@@ -229,15 +250,15 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     return acc;
   }, {});
 
-  // Sort schedules within each day: time first, then customs name alphabetically
+  // Sort schedules within each day: time first, then stop name alphabetically
   Object.keys(schedulesByDay).forEach(day => {
     schedulesByDay[day].sort((a, b) => {
       // Primary sort: departure time
       const timeCompare = a.departureTime.localeCompare(b.departureTime);
       if (timeCompare !== 0) return timeCompare;
 
-      // Secondary sort: customs name (alphabetically)
-      return a.customs.customsShortName.localeCompare(b.customs.customsShortName, 'tr');
+      // Secondary sort: stop name (alphabetically)
+      return stopNameOf(a).localeCompare(stopNameOf(b), getCurrentLocale());
     });
   });
 
@@ -415,6 +436,34 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
                   </button>
                 </div>
 
+                {/* Durak tipi: Gümrük / Müşteri Firması (bayrak açıksa) */}
+                {clientStopsEnabled && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-text-main">{t('courierStops.stopType')}</span>
+                    <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                      {[
+                        ['CUSTOMS', t('courierStops.customs')],
+                        ['CLIENT', t('courierStops.client')],
+                      ].map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={stopType === value}
+                          onClick={() => setStopType(value)}
+                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                            stopType === value
+                              ? 'bg-primary text-white'
+                              : 'bg-white dark:bg-gray-700 text-text-main hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {clientStopsPilot && <NewFeatureBadge />}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {/* Day of Week */}
                   <div>
@@ -430,21 +479,46 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
                     </select>
                   </div>
 
-                  {/* Customs */}
+                  {/* Stop: Customs or Client */}
                   <div>
-                    <label className="block text-xs font-medium text-text-main mb-1">Gümrük</label>
-                    <select
-                      value={newSchedule.customsId}
-                      onChange={(e) => setNewSchedule(prev => ({ ...prev, customsId: e.target.value }))}
-                      disabled={loadingCustoms}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:ring-2 focus:ring-primary"
-                    >
-                      {customsList.map(customs => (
-                        <option key={customs.id} value={customs.id}>
-                          {customs.customsShortName}
-                        </option>
-                      ))}
-                    </select>
+                    {isClientStop ? (
+                      <>
+                        <label className="block text-xs font-medium text-text-main mb-1">{t('courierStops.client')}</label>
+                        <select
+                          value={newSchedule.clientCompanyId}
+                          onChange={(e) => setNewSchedule(prev => ({ ...prev, clientCompanyId: e.target.value }))}
+                          disabled={loadingClients || clientList.length === 0}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">
+                            {loadingClients
+                              ? t('courierStops.clientsLoading')
+                              : clientList.length === 0 ? t('courierStops.noClients') : t('courierStops.selectClient')}
+                          </option>
+                          {clientList.map(client => (
+                            <option key={client.id} value={client.id}>
+                              {client.label}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <>
+                        <label className="block text-xs font-medium text-text-main mb-1">Gümrük</label>
+                        <select
+                          value={newSchedule.customsId}
+                          onChange={(e) => setNewSchedule(prev => ({ ...prev, customsId: e.target.value }))}
+                          disabled={loadingCustoms}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:ring-2 focus:ring-primary"
+                        >
+                          {customsList.map(customs => (
+                            <option key={customs.id} value={customs.id}>
+                              {customs.customsShortName}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
                   </div>
 
                   {/* Time */}
@@ -494,10 +568,12 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
                               className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                             >
                               <div className="flex items-center gap-3 flex-1">
-                                <span className="material-symbols-outlined text-primary text-sm">schedule</span>
+                                <span className="material-symbols-outlined text-primary text-sm">
+                                  {schedule.stopType === 'CLIENT' ? 'corporate_fare' : 'schedule'}
+                                </span>
                                 <div>
                                   <p className="text-sm font-medium text-text-main">
-                                    {formatTime(schedule.departureTime)} - {schedule.customs?.customsShortName || 'N/A'}
+                                    {formatTime(schedule.departureTime)} - {stopNameOf(schedule) || 'N/A'}
                                   </p>
                                   {schedule.notes && (
                                     <p className="text-xs text-text-secondary">{schedule.notes}</p>
@@ -547,6 +623,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
       {showBatchModal && (
         <BatchAddScheduleModal
           courier={courier}
+          brokerCompanyId={brokerCompanyId}
           onClose={() => setShowBatchModal(false)}
           onSuccess={() => {
             loadSchedules(); // Refresh schedules list

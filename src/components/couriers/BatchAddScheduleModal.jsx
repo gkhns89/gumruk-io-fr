@@ -3,19 +3,33 @@ import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { DAY_OPTIONS } from '../../utils/constants';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
+import { useLinkedClients } from '../../hooks/useLinkedClients';
+import { t } from '../../locales';
+import NewFeatureBadge from '../common/NewFeatureBadge';
 
 /**
  * Toplu Schedule Ekleme Modal
- * Birden fazla gün + gümrük kombinasyonu için tek seferde schedule ekleme
+ * Birden fazla gün + durak (gümrük ya da müşteri firması) kombinasyonu için tek seferde schedule ekleme
  */
-export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
+export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [customsList, setCustomsList] = useState([]);
   const [loadingCustoms, setLoadingCustoms] = useState(true);
 
+  // Müşteri firması durağı — FEATURE_FLAGS.COURIER_CLIENT_STOPS
+  const { hasFeature, isPilotFeature } = useFeatureFlags();
+  const clientStopsEnabled = hasFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
+  const clientStopsPilot = isPilotFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
+  const [stopType, setStopType] = useState('CUSTOMS'); // 'CUSTOMS' | 'CLIENT'
+  const isClientStop = clientStopsEnabled && stopType === 'CLIENT';
+  const { clients: clientList, loading: loadingClients } = useLinkedClients(brokerCompanyId, clientStopsEnabled);
+
   // Form state
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedCustoms, setSelectedCustoms] = useState([]);
+  const [selectedClients, setSelectedClients] = useState([]);
   const [selectedTimes, setSelectedTimes] = useState([]);
 
   // Hazır saat şablonları (15 dakikalık aralıklarla)
@@ -76,6 +90,15 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     );
   };
 
+  // Toggle client selection
+  const toggleClient = (clientId) => {
+    setSelectedClients(prev =>
+      prev.includes(clientId)
+        ? prev.filter(c => c !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
   // Toggle time selection
   const toggleTime = (time) => {
     setSelectedTimes(prev =>
@@ -100,14 +123,22 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     setSelectedDays([]);
   };
 
-  // Select all customs
-  const selectAllCustoms = () => {
-    setSelectedCustoms(customsList.map(c => c.id));
+  // Select all stops of the active type
+  const selectAllStops = () => {
+    if (isClientStop) {
+      setSelectedClients(clientList.map(c => c.id));
+    } else {
+      setSelectedCustoms(customsList.map(c => c.id));
+    }
   };
 
-  // Clear customs selection
-  const clearCustoms = () => {
-    setSelectedCustoms([]);
+  // Clear stop selection of the active type
+  const clearStops = () => {
+    if (isClientStop) {
+      setSelectedClients([]);
+    } else {
+      setSelectedCustoms([]);
+    }
   };
 
   // Select all times
@@ -136,6 +167,8 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     setSelectedTimes([]);
   };
 
+  const selectedStops = isClientStop ? selectedClients : selectedCustoms;
+
   // Validate and submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -146,8 +179,8 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
       return;
     }
 
-    if (selectedCustoms.length === 0) {
-      showError('En az bir gümrük müdürlüğü seçmelisiniz');
+    if (selectedStops.length === 0) {
+      showError(isClientStop ? t('courierStops.selectAtLeastOneClient') : 'En az bir gümrük müdürlüğü seçmelisiniz');
       return;
     }
 
@@ -165,11 +198,11 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
       const errors = [];
 
       for (const dayOfWeek of selectedDays) {
-        for (const customsId of selectedCustoms) {
+        for (const stopId of selectedStops) {
           for (const departureTime of selectedTimes) {
             try {
               const result = await courierService.addSchedule(courier.id, {
-                customsId,
+                ...(isClientStop ? { clientCompanyId: stopId } : { customsId: stopId }),
                 dayOfWeek,
                 departureTime,
                 active: true,
@@ -211,7 +244,7 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
     }
   };
 
-  const totalSchedules = selectedDays.length * selectedCustoms.length * selectedTimes.length;
+  const totalSchedules = selectedDays.length * selectedStops.length * selectedTimes.length;
 
   return (
     <div
@@ -229,7 +262,7 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
               Toplu Kalkış Saati Ekle
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {courier.shortName || courier.name} - Birden fazla gün ve gümrük için tek seferde ekle
+              {courier.shortName || courier.name} - Birden fazla gün ve durak için tek seferde ekle
             </p>
           </div>
           <button
@@ -297,23 +330,50 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
             )}
           </div>
 
-          {/* Customs Selection */}
+          {/* Stops Selection */}
           <div className="mb-6">
+            {clientStopsEnabled && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('courierStops.stopType')}</span>
+                <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                  {[
+                    ['CUSTOMS', t('courierStops.customs')],
+                    ['CLIENT', t('courierStops.client')],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={stopType === value}
+                      onClick={() => setStopType(value)}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                        stopType === value
+                          ? 'bg-primary text-white'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {clientStopsPilot && <NewFeatureBadge />}
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Gümrük Müdürlükleri
+                {isClientStop ? t('courierStops.clientStops') : 'Gümrük Müdürlükleri'}
               </label>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={selectAllCustoms}
+                  onClick={selectAllStops}
                   className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
                 >
                   Tümünü Seç
                 </button>
                 <button
                   type="button"
-                  onClick={clearCustoms}
+                  onClick={clearStops}
                   className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
                   Temizle
@@ -321,7 +381,43 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
               </div>
             </div>
 
-            {loadingCustoms ? (
+            {isClientStop ? (
+              loadingClients ? (
+                <div className="text-center py-4 text-gray-500">{t('courierStops.clientsLoading')}</div>
+              ) : clientList.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">{t('courierStops.noClients')}</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                    {clientList.map(client => (
+                      <label
+                        key={client.id}
+                        className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-all ${
+                          selectedClients.includes(client.id)
+                            ? 'bg-green-50 dark:bg-green-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedClients.includes(client.id)}
+                          onChange={() => toggleClient(client.id)}
+                          className="w-4 h-4 text-green-600 rounded"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {client.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {selectedClients.length > 0 && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                      {t('courierStops.selectedClients', { count: selectedClients.length })}
+                    </p>
+                  )}
+                </>
+              )
+            ) : loadingCustoms ? (
               <div className="text-center py-4 text-gray-500">Gümrükler yükleniyor...</div>
             ) : customsList.length === 0 ? (
               <div className="text-center py-4 text-red-600">Gümrük bulunamadı</div>
@@ -434,7 +530,9 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <span className="font-bold">{totalSchedules} adet</span> kalkış saati eklenecek
                 <br />
-                ({selectedDays.length} gün × {selectedCustoms.length} gümrük × {selectedTimes.length} saat)
+                {isClientStop
+                  ? `(${t('courierStops.summaryClients', { days: selectedDays.length, stops: selectedClients.length, times: selectedTimes.length })})`
+                  : `(${selectedDays.length} gün × ${selectedCustoms.length} gümrük × ${selectedTimes.length} saat)`}
               </p>
             </div>
           )}

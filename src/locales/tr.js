@@ -393,6 +393,7 @@ export const tr = {
     addonCatalog: "Hizmet Kataloğu",
     plans: "Plan Yönetimi",
     feedbackTasks: "Feedback Taskları",
+    featureFlags: "Özellik Bayrakları",
   },
 
   // Kenar çubuğu ve mobil menü
@@ -417,6 +418,47 @@ export const tr = {
     title: "Dil",
     description: "Arayüz dili. Değiştirdiğinizde sayfa yeniden yüklenir.",
     inProgress: "Çeviri sürüyor; bazı ekranlar henüz Türkçe görünebilir.",
+  },
+
+  // Özellik bayrakları (kademeli yayın)
+  featureFlags: {
+    title: "Özellik Bayrakları",
+    subtitle: "Güncellenen bir özelliği önce seçili gümrük firmalarında deneyin, sorun yoksa herkese açın.",
+    newBadge: "Yeni",
+    states: {
+      OFF: "Kapalı",
+      PILOT: "Pilot",
+      ON: "Herkese Açık",
+    },
+    stateHelp: {
+      OFF: "Kimse yeni hâli görmez.",
+      PILOT: "Yalnızca seçili gümrük firmaları, onlara bağlı müşteriler ve SUPER_ADMIN görür.",
+      ON: "Tüm kullanıcılar yeni hâli görür.",
+    },
+    pilotCompanies: "Pilot gümrük firmaları",
+    noBrokers: "Gümrük firması bulunamadı",
+    pilotNeedsCompany: "Pilot durumunda en az bir gümrük firması seçin",
+    save: "Kaydet",
+    saving: "Kaydediliyor...",
+    saved: "Bayrak güncellendi",
+    loadError: "Bayraklar yüklenemedi",
+    saveError: "Bayrak güncellenemedi",
+    lastUpdated: "Son güncelleme",
+    empty: "Tanımlı bayrak yok",
+  },
+
+  // Kurye durakları
+  courierStops: {
+    stopType: "Durak",
+    customs: "Gümrük",
+    client: "Müşteri Firması",
+    selectClient: "Müşteri firması seçin",
+    noClients: "Bağlı müşteri firması yok",
+    clientsLoading: "Müşteri firmaları yükleniyor...",
+    clientStops: "Müşteri Firmaları",
+    selectAtLeastOneClient: "En az bir müşteri firması seçmelisiniz",
+    selectedClients: "{{count}} müşteri firması seçildi",
+    summaryClients: "{{days}} gün × {{stops}} müşteri firması × {{times}} saat",
   },
 };
 

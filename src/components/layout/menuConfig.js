@@ -51,6 +51,7 @@ export const MANAGEMENT_ITEMS = [
   menuItem("library_add", "nav.addonCatalog", "/management/addon-catalog", { roles: ['SUPER_ADMIN'] }),
   menuItem("workspace_premium", "nav.plans", "/management/plans", { roles: ['SUPER_ADMIN'] }),
   menuItem("task_alt", "nav.feedbackTasks", "/management/feedback-tasks", { roles: ['SUPER_ADMIN'] }),
+  menuItem("flag", "nav.featureFlags", "/management/feature-flags", { roles: ['SUPER_ADMIN'] }),
 ];
 
 // Kullanıcının rol + koşullarına göre görünür yönetim öğeleri.

@@ -57,9 +57,20 @@ staging or production, and never log tokens or raw API payloads.
 
 ### Provider stack (`src/main.jsx`)
 
-`BrowserRouter → ThemeProvider → AuthProvider → PaymentRestrictionProvider → App`
-plus a global `ToastContainer`. The order matters: `PaymentRestrictionProvider` reads
-`AuthContext` directly.
+`BrowserRouter → ThemeProvider → AuthProvider → PaymentRestrictionProvider → FeatureFlagProvider → App`
+plus a global `ToastContainer`. The order matters: `PaymentRestrictionProvider` and
+`FeatureFlagProvider` read `AuthContext` directly.
+
+### Release flags
+
+A feature being updated can run for chosen brokerages first. Flags are declared in the
+backend (`FeatureFlagKey`) and mirrored in `src/utils/featureFlags.js`; SUPER_ADMIN sets each
+one to OFF / PILOT / ON and picks pilot brokers on `/management/feature-flags`.
+`FeatureFlagProvider` loads `/feature-flags/me` once per login; read it with
+`useFeatureFlags()` → `hasFeature(key)` to branch, `isPilotFeature(key)` to show
+`<NewFeatureBadge />`. In PILOT the backend also turns a flag on for client users linked to a
+pilot broker. The frontend only reveals UI — flagged endpoints check the flag themselves.
+When a flag goes ON for good, delete the old code path, the constant and the backend key.
 
 ### Routing (`src/App.jsx`)
 
