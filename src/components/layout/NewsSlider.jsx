@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { customsNewsService } from '../../api/customsNewsService';
+import { t, getCurrentLocale } from '../../locales';
 
 export default function NewsSlider() {
   const [news, setNews] = useState([]);
@@ -24,7 +25,7 @@ export default function NewsSlider() {
         setNews(result.data);
         setError(null);
       } else {
-        setError(result.error || 'Haber bulunamadı');
+        setError(result.error || t('news.notFound'));
       }
 
       setIsLoading(false);
@@ -100,7 +101,7 @@ export default function NewsSlider() {
     return (
       <div className="flex items-center gap-2 text-gray-500 text-sm">
         <span className="material-symbols-outlined text-lg animate-spin">refresh</span>
-        <span className="hidden md:inline">Haberler yükleniyor...</span>
+        <span className="hidden md:inline">{t('news.loading')}</span>
       </div>
     );
   }
@@ -119,7 +120,7 @@ export default function NewsSlider() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200 dark:border-gray-600 transition-colors">
             <span className="material-symbols-outlined text-lg text-primary">newspaper</span>
-            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 hidden lg:inline">Güncel</span>
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 hidden lg:inline">{t('news.current')}</span>
           </div>
           <span className="material-symbols-outlined text-xl text-primary sm:hidden">newspaper</span>
         </div>
@@ -154,8 +155,8 @@ export default function NewsSlider() {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             className="h-8 w-8 lg:h-9 lg:w-9 flex items-center justify-center rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-600 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-md transition-all group"
-            aria-label="Önceki Haber"
-            title="Önceki Haber"
+            aria-label={t('news.previous')}
+            title={t('news.previous')}
           >
             <span className="material-symbols-outlined text-lg text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">
               chevron_left
@@ -175,8 +176,8 @@ export default function NewsSlider() {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             className="h-8 w-8 lg:h-9 lg:w-9 flex items-center justify-center rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-600 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-md transition-all group"
-            aria-label="Sonraki Haber"
-            title="Sonraki Haber"
+            aria-label={t('news.next')}
+            title={t('news.next')}
           >
             <span className="material-symbols-outlined text-lg text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">
               chevron_right
@@ -216,12 +217,12 @@ export default function NewsSlider() {
               <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10 rounded-t-lg transition-colors">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="material-symbols-outlined text-primary text-2xl">newspaper</span>
-                  <h2 className="text-lg font-bold text-text-main truncate">Gümrük Haberleri</h2>
+                  <h2 className="text-lg font-bold text-text-main truncate">{t('news.title')}</h2>
                 </div>
                 <button
                   onClick={handleCloseModal}
                   className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0 ml-2"
-                  aria-label="Kapat"
+                  aria-label={t('common.close')}
                 >
                   <span className="material-symbols-outlined text-text-main">close</span>
                 </button>
@@ -237,7 +238,7 @@ export default function NewsSlider() {
                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <span className="material-symbols-outlined text-base">calendar_today</span>
                     <time dateTime={currentNews.publishedDate}>
-                      {new Date(currentNews.publishedDate).toLocaleDateString('tr-TR', {
+                      {new Date(currentNews.publishedDate).toLocaleDateString(getCurrentLocale(), {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -247,7 +248,7 @@ export default function NewsSlider() {
                 )}
 
                 <div className="prose prose-sm max-w-none text-text-secondary leading-relaxed space-y-3">
-                  {currentNews.description || currentNews.summary || 'Haber detayı mevcut değil.'}
+                  {currentNews.description || currentNews.summary || t('news.noDetail')}
                 </div>
 
                 {/* Actions */}
@@ -257,7 +258,7 @@ export default function NewsSlider() {
                       onClick={handleGoToLink}
                       className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
                     >
-                      <span>Detaylı Oku</span>
+                      <span>{t('news.readMore')}</span>
                       <span className="material-symbols-outlined text-lg">open_in_new</span>
                     </button>
                   )}
@@ -266,7 +267,7 @@ export default function NewsSlider() {
                     onClick={handleCloseModal}
                     className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-text-main"
                   >
-                    Kapat
+                    {t('common.close')}
                   </button>
                 </div>
               </div>
@@ -300,8 +301,8 @@ export default function NewsSlider() {
                     handlePrevious();
                   }}
                   className="h-12 w-12 lg:h-14 lg:w-14 flex items-center justify-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md hover:bg-white dark:hover:bg-gray-800 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-600 hover:border-primary/50 dark:hover:border-primary/50 transition-all group/btn"
-                  aria-label="Önceki Haber"
-                  title="Önceki Haber"
+                  aria-label={t('news.previous')}
+                  title={t('news.previous')}
                 >
                   {/* Mobil ikon */}
                   <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors block md:!hidden">
@@ -327,8 +328,8 @@ export default function NewsSlider() {
                     handleNext();
                   }}
                   className="h-12 w-12 lg:h-14 lg:w-14 flex items-center justify-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md hover:bg-white dark:hover:bg-gray-800 shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-600 hover:border-primary/50 dark:hover:border-primary/50 transition-all group/btn"
-                  aria-label="Sonraki Haber"
-                  title="Sonraki Haber"
+                  aria-label={t('news.next')}
+                  title={t('news.next')}
                 >
                   {/* Mobil ikon */}
                   <span className="material-symbols-outlined text-2xl text-gray-700 dark:text-gray-300 group-hover/btn:text-primary transition-colors block md:!hidden">

@@ -5,53 +5,61 @@ import { feedbackService } from '../api/feedbackService';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccess, showError } from '../utils/toastUtils';
 import FeedbackDetailModal from '../components/common/FeedbackDetailModal';
+import { t } from '../locales';
 
 const CATEGORIES = [
-  { value: 'BUG',      label: 'Hata / Bug',        icon: 'bug_report' },
-  { value: 'FEATURE',  label: 'Öneri / Özellik',   icon: 'lightbulb'  },
-  { value: 'QUESTION', label: 'Soru',               icon: 'help'       },
-  { value: 'OTHER',    label: 'Diğer',              icon: 'more_horiz' },
+  { value: 'BUG',      icon: 'bug_report' },
+  { value: 'FEATURE',  icon: 'lightbulb'  },
+  { value: 'QUESTION', icon: 'help'       },
+  { value: 'OTHER',    icon: 'more_horiz' },
 ];
 
+// Etiketler getter: çeviri sabit tanımlanırken değil, okunduğunda alınır
 const CATEGORY_CONFIG = {
-  BUG:      { label: 'Hata',    icon: 'bug_report',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800' },
-  FEATURE:  { label: 'Öneri',   icon: 'lightbulb',   color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
-  QUESTION: { label: 'Soru',    icon: 'help',        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-  OTHER:    { label: 'Diğer',   icon: 'more_horiz',  color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
+  BUG:      { get label() { return t('feedback.categories.BUG'); },      icon: 'bug_report',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800' },
+  FEATURE:  { get label() { return t('feedback.categories.FEATURE'); },  icon: 'lightbulb',   color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
+  QUESTION: { get label() { return t('feedback.categories.QUESTION'); }, icon: 'help',        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+  OTHER:    { get label() { return t('feedback.categories.OTHER'); },    icon: 'more_horiz',  color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
 };
 
+const clickUpStatus = (labelKey, color, icon) => ({
+  get label() { return t(`feedback.clickupStatus.${labelKey}`); },
+  color,
+  icon,
+});
+
 const CLICKUP_STATUS_MAP = {
-  'new':           { label: 'Yeni',                 color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',             icon: 'fiber_new' },
-  'open':          { label: 'Açık',                 color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'to do':         { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'todo':          { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'planning':      { label: 'Planlandı',             color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: 'event_note' },
-  'backlog':       { label: 'Biriktirici',           color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'inbox' },
-  'pending':       { label: 'Bekliyor',              color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'hourglass_empty' },
-  'needs info':    { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
-  'need info':     { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
-  'active':        { label: 'Aktif',                 color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'play_circle' },
-  'in progress':   { label: 'İşlemde',               color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
-  'blocked':       { label: 'Engellendi',            color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             icon: 'block' },
-  'on hold':       { label: 'Beklemede',             color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
-  'review':        { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'in review':     { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'testing':       { label: 'Test Ediliyor',         color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'science' },
-  'qa':            { label: 'Kalite Kontrolde',      color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'fact_check' },
-  'staged':        { label: 'Hazırlandı',            color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',         icon: 'cloud_upload' },
-  'deployed':      { label: 'Yayınlandı',            color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', icon: 'rocket_launch' },
-  'complete':      { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'completed':     { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'done':          { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'resolved':      { label: 'Çözüldü',               color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'check_circle' },
-  'closed':        { label: 'Kapatıldı',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'lock' },
-  'archived':      { label: 'Arşivlendi',            color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'archive' },
-  'cancelled':     { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
-  'canceled':      { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
-  'wont fix':      { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
-  "won't fix":     { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
-  'duplicate':     { label: 'Yinelenen',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'content_copy' },
-  'invalid':       { label: 'Geçersiz',              color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'not_interested' },
+  'new':           clickUpStatus('new',        'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',             'fiber_new'),
+  'open':          clickUpStatus('open',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'to do':         clickUpStatus('todo',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'todo':          clickUpStatus('todo',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'planning':      clickUpStatus('planning',   'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', 'event_note'),
+  'backlog':       clickUpStatus('backlog',    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'inbox'),
+  'pending':       clickUpStatus('pending',    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', 'hourglass_empty'),
+  'needs info':    clickUpStatus('needsInfo',  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     'help_outline'),
+  'need info':     clickUpStatus('needsInfo',  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     'help_outline'),
+  'active':        clickUpStatus('active',     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         'play_circle'),
+  'in progress':   clickUpStatus('inProgress', 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         'autorenew'),
+  'blocked':       clickUpStatus('blocked',    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             'block'),
+  'on hold':       clickUpStatus('onHold',     'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', 'pause_circle'),
+  'review':        clickUpStatus('review',     'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', 'manage_search'),
+  'in review':     clickUpStatus('review',     'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', 'manage_search'),
+  'testing':       clickUpStatus('testing',    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         'science'),
+  'qa':            clickUpStatus('qa',         'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         'fact_check'),
+  'staged':        clickUpStatus('staged',     'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',         'cloud_upload'),
+  'deployed':      clickUpStatus('deployed',   'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', 'rocket_launch'),
+  'complete':      clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'completed':     clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'done':          clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'resolved':      clickUpStatus('resolved',   'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'check_circle'),
+  'closed':        clickUpStatus('closed',     'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'lock'),
+  'archived':      clickUpStatus('archived',   'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'archive'),
+  'cancelled':     clickUpStatus('cancelled',  'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             'cancel'),
+  'canceled':      clickUpStatus('cancelled',  'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             'cancel'),
+  'wont fix':      clickUpStatus('wontFix',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'do_not_disturb'),
+  "won't fix":     clickUpStatus('wontFix',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'do_not_disturb'),
+  'duplicate':     clickUpStatus('duplicate',  'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'content_copy'),
+  'invalid':       clickUpStatus('invalid',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'not_interested'),
 };
 
 const getClickUpStatusConfig = (status) => {
@@ -67,10 +75,10 @@ const getClickUpStatusConfig = (status) => {
 
 const getStatusConfig = (fb) => {
   if (fb.clickupDeleted)
-    return { label: 'Kapatıldı', color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: 'check_circle' };
+    return { label: t('feedback.clickupStatus.closed'), color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: 'check_circle' };
   if (fb.clickupStatus)
     return getClickUpStatusConfig(fb.clickupStatus);
-  return { label: 'Alındı', color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400', icon: 'inbox' };
+  return { label: t('feedback.received'), color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400', icon: 'inbox' };
 };
 
 
@@ -151,8 +159,8 @@ const HelpPage = () => {
   const handleScreenshotChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setFormError('Sadece resim dosyaları yüklenebilir'); return; }
-    if (file.size > MAX_SCREENSHOT_SIZE) { setFormError("Screenshot boyutu 5 MB'ı aşamaz"); return; }
+    if (!file.type.startsWith('image/')) { setFormError(t('imageUpload.onlyImages')); return; }
+    if (file.size > MAX_SCREENSHOT_SIZE) { setFormError(t('feedback.form.screenshotTooLarge')); return; }
     setScreenshot(file);
     setScreenshotPreview(URL.createObjectURL(file));
     setFormError('');
@@ -166,8 +174,8 @@ const HelpPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) { setFormError('Başlık zorunludur'); return; }
-    if (!formData.description.trim()) { setFormError('Açıklama zorunludur'); return; }
+    if (!formData.title.trim()) { setFormError(t('feedback.form.titleRequired')); return; }
+    if (!formData.description.trim()) { setFormError(t('feedback.form.descriptionRequired')); return; }
 
     setFormLoading(true);
     setFormError('');
@@ -182,15 +190,15 @@ const HelpPage = () => {
     setFormLoading(false);
 
     if (result.success) {
-      showSuccess('Geri bildiriminiz alındı, teşekkürler!');
+      showSuccess(t('feedback.form.success'));
       setFormData(INITIAL_FORM);
       setScreenshot(null);
       setScreenshotPreview(null);
       setFormSubmitted(true);
       loadFeedbacks();
     } else {
-      setFormError(result.error || 'Gönderim sırasında bir hata oluştu');
-      showError('Geri bildirim gönderilemedi');
+      setFormError(result.error || t('feedback.form.submitError'));
+      showError(t('feedback.form.failed'));
     }
   };
 
@@ -201,13 +209,13 @@ const HelpPage = () => {
           <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
             <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
               <span className="material-symbols-outlined text-4xl text-primary">help_center</span>
-              Yardım
+              {t('nav.help')}
             </h1>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center text-text-secondary">
               <span className="material-symbols-outlined text-[48px] block mb-3">admin_panel_settings</span>
-              <p className="text-sm">Bu sayfa yönetici kullanıcılar için geçerli değildir.</p>
+              <p className="text-sm">{t('help.adminNotApplicable')}</p>
             </div>
           </div>
         </div>
@@ -223,10 +231,10 @@ const HelpPage = () => {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">help_center</span>
-            Yardım
+            {t('nav.help')}
           </h1>
           <p className="text-text-secondary mt-2">
-            Sorun bildirin, öneri gönderin veya geçmiş taleplerinizi takip edin
+            {t('help.subtitle')}
           </p>
         </div>
 
@@ -236,7 +244,7 @@ const HelpPage = () => {
           <section>
             <h2 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[20px] text-primary">feedback</span>
-              Sorun Bildir / Öneri Gönder
+              {t('help.reportTitle')}
             </h2>
 
             <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -246,13 +254,13 @@ const HelpPage = () => {
                   <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                     <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[28px]">check_circle</span>
                   </div>
-                  <p className="text-base font-semibold text-text-main">Geri bildiriminiz alındı!</p>
-                  <p className="text-sm text-text-secondary">Talebiniz incelemeye alındı. Durumunu aşağıdan takip edebilirsiniz.</p>
+                  <p className="text-base font-semibold text-text-main">{t('help.submittedTitle')}</p>
+                  <p className="text-sm text-text-secondary">{t('help.submittedHint')}</p>
                   <button
                     onClick={() => setFormSubmitted(false)}
                     className="mt-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition"
                   >
-                    Yeni Bildirim Gönder
+                    {t('help.newReport')}
                   </button>
                 </div>
               ) : (
@@ -272,7 +280,7 @@ const HelpPage = () => {
                           }`}
                       >
                         <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
-                        {cat.label}
+                        {t(`feedback.categoryOptions.${cat.value}`)}
                       </button>
                     ))}
                   </div>
@@ -283,7 +291,7 @@ const HelpPage = () => {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    placeholder="Kısa başlık..."
+                    placeholder={t('feedback.form.titlePlaceholder')}
                     maxLength={255}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700
                                bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100
@@ -295,7 +303,7 @@ const HelpPage = () => {
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Sorunu veya önerinizi detaylı açıklayın..."
+                    placeholder={t('feedback.form.descriptionPlaceholder')}
                     rows={4}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700
                                bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100
@@ -309,7 +317,7 @@ const HelpPage = () => {
                       <div className="relative inline-block">
                         <img
                           src={screenshotPreview}
-                          alt="Screenshot önizleme"
+                          alt={t('feedback.form.screenshotPreviewAlt')}
                           className="h-20 rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
                         />
                         <button
@@ -330,7 +338,7 @@ const HelpPage = () => {
                                    hover:border-primary hover:text-primary transition text-sm"
                       >
                         <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
-                        Screenshot ekle (opsiyonel, maks 5 MB)
+                        {t('feedback.form.addScreenshot')}
                       </button>
                     )}
                     <input
@@ -361,7 +369,7 @@ const HelpPage = () => {
                       {formLoading && (
                         <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                       )}
-                      {formLoading ? 'Gönderiliyor...' : 'Gönder'}
+                      {formLoading ? t('feedback.form.sending') : t('common.submit')}
                     </button>
                   </div>
 
@@ -375,7 +383,7 @@ const HelpPage = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text-main flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-primary">history</span>
-                Bildirim Geçmişim
+                {t('help.historyTitle')}
               </h2>
               <button
                 onClick={loadFeedbacks}
@@ -383,7 +391,7 @@ const HelpPage = () => {
                            text-xs text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 <span className="material-symbols-outlined text-[15px]">refresh</span>
-                Yenile
+                {t('help.refresh')}
               </button>
             </div>
 
@@ -394,7 +402,7 @@ const HelpPage = () => {
             ) : feedbacks.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[120px] gap-2 text-text-secondary bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
                 <span className="material-symbols-outlined text-[40px]">inbox</span>
-                <p className="text-sm">Henüz bildirim göndermediniz</p>
+                <p className="text-sm">{t('help.noHistory')}</p>
               </div>
             ) : (
               <div className="space-y-2">

@@ -2,12 +2,13 @@ import React, { useState, useRef } from 'react';
 import { feedbackService } from '../../api/feedbackService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { useAuth } from '../../hooks/useAuth';
+import { t } from '../../locales';
 
 const CATEGORIES = [
-  { value: 'BUG', label: 'Hata / Bug', icon: 'bug_report' },
-  { value: 'FEATURE', label: 'Öneri / Özellik', icon: 'lightbulb' },
-  { value: 'QUESTION', label: 'Soru', icon: 'help' },
-  { value: 'OTHER', label: 'Diğer', icon: 'more_horiz' },
+  { value: 'BUG', icon: 'bug_report' },
+  { value: 'FEATURE', icon: 'lightbulb' },
+  { value: 'QUESTION', icon: 'help' },
+  { value: 'OTHER', icon: 'more_horiz' },
 ];
 
 const MAX_SCREENSHOT_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -37,11 +38,11 @@ const FeedbackModal = ({ onClose }) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Sadece resim dosyaları yüklenebilir');
+      setError(t('imageUpload.onlyImages'));
       return;
     }
     if (file.size > MAX_SCREENSHOT_SIZE) {
-      setError('Screenshot boyutu 5 MB\'ı aşamaz');
+      setError(t('feedback.form.screenshotTooLarge'));
       return;
     }
 
@@ -58,8 +59,8 @@ const FeedbackModal = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) { setError('Başlık zorunludur'); return; }
-    if (!formData.description.trim()) { setError('Açıklama zorunludur'); return; }
+    if (!formData.title.trim()) { setError(t('feedback.form.titleRequired')); return; }
+    if (!formData.description.trim()) { setError(t('feedback.form.descriptionRequired')); return; }
 
     setLoading(true);
     setError('');
@@ -74,11 +75,11 @@ const FeedbackModal = ({ onClose }) => {
     setLoading(false);
 
     if (result.success) {
-      showSuccess('Geri bildiriminiz alındı, teşekkürler!');
+      showSuccess(t('feedback.form.success'));
       onClose();
     } else {
-      setError(result.error || 'Gönderim sırasında bir hata oluştu');
-      showError('Geri bildirim gönderilemedi');
+      setError(result.error || t('feedback.form.submitError'));
+      showError(t('feedback.form.failed'));
     }
   };
 
@@ -93,12 +94,12 @@ const FeedbackModal = ({ onClose }) => {
         <div className="flex items-center justify-between px-6 py-4 bg-primary text-white">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[22px]">feedback</span>
-            <h2 className="font-semibold text-base">Sorun Bildir / Öneri</h2>
+            <h2 className="font-semibold text-base">{t('layout.reportIssue')}</h2>
           </div>
           <button
             onClick={onClose}
             className="rounded-full p-1 hover:bg-white/20 transition"
-            aria-label="Kapat"
+            aria-label={t('common.close')}
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -121,7 +122,7 @@ const FeedbackModal = ({ onClose }) => {
                   }`}
               >
                 <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
-                {cat.label}
+                {t(`feedback.categoryOptions.${cat.value}`)}
               </button>
             ))}
           </div>
@@ -133,7 +134,7 @@ const FeedbackModal = ({ onClose }) => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Kısa başlık..."
+              placeholder={t('feedback.form.titlePlaceholder')}
               maxLength={255}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700
                          bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100
@@ -147,7 +148,7 @@ const FeedbackModal = ({ onClose }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Sorunu veya önerinizi detaylı açıklayın..."
+              placeholder={t('feedback.form.descriptionPlaceholder')}
               rows={4}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700
                          bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100
@@ -162,7 +163,7 @@ const FeedbackModal = ({ onClose }) => {
               <div className="relative inline-block">
                 <img
                   src={screenshotPreview}
-                  alt="Screenshot önizleme"
+                  alt={t('feedback.form.screenshotPreviewAlt')}
                   className="h-20 rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
                 />
                 <button
@@ -183,7 +184,7 @@ const FeedbackModal = ({ onClose }) => {
                            hover:border-primary hover:text-primary transition text-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
-                Screenshot ekle (opsiyonel, maks 5 MB)
+                {t('feedback.form.addScreenshot')}
               </button>
             )}
             <input
@@ -215,7 +216,7 @@ const FeedbackModal = ({ onClose }) => {
                 className="px-4 py-2 rounded-xl text-sm text-gray-500 dark:text-gray-400
                            hover:bg-gray-100 dark:hover:bg-gray-700 transition"
               >
-                İptal
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -229,7 +230,7 @@ const FeedbackModal = ({ onClose }) => {
                     progress_activity
                   </span>
                 )}
-                {loading ? 'Gönderiliyor...' : 'Gönder'}
+                {loading ? t('feedback.form.sending') : t('common.submit')}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { customsNewsService } from '../api/customsNewsService';
 import MainLayout from '../components/layout/MainLayout';
 import { handleError, handleApiResponse } from '../utils/errorUtils';
+import { t, getCurrentLocale } from '../locales';
 
 const NewsPage = () => {
   const [news, setNews] = useState([]);
@@ -23,7 +24,7 @@ const NewsPage = () => {
       const result = await customsNewsService.getRecentNews();
       handleApiResponse(result, () => setNews(result.data), setError, 'Haberler yükleme');
     } catch (err) {
-      handleError(err, setError, 'Haberler yükleme', 'Haberler yüklenirken bir hata oluştu');
+      handleError(err, setError, 'Haberler yükleme', t('news.loadError'));
     } finally {
       setLoading(false);
     }
@@ -106,7 +107,7 @@ const NewsPage = () => {
             newspaper
           </span>
           <span className="text-xs font-medium">
-            Gümrük Haberi
+            {t('news.item')}
           </span>
         </div>
       </div>
@@ -144,7 +145,7 @@ const NewsPage = () => {
           }}
           className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
         >
-          <span>Detayları Gör</span>
+          <span>{t('news.viewDetails')}</span>
           <span className="material-symbols-outlined text-base">
             arrow_forward
           </span>
@@ -166,7 +167,7 @@ const NewsPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    return new Date(dateString).toLocaleDateString(getCurrentLocale(), {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -184,10 +185,10 @@ const NewsPage = () => {
                 <span className="material-symbols-outlined text-4xl text-primary">
                   feed
                 </span>
-                Gümrük Haberleri
+                {t('news.title')}
               </h1>
               <p className="text-text-secondary mt-2">
-                T.C. Ticaret Bakanlığı gümrük haberlerini buradan takip edebilirsiniz
+                {t('news.subtitle')}
               </p>
             </div>
           </div>
@@ -200,7 +201,7 @@ const NewsPage = () => {
               </span>
               <input
                 type="text"
-                placeholder="Haberlerde ara..."
+                placeholder={t('news.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
@@ -210,12 +211,12 @@ const NewsPage = () => {
               onClick={loadNews}
               disabled={loading}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Yenile"
+              title={t('news.refresh')}
             >
               <span className={`material-symbols-outlined ${loading ? 'animate-spin' : ''}`}>
                 refresh
               </span>
-              <span className="hidden sm:inline">Yenile</span>
+              <span className="hidden sm:inline">{t('news.refresh')}</span>
             </button>
           </div>
         </div>
@@ -228,7 +229,7 @@ const NewsPage = () => {
                 <span className="material-symbols-outlined text-5xl text-primary animate-spin">
                   refresh
                 </span>
-                <p className="mt-4 text-text-secondary">Haberler yükleniyor...</p>
+                <p className="mt-4 text-text-secondary">{t('news.loading')}</p>
               </div>
             </div>
           )}
@@ -239,7 +240,7 @@ const NewsPage = () => {
                 error
               </span>
               <div>
-                <p className="text-red-800 dark:text-red-300 font-medium">Hata</p>
+                <p className="text-red-800 dark:text-red-300 font-medium">{t('news.error')}</p>
                 <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>
               </div>
             </div>
@@ -251,7 +252,7 @@ const NewsPage = () => {
                 feed
               </span>
               <p className="mt-4 text-text-secondary">
-                {searchTerm ? 'Arama kriterlerine uygun haber bulunamadı' : 'Henüz haber bulunmuyor'}
+                {searchTerm ? t('news.noResults') : t('news.empty')}
               </p>
             </div>
           )}
@@ -266,7 +267,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-xl">
                         today
                       </span>
-                      <h2 className="text-base font-bold">Bugünün Haberleri</h2>
+                      <h2 className="text-base font-bold">{t('news.todayTitle')}</h2>
                     </div>
                     <div className="flex-1 h-px bg-gradient-to-r from-primary/20 dark:from-primary/30 to-transparent"></div>
                   </div>
@@ -285,12 +286,12 @@ const NewsPage = () => {
                               new_releases
                             </span>
                             <span className="text-xs font-bold uppercase tracking-wider">
-                              Yeni Haber
+                              {t('news.newBadge')}
                             </span>
                           </div>
                           {item.publishedDate && (
                             <span className="text-xs text-white/90 font-medium">
-                              {new Date(item.publishedDate).toLocaleTimeString('tr-TR', {
+                              {new Date(item.publishedDate).toLocaleTimeString(getCurrentLocale(), {
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}
@@ -317,7 +318,7 @@ const NewsPage = () => {
                             }}
                             className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-bold shadow-sm hover:shadow-md"
                           >
-                            <span>Haberi Oku</span>
+                            <span>{t('news.readNews')}</span>
                             <span className="material-symbols-outlined text-lg">
                               arrow_forward
                             </span>
@@ -337,7 +338,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-lg">
                         schedule
                       </span>
-                      <h2 className="text-sm font-semibold">Dün</h2>
+                      <h2 className="text-sm font-semibold">{t('time.yesterday')}</h2>
                     </div>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
@@ -356,7 +357,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-lg">
                         calendar_month
                       </span>
-                      <h2 className="text-sm font-semibold">Bu Hafta</h2>
+                      <h2 className="text-sm font-semibold">{t('time.thisWeek')}</h2>
                     </div>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
@@ -375,7 +376,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-lg">
                         event
                       </span>
-                      <h2 className="text-sm font-semibold">Geçen Hafta</h2>
+                      <h2 className="text-sm font-semibold">{t('news.lastWeek')}</h2>
                     </div>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
@@ -394,7 +395,7 @@ const NewsPage = () => {
                       <span className="material-symbols-outlined text-lg">
                         history
                       </span>
-                      <h2 className="text-sm font-semibold">Daha Eski Haberler</h2>
+                      <h2 className="text-sm font-semibold">{t('news.older')}</h2>
                     </div>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                   </div>
@@ -423,12 +424,12 @@ const NewsPage = () => {
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10 rounded-t-lg transition-colors">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="material-symbols-outlined text-primary text-2xl">newspaper</span>
-                <h2 className="text-lg font-bold text-text-main truncate">Gümrük Haberi</h2>
+                <h2 className="text-lg font-bold text-text-main truncate">{t('news.item')}</h2>
               </div>
               <button
                 onClick={handleCloseModal}
                 className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0 ml-2"
-                aria-label="Kapat"
+                aria-label={t('common.close')}
               >
                 <span className="material-symbols-outlined text-text-main">close</span>
               </button>
@@ -450,7 +451,7 @@ const NewsPage = () => {
               )}
 
               <div className="prose prose-sm max-w-none text-text-secondary leading-relaxed space-y-3">
-                {selectedNews.description || selectedNews.summary || 'Haber detayı mevcut değil.'}
+                {selectedNews.description || selectedNews.summary || t('news.noDetail')}
               </div>
 
               {/* Actions */}
@@ -460,7 +461,7 @@ const NewsPage = () => {
                     onClick={handleGoToLink}
                     className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
                   >
-                    <span>Detaylı Oku</span>
+                    <span>{t('news.readMore')}</span>
                     <span className="material-symbols-outlined text-lg">open_in_new</span>
                   </button>
                 )}
@@ -469,7 +470,7 @@ const NewsPage = () => {
                   onClick={handleCloseModal}
                   className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-text-main"
                 >
-                  Kapat
+                  {t('common.close')}
                 </button>
               </div>
             </div>

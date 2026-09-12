@@ -7,19 +7,19 @@ import { gRadarCreditService } from '../api/gRadarCreditService';
 import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 import ImageUploadField from '../components/common/ImageUploadField';
 import LanguageSelectCard from '../components/settings/LanguageSelectCard';
+import { t, getCurrentLocale } from '../locales';
 
-const LOT_SOURCE_LABEL = {
-  PURCHASE_BALANCE: 'Bakiyeden satın alma',
-  PURCHASE_TRANSFER: 'Havale (onaylı)',
-  ADMIN_GRANT: 'Yönetici tanımı',
+// Kredi lotu kaynakları; bilinmeyen kaynak ham hâliyle gösterilir
+const LOT_SOURCES = ['PURCHASE_BALANCE', 'PURCHASE_TRANSFER', 'ADMIN_GRANT'];
+
+const ROLE_LABEL_KEYS = {
+  SUPER_ADMIN: 'profile.roles.superAdmin',
+  BROKER_ADMIN: 'profile.roles.brokerAdmin',
+  BROKER_USER: 'profile.roles.brokerUser',
+  CLIENT_USER: 'roles.clientUser',
 };
 
-const ROLE_LABELS = {
-  SUPER_ADMIN: 'Sistem Yöneticisi',
-  BROKER_ADMIN: 'Gümrük Müşaviri Yöneticisi',
-  BROKER_USER: 'Gümrük Müşaviri Çalışanı',
-  CLIENT_USER: 'Müşteri Kullanıcısı',
-};
+const STRENGTH_LABEL_KEYS = ['veryWeak', 'weak', 'fair', 'good', 'strong', 'veryStrong'];
 
 /**
  * Cryptographically secure random password.
@@ -66,12 +66,11 @@ function passwordStrength(pwd) {
   if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
   if (/[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  const labels = ['Çok zayıf', 'Zayıf', 'Orta', 'İyi', 'Güçlü', 'Çok güçlü'];
   const colors = [
     'bg-red-500', 'bg-red-400', 'bg-yellow-500',
     'bg-yellow-400', 'bg-green-500', 'bg-green-600',
   ];
-  return { score, label: labels[score], color: colors[score] };
+  return { score, label: t(`profile.strength.${STRENGTH_LABEL_KEYS[score]}`), color: colors[score] };
 }
 
 export default function ProfilePage() {
@@ -88,14 +87,14 @@ export default function ProfilePage() {
     setAvatarBust((n) => n + 1);
   };
   const tabs = useMemo(() => {
-    const t = [
-      { id: 'profile', label: 'Profil', icon: 'person' },
-      { id: 'security', label: 'Güvenlik', icon: 'lock' },
+    const list = [
+      { id: 'profile', label: t('profile.tabs.profile'), icon: 'person' },
+      { id: 'security', label: t('profile.tabs.security'), icon: 'lock' },
     ];
     if (isBrokerAdmin) {
-      t.push({ id: 'g-radar', label: 'G-Radar Kredim', icon: 'travel_explore' });
+      list.push({ id: 'g-radar', label: t('profile.tabs.gRadar'), icon: 'travel_explore' });
     }
-    return t;
+    return list;
   }, [isBrokerAdmin]);
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -131,20 +130,22 @@ export default function ProfilePage() {
 
   const strength = useMemo(() => passwordStrength(newPassword), [newPassword]);
 
+  const roleLabelKey = ROLE_LABEL_KEYS[user?.globalRole];
+
   const handleSaveProfile = async () => {
     if (!username.trim()) {
-      showError('Kullanıcı adı boş olamaz');
+      showError(t('profile.info.usernameRequired'));
       return;
     }
     if (username.trim() === user?.username) {
-      showInfo('Değişiklik yok');
+      showInfo(t('profile.info.noChanges'));
       return;
     }
     setSavingProfile(true);
     const res = await userService.updateMyProfile({ username: username.trim() });
     setSavingProfile(false);
     if (res.success) {
-      showSuccess('Profil güncellendi. Değişiklik için yeniden giriş yapmanız önerilir.');
+      showSuccess(t('profile.info.updated'));
     } else {
       showError(res.error);
     }
@@ -152,19 +153,19 @@ export default function ProfilePage() {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      showError('Tüm alanları doldurun');
+      showError(t('profile.password.allRequired'));
       return;
     }
     if (newPassword.length < 8) {
-      showError('Yeni şifre en az 8 karakter olmalıdır');
+      showError(t('profile.password.minLength'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      showError('Yeni şifre ile tekrarı eşleşmiyor');
+      showError(t('profile.password.confirmMismatch'));
       return;
     }
     if (currentPassword === newPassword) {
-      showError('Yeni şifre eski şifreden farklı olmalıdır');
+      showError(t('profile.password.sameAsCurrent'));
       return;
     }
 
@@ -177,7 +178,7 @@ export default function ProfilePage() {
     setChangingPassword(false);
 
     if (res.success) {
-      showSuccess('Şifreniz değiştirildi. Yeniden giriş ekranına yönlendiriliyorsunuz...');
+      showSuccess(t('profile.password.changed'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -196,10 +197,10 @@ export default function ProfilePage() {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">account_circle</span>
-            Hesabım
+            {t('nav.profile')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Profil bilgilerinizi ve güvenlik ayarlarınızı buradan yönetin.
+            {t('profile.subtitle')}
           </p>
         </div>
 
@@ -207,18 +208,18 @@ export default function ProfilePage() {
           <div className="max-w-3xl mx-auto">
             {/* Tab buttons */}
             <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
-              {tabs.map((t) => (
+              {tabs.map((tab) => (
                 <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === t.id
+                    activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-text-secondary hover:text-text-main'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-base">{t.icon}</span>
-                  {t.label}
+                  <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -226,12 +227,12 @@ export default function ProfilePage() {
             {/* Profile tab */}
             {activeTab === 'profile' && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
-                <h2 className="text-lg font-semibold text-text-main mb-4">Profil Bilgileri</h2>
+                <h2 className="text-lg font-semibold text-text-main mb-4">{t('profile.info.title')}</h2>
 
                 {/* Profil fotoğrafı — CLIENT_USER'a gösterilmez */}
                 {!isClientUser && (
                   <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-xs font-medium text-text-secondary block mb-3">Profil Fotoğrafı</span>
+                    <span className="text-xs font-medium text-text-secondary block mb-3">{t('profile.info.photo')}</span>
                     <ImageUploadField
                       currentUrl={user?.avatarUrl}
                       bustKey={avatarBust}
@@ -251,40 +252,40 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">E-posta</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('user.email')}</span>
                     <input
                       type="email"
                       value={user?.email || ''}
                       disabled
                       className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-text-secondary px-3 py-2 text-sm cursor-not-allowed"
                     />
-                    <span className="text-[11px] text-gray-400">E-posta değiştirmek için yöneticinizle iletişime geçin.</span>
+                    <span className="text-[11px] text-gray-400">{t('profile.info.emailHint')}</span>
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">Rol</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('user.role')}</span>
                     <input
                       type="text"
-                      value={ROLE_LABELS[user?.globalRole] || user?.globalRole || ''}
+                      value={roleLabelKey ? t(roleLabelKey) : (user?.globalRole || '')}
                       disabled
                       className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-text-secondary px-3 py-2 text-sm cursor-not-allowed"
                     />
                   </label>
 
                   <label className="flex flex-col gap-1 sm:col-span-2">
-                    <span className="text-xs font-medium text-text-secondary">Kullanıcı Adı</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('management.username')}</span>
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="örn. Gökhan Şişman"
+                      placeholder={t('profile.info.usernamePlaceholder')}
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                     />
                   </label>
 
                   {user?.companyDetails?.name && (
                     <label className="flex flex-col gap-1 sm:col-span-2">
-                      <span className="text-xs font-medium text-text-secondary">Firma</span>
+                      <span className="text-xs font-medium text-text-secondary">{t('user.company')}</span>
                       <input
                         type="text"
                         value={user.companyDetails.name}
@@ -302,7 +303,7 @@ export default function ProfilePage() {
                     className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-base">save</span>
-                    {savingProfile ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                    {savingProfile ? t('management.saving') : t('profile.info.saveChanges')}
                   </button>
                 </div>
               </div>
@@ -336,15 +337,14 @@ export default function ProfilePage() {
                   aria-hidden="true"
                 />
 
-                <h2 className="text-lg font-semibold text-text-main mb-4">Şifre Değiştir</h2>
+                <h2 className="text-lg font-semibold text-text-main mb-4">{t('profile.password.title')}</h2>
                 <p className="text-xs text-text-secondary mb-4">
-                  Şifrenizi değiştirdikten sonra tüm aktif oturumlarınız sonlandırılır
-                  ve yeniden giriş yapmanız istenir.
+                  {t('profile.password.hint')}
                 </p>
 
                 <div className="grid grid-cols-1 gap-4">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">Mevcut Şifre</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('profile.password.current')}</span>
                     <input
                       type={showPasswords ? 'text' : 'password'}
                       name="current-password"
@@ -357,7 +357,7 @@ export default function ProfilePage() {
 
                   <label className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-text-secondary">Yeni Şifre</span>
+                      <span className="text-xs font-medium text-text-secondary">{t('profile.password.newPassword')}</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -365,13 +365,13 @@ export default function ProfilePage() {
                           setNewPassword(pwd);
                           setConfirmPassword(pwd);
                           setShowPasswords(true);
-                          showSuccess('Güvenli şifre üretildi. Lütfen güvenli bir yere kaydedin.');
+                          showSuccess(t('profile.password.generated'));
                         }}
                         className="flex items-center gap-1 text-[11px] font-medium text-primary hover:opacity-80 transition-opacity"
-                        title="16 karakterli, büyük/küçük harf, rakam ve sembol içeren güvenli şifre üretir"
+                        title={t('profile.password.generateHint')}
                       >
                         <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                        Güvenli Şifre Üret
+                        {t('profile.password.generate')}
                       </button>
                     </div>
                     <input
@@ -396,12 +396,12 @@ export default function ProfilePage() {
                       </div>
                     )}
                     <span className="text-[11px] text-gray-400">
-                      En az 8 karakter. Büyük/küçük harf, rakam ve sembol kullanın.
+                      {t('profile.password.rules')}
                     </span>
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">Yeni Şifre (Tekrar)</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('profile.password.confirmNew')}</span>
                     <input
                       type={showPasswords ? 'text' : 'password'}
                       name="confirm-password"
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                     />
                     {confirmPassword && newPassword !== confirmPassword && (
-                      <span className="text-[11px] text-red-500">Şifreler eşleşmiyor</span>
+                      <span className="text-[11px] text-red-500">{t('profile.password.mismatch')}</span>
                     )}
                   </label>
 
@@ -422,7 +422,7 @@ export default function ProfilePage() {
                       onChange={(e) => setShowPasswords(e.target.checked)}
                       className="rounded"
                     />
-                    Şifreleri göster
+                    {t('profile.password.show')}
                   </label>
                 </div>
 
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                     className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-base">lock_reset</span>
-                    {changingPassword ? 'Değiştiriliyor...' : 'Şifreyi Değiştir'}
+                    {changingPassword ? t('profile.password.changing') : t('profile.password.submit')}
                   </button>
                 </div>
               </form>
@@ -475,10 +475,9 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
       <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-text-main">G-Radar Kredisi</h2>
+            <h2 className="text-lg font-semibold text-text-main">{t('profile.wallet.title')}</h2>
             <p className="text-xs text-text-secondary mt-1">
-              Kredileriniz yüklendikleri tarihten itibaren 1 yıl geçerlidir
-              ve en eski (yakında dolacak) lot önce harcanır.
+              {t('profile.wallet.hint')}
             </p>
           </div>
           <div className="flex gap-2">
@@ -488,7 +487,7 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
               className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-text-main hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">refresh</span>
-              Yenile
+              {t('profile.wallet.refresh')}
             </button>
             {!optedOut && (
               <button
@@ -496,7 +495,7 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
               >
                 <span className="material-symbols-outlined text-base">add_shopping_cart</span>
-                Kredi Satın Al
+                {t('profile.wallet.buy')}
               </button>
             )}
           </div>
@@ -506,12 +505,10 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
           <div className="mt-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
             <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-base">info</span>
-              G-Radar entegrasyonu hesabınıza tanımlanmamış
+              {t('profile.wallet.notEnabledTitle')}
             </p>
             <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-              Yöneticinizle iletişime geçerek bu firmaya G-Radar entegrasyonunu
-              tanımlatabilirsiniz. Tanımlanırsa mevcut bakiyeniz kullanılabilir
-              olur.
+              {t('profile.wallet.notEnabledHint')}
             </p>
           </div>
         )}
@@ -523,10 +520,10 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-              <StatCard label="Mevcut Bakiye" value={stats.currentCredits ?? 0} highlight />
-              <StatCard label="Toplam Alınan" value={stats.lifetimePurchased ?? 0} />
-              <StatCard label="Kullanılan" value={stats.lifetimeConsumed ?? 0} />
-              <StatCard label="Süresi Dolan" value={stats.lifetimeExpired ?? 0} muted />
+              <StatCard label={t('profile.wallet.currentBalance')} value={stats.currentCredits ?? 0} highlight />
+              <StatCard label={t('profile.wallet.totalPurchased')} value={stats.lifetimePurchased ?? 0} />
+              <StatCard label={t('profile.wallet.consumed')} value={stats.lifetimeConsumed ?? 0} />
+              <StatCard label={t('profile.wallet.expired')} value={stats.lifetimeExpired ?? 0} muted />
             </div>
           </>
         )}
@@ -535,9 +532,9 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
       {/* Active lots */}
       <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-text-main">Aktif Kredi Lotları</h3>
+          <h3 className="text-base font-semibold text-text-main">{t('profile.wallet.activeLots')}</h3>
           <span className="text-xs text-text-secondary">
-            En yakın süresi dolacak olan en üstte (FIFO)
+            {t('profile.wallet.fifoHint')}
           </span>
         </div>
 
@@ -546,12 +543,12 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
             <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-2 block">
               inventory_2
             </span>
-            <p className="text-text-secondary text-sm">Henüz kredi lotunuz yok.</p>
+            <p className="text-text-secondary text-sm">{t('profile.wallet.noLots')}</p>
             <button
               onClick={onPurchase}
               className="mt-3 text-sm font-medium text-primary hover:opacity-80 transition-opacity"
             >
-              İlk paketinizi satın alın →
+              {t('profile.wallet.buyFirst')}
             </button>
           </div>
         ) : (
@@ -559,12 +556,12 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-text-secondary">
-                  <th className="text-left px-3 py-2">Yükleme</th>
-                  <th className="text-left px-3 py-2">Kaynak</th>
-                  <th className="text-right px-3 py-2">Yüklenen</th>
-                  <th className="text-right px-3 py-2">Kalan</th>
-                  <th className="text-left px-3 py-2">Son Kullanma</th>
-                  <th className="text-right px-3 py-2">Kalan Gün</th>
+                  <th className="text-left px-3 py-2">{t('profile.wallet.columns.granted')}</th>
+                  <th className="text-left px-3 py-2">{t('profile.wallet.columns.source')}</th>
+                  <th className="text-right px-3 py-2">{t('profile.wallet.columns.initial')}</th>
+                  <th className="text-right px-3 py-2">{t('profile.wallet.columns.remaining')}</th>
+                  <th className="text-left px-3 py-2">{t('profile.wallet.columns.expires')}</th>
+                  <th className="text-right px-3 py-2">{t('profile.wallet.columns.daysLeft')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -576,10 +573,10 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
                   return (
                     <tr key={lot.id} className={rowCls}>
                       <td className="px-3 py-2 text-text-main">
-                        {new Date(lot.grantedAt).toLocaleDateString('tr-TR')}
+                        {new Date(lot.grantedAt).toLocaleDateString(getCurrentLocale())}
                       </td>
                       <td className="px-3 py-2 text-text-secondary text-xs">
-                        {LOT_SOURCE_LABEL[lot.source] || lot.source}
+                        {LOT_SOURCES.includes(lot.source) ? t(`profile.wallet.sources.${lot.source}`) : lot.source}
                       </td>
                       <td className="px-3 py-2 text-right text-text-secondary">
                         {lot.creditsInitial}
@@ -588,14 +585,14 @@ function GRadarWalletTab({ wallet, loading, onRefresh, onPurchase }) {
                         {lot.creditsRemaining}
                       </td>
                       <td className="px-3 py-2 text-text-main">
-                        {new Date(lot.expiresAt).toLocaleDateString('tr-TR')}
+                        {new Date(lot.expiresAt).toLocaleDateString(getCurrentLocale())}
                       </td>
                       <td className={`px-3 py-2 text-right font-medium ${
                         days <= 7 ? 'text-red-600 dark:text-red-400'
                           : days <= 30 ? 'text-yellow-600 dark:text-yellow-400'
                           : 'text-text-main'
                       }`}>
-                        {days} gün
+                        {t('profile.wallet.days', { count: days })}
                       </td>
                     </tr>
                   );

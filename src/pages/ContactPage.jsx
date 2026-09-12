@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import { contactService } from '../api/contactService';
+import { t } from '../locales';
 
+// Kartta başlık olarak kaydın kendi etiketi (contact.label) gösterilir; burada yalnızca ikon ve renk var
 const TYPE_CONFIG = {
-  PHONE:    { icon: 'phone',       color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',   label: 'Telefon' },
-  EMAIL:    { icon: 'email',       color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', label: 'E-posta' },
-  WHATSAPP: { icon: 'chat',        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',  label: 'WhatsApp' },
-  ADDRESS:  { icon: 'location_on', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', label: 'Adres' },
-  WEBSITE:  { icon: 'language',    color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',    label: 'Web Sitesi' },
-  OTHER:    { icon: 'info',        color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',       label: 'Diğer' },
+  PHONE:    { icon: 'phone',       color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  EMAIL:    { icon: 'email',       color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  WHATSAPP: { icon: 'chat',        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  ADDRESS:  { icon: 'location_on', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  WEBSITE:  { icon: 'language',    color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
+  OTHER:    { icon: 'info',        color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
 };
 
 const getContactHref = (type, value) => {
@@ -44,10 +46,10 @@ const ContactPage = () => {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">headset_mic</span>
-            İletişim
+            {t('nav.contact')}
           </h1>
           <p className="text-text-secondary mt-2">
-            Destek ekibimizle iletişime geçin
+            {t('contact.subtitle')}
           </p>
         </div>
 
@@ -56,7 +58,7 @@ const ContactPage = () => {
 
           <h2 className="text-lg font-semibold text-text-main mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px] text-primary">contacts</span>
-            İletişim Bilgileri
+            {t('contact.infoTitle')}
           </h2>
 
           {loadingContacts ? (
@@ -66,7 +68,7 @@ const ContactPage = () => {
           ) : contacts.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[120px] gap-2 text-text-secondary bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
               <span className="material-symbols-outlined text-[40px]">contact_support</span>
-              <p className="text-sm">Henüz iletişim bilgisi eklenmemiş</p>
+              <p className="text-sm">{t('contact.empty')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { sessionService } from '../api/sessionService';
 import MainLayout from '../components/layout/MainLayout';
 import { showSuccess, showError, showWarning } from '../utils/toastUtils';
+import { t, getCurrentLocale } from '../locales';
 
 const SessionManagement = () => {
   // Core data
@@ -34,12 +35,12 @@ const SessionManagement = () => {
         setSessions(result.data || []);
         setError('');
       } else {
-        setError(result.error || 'Session\'lar yüklenemedi');
+        setError(result.error || t('api.session.listError'));
         setSessions([]);
       }
     } catch (err) {
       console.error('Error loading sessions:', err);
-      setError('Session\'lar yüklenirken bir hata oluştu');
+      setError(t('sessions.loadErrorUnexpected'));
       setSessions([]);
     } finally {
       setLoading(false);
@@ -64,18 +65,18 @@ const SessionManagement = () => {
     const result = await sessionService.invalidateSession(sessionId);
 
     if (result.success) {
-      showSuccess('Session başarıyla sonlandırıldı');
+      showSuccess(t('sessions.invalidated'));
       loadSessions();
       setSelectedSessions(new Set());
     } else {
-      showError(result.error || 'Session sonlandırılamadı');
+      showError(result.error || t('api.session.invalidateError'));
     }
   };
 
   // Handle bulk invalidate
   const handleBulkInvalidate = async () => {
     if (selectedSessions.size === 0) {
-      showWarning('Lütfen en az bir session seçin');
+      showWarning(t('sessions.selectAtLeastOne'));
       return;
     }
 
@@ -83,11 +84,11 @@ const SessionManagement = () => {
     const result = await sessionService.bulkInvalidateSessions(sessionIds);
 
     if (result.success) {
-      showSuccess(`${selectedSessions.size} session başarıyla sonlandırıldı`);
+      showSuccess(t('sessions.bulkInvalidated', { count: selectedSessions.size }));
       loadSessions();
       setSelectedSessions(new Set());
     } else {
-      showError(result.error || 'Session\'lar sonlandırılamadı');
+      showError(result.error || t('sessions.bulkInvalidateError'));
     }
   };
 
@@ -96,11 +97,11 @@ const SessionManagement = () => {
     const result = await sessionService.invalidateAllUserSessions(userId);
 
     if (result.success) {
-      showSuccess(`${username} kullanıcısının tüm session'ları sonlandırıldı`);
+      showSuccess(t('sessions.userInvalidated', { name: username }));
       loadSessions();
       setSelectedSessions(new Set());
     } else {
-      showError(result.error || 'Kullanıcı session\'ları sonlandırılamadı');
+      showError(result.error || t('api.session.invalidateAllError'));
     }
   };
 
@@ -125,25 +126,25 @@ const SessionManagement = () => {
         bg: 'bg-red-100 dark:bg-red-900/30',
         text: 'text-red-800 dark:text-red-300',
         border: 'border-red-300 dark:border-red-700',
-        label: 'Super Admin'
+        label: t('sessions.roles.SUPER_ADMIN')
       },
       BROKER_ADMIN: {
         bg: 'bg-purple-100 dark:bg-purple-900/30',
         text: 'text-purple-800 dark:text-purple-300',
         border: 'border-purple-300 dark:border-purple-700',
-        label: 'Broker Admin'
+        label: t('sessions.roles.BROKER_ADMIN')
       },
       BROKER_USER: {
         bg: 'bg-blue-100 dark:bg-blue-900/30',
         text: 'text-blue-800 dark:text-blue-300',
         border: 'border-blue-300 dark:border-blue-700',
-        label: 'Broker User'
+        label: t('sessions.roles.BROKER_USER')
       },
       CLIENT_USER: {
         bg: 'bg-green-100 dark:bg-green-900/30',
         text: 'text-green-800 dark:text-green-300',
         border: 'border-green-300 dark:border-green-700',
-        label: 'Client User'
+        label: t('sessions.roles.CLIENT_USER')
       }
     };
     return badges[role] || {
@@ -158,7 +159,7 @@ const SessionManagement = () => {
   const formatDateTime = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('tr-TR', {
+    return new Intl.DateTimeFormat(getCurrentLocale(), {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -175,12 +176,12 @@ const SessionManagement = () => {
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Az önce';
-    if (diffMins < 60) return `${diffMins} dakika önce`;
+    if (diffMins < 1) return t('sessions.justNow');
+    if (diffMins < 60) return t('notifications.minutesAgo', { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} saat önce`;
+    if (diffHours < 24) return t('notifications.hoursAgo', { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} gün önce`;
+    return t('notifications.daysAgo', { count: diffDays });
   };
 
   // Filter sessions
@@ -218,6 +219,9 @@ const SessionManagement = () => {
   const allSelected = filteredSessions.length > 0 &&
     filteredSessions.every(s => selectedSessions.has(s.sessionId));
 
+  // Sayı kalın yazılır; metin yer tutucunun iki yanından bölünür
+  const [activeCountBefore, activeCountAfter] = t('sessions.activeCount').split('{{count}}');
+
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -229,16 +233,16 @@ const SessionManagement = () => {
                 <span className="material-symbols-outlined text-4xl text-primary">
                   manage_accounts
                 </span>
-                Session Yönetimi
+                {t('nav.sessions')}
               </h1>
               <p className="text-text-secondary mt-2">
-                Tüm aktif kullanıcı oturumlarını görüntüleyin ve yönetin
+                {t('sessions.subtitle')}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                <span className="font-semibold">{sessions.length}</span> aktif session
+                {activeCountBefore}<span className="font-semibold">{sessions.length}</span>{activeCountAfter}
                 {selectedSessions.size > 0 && (
                   <span className="ml-2 text-primary font-semibold">
-                    • {selectedSessions.size} seçili
+                    • {t('sessions.selectedCount', { count: selectedSessions.size })}
                   </span>
                 )}
               </p>
@@ -253,13 +257,13 @@ const SessionManagement = () => {
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                 }`}
-                title={autoRefresh ? 'Otomatik yenileme aktif (30sn)' : 'Otomatik yenileme kapalı'}
+                title={autoRefresh ? t('sessions.autoRefreshOnHint') : t('sessions.autoRefreshOffHint')}
               >
                 <span className="material-symbols-outlined">
                   {autoRefresh ? 'sync' : 'sync_disabled'}
                 </span>
                 <span className="text-sm font-medium">
-                  {autoRefresh ? 'Yenileme Aktif' : 'Yenileme Kapalı'}
+                  {autoRefresh ? t('sessions.autoRefreshOn') : t('sessions.autoRefreshOff')}
                 </span>
               </button>
 
@@ -268,7 +272,7 @@ const SessionManagement = () => {
                 onClick={loadSessions}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                title="Şimdi yenile"
+                title={t('sessions.refreshNow')}
               >
                 <span className={`material-symbols-outlined ${loading ? 'animate-spin' : ''}`}>
                   refresh
@@ -279,14 +283,14 @@ const SessionManagement = () => {
               {selectedSessions.size > 0 && (
                 <button
                   onClick={() => showConfirmation({
-                    title: 'Toplu Session Sonlandırma',
-                    message: `${selectedSessions.size} session sonlandırılacak. Emin misiniz?`,
+                    title: t('sessions.bulkTitle'),
+                    message: t('sessions.bulkMessage', { count: selectedSessions.size }),
                     execute: handleBulkInvalidate
                   })}
                   className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md"
                 >
                   <span className="material-symbols-outlined">block</span>
-                  {selectedSessions.size} Session'ı Sonlandır
+                  {t('sessions.bulkButton', { count: selectedSessions.size })}
                 </button>
               )}
             </div>
@@ -302,7 +306,7 @@ const SessionManagement = () => {
                 {/* Search */}
                 <div>
                   <label className="block text-sm font-medium text-text-main mb-2">
-                    Kullanıcı Ara
+                    {t('sessions.searchUser')}
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
@@ -312,7 +316,7 @@ const SessionManagement = () => {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="İsim veya email ile ara..."
+                      placeholder={t('sessions.searchPlaceholder')}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                     />
                   </div>
@@ -321,25 +325,25 @@ const SessionManagement = () => {
                 {/* Role Filter */}
                 <div>
                   <label className="block text-sm font-medium text-text-main mb-2">
-                    Rol Filtresi
+                    {t('sessions.roleFilter')}
                   </label>
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                   >
-                    <option value="ALL">Tümü</option>
-                    <option value="SUPER_ADMIN">Super Admin</option>
-                    <option value="BROKER_ADMIN">Broker Admin</option>
-                    <option value="BROKER_USER">Broker User</option>
-                    <option value="CLIENT_USER">Client User</option>
+                    <option value="ALL">{t('management.all')}</option>
+                    <option value="SUPER_ADMIN">{t('sessions.roles.SUPER_ADMIN')}</option>
+                    <option value="BROKER_ADMIN">{t('sessions.roles.BROKER_ADMIN')}</option>
+                    <option value="BROKER_USER">{t('sessions.roles.BROKER_USER')}</option>
+                    <option value="CLIENT_USER">{t('sessions.roles.CLIENT_USER')}</option>
                   </select>
                 </div>
 
                 {/* IP Filter */}
                 <div>
                   <label className="block text-sm font-medium text-text-main mb-2">
-                    IP Adresi Filtresi
+                    {t('sessions.ipFilter')}
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
@@ -349,7 +353,7 @@ const SessionManagement = () => {
                       type="text"
                       value={ipFilter}
                       onChange={(e) => setIpFilter(e.target.value)}
-                      placeholder="IP adresi ile filtrele..."
+                      placeholder={t('sessions.ipPlaceholder')}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                     />
                   </div>
@@ -362,7 +366,7 @@ const SessionManagement = () => {
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
                 <div className="flex items-center justify-center gap-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <p className="text-text-secondary">Yükleniyor...</p>
+                  <p className="text-text-secondary">{t('common.loading')}</p>
                 </div>
               </div>
             )}
@@ -385,13 +389,13 @@ const SessionManagement = () => {
                 </span>
                 <h3 className="text-xl font-semibold text-text-main mb-2">
                   {sessions.length === 0
-                    ? 'Henüz aktif session bulunmuyor'
-                    : 'Filtre kriterlerine uygun session bulunamadı'}
+                    ? t('sessions.empty')
+                    : t('sessions.emptyFiltered')}
                 </h3>
                 <p className="text-text-secondary">
                   {sessions.length === 0
-                    ? 'Kullanıcılar giriş yaptıkça burada görünecekler'
-                    : 'Farklı filtreler deneyerek arama yapabilirsiniz'}
+                    ? t('sessions.emptyHint')
+                    : t('management.filterEmptyHint')}
                 </p>
               </div>
             )}
@@ -412,28 +416,28 @@ const SessionManagement = () => {
                           />
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Kullanıcı
+                          {t('sessions.columns.user')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Rol
+                          {t('user.role')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Firma
+                          {t('user.company')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cihaz
+                          {t('sessions.columns.device')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          IP Adresi
+                          {t('sessions.columns.ipAddress')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Giriş Zamanı
+                          {t('sessions.columns.loginAt')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Son Aktivite
+                          {t('sessions.columns.lastActivity')}
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          İşlemler
+                          {t('management.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -474,12 +478,12 @@ const SessionManagement = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-text-main">
-                                {session.companyName || 'N/A'}
+                                {session.companyName || t('sessions.notAvailable')}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-text-secondary">
-                                {session.deviceInfo || 'Unknown'}
+                                {session.deviceInfo || t('sessions.unknownDevice')}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -502,12 +506,12 @@ const SessionManagement = () => {
                                 {/* Kick all user sessions */}
                                 <button
                                   onClick={() => showConfirmation({
-                                    title: 'Kullanıcının Tüm Session\'larını Sonlandır',
-                                    message: `${session.username} kullanıcısının tüm aktif session'ları sonlandırılacak. Emin misiniz?`,
+                                    title: t('sessions.endAllTitle'),
+                                    message: t('sessions.endAllMessage', { name: session.username }),
                                     execute: () => handleInvalidateAllUserSessions(session.userId, session.username)
                                   })}
                                   className="text-orange-600 hover:text-orange-800 transition-colors"
-                                  title="Kullanıcının tüm session'larını sonlandır"
+                                  title={t('sessions.endAllHint')}
                                 >
                                   <span className="material-symbols-outlined">person_off</span>
                                 </button>
@@ -515,12 +519,12 @@ const SessionManagement = () => {
                                 {/* Kick single session */}
                                 <button
                                   onClick={() => showConfirmation({
-                                    title: 'Session Sonlandır',
-                                    message: `${session.username} kullanıcısının bu session'ı sonlandırılacak. Emin misiniz?`,
+                                    title: t('sessions.endOneTitle'),
+                                    message: t('sessions.endOneMessage', { name: session.username }),
                                     execute: () => handleInvalidateSession(session.sessionId)
                                   })}
                                   className="text-red-600 hover:text-red-800 transition-colors"
-                                  title="Bu session'ı sonlandır"
+                                  title={t('sessions.endOneHint')}
                                 >
                                   <span className="material-symbols-outlined">block</span>
                                 </button>
@@ -560,13 +564,13 @@ const SessionManagement = () => {
                   }}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-text-main"
                 >
-                  İptal
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleConfirm}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  Onayla
+                  {t('common.confirm')}
                 </button>
               </div>
             </div>
