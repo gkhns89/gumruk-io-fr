@@ -4,7 +4,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { feedbackService } from "../../api/feedbackService";
 import FeedbackModal from "../common/FeedbackModal";
 import AuthedImage from "../common/AuthedImage";
-import { getVisibleManagementItems } from "./menuConfig";
+import { HOME_ITEM, SUPPORT_ITEMS, getGeneralMenuItems, getVisibleManagementItems } from "./menuConfig";
+import { t } from "../../locales";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -42,22 +43,10 @@ export default function MobileMenu({ isOpen, onClose }) {
     onClose();
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const menuItems = [
-    { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
-    { icon: "search", label: "İşlem Takip", path: "/transactions" },
-    { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
-    { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
-    { icon: "feed", label: "Haberler", path: "/news" },
-    { icon: "campaign", label: "Duyurular", path: "/announcements" },
-    { icon: "person", label: "Hesabım", path: "/profile" },
-    // Ayarlar sadece SUPER_ADMIN için — diğer rollerin orada erişimi yok.
-    ...(isSuperAdmin ? [{ icon: "settings", label: "Ayarlar", path: "/settings" }] : []),
-  ];
+  // Liste menuConfig'te, Sidebar ile ortak (Ayarlar yalnızca SUPER_ADMIN için)
+  const menuItems = [HOME_ITEM, ...getGeneralMenuItems(user)];
 
-  const bottomMenuItems = [
-    { icon: "headset_mic", label: "İletişim", path: "/contact" },
-    { icon: "help_center", label: "Yardım", path: "/help" },
-  ];
+  const bottomMenuItems = SUPPORT_ITEMS;
 
   // Yönetim menüsü öğeleri ortak config'ten (Sidebar ile birebir aynı, rol + koşula göre)
   const visibleManagementItems = getVisibleManagementItems(user);
@@ -83,7 +72,7 @@ export default function MobileMenu({ isOpen, onClose }) {
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      
+
       {/* Drawer */}
       <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-background-dark shadow-2xl flex flex-col animate-slide-in-left transition-colors duration-300">
         {/* Header */}
@@ -102,7 +91,7 @@ export default function MobileMenu({ isOpen, onClose }) {
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="text-text-main text-base font-semibold leading-normal truncate">
-                {user?.username || "Kullanıcı"}
+                {user?.username || t("layout.userFallback")}
               </h1>
               <p className="text-text-secondary text-sm font-normal leading-normal truncate">
                 {user?.globalRole || "Role"}
@@ -120,7 +109,7 @@ export default function MobileMenu({ isOpen, onClose }) {
         {/* Company Info */}
         {user?.company?.name && (
           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Firma</p>
+            <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">{t("layout.company")}</p>
             <p className="text-sm text-text-main font-medium truncate">
               {user.company.name}
             </p>
@@ -175,7 +164,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                     admin_panel_settings
                   </span>
                   <p className="text-sm font-semibold uppercase tracking-wider">
-                    Yönetim
+                    {t("layout.management")}
                   </p>
                 </div>
                 <span className={`material-symbols-outlined transition-transform ${isManagementOpen ? 'rotate-180' : ''}`}>
@@ -256,7 +245,7 @@ export default function MobileMenu({ isOpen, onClose }) {
               >
                 <span className="material-symbols-outlined">feedback</span>
                 <p className="text-sm font-medium leading-normal">
-                  Sorun Bildir / Öneri
+                  {t("layout.reportIssue")}
                 </p>
               </button>
             )}
@@ -270,7 +259,7 @@ export default function MobileMenu({ isOpen, onClose }) {
             className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors font-medium"
           >
             <span className="material-symbols-outlined">logout</span>
-            <span>Oturumu Kapat</span>
+            <span>{t("layout.signOut")}</span>
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { userService } from '../api/userService';
 import { gRadarCreditService } from '../api/gRadarCreditService';
 import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 import ImageUploadField from '../components/common/ImageUploadField';
+import LanguageSelectCard from '../components/settings/LanguageSelectCard';
 
 const LOT_SOURCE_LABEL = {
   PURCHASE_BALANCE: 'Bakiyeden satın alma',
@@ -306,6 +307,9 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* Dil seçimi — şimdilik yalnızca SUPER_ADMIN (bileşen kendisi kontrol ediyor) */}
+            {activeTab === 'profile' && <LanguageSelectCard />}
 
             {/* Security tab */}
             {activeTab === 'security' && (

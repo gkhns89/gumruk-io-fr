@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Link, useLocation } from "react-router-dom";
 import AuthedImage from "../common/AuthedImage";
-import { getVisibleManagementItems } from "./menuConfig";
+import { HOME_ITEM, SUPPORT_ITEMS, getGeneralMenuItems, getVisibleManagementItems } from "./menuConfig";
+import { t } from "../../locales";
 import "./Sidebar.css";
 
 export default function Sidebar() {
@@ -39,25 +40,10 @@ export default function Sidebar() {
   }, [sidebarMode]);
 
   // Ana menü öğeleri - Her zaman görünür
-  const mainMenuItems = [
-    { icon: "home", label: "Ana Sayfa", path: "/dashboard" },
-  ];
+  const mainMenuItems = [HOME_ITEM];
 
-  // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler.
-  // Ayarlar sayfası tamamen SUPER_ADMIN'e ait (ClickUp + G-Radar master config);
-  // diğer rollerin orada zaten yetkili oldukları hiçbir alan yok, bu yüzden
-  // menü öğesini de hiç göstermiyoruz.
-  const otherMenuItems = [
-    { icon: "search", label: "İşlem Takip", path: "/transactions" },
-    { icon: "warehouse", label: "Antrepo Takip", path: "/warehouse" },
-    { icon: "local_shipping", label: "Yük Takip", path: "/cargo" },
-    { icon: "feed", label: "Haberler", path: "/news" },
-    { icon: "campaign", label: "Duyurular", path: "/announcements" },
-    { icon: "person", label: "Hesabım", path: "/profile" },
-    ...(user?.globalRole === 'SUPER_ADMIN'
-      ? [{ icon: "settings", label: "Ayarlar", path: "/settings" }]
-      : []),
-  ];
+  // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler (liste menuConfig'te, MobileMenu ile ortak)
+  const otherMenuItems = getGeneralMenuItems(user);
 
   // Yönetim menüsü öğeleri ortak config'ten gelir (MobileMenu ile aynı kaynak)
   // Kullanıcının yönetim menüsüne erişimi var mı?
@@ -170,10 +156,7 @@ export default function Sidebar() {
 
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
 
-  const bottomMenuItems = isSuperAdmin ? [] : [
-    { icon: "headset_mic", label: "İletişim", path: "/contact" },
-    { icon: "help_center", label: "Yardım", path: "/help" },
-  ];
+  const bottomMenuItems = isSuperAdmin ? [] : SUPPORT_ITEMS;
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -251,7 +234,7 @@ export default function Sidebar() {
         {/* User Profile - Profil sayfasına gider */}
         <Link
           to="/profile"
-          title={!isExpanded ? "Hesabım" : ""}
+          title={!isExpanded ? t("nav.profile") : ""}
           className={`
             group flex items-center p-4 transition-colors
             hover:bg-gray-100 dark:hover:bg-gray-700/60
@@ -269,7 +252,7 @@ export default function Sidebar() {
               </div>
               <div className="flex flex-col min-w-0">
                 <h1 className="text-text-main text-sm font-medium leading-tight truncate">
-                  {user?.username || "Kullanıcı"}
+                  {user?.username || t("layout.userFallback")}
                 </h1>
                 <p className="text-text-secondary text-xs font-normal leading-tight truncate">
                   {user?.globalRole || "Role"}
@@ -297,7 +280,7 @@ export default function Sidebar() {
             <button
               onClick={handlePin}
               className="h-9 w-9 mx-auto flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
-              title="Sabitle ve Genişlet"
+              title={t("layout.pinAndExpand")}
             >
               <span className="material-symbols-outlined text-base">
                 chevron_right
@@ -310,7 +293,7 @@ export default function Sidebar() {
             <button
               onClick={handleCollapse}
               className="h-9 w-9 mx-auto flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
-              title="Genişlet"
+              title={t("layout.expand")}
             >
               <span className="material-symbols-outlined text-base">
                 close_fullscreen
@@ -324,13 +307,13 @@ export default function Sidebar() {
               <button
                 onClick={handleCollapse}
                 className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-secondary hover:text-text-main transition-colors flex-1"
-                title="Daralt"
+                title={t("layout.collapse")}
               >
                 <span className="material-symbols-outlined text-base">
                   close_fullscreen
                 </span>
                 <span className="text-xs font-medium whitespace-nowrap">
-                  Daralt
+                  {t("layout.collapse")}
                 </span>
               </button>
 
@@ -341,13 +324,13 @@ export default function Sidebar() {
                     ? 'bg-primary text-white hover:bg-primary/90'
                     : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-secondary hover:text-text-main'
                 }`}
-                title={isPinnedExpanded ? "Sabitlemeyi Kaldır" : "Sabitle"}
+                title={isPinnedExpanded ? t("layout.unpin") : t("layout.pin")}
               >
                 <span className="material-symbols-outlined text-base">
                   keep
                 </span>
                 <span className="text-xs font-medium whitespace-nowrap">
-                  Sabitle
+                  {t("layout.pin")}
                 </span>
               </button>
             </>
@@ -373,7 +356,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => setIsOtherCollapsed(!isOtherCollapsed)}
                   className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                  title="Diğer Menü Öğeleri"
+                  title={t("layout.otherMenuItems")}
                 >
                   <span></span>
                   <span className="material-symbols-outlined text-base justify-self-center">
@@ -387,7 +370,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => setIsOtherCollapsed(!isOtherCollapsed)}
                   className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                  title="Diğer"
+                  title={t("layout.other")}
                 >
                   <span className="material-symbols-outlined text-lg">
                     more_horiz
@@ -417,7 +400,7 @@ export default function Sidebar() {
                     admin_panel_settings
                   </span>
                   <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                    Yönetim
+                    {t("layout.management")}
                   </p>
                 </div>
               ) : (
@@ -470,7 +453,7 @@ export default function Sidebar() {
                     <button
                       onClick={() => setIsManagementCollapsed(!isManagementCollapsed)}
                       className="grid grid-cols-3 items-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                      title="Diğer Yönetim Öğeleri"
+                      title={t("layout.otherManagementItems")}
                     >
                       <span></span>
                       <span className="material-symbols-outlined text-base justify-self-center">
@@ -484,7 +467,7 @@ export default function Sidebar() {
                     <button
                       onClick={() => setIsManagementCollapsed(!isManagementCollapsed)}
                       className="flex items-center justify-center px-3 h-7 rounded-xl transition-colors w-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                      title="Diğer"
+                      title={t("layout.other")}
                     >
                       <span className="material-symbols-outlined text-lg">
                         more_horiz
@@ -572,12 +555,12 @@ export default function Sidebar() {
               w-full transition-colors mt-2
               ${!isExpanded && 'justify-center'}
             `}
-            title={!isExpanded ? 'Çıkış' : ''}
+            title={!isExpanded ? t("nav.logout") : ''}
           >
             <span className="material-symbols-outlined text-xl flex-shrink-0">logout</span>
             {isExpanded && (
               <p className="text-sm font-medium leading-normal whitespace-nowrap">
-                Çıkış
+                {t("nav.logout")}
               </p>
             )}
           </button>
