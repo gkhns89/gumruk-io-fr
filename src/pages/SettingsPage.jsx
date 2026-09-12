@@ -8,14 +8,22 @@ import { gRadarService } from '../api/gRadarService';
 import { sessionService } from '../api/sessionService';
 import { showSuccess, showError } from '../utils/toastUtils';
 import { confirmDialog } from '../utils/confirmDialog';
+import { t, getCurrentLocale } from '../locales';
+
+// Etiket getter: çeviri sabit tanımlanırken değil, okunduğunda alınır
+const contactType = (value, icon) => ({
+  value,
+  get label() { return t(`settingsPage.contacts.types.${value}`); },
+  icon,
+});
 
 const TYPE_OPTIONS = [
-  { value: 'PHONE',    label: 'Telefon',    icon: 'phone' },
-  { value: 'EMAIL',    label: 'E-posta',    icon: 'email' },
-  { value: 'WHATSAPP', label: 'WhatsApp',   icon: 'chat' },
-  { value: 'ADDRESS',  label: 'Adres',      icon: 'location_on' },
-  { value: 'WEBSITE',  label: 'Web Sitesi', icon: 'language' },
-  { value: 'OTHER',    label: 'Diğer',      icon: 'info' },
+  contactType('PHONE',    'phone'),
+  contactType('EMAIL',    'email'),
+  contactType('WHATSAPP', 'chat'),
+  contactType('ADDRESS',  'location_on'),
+  contactType('WEBSITE',  'language'),
+  contactType('OTHER',    'info'),
 ];
 
 const EMPTY_CONTACT_FORM = { label: '', value: '', type: 'PHONE', isActive: true, sortOrder: 0 };
@@ -28,9 +36,9 @@ const formatDuration = (ms) => {
   const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
   const parts = [];
-  if (days) parts.push(`${days} gün`);
-  if (hours) parts.push(`${hours} saat`);
-  if (minutes) parts.push(`${minutes} dakika`);
+  if (days) parts.push(t('settingsPage.duration.days', { count: days }));
+  if (hours) parts.push(t('settingsPage.duration.hours', { count: hours }));
+  if (minutes) parts.push(t('settingsPage.duration.minutes', { count: minutes }));
   return parts.length ? parts.join(' ') : `${ms} ms`;
 };
 
@@ -89,7 +97,7 @@ const SettingsPage = () => {
   const handleSaveGRadarConfig = async () => {
     const reservedNum = Number(gRadarForm.reservedCredits);
     if (!Number.isInteger(reservedNum) || reservedNum < 0) {
-      showError('Güvenlik sınırı kredisi 0 veya pozitif tamsayı olmalı');
+      showError(t('gRadarAdmin.master.reservedCreditsInvalid'));
       return;
     }
     setGRadarSaving(true);
@@ -104,7 +112,7 @@ const SettingsPage = () => {
     const res = await gRadarService.updateMasterConfig(payload);
     setGRadarSaving(false);
     if (res.success) {
-      showSuccess(res.data?.message || 'G-Radar konfigürasyonu güncellendi');
+      showSuccess(res.data?.message || t('gRadarAdmin.master.configUpdated'));
       setGRadarForm(prev => ({ ...prev, apiToken: '', webhookSecret: '' }));
       loadGRadarConfig();
     } else {
@@ -126,7 +134,7 @@ const SettingsPage = () => {
       showError(res.error);
       return;
     }
-    showSuccess(res.data?.message || 'Master bakiyesi güncellendi');
+    showSuccess(res.data?.message || t('gRadarAdmin.master.balanceRefreshed'));
     setGRadarRefreshIdentifier('');
     loadGRadarConfig();
   };
@@ -140,7 +148,7 @@ const SettingsPage = () => {
       return;
     }
     if (res.data?.success) {
-      showSuccess(res.data.message || 'G-Radar bağlantısı başarılı');
+      showSuccess(res.data.message || t('gRadarAdmin.master.connectionSuccess'));
       // The probe reads the remaining-credits header off the response; if
       // G-Radar sent it we just learned the real master pool size. Refresh
       // the master config card so the cached number reflects upstream
@@ -149,7 +157,7 @@ const SettingsPage = () => {
         loadGRadarConfig();
       }
     } else {
-      showError(res.data?.message || 'G-Radar bağlantısı başarısız');
+      showError(res.data?.message || t('gRadarAdmin.master.connectionFailed'));
     }
   };
 
@@ -180,8 +188,8 @@ const SettingsPage = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.folderId.trim()) { showError('Folder ID boş olamaz'); return; }
-    if (!hasExistingToken && !form.apiToken.trim()) { showError('API Token boş olamaz'); return; }
+    if (!form.folderId.trim()) { showError(t('settingsPage.clickUp.folderIdRequired')); return; }
+    if (!hasExistingToken && !form.apiToken.trim()) { showError(t('settingsPage.clickUp.apiTokenRequired')); return; }
 
     setLoading(true);
     const payload = {
@@ -194,12 +202,12 @@ const SettingsPage = () => {
     setLoading(false);
 
     if (result.success) {
-      showSuccess('ClickUp ayarları kaydedildi');
+      showSuccess(t('settingsPage.clickUp.saved'));
       setForm(prev => ({ ...prev, apiToken: '' }));
       setHasExistingToken(true);
       loadData();
     } else {
-      showError(result.error || 'Kayıt başarısız');
+      showError(result.error || t('settingsPage.clickUp.saveError'));
     }
   };
 
@@ -208,27 +216,27 @@ const SettingsPage = () => {
     const result = await feedbackService.registerWebhook();
     setRegisteringWebhook(false);
     if (result.success) {
-      showSuccess('Webhook başarıyla kaydedildi');
+      showSuccess(t('settingsPage.clickUp.webhookRegistered'));
       loadData();
     } else {
-      showError(result.error || 'Webhook kaydı başarısız');
+      showError(result.error || t('api.feedback.webhookRegisterError'));
     }
   };
 
   const handleDeleteWebhook = async () => {
     const ok = await confirmDialog({
-      title: 'Webhook kaydını sil',
-      message: 'ClickUp webhook kaydı silinecek. Devam edilsin mi?',
+      title: t('settingsPage.clickUp.deleteWebhookTitle'),
+      message: t('settingsPage.clickUp.deleteWebhookMessage'),
       intent: 'danger',
-      confirmText: 'Sil',
+      confirmText: t('common.delete'),
     });
     if (!ok) return;
     const result = await feedbackService.deleteWebhook();
     if (result.success) {
-      showSuccess('Webhook silindi');
+      showSuccess(t('settingsPage.clickUp.webhookDeleted'));
       loadData();
     } else {
-      showError(result.error || 'Webhook silinemedi');
+      showError(result.error || t('api.feedback.webhookDeleteError'));
     }
   };
 
@@ -237,9 +245,9 @@ const SettingsPage = () => {
     const result = await feedbackService.testClickUpConnection();
     setTesting(false);
     if (result.success && result.data?.success) {
-      showSuccess(result.data.message || 'Bağlantı başarılı');
+      showSuccess(result.data.message || t('settingsPage.clickUp.connectionSuccess'));
     } else {
-      showError(result.data?.message || 'Bağlantı başarısız');
+      showError(result.data?.message || t('settingsPage.clickUp.connectionFailed'));
     }
   };
 
@@ -281,8 +289,8 @@ const SettingsPage = () => {
 
   const handleContactSave = async (e) => {
     e.preventDefault();
-    if (!contactForm.label.trim()) { showError('Başlık boş olamaz'); return; }
-    if (!contactForm.value.trim()) { showError('Değer boş olamaz'); return; }
+    if (!contactForm.label.trim()) { showError(t('settingsPage.contacts.labelRequired')); return; }
+    if (!contactForm.value.trim()) { showError(t('settingsPage.contacts.valueRequired')); return; }
     setSavingContact(true);
     const payload = { ...contactForm, sortOrder: Number(contactForm.sortOrder) || 0 };
     const result = editingContactId
@@ -290,28 +298,28 @@ const SettingsPage = () => {
       : await contactService.createContactInfo(payload);
     setSavingContact(false);
     if (result.success) {
-      showSuccess(editingContactId ? 'İletişim bilgisi güncellendi' : 'İletişim bilgisi eklendi');
+      showSuccess(editingContactId ? t('settingsPage.contacts.updated') : t('settingsPage.contacts.added'));
       setContactFormOpen(false);
       loadContacts();
     } else {
-      showError(result.error || 'İşlem başarısız');
+      showError(result.error || t('adminCommon.actionFailed'));
     }
   };
 
   const handleContactDelete = async (id) => {
     const ok = await confirmDialog({
-      title: 'İletişim bilgisini sil',
-      message: 'Bu iletişim bilgisi kalıcı olarak silinecek. Devam edilsin mi?',
+      title: t('settingsPage.contacts.deleteTitle'),
+      message: t('settingsPage.contacts.deleteMessage'),
       intent: 'danger',
-      confirmText: 'Sil',
+      confirmText: t('common.delete'),
     });
     if (!ok) return;
     const result = await contactService.deleteContactInfo(id);
     if (result.success) {
-      showSuccess('İletişim bilgisi silindi');
+      showSuccess(t('settingsPage.contacts.deleted'));
       loadContacts();
     } else {
-      showError(result.error || 'Silme başarısız');
+      showError(result.error || t('settingsPage.contacts.deleteError'));
     }
   };
 
@@ -328,10 +336,10 @@ const SettingsPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">settings</span>
-                Ayarlar
+                {t('nav.settings')}
               </h1>
               <p className="text-text-secondary mt-2">
-                Uygulama entegrasyonlarını ve tercihlerini yönetin
+                {t('settingsPage.subtitle')}
               </p>
             </div>
           </div>
@@ -342,7 +350,7 @@ const SettingsPage = () => {
           {!isSuperAdmin ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400 dark:text-gray-500 gap-3">
               <span className="material-symbols-outlined text-[56px]">lock</span>
-              <p className="text-base">Bu sayfaya erişim yetkiniz yok.</p>
+              <p className="text-base">{t('management.noAccess')}</p>
             </div>
           ) : loadingData ? (
             <div className="flex items-center justify-center min-h-[200px]">
@@ -357,38 +365,38 @@ const SettingsPage = () => {
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">schedule</span>
                   <div className="flex-1">
-                    <h2 className="font-semibold text-text-main">Oturum Politikası</h2>
+                    <h2 className="font-semibold text-text-main">{t('settingsPage.sessionPolicy.title')}</h2>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      Token ömürleri ve tek oturum kuralı — yalnızca bilgi
+                      {t('settingsPage.sessionPolicy.subtitle')}
                     </p>
                   </div>
                   <span className="text-[11px] px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-text-secondary flex-shrink-0">
-                    Salt okunur
+                    {t('settingsPage.sessionPolicy.readOnly')}
                   </span>
                 </div>
 
                 <div className="p-6 space-y-4">
                   {!sessionPolicy ? (
-                    <p className="text-sm text-text-secondary">Oturum politikası bilgisi alınamadı.</p>
+                    <p className="text-sm text-text-secondary">{t('settingsPage.sessionPolicy.loadError')}</p>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                          <p className="text-xs text-text-secondary">Normal giriş</p>
+                          <p className="text-xs text-text-secondary">{t('settingsPage.sessionPolicy.normalLogin')}</p>
                           <p className="text-xl font-bold text-text-main mt-1">
                             {formatDuration(sessionPolicy.tokenExpirationMs)}
                           </p>
                           <p className="text-[11px] text-text-secondary mt-1">
-                            Beni Hatırla işaretlenmeden yapılan girişler
+                            {t('settingsPage.sessionPolicy.normalLoginHint')}
                           </p>
                         </div>
                         <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                          <p className="text-xs text-text-secondary">Beni Hatırla ile giriş</p>
+                          <p className="text-xs text-text-secondary">{t('settingsPage.sessionPolicy.rememberMeLogin')}</p>
                           <p className="text-xl font-bold text-text-main mt-1">
                             {formatDuration(sessionPolicy.rememberMeExpirationMs)}
                           </p>
                           <p className="text-[11px] text-text-secondary mt-1">
-                            Login ekranındaki kutu işaretlendiğinde
+                            {t('settingsPage.sessionPolicy.rememberMeLoginHint')}
                           </p>
                         </div>
                       </div>
@@ -397,20 +405,20 @@ const SettingsPage = () => {
                         <div className="flex items-start gap-2">
                           <span className="material-symbols-outlined text-[18px] text-text-secondary mt-0.5">devices</span>
                           <div className="text-sm text-text-main">
-                            <span className="font-medium">Tek oturum:</span>{' '}
+                            <span className="font-medium">{t('settingsPage.sessionPolicy.singleSession')}</span>{' '}
                             {(sessionPolicy.singleSessionRoles || []).join(', ') || '-'}
                             <p className="text-xs text-text-secondary mt-0.5">
-                              Bu roller başka bir cihazdan giriş yaptığında önceki oturum kapanır.
+                              {t('settingsPage.sessionPolicy.singleSessionHint')}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <span className="material-symbols-outlined text-[18px] text-text-secondary mt-0.5">group</span>
                           <div className="text-sm text-text-main">
-                            <span className="font-medium">Çoklu oturum:</span>{' '}
+                            <span className="font-medium">{t('settingsPage.sessionPolicy.multiSession')}</span>{' '}
                             {(sessionPolicy.multiSessionRoles || []).join(', ') || '-'}
                             <p className="text-xs text-text-secondary mt-0.5">
-                              Aynı anda birden fazla cihazdan giriş yapabilirler.
+                              {t('settingsPage.sessionPolicy.multiSessionHint')}
                             </p>
                           </div>
                         </div>
@@ -419,9 +427,9 @@ const SettingsPage = () => {
                       <div className="flex items-start gap-2 text-xs text-text-secondary">
                         <span className="material-symbols-outlined text-[16px] flex-shrink-0">info</span>
                         <p>
-                          Bu değerler {sessionPolicy.source || 'ortam değişkenleri'} üzerinden yönetilir;
-                          değişiklik sunucunun yeniden başlatılmasını gerektirir. Token yenileme (refresh)
-                          yoktur — süre dolduğunda kullanıcı ekranda aktif olsa bile çıkış yapılır.
+                          {t('settingsPage.sessionPolicy.sourceNote', {
+                            source: sessionPolicy.source || t('settingsPage.sessionPolicy.defaultSource'),
+                          })}
                         </p>
                       </div>
                     </>
@@ -436,9 +444,9 @@ const SettingsPage = () => {
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">integration_instructions</span>
                   <div>
-                    <h2 className="font-semibold text-text-main">ClickUp Entegrasyonu</h2>
+                    <h2 className="font-semibold text-text-main">{t('settingsPage.clickUp.title')}</h2>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      Kullanıcı feedback bildirimlerini ClickUp'a otomatik aktar
+                      {t('settingsPage.clickUp.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -455,7 +463,7 @@ const SettingsPage = () => {
                       <span className="material-symbols-outlined text-[14px]">
                         {configured ? 'check_circle' : 'cancel'}
                       </span>
-                      {configured ? 'Yapılandırıldı' : 'Yapılandırılmadı'}
+                      {configured ? t('settingsPage.clickUp.configured') : t('settingsPage.clickUp.notConfigured')}
                     </span>
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border
                       ${enabled
@@ -465,7 +473,7 @@ const SettingsPage = () => {
                       <span className="material-symbols-outlined text-[14px]">
                         {enabled ? 'toggle_on' : 'toggle_off'}
                       </span>
-                      {enabled ? 'Aktif' : 'Pasif'}
+                      {enabled ? t('adminCommon.active') : t('management.inactive')}
                     </span>
                   </div>
 
@@ -482,7 +490,7 @@ const SettingsPage = () => {
                           <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-800
                                           bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm">
                             <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                            Token kayıtlı
+                            {t('settingsPage.clickUp.tokenSaved')}
                           </div>
                           <button
                             type="button"
@@ -490,7 +498,7 @@ const SettingsPage = () => {
                             className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600
                                        text-sm text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                           >
-                            Değiştir
+                            {t('settingsPage.clickUp.change')}
                           </button>
                         </div>
                       ) : (
@@ -518,7 +526,7 @@ const SettingsPage = () => {
                         name="folderId"
                         value={form.folderId}
                         onChange={handleChange}
-                        placeholder="Örn: 12345678"
+                        placeholder={t('settingsPage.clickUp.folderIdPlaceholder')}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600
                                    bg-white dark:bg-gray-800 text-text-main
                                    placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50
@@ -530,21 +538,21 @@ const SettingsPage = () => {
                     <div>
                       <label className="block text-sm font-medium text-text-main mb-1.5">
                         Webhook Base URL
-                        <span className="ml-1.5 text-xs font-normal text-text-secondary">(opsiyonel)</span>
+                        <span className="ml-1.5 text-xs font-normal text-text-secondary">{t('settingsPage.clickUp.optional')}</span>
                       </label>
                       <input
                         type="url"
                         name="webhookBaseUrl"
                         value={form.webhookBaseUrl}
                         onChange={handleChange}
-                        placeholder="https://api.siteniz.com"
+                        placeholder={t('settingsPage.clickUp.webhookBaseUrlPlaceholder')}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600
                                    bg-white dark:bg-gray-800 text-text-main
                                    placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50
                                    focus:border-primary text-sm transition-colors"
                       />
                       <p className="text-xs text-text-secondary mt-1">
-                        Girilirse kayıt sırasında webhook otomatik kaydedilir →{' '}
+                        {t('settingsPage.clickUp.webhookBaseUrlHint')}{' '}
                         <span className="font-mono">{form.webhookBaseUrl || 'https://...'}/api/webhooks/clickup</span>
                       </p>
                     </div>
@@ -560,7 +568,7 @@ const SettingsPage = () => {
                         className="w-4 h-4 accent-primary rounded cursor-pointer"
                       />
                       <label htmlFor="isEnabled" className="text-sm text-text-main cursor-pointer select-none">
-                        Feedback butonunu kullanıcılara göster
+                        {t('settingsPage.clickUp.showFeedbackButton')}
                       </label>
                     </div>
 
@@ -573,13 +581,13 @@ const SettingsPage = () => {
                         className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                                    text-sm text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800
                                    transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!configured ? 'Önce ayarları kaydedin' : ''}
+                        title={!configured ? t('settingsPage.clickUp.saveSettingsFirst') : ''}
                       >
                         {testing
                           ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                           : <span className="material-symbols-outlined text-[16px]">wifi_tethering</span>
                         }
-                        {testing ? 'Test ediliyor...' : 'Bağlantıyı Test Et'}
+                        {testing ? t('adminCommon.testing') : t('adminCommon.testConnection')}
                       </button>
 
                       <button
@@ -589,7 +597,7 @@ const SettingsPage = () => {
                                    hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {loading && <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>}
-                        {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                        {loading ? t('management.saving') : t('common.save')}
                       </button>
                     </div>
                   </form>
@@ -607,7 +615,11 @@ const SettingsPage = () => {
                             <span className="material-symbols-outlined text-[13px]">
                               {settings?.webhookRegistered ? 'webhook' : 'webhook'}
                             </span>
-                            Webhook: {settings?.webhookRegistered ? 'Aktif' : 'Kayıtlı değil'}
+                            {t('settingsPage.clickUp.webhookStatus', {
+                              status: settings?.webhookRegistered
+                                ? t('adminCommon.active')
+                                : t('settingsPage.clickUp.webhookNotRegistered'),
+                            })}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -616,14 +628,14 @@ const SettingsPage = () => {
                               type="button"
                               onClick={handleRegisterWebhook}
                               disabled={registeringWebhook || !form.webhookBaseUrl.trim()}
-                              title={!form.webhookBaseUrl.trim() ? 'Önce Webhook Base URL girin ve kaydedin' : ''}
+                              title={!form.webhookBaseUrl.trim() ? t('settingsPage.clickUp.enterWebhookUrlFirst') : ''}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary text-primary text-xs font-medium
                                          hover:bg-primary/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {registeringWebhook
                                 ? <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
                                 : <span className="material-symbols-outlined text-[14px]">add_link</span>}
-                              {registeringWebhook ? 'Kaydediliyor...' : 'Webhook Kaydet'}
+                              {registeringWebhook ? t('management.saving') : t('settingsPage.clickUp.registerWebhook')}
                             </button>
                           ) : (
                             <button
@@ -634,7 +646,7 @@ const SettingsPage = () => {
                                          hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                             >
                               <span className="material-symbols-outlined text-[14px]">link_off</span>
-                              Webhook Kaldır
+                              {t('settingsPage.clickUp.removeWebhook')}
                             </button>
                           )}
                         </div>
@@ -644,7 +656,7 @@ const SettingsPage = () => {
 
                   {settings?.updatedAt && (
                     <p className="text-xs text-text-secondary pt-1">
-                      Son güncelleme: {new Date(settings.updatedAt).toLocaleString('tr-TR')}
+                      {t('adminCommon.lastUpdated', { date: new Date(settings.updatedAt).toLocaleString(getCurrentLocale()) })}
                     </p>
                   )}
                 </div>
@@ -655,9 +667,9 @@ const SettingsPage = () => {
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">travel_explore</span>
                   <div className="flex-1">
-                    <h2 className="font-semibold text-text-main">G-Radar Entegrasyonu (Master)</h2>
+                    <h2 className="font-semibold text-text-main">{t('gRadarAdmin.master.title')}</h2>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      Geliştirici hesabınızın API token'ı ve webhook ayarları. Tüm brokerlar bu hesap üzerinden çalışır.
+                      {t('gRadarAdmin.master.subtitle')}
                     </p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -665,7 +677,7 @@ const SettingsPage = () => {
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                       : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                   }`}>
-                    {gRadarConfig?.active ? 'Aktif' : 'Pasif'}
+                    {gRadarConfig?.active ? t('adminCommon.active') : t('management.inactive')}
                   </span>
                 </div>
                 <div className="p-6 space-y-5">
@@ -675,10 +687,10 @@ const SettingsPage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">savings</span>
-                          Master Havuz Bakiyesi
+                          {t('gRadarAdmin.master.poolBalance')}
                         </h3>
                         <p className="text-xs text-text-secondary mt-0.5">
-                          G-Radar hesabınızda kalan kredi. Brokerlara hiçbir yerde gösterilmez.
+                          {t('gRadarAdmin.master.poolBalanceHint')}
                         </p>
                       </div>
                       <div className="text-right">
@@ -687,11 +699,11 @@ const SettingsPage = () => {
                             ? 'text-red-600 dark:text-red-400'
                             : 'text-purple-700 dark:text-purple-300'
                         }`}>
-                          {gRadarConfig?.lastKnownMasterCredits ?? '—'} kredi
+                          {t('gRadarAdmin.credits', { count: gRadarConfig?.lastKnownMasterCredits ?? '—' })}
                         </div>
                         {gRadarConfig?.lastCreditCheckAt && (
                           <p className="text-[11px] text-text-secondary mt-0.5">
-                            Son güncelleme: {new Date(gRadarConfig.lastCreditCheckAt).toLocaleString('tr-TR')}
+                            {t('adminCommon.lastUpdated', { date: new Date(gRadarConfig.lastCreditCheckAt).toLocaleString(getCurrentLocale()) })}
                           </p>
                         )}
                       </div>
@@ -701,21 +713,21 @@ const SettingsPage = () => {
                     <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 space-y-2">
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="text-xs text-text-secondary">
-                          Brokerlara tanımlı toplam:
+                          {t('gRadarAdmin.master.assignedTotal')}
                           <strong className="text-text-main ml-1">
-                            {gRadarConfig?.totalAssignedCredits ?? 0} kredi
+                            {t('gRadarAdmin.credits', { count: gRadarConfig?.totalAssignedCredits ?? 0 })}
                           </strong>
                           {(gRadarConfig?.walletsWithCreditsCount ?? 0) > 0 && (
                             <span className="ml-1 opacity-70">
-                              ({gRadarConfig.walletsWithCreditsCount} firma)
+                              {t('gRadarAdmin.master.companyCount', { count: gRadarConfig.walletsWithCreditsCount })}
                             </span>
                           )}
                           {gRadarConfig?.lastKnownMasterCredits != null && (
                             <span className="block mt-0.5 opacity-80">
-                              Kullanılabilir alan: <strong>
+                              {t('gRadarAdmin.master.available')} <strong>
                                 {Math.max(0, (gRadarConfig.lastKnownMasterCredits ?? 0) - (gRadarConfig.totalAssignedCredits ?? 0) - (gRadarConfig.reservedCredits ?? 0))}
-                              </strong> kredi
-                              <span className="opacity-60"> (master − tanımlı − güvenlik sınırı)</span>
+                              </strong> {t('gRadarAdmin.creditsUnit')}
+                              <span className="opacity-60"> {t('gRadarAdmin.master.availableFormula')}</span>
                             </span>
                           )}
                         </div>
@@ -730,37 +742,36 @@ const SettingsPage = () => {
                           type="text"
                           value={gRadarRefreshIdentifier}
                           onChange={(e) => setGRadarRefreshIdentifier(e.target.value)}
-                          placeholder="Var olan AWB / B/L / konteyner (opsiyonel)"
+                          placeholder={t('gRadarAdmin.master.identifierPlaceholder')}
                           className="flex-1 min-w-[200px] rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                         <select
                           value={gRadarRefreshType}
                           onChange={(e) => setGRadarRefreshType(e.target.value)}
                           disabled={!gRadarRefreshIdentifier.trim()}
-                          title={!gRadarRefreshIdentifier.trim() ? 'Önce bir kimlik girin' : 'Kimlik tipi — Otomatik bırakırsanız format otomatik tahmin edilir (B/L varsayılan)'}
+                          title={!gRadarRefreshIdentifier.trim() ? t('gRadarAdmin.master.enterIdentifierFirst') : t('gRadarAdmin.master.identifierTypeHint')}
                           className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-text-main px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                         >
-                          <option value="AUTO">Otomatik</option>
-                          <option value="AWB">AWB (hava)</option>
-                          <option value="BL">B/L (deniz)</option>
-                          <option value="CONTAINER">Konteyner (deniz)</option>
+                          {['AUTO', 'AWB', 'BL', 'CONTAINER'].map((type) => (
+                            <option key={type} value={type}>{t(`gRadarAdmin.master.identifierTypes.${type}`)}</option>
+                          ))}
                         </select>
                         <button
                           onClick={handleRefreshGRadarBalance}
                           disabled={gRadarRefreshing || !gRadarConfig?.apiTokenConfigured}
                           title={
                             !gRadarConfig?.apiTokenConfigured
-                              ? 'Önce API token kaydedin'
+                              ? t('gRadarAdmin.master.saveTokenFirst')
                               : gRadarRefreshIdentifier.trim()
-                                ? 'Girdiğiniz kimlikle idempotent POST atar — G-Radar 409 döner, kredi tüketilmez ama gerçek bakiye gelir'
-                                : 'Otomatik: en son kayıtlı hava/deniz kargosunu kullanır — kredi tüketilmez'
+                                ? t('gRadarAdmin.master.refreshWithIdentifierHint')
+                                : t('gRadarAdmin.master.refreshAutoHint')
                           }
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-40"
                         >
                           <span className={`material-symbols-outlined text-sm ${gRadarRefreshing ? 'animate-spin' : ''}`}>
                             {gRadarRefreshing ? 'refresh' : 'sync'}
                           </span>
-                          {gRadarRefreshing ? 'Yenileniyor...' : 'Bakiyeyi Yenile'}
+                          {gRadarRefreshing ? t('adminCommon.refreshing') : t('gRadarAdmin.master.refreshBalance')}
                         </button>
                       </div>
                     </div>
@@ -768,7 +779,7 @@ const SettingsPage = () => {
                     {(gRadarConfig?.lastKnownMasterCredits ?? 0) < 50 && gRadarConfig?.lastKnownMasterCredits != null && (
                       <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
                         <span className="material-symbols-outlined text-base">warning</span>
-                        Master kredi tükeniyor — G-Radar'dan paket yükleyin.
+                        {t('gRadarAdmin.master.lowCredits')}
                       </p>
                     )}
                   </div>
@@ -780,7 +791,7 @@ const SettingsPage = () => {
                       {gRadarConfig?.apiTokenConfigured && (
                         <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
-                          Kayıtlı
+                          {t('gRadarAdmin.saved')}
                         </span>
                       )}
                     </div>
@@ -788,10 +799,10 @@ const SettingsPage = () => {
                       type="password"
                       value={gRadarForm.apiToken}
                       onChange={(e) => setGRadarForm(prev => ({ ...prev, apiToken: e.target.value }))}
-                      placeholder={gRadarConfig?.apiTokenConfigured ? '*** (değiştirmek için yeni token girin)' : 'G-Radar API token'}
+                      placeholder={gRadarConfig?.apiTokenConfigured ? t('gRadarAdmin.master.tokenPlaceholderSaved') : 'G-Radar API token'}
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <span className="text-[11px] text-text-secondary">Boş bırakırsanız mevcut token korunur. AES ile şifrelenerek saklanır.</span>
+                    <span className="text-[11px] text-text-secondary">{t('gRadarAdmin.master.tokenHint')}</span>
                   </label>
 
                   {/* Webhook URL */}
@@ -805,7 +816,7 @@ const SettingsPage = () => {
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-[11px] text-text-secondary">
-                      Bu URL'i G-Radar dashboard'una (air + ocean ayrı) manuel olarak eklemeniz gerekir.
+                      {t('gRadarAdmin.master.webhookUrlHint')}
                     </span>
                   </label>
 
@@ -816,7 +827,7 @@ const SettingsPage = () => {
                       {gRadarConfig?.webhookSecretConfigured && (
                         <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
-                          Kayıtlı
+                          {t('gRadarAdmin.saved')}
                         </span>
                       )}
                     </div>
@@ -824,10 +835,10 @@ const SettingsPage = () => {
                       type="password"
                       value={gRadarForm.webhookSecret}
                       onChange={(e) => setGRadarForm(prev => ({ ...prev, webhookSecret: e.target.value }))}
-                      placeholder={gRadarConfig?.webhookSecretConfigured ? '*** (değiştirmek için yeni secret girin)' : 'Webhook HMAC secret'}
+                      placeholder={gRadarConfig?.webhookSecretConfigured ? t('gRadarAdmin.master.secretPlaceholderSaved') : 'Webhook HMAC secret'}
                       className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <span className="text-[11px] text-text-secondary">G-Radar'ın gönderdiği webhook imza header'ını doğrulamak için kullanılır.</span>
+                    <span className="text-[11px] text-text-secondary">{t('gRadarAdmin.master.secretHint')}</span>
                   </label>
 
                   {/* Active toggle */}
@@ -839,14 +850,14 @@ const SettingsPage = () => {
                       className="rounded"
                     />
                     <div>
-                      <span className="text-sm font-medium text-text-main">Entegrasyonu Aktif Et</span>
-                      <p className="text-xs text-text-secondary">Kapalı iken hiçbir broker G-Radar işlemi yapamaz.</p>
+                      <span className="text-sm font-medium text-text-main">{t('gRadarAdmin.master.activate')}</span>
+                      <p className="text-xs text-text-secondary">{t('gRadarAdmin.master.activateHint')}</p>
                     </div>
                   </label>
 
                   {/* Reserved credits — master pool safety threshold */}
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-text-secondary">Güvenlik Sınırı Kredisi</span>
+                    <span className="text-xs font-medium text-text-secondary">{t('gRadarAdmin.master.reservedCredits')}</span>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -856,17 +867,17 @@ const SettingsPage = () => {
                         onChange={(e) => setGRadarForm(prev => ({ ...prev, reservedCredits: e.target.value }))}
                         className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
-                      <span className="text-xs text-text-secondary">kredi</span>
+                      <span className="text-xs text-text-secondary">{t('gRadarAdmin.creditsUnit')}</span>
                     </div>
                     <span className="text-[11px] text-text-secondary">
-                      Master havuzda bu sayının altına düşecek satın almalar reddedilir. Varsayılan 10 — havuz tükenmek üzereyken bunu yükseltip yeni broker alımlarını durdurabilirsiniz.
+                      {t('gRadarAdmin.master.reservedCreditsHint')}
                     </span>
                   </label>
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                     {gRadarConfig?.updatedAt && (
                       <p className="text-xs text-text-secondary">
-                        Son güncelleme: {new Date(gRadarConfig.updatedAt).toLocaleString('tr-TR')}
+                        {t('adminCommon.lastUpdated', { date: new Date(gRadarConfig.updatedAt).toLocaleString(getCurrentLocale()) })}
                         {gRadarConfig.updatedByEmail && ` — ${gRadarConfig.updatedByEmail}`}
                       </p>
                     )}
@@ -876,15 +887,15 @@ const SettingsPage = () => {
                         disabled={gRadarTesting || !gRadarConfig?.apiTokenConfigured}
                         title={
                           !gRadarConfig?.apiTokenConfigured
-                            ? 'Önce API token kaydedin'
-                            : 'Configured token ile G-Radar\'a kısa bir GET atar — kredi tüketmez'
+                            ? t('gRadarAdmin.master.saveTokenFirst')
+                            : t('gRadarAdmin.master.testConnectionHint')
                         }
                         className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main rounded-lg text-sm font-medium hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
                       >
                         <span className={`material-symbols-outlined text-base ${gRadarTesting ? 'animate-spin' : ''}`}>
                           {gRadarTesting ? 'refresh' : 'cable'}
                         </span>
-                        {gRadarTesting ? 'Test ediliyor...' : 'Bağlantıyı Test Et'}
+                        {gRadarTesting ? t('adminCommon.testing') : t('adminCommon.testConnection')}
                       </button>
                       <button
                         onClick={handleSaveGRadarConfig}
@@ -892,7 +903,7 @@ const SettingsPage = () => {
                         className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-base">save</span>
-                        {gRadarSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                        {gRadarSaving ? t('management.saving') : t('common.save')}
                       </button>
                     </div>
                   </div>
@@ -911,9 +922,9 @@ const SettingsPage = () => {
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[22px] text-primary">contacts</span>
                     <div>
-                      <h2 className="font-semibold text-text-main">İletişim Bilgileri</h2>
+                      <h2 className="font-semibold text-text-main">{t('contact.infoTitle')}</h2>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        İletişim sayfasında kullanıcılara gösterilecek bilgiler
+                        {t('settingsPage.contacts.subtitle')}
                       </p>
                     </div>
                   </div>
@@ -923,7 +934,7 @@ const SettingsPage = () => {
                                hover:bg-primary/90 transition flex-shrink-0"
                   >
                     <span className="material-symbols-outlined text-[16px]">add</span>
-                    Ekle
+                    {t('common.add')}
                   </button>
                 </div>
 
@@ -932,12 +943,12 @@ const SettingsPage = () => {
                   {contactFormOpen && (
                     <form onSubmit={handleContactSave} className="mb-5 p-4 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 space-y-3">
                       <p className="text-sm font-semibold text-text-main">
-                        {editingContactId ? 'İletişim Bilgisini Düzenle' : 'Yeni İletişim Bilgisi'}
+                        {editingContactId ? t('settingsPage.contacts.editTitle') : t('settingsPage.contacts.newTitle')}
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-text-secondary mb-1">Tür</label>
+                          <label className="block text-xs font-medium text-text-secondary mb-1">{t('settingsPage.contacts.type')}</label>
                           <select
                             name="type"
                             value={contactForm.type}
@@ -952,20 +963,20 @@ const SettingsPage = () => {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-text-secondary mb-1">Başlık</label>
+                          <label className="block text-xs font-medium text-text-secondary mb-1">{t('settingsPage.contacts.label')}</label>
                           <input
                             type="text"
                             name="label"
                             value={contactForm.label}
                             onChange={handleContactFormChange}
-                            placeholder="Müşteri Hizmetleri"
+                            placeholder={t('settingsPage.contacts.labelPlaceholder')}
                             className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                                        bg-white dark:bg-gray-800 text-text-main text-sm
                                        placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
                           />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="block text-xs font-medium text-text-secondary mb-1">Değer</label>
+                          <label className="block text-xs font-medium text-text-secondary mb-1">{t('settingsPage.contacts.value')}</label>
                           <input
                             type="text"
                             name="value"
@@ -978,7 +989,7 @@ const SettingsPage = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-text-secondary mb-1">Sıralama</label>
+                          <label className="block text-xs font-medium text-text-secondary mb-1">{t('sectors.settings.order')}</label>
                           <input
                             type="number"
                             name="sortOrder"
@@ -999,7 +1010,7 @@ const SettingsPage = () => {
                               onChange={handleContactFormChange}
                               className="w-4 h-4 accent-primary rounded"
                             />
-                            <span className="text-sm text-text-main">Aktif (kullanıcılara göster)</span>
+                            <span className="text-sm text-text-main">{t('settingsPage.contacts.activeHint')}</span>
                           </label>
                         </div>
                       </div>
@@ -1012,7 +1023,7 @@ const SettingsPage = () => {
                                      hover:bg-primary/90 transition disabled:opacity-60"
                         >
                           {savingContact && <span className="material-symbols-outlined text-[15px] animate-spin">progress_activity</span>}
-                          {savingContact ? 'Kaydediliyor...' : 'Kaydet'}
+                          {savingContact ? t('management.saving') : t('common.save')}
                         </button>
                         <button
                           type="button"
@@ -1020,7 +1031,7 @@ const SettingsPage = () => {
                           className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                                      text-sm text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                         >
-                          İptal
+                          {t('common.cancel')}
                         </button>
                       </div>
                     </form>
@@ -1033,12 +1044,12 @@ const SettingsPage = () => {
                     </div>
                   ) : contacts.length === 0 ? (
                     <div className="text-center py-8 text-text-secondary text-sm">
-                      Henüz iletişim bilgisi eklenmemiş
+                      {t('contact.empty')}
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {contacts.map(c => {
-                        const typeCfg = TYPE_OPTIONS.find(t => t.value === c.type) || TYPE_OPTIONS[5];
+                        const typeCfg = TYPE_OPTIONS.find(opt => opt.value === c.type) || TYPE_OPTIONS[5];
                         return (
                           <div
                             key={c.id}
@@ -1055,7 +1066,7 @@ const SettingsPage = () => {
                               <p className="text-sm font-medium text-text-main truncate">{c.value}</p>
                             </div>
                             {!c.isActive && (
-                              <span className="text-[10px] text-gray-400 flex-shrink-0 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600">Pasif</span>
+                              <span className="text-[10px] text-gray-400 flex-shrink-0 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600">{t('management.inactive')}</span>
                             )}
                             <span className="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
                               #{c.sortOrder}
@@ -1063,14 +1074,14 @@ const SettingsPage = () => {
                             <button
                               onClick={() => openEditContact(c)}
                               className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                              title="Düzenle"
+                              title={t('common.edit')}
                             >
                               <span className="material-symbols-outlined text-[16px] text-text-secondary">edit</span>
                             </button>
                             <button
                               onClick={() => handleContactDelete(c.id)}
                               className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-                              title="Sil"
+                              title={t('common.delete')}
                             >
                               <span className="material-symbols-outlined text-[16px] text-red-500">delete</span>
                             </button>

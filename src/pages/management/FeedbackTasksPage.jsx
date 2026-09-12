@@ -2,57 +2,65 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { feedbackService } from '../../api/feedbackService';
 import FeedbackDetailModal from '../../components/common/FeedbackDetailModal';
+import { t, getCurrentLocale } from '../../locales';
 
+// Etiketler getter: çeviri sabit tanımlanırken değil, okunduğunda alınır
 const CATEGORY_CONFIG = {
-  BUG:      { label: 'Hata',    icon: 'bug_report',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800' },
-  FEATURE:  { label: 'Öneri',   icon: 'lightbulb',   color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
-  QUESTION: { label: 'Soru',    icon: 'help',        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-  OTHER:    { label: 'Diğer',   icon: 'more_horiz',  color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
+  BUG:      { get label() { return t('feedback.categories.BUG'); },      icon: 'bug_report',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800' },
+  FEATURE:  { get label() { return t('feedback.categories.FEATURE'); },  icon: 'lightbulb',   color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
+  QUESTION: { get label() { return t('feedback.categories.QUESTION'); }, icon: 'help',        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+  OTHER:    { get label() { return t('feedback.categories.OTHER'); },    icon: 'more_horiz',  color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
 };
 
 const SYNC_CONFIG = {
-  PENDING: { label: 'Kuyruğa Alındı', icon: 'schedule',     color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  SYNCED:  { label: 'Aktarıldı',      icon: 'check_circle', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  FAILED:  { label: 'Aktarım Hatası', icon: 'error',        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  PENDING: { get label() { return t('feedbackTasks.sync.PENDING'); }, icon: 'schedule',     color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  SYNCED:  { get label() { return t('feedbackTasks.sync.SYNCED'); },  icon: 'check_circle', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  FAILED:  { get label() { return t('feedbackTasks.sync.FAILED'); },  icon: 'error',        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
+
+const clickUpStatus = (labelKey, color, icon) => ({
+  get label() { return t(`feedback.clickupStatus.${labelKey}`); },
+  color,
+  icon,
+});
 
 const CLICKUP_STATUS_MAP = {
   // Başlangıç / planlama
-  'new':           { label: 'Yeni',                 color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',             icon: 'fiber_new' },
-  'open':          { label: 'Açık',                 color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'to do':         { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'todo':          { label: 'Yapılacak',             color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'radio_button_unchecked' },
-  'planning':      { label: 'Planlandı',             color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: 'event_note' },
-  'backlog':       { label: 'Biriktirici',           color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        icon: 'inbox' },
-  'pending':       { label: 'Bekliyor',              color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: 'hourglass_empty' },
-  'needs info':    { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
-  'need info':     { label: 'Bilgi Bekleniyor',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     icon: 'help_outline' },
+  'new':           clickUpStatus('new',        'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',             'fiber_new'),
+  'open':          clickUpStatus('open',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'to do':         clickUpStatus('todo',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'todo':          clickUpStatus('todo',       'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'radio_button_unchecked'),
+  'planning':      clickUpStatus('planning',   'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', 'event_note'),
+  'backlog':       clickUpStatus('backlog',    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',        'inbox'),
+  'pending':       clickUpStatus('pending',    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', 'hourglass_empty'),
+  'needs info':    clickUpStatus('needsInfo',  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     'help_outline'),
+  'need info':     clickUpStatus('needsInfo',  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',     'help_outline'),
   // Aktif süreç
-  'active':        { label: 'Aktif',                 color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'play_circle' },
-  'in progress':   { label: 'İşlemde',               color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         icon: 'autorenew' },
-  'blocked':       { label: 'Engellendi',            color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             icon: 'block' },
-  'on hold':       { label: 'Beklemede',             color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: 'pause_circle' },
+  'active':        clickUpStatus('active',     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         'play_circle'),
+  'in progress':   clickUpStatus('inProgress', 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',         'autorenew'),
+  'blocked':       clickUpStatus('blocked',    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',             'block'),
+  'on hold':       clickUpStatus('onHold',     'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', 'pause_circle'),
   // İnceleme / test
-  'review':        { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'in review':     { label: 'İncelemede',            color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', icon: 'manage_search' },
-  'testing':       { label: 'Test Ediliyor',         color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'science' },
-  'qa':            { label: 'Kalite Kontrolde',      color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         icon: 'fact_check' },
+  'review':        clickUpStatus('review',     'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', 'manage_search'),
+  'in review':     clickUpStatus('review',     'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', 'manage_search'),
+  'testing':       clickUpStatus('testing',    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         'science'),
+  'qa':            clickUpStatus('qa',         'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',         'fact_check'),
   // Yayın / kapanış
-  'staged':        { label: 'Hazırlandı',            color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',         icon: 'cloud_upload' },
-  'deployed':      { label: 'Yayınlandı',            color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', icon: 'rocket_launch' },
-  'complete':      { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'completed':     { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'done':          { label: 'Tamamlandı',            color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'task_alt' },
-  'resolved':      { label: 'Çözüldü',               color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     icon: 'check_circle' },
-  'closed':        { label: 'Kapatıldı',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'lock' },
-  'archived':      { label: 'Arşivlendi',            color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'archive' },
+  'staged':        clickUpStatus('staged',     'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',         'cloud_upload'),
+  'deployed':      clickUpStatus('deployed',   'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', 'rocket_launch'),
+  'complete':      clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'completed':     clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'done':          clickUpStatus('completed',  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'task_alt'),
+  'resolved':      clickUpStatus('resolved',   'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',     'check_circle'),
+  'closed':        clickUpStatus('closed',     'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'lock'),
+  'archived':      clickUpStatus('archived',   'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'archive'),
   // Olumsuz kapanış
-  'cancelled':     { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
-  'canceled':      { label: 'İptal',                 color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             icon: 'cancel' },
-  'wont fix':      { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
-  "won't fix":     { label: 'Çözüme Alınmayacak',   color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'do_not_disturb' },
-  'duplicate':     { label: 'Yinelenen',             color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'content_copy' },
-  'invalid':       { label: 'Geçersiz',              color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            icon: 'not_interested' },
+  'cancelled':     clickUpStatus('cancelled',  'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             'cancel'),
+  'canceled':      clickUpStatus('cancelled',  'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',             'cancel'),
+  'wont fix':      clickUpStatus('wontFix',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'do_not_disturb'),
+  "won't fix":     clickUpStatus('wontFix',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'do_not_disturb'),
+  'duplicate':     clickUpStatus('duplicate',  'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'content_copy'),
+  'invalid':       clickUpStatus('invalid',    'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',            'not_interested'),
 };
 
 const getClickUpStatusConfig = (status) => {
@@ -68,20 +76,20 @@ const getClickUpStatusConfig = (status) => {
 
 const getStatusConfig = (task) => {
   if (task.clickupDeleted)
-    return { label: 'Kaldırıldı',     color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',           icon: 'link_off' };
+    return { label: t('feedback.detail.removed'),     color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',           icon: 'link_off' };
   if (task.clickupStatus)
     return getClickUpStatusConfig(task.clickupStatus);
   if (task.syncStatus === 'FAILED')
-    return { label: 'Aktarım Hatası', color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',            icon: 'error' };
+    return { label: t('feedbackTasks.sync.FAILED'),   color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',            icon: 'error' };
   if (task.syncStatus === 'PENDING')
-    return { label: 'Kuyruğa Alındı', color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', icon: 'schedule' };
-  return { label: 'Aktarıldı',        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',    icon: 'check_circle' };
+    return { label: t('feedbackTasks.sync.PENDING'),  color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', icon: 'schedule' };
+  return { label: t('feedbackTasks.sync.SYNCED'),     color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',    icon: 'check_circle' };
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   const utc = dateString.includes('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
-  return new Intl.DateTimeFormat('tr-TR', {
+  return new Intl.DateTimeFormat(getCurrentLocale(), {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   }).format(new Date(utc));
@@ -89,7 +97,7 @@ const formatDate = (dateString) => {
 
 const formatEpoch = (ms) => {
   if (!ms) return null;
-  return new Intl.DateTimeFormat('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  return new Intl.DateTimeFormat(getCurrentLocale(), { year: 'numeric', month: '2-digit', day: '2-digit' })
     .format(new Date(Number(ms)));
 };
 
@@ -139,27 +147,30 @@ const FeedbackTasksPage = () => {
     if (result.success) {
       setTasks(result.data || []);
     } else {
-      setError(result.error || 'Tasklar yüklenemedi');
+      setError(result.error || t('feedbackTasks.loadError'));
     }
     setLoading(false);
   }, []);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
-  const filtered = tasks.filter(t => {
-    const matchCat = categoryFilter === 'ALL' || t.category === categoryFilter;
-    const matchSync = syncFilter === 'ALL' || t.syncStatus === syncFilter;
+  const filtered = tasks.filter(task => {
+    const matchCat = categoryFilter === 'ALL' || task.category === categoryFilter;
+    const matchSync = syncFilter === 'ALL' || task.syncStatus === syncFilter;
     const matchSearch = !search ||
-      t.title?.toLowerCase().includes(search.toLowerCase()) ||
-      t.companyName?.toLowerCase().includes(search.toLowerCase()) ||
-      t.userEmail?.toLowerCase().includes(search.toLowerCase());
+      task.title?.toLowerCase().includes(search.toLowerCase()) ||
+      task.companyName?.toLowerCase().includes(search.toLowerCase()) ||
+      task.userEmail?.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSync && matchSearch;
   });
 
-  const syncCounts = tasks.reduce((acc, t) => {
-    acc[t.syncStatus] = (acc[t.syncStatus] || 0) + 1;
+  const syncCounts = tasks.reduce((acc, task) => {
+    acc[task.syncStatus] = (acc[task.syncStatus] || 0) + 1;
     return acc;
   }, {});
+
+  // Toplam sayı kalın yazılır; metin yer tutucunun iki yanından bölünür
+  const [totalBefore, totalAfter] = t('feedbackTasks.total').split('{{count}}');
 
   return (
     <MainLayout>
@@ -171,14 +182,14 @@ const FeedbackTasksPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">task_alt</span>
-                Feedback Taskları
+                {t('nav.feedbackTasks')}
               </h1>
               <p className="text-text-secondary mt-2">
-                Kullanıcılardan gelen bildirimler ve ClickUp senkronizasyon durumu
+                {t('feedbackTasks.subtitle')}
               </p>
               <div className="flex items-center gap-3 mt-2 flex-wrap">
                 <span className="text-sm text-text-secondary">
-                  Toplam <span className="font-semibold text-text-main">{tasks.length}</span> bildirim
+                  {totalBefore}<span className="font-semibold text-text-main">{tasks.length}</span>{totalAfter}
                 </span>
                 {Object.entries(syncCounts).map(([status, count]) => {
                   const cfg = SYNC_CONFIG[status];
@@ -197,7 +208,7 @@ const FeedbackTasksPage = () => {
                          text-sm text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition"
             >
               <span className="material-symbols-outlined text-[18px]">refresh</span>
-              Yenile
+              {t('adminCommon.refresh')}
             </button>
           </div>
         </div>
@@ -210,7 +221,7 @@ const FeedbackTasksPage = () => {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Başlık, şirket, e-posta..."
+              placeholder={t('feedbackTasks.searchPlaceholder')}
               className="flex-1 bg-transparent text-sm text-text-main placeholder:text-text-secondary focus:outline-none"
             />
           </div>
@@ -222,7 +233,7 @@ const FeedbackTasksPage = () => {
             className="h-9 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                        text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
-            <option value="ALL">Tüm Kategoriler</option>
+            <option value="ALL">{t('feedbackTasks.allCategories')}</option>
             {Object.entries(CATEGORY_CONFIG).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
@@ -235,7 +246,7 @@ const FeedbackTasksPage = () => {
             className="h-9 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                        text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
-            <option value="ALL">Tüm Durumlar</option>
+            <option value="ALL">{t('feedbackTasks.allStatuses')}</option>
             {Object.entries(SYNC_CONFIG).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
@@ -256,7 +267,7 @@ const FeedbackTasksPage = () => {
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[200px] gap-3 text-text-secondary">
               <span className="material-symbols-outlined text-[56px]">inbox</span>
-              <p className="text-sm">{tasks.length === 0 ? 'Henüz hiç feedback yok' : 'Filtreyle eşleşen sonuç bulunamadı'}</p>
+              <p className="text-sm">{tasks.length === 0 ? t('feedbackTasks.empty') : t('feedbackTasks.emptyFiltered')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -284,16 +295,16 @@ const FeedbackTasksPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 mb-0.5">
                           {priority === 'urgent' && (
-                            <span className="material-symbols-outlined text-[14px] text-red-500 flex-shrink-0" title="Acil">priority_high</span>
+                            <span className="material-symbols-outlined text-[14px] text-red-500 flex-shrink-0" title={t('feedback.priority.urgent')}>priority_high</span>
                           )}
                           {priority === 'high' && (
-                            <span className="material-symbols-outlined text-[14px] text-orange-500 flex-shrink-0" title="Yüksek">keyboard_double_arrow_up</span>
+                            <span className="material-symbols-outlined text-[14px] text-orange-500 flex-shrink-0" title={t('feedback.priority.high')}>keyboard_double_arrow_up</span>
                           )}
                           <p className="text-sm font-semibold text-text-main truncate">{task.title}</p>
                         </div>
                         <p className="text-xs text-text-secondary truncate">
                           {task.companyName} · {task.userEmail}
-                          {task.dueDate && <span className="text-orange-500 ml-1">· Son: {formatEpoch(task.dueDate)}</span>}
+                          {task.dueDate && <span className="text-orange-500 ml-1">· {t('feedbackTasks.dueDate', { date: formatEpoch(task.dueDate) })}</span>}
                           <span className="hidden md:inline ml-1">· {formatDate(task.createdAt)}</span>
                         </p>
                       </div>
@@ -321,7 +332,7 @@ const FeedbackTasksPage = () => {
                         <button
                           onClick={e => { e.stopPropagation(); openClickUpTask(task.clickupTaskId); }}
                           className="flex-shrink-0 p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition"
-                          title="ClickUp'ta aç"
+                          title={t('feedbackTasks.openInClickUp')}
                         >
                           <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                         </button>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 /**
  * Header bell + popover that lists PENDING G-Radar enable requests.
@@ -80,7 +81,7 @@ export default function GRadarRequestsBell() {
     const res = await gRadarService.approveRequest(id, { fetchImmediately });
     setActingId(null);
     if (res.success) {
-      showSuccess(res.data?.message || 'Talep onaylandı');
+      showSuccess(res.data?.message || t('gRadarAdmin.requests.approved'));
       load();
     } else {
       showError(res.error);
@@ -89,14 +90,14 @@ export default function GRadarRequestsBell() {
 
   const reject = async (id) => {
     if (!rejectReason.trim()) {
-      showError('Red gerekçesi zorunludur');
+      showError(t('adminCommon.rejectionReasonRequired'));
       return;
     }
     setActingId(id);
     const res = await gRadarService.rejectRequest(id, rejectReason.trim());
     setActingId(null);
     if (res.success) {
-      showSuccess('Talep reddedildi');
+      showSuccess(t('gRadarAdmin.requests.rejected'));
       setRejectingId(null);
       setRejectReason('');
       load();
@@ -112,8 +113,8 @@ export default function GRadarRequestsBell() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="G-Radar Talepleri"
-        aria-label="G-Radar Talepleri"
+        title={t('gRadarAdmin.requests.title')}
+        aria-label={t('gRadarAdmin.requests.title')}
       >
         <span className="material-symbols-outlined text-text-secondary">travel_explore</span>
         {count > 0 && (
@@ -128,25 +129,25 @@ export default function GRadarRequestsBell() {
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-background-dark">
             <h3 className="font-semibold text-text-main text-sm flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-base">travel_explore</span>
-              G-Radar Talepleri
+              {t('gRadarAdmin.requests.title')}
             </h3>
             <button
               onClick={load}
               disabled={loading}
               className="text-xs text-text-secondary hover:text-text-main disabled:opacity-50"
             >
-              {loading ? 'Yenileniyor...' : 'Yenile'}
+              {loading ? t('adminCommon.refreshing') : t('adminCommon.refresh')}
             </button>
           </div>
 
           {loading && requests.length === 0 ? (
-            <p className="text-center text-text-secondary text-sm py-8">Yükleniyor...</p>
+            <p className="text-center text-text-secondary text-sm py-8">{t('common.loading')}</p>
           ) : requests.length === 0 ? (
             <div className="text-center py-10 px-4">
               <span className="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-600 mb-1 block">
                 inbox
               </span>
-              <p className="text-sm text-text-secondary">Bekleyen talep yok</p>
+              <p className="text-sm text-text-secondary">{t('gRadarAdmin.requests.empty')}</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -155,7 +156,7 @@ export default function GRadarRequestsBell() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-text-main truncate">
-                        {r.cargoVehicleType === 'AIRPLANE' ? '✈️' : '🚢'} {r.cargoIdentifier || `Yük #${r.cargoId}`}
+                        {r.cargoVehicleType === 'AIRPLANE' ? '✈️' : '🚢'} {r.cargoIdentifier || t('gRadarAdmin.requests.cargoFallback', { id: r.cargoId })}
                       </p>
                       {/* SUPER_ADMIN sees requests across every broker — show
                           which one this belongs to so the pool view is
@@ -167,9 +168,9 @@ export default function GRadarRequestsBell() {
                         </p>
                       )}
                       <p className="text-[11px] text-text-secondary">
-                        {r.requestedByUsername || r.requestedByEmail || 'Bilinmeyen kullanıcı'}
+                        {r.requestedByUsername || r.requestedByEmail || t('gRadarAdmin.requests.unknownUser')}
                         {' · '}
-                        {new Date(r.requestedAt).toLocaleString('tr-TR')}
+                        {new Date(r.requestedAt).toLocaleString(getCurrentLocale())}
                       </p>
                     </div>
                   </div>
@@ -182,7 +183,7 @@ export default function GRadarRequestsBell() {
                     // Read-only oversight pool — broker admins are the only
                     // ones who can act, SuperAdmin just watches.
                     <p className="text-[11px] text-text-secondary italic">
-                      Yalnızca görüntüleme — onay/red broker yöneticisinde
+                      {t('gRadarAdmin.requests.viewOnly')}
                     </p>
                   ) : rejectingId === r.id ? (
                     <div className="flex flex-col gap-2">
@@ -190,7 +191,7 @@ export default function GRadarRequestsBell() {
                         type="text"
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder="Red gerekçesi (zorunlu)"
+                        placeholder={t('adminCommon.rejectionReasonPlaceholder')}
                         className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <div className="flex gap-2 justify-end">
@@ -198,14 +199,14 @@ export default function GRadarRequestsBell() {
                           onClick={() => { setRejectingId(null); setRejectReason(''); }}
                           className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-main"
                         >
-                          İptal
+                          {t('common.cancel')}
                         </button>
                         <button
                           onClick={() => reject(r.id)}
                           disabled={actingId === r.id}
                           className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50"
                         >
-                          {actingId === r.id ? '...' : 'Reddet'}
+                          {actingId === r.id ? '...' : t('payment.reject')}
                         </button>
                       </div>
                     </div>
@@ -215,19 +216,19 @@ export default function GRadarRequestsBell() {
                         onClick={() => approve(r.id, false)}
                         disabled={actingId === r.id}
                         className="flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
-                        title="Talebi onayla — G-Radar aktif edilir ama bilgi çekilmez (kredi düşmez)"
+                        title={t('gRadarAdmin.requests.approveHint')}
                       >
                         <span className="material-symbols-outlined text-sm">check</span>
-                        Onayla
+                        {t('payment.confirm')}
                       </button>
                       <button
                         onClick={() => approve(r.id, true)}
                         disabled={actingId === r.id}
                         className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary hover:opacity-90 text-white rounded-lg font-medium disabled:opacity-50"
-                        title="Talebi onayla ve hemen G-Radar'dan bilgileri çek (1 kredi düşer)"
+                        title={t('gRadarAdmin.requests.approveAndFetchHint')}
                       >
                         <span className="material-symbols-outlined text-sm">download</span>
-                        Onayla + Bilgileri Getir (1 kredi)
+                        {t('gRadarAdmin.requests.approveAndFetch')}
                       </button>
                       <button
                         onClick={() => setRejectingId(r.id)}
@@ -235,7 +236,7 @@ export default function GRadarRequestsBell() {
                         className="flex items-center gap-1 px-2.5 py-1 text-xs border border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-sm">close</span>
-                        Reddet
+                        {t('payment.reject')}
                       </button>
                     </div>
                   )}

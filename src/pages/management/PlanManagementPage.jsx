@@ -3,6 +3,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import { planService } from '../../api/planService';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 const EMPTY_FORM = {
   name: '',
@@ -16,7 +17,7 @@ const EMPTY_FORM = {
 
 const fmtPrice = (v) =>
   v != null && v !== '' && Number(v) > 0
-    ? `₺${Number(v).toLocaleString('tr-TR')}`
+    ? `₺${Number(v).toLocaleString(getCurrentLocale())}`
     : '—';
 
 // Plana göre renk tonu — id'nin moduna bakarak 5 farklı renk döndürür
@@ -64,11 +65,11 @@ function PlanFormModal({ plan, onClose, onSaved }) {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const handleSave = async () => {
-    if (!form.name.trim()) return showError('Plan adı zorunludur');
+    if (!form.name.trim()) return showError(t('planManagement.form.nameRequired'));
     if (!form.maxBrokerUsers || Number(form.maxBrokerUsers) < 1)
-      return showError('Maksimum kullanıcı sayısı 1 veya daha fazla olmalıdır');
+      return showError(t('planManagement.form.maxUsersInvalid'));
     if (!form.maxClientCompanies || Number(form.maxClientCompanies) < 1)
-      return showError('Maksimum müşteri firma sayısı 1 veya daha fazla olmalıdır');
+      return showError(t('planManagement.form.maxClientsInvalid'));
 
     setSaving(true);
     try {
@@ -88,14 +89,14 @@ function PlanFormModal({ plan, onClose, onSaved }) {
       };
       if (plan) {
         await planService.updatePlan(plan.id, payload);
-        showSuccess('Plan güncellendi');
+        showSuccess(t('planManagement.form.updated'));
       } else {
         await planService.createPlan(payload);
-        showSuccess('Plan oluşturuldu');
+        showSuccess(t('planManagement.form.created'));
       }
       onSaved();
     } catch {
-      showError('İşlem başarısız');
+      showError(t('adminCommon.actionFailed'));
     } finally {
       setSaving(false);
     }
@@ -109,7 +110,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
             <span className="material-symbols-outlined text-primary">
               {plan ? 'edit' : 'add_circle'}
             </span>
-            {plan ? 'Planı Düzenle' : 'Yeni Plan Oluştur'}
+            {plan ? t('planManagement.form.editTitle') : t('planManagement.form.createTitle')}
           </h2>
           <button onClick={onClose} className="text-text-secondary hover:text-text-main transition-colors">
             <span className="material-symbols-outlined">close</span>
@@ -118,26 +119,26 @@ function PlanFormModal({ plan, onClose, onSaved }) {
 
         <div className="px-6 py-5 space-y-4">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-text-secondary">Plan Adı *</span>
+            <span className="text-xs font-medium text-text-secondary">{t('planManagement.form.name')}</span>
             <input
               type="text" value={form.name} onChange={set('name')}
-              placeholder="örn. Başlangıç, Profesyonel, Kurumsal"
+              placeholder={t('planManagement.form.namePlaceholder')}
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-text-secondary">Açıklama</span>
+            <span className="text-xs font-medium text-text-secondary">{t('adminCommon.description')}</span>
             <input
               type="text" value={form.description} onChange={set('description')}
-              placeholder="isteğe bağlı"
+              placeholder={t('adminCommon.optionalPlaceholder')}
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
           </label>
 
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Maks. Kullanıcı *</span>
+              <span className="text-xs font-medium text-text-secondary">{t('planManagement.form.maxUsers')}</span>
               <input
                 type="number" min="1" value={form.maxBrokerUsers} onChange={set('maxBrokerUsers')}
                 placeholder="5"
@@ -145,7 +146,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Maks. Müşteri Firma *</span>
+              <span className="text-xs font-medium text-text-secondary">{t('planManagement.form.maxClients')}</span>
               <input
                 type="number" min="1" value={form.maxClientCompanies} onChange={set('maxClientCompanies')}
                 placeholder="20"
@@ -156,7 +157,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
 
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Aylık Fiyat (₺)</span>
+              <span className="text-xs font-medium text-text-secondary">{t('planManagement.form.monthlyPrice')}</span>
               <input
                 type="number" min="0" step="0.01" value={form.monthlyPrice} onChange={set('monthlyPrice')}
                 placeholder="0.00"
@@ -164,7 +165,7 @@ function PlanFormModal({ plan, onClose, onSaved }) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Yıllık Fiyat (₺)</span>
+              <span className="text-xs font-medium text-text-secondary">{t('planManagement.form.yearlyPrice')}</span>
               <input
                 type="number" min="0" step="0.01" value={form.yearlyPrice} onChange={set('yearlyPrice')}
                 placeholder="0.00"
@@ -175,16 +176,16 @@ function PlanFormModal({ plan, onClose, onSaved }) {
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-text-secondary">
-              G-Radar — Kredi Başı USD Fiyatı
+              {t('planManagement.form.gRadarPrice')}
             </span>
             <input
               type="number" min="0" step="0.01" value={form.gRadarPricePerCreditUsd}
               onChange={set('gRadarPricePerCreditUsd')}
-              placeholder="örn. 2.50"
+              placeholder={t('planManagement.form.gRadarPricePlaceholder')}
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
             <span className="text-[11px] text-text-secondary">
-              Boş bırakırsanız bu plan G-Radar'ı desteklemez. Satın alma anında güncel TCMB kuruyla ₺'ye çevrilir.
+              {t('planManagement.form.gRadarPriceHint')}
             </span>
           </label>
         </div>
@@ -194,14 +195,14 @@ function PlanFormModal({ plan, onClose, onSaved }) {
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave} disabled={saving}
             className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base">save</span>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? t('management.saving') : t('common.save')}
           </button>
         </div>
       </div>
@@ -231,12 +232,15 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
     }
   };
 
+  // Firma sayısı kalın yazılır; metin yer tutucunun iki yanından bölünür
+  const [subscribersBefore, subscribersAfter] = t('planManagement.deactivate.subscribersMessage').split('{{count}}');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-gray-700 transition-colors">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <span className="material-symbols-outlined text-2xl text-red-500">warning</span>
-          <h2 className="text-base font-bold text-text-main">Planı Pasife Al — "{plan.name}"</h2>
+          <h2 className="text-base font-bold text-text-main">{t('planManagement.deactivate.title', { name: plan.name })}</h2>
         </div>
 
         <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
@@ -244,7 +248,7 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
             <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
               <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
               <p className="text-sm text-green-700 dark:text-green-400 font-medium">
-                Bu plana bağlı aktif gümrük firması yok. Güvenle pasife alabilirsiniz.
+                {t('planManagement.deactivate.noSubscribers')}
               </p>
             </div>
           ) : (
@@ -252,8 +256,9 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
               <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4">
                 <span className="material-symbols-outlined text-amber-500 mt-0.5">info</span>
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                  <strong>{subscribers.length} gümrük firması</strong> bu planı kullanıyor. Pasife almadan önce
-                  her firmanın taşınacağı planı seçin.
+                  {subscribersBefore}
+                  <strong>{t('planManagement.deactivate.subscribersCount', { count: subscribers.length })}</strong>
+                  {subscribersAfter}
                 </p>
               </div>
               <div className="space-y-2">
@@ -273,7 +278,7 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
                         onChange={(e) => setTarget(sub.brokerId, e.target.value)}
                         className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors min-w-[160px]"
                       >
-                        <option value="">— Plan seç —</option>
+                        <option value="">{t('planManagement.deactivate.selectPlan')}</option>
                         {otherPlans.map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
@@ -284,7 +289,7 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
               </div>
               {!allAssigned && (
                 <p className="text-xs text-red-500 dark:text-red-400 text-center">
-                  Tüm firmalar için hedef plan seçilmelidir.
+                  {t('planManagement.deactivate.allRequired')}
                 </p>
               )}
             </>
@@ -296,7 +301,7 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleConfirm} disabled={!allAssigned || confirming}
@@ -305,7 +310,7 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
             <span className="material-symbols-outlined text-base">
               {confirming ? 'hourglass_empty' : 'visibility_off'}
             </span>
-            {confirming ? 'İşleniyor...' : 'Pasife Al'}
+            {confirming ? t('paymentPage.gRadar.processing') : t('adminCommon.deactivate')}
           </button>
         </div>
       </div>
@@ -317,6 +322,9 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
 function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate }) {
   const [expanded, setExpanded] = useState(false);
   const accent = accentFor(plan.id);
+  // Sayılar kalın yazılır; metin yer tutucunun iki yanından bölünür
+  const [usersBefore, usersAfter] = t('planManagement.card.users').split('{{count}}');
+  const [clientsBefore, clientsAfter] = t('planManagement.card.clients').split('{{count}}');
 
   return (
     <div
@@ -332,7 +340,7 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-text-secondary mb-1">
-              Abonelik Planı
+              {t('planManagement.card.label')}
             </p>
             <h3 className="text-lg font-bold text-text-main leading-tight truncate">{plan.name}</h3>
             {plan.description && (
@@ -348,7 +356,7 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
                 : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
             }`}
           >
-            {plan.isActive ? 'Aktif' : 'Pasif'}
+            {plan.isActive ? t('adminCommon.active') : t('management.inactive')}
           </span>
         </div>
       </div>
@@ -356,15 +364,15 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
       {/* ── Fiyat Bölümü ── */}
       <div className="mx-5 rounded-xl bg-gray-50 dark:bg-gray-800/60 px-4 py-3 grid grid-cols-3 gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">Aylık</p>
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">{t('adminCommon.monthly')}</p>
           <p className={`text-base font-bold ${accent.icon}`}>{fmtPrice(plan.monthlyPrice)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">Yıllık</p>
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">{t('adminCommon.yearly')}</p>
           <p className={`text-base font-bold ${accent.icon}`}>{fmtPrice(plan.yearlyPrice)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">G-Radar/kr.</p>
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-text-secondary mb-0.5">{t('planManagement.card.gRadarPerCredit')}</p>
           <p className={`text-base font-bold ${accent.icon}`}>
             {plan.gRadarPricePerCreditUsd != null && Number(plan.gRadarPricePerCreditUsd) > 0
               ? `$${Number(plan.gRadarPricePerCreditUsd).toFixed(2)}`
@@ -377,12 +385,12 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
       <div className="px-5 py-4 flex items-center gap-4">
         <div className="flex items-center gap-1.5 text-text-secondary">
           <span className="material-symbols-outlined text-[18px]">group</span>
-          <span className="text-xs"><span className="font-semibold text-text-main">{plan.maxBrokerUsers}</span> kullanıcı</span>
+          <span className="text-xs">{usersBefore}<span className="font-semibold text-text-main">{plan.maxBrokerUsers}</span>{usersAfter}</span>
         </div>
         <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
         <div className="flex items-center gap-1.5 text-text-secondary">
           <span className="material-symbols-outlined text-[18px]">corporate_fare</span>
-          <span className="text-xs"><span className="font-semibold text-text-main">{plan.maxClientCompanies}</span> müşteri firma</span>
+          <span className="text-xs">{clientsBefore}<span className="font-semibold text-text-main">{plan.maxClientCompanies}</span>{clientsAfter}</span>
         </div>
       </div>
 
@@ -399,7 +407,7 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
         >
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px] text-text-secondary">domain</span>
-            <span className="text-xs font-medium text-text-secondary">Gümrük Firmaları</span>
+            <span className="text-xs font-medium text-text-secondary">{t('planManagement.card.brokers')}</span>
           </div>
           <div className="flex items-center gap-2">
             <span
@@ -438,7 +446,7 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
                   <span className="text-xs font-medium text-text-main truncate">{b.brokerName}</span>
                 </div>
                 <span className="text-[11px] text-text-secondary flex-shrink-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5">
-                  {b.billingCycle === 'MONTHLY' ? 'Aylık' : 'Yıllık'}
+                  {b.billingCycle === 'MONTHLY' ? t('adminCommon.monthly') : t('adminCommon.yearly')}
                 </span>
               </div>
             ))}
@@ -454,14 +462,14 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 transition-colors"
           >
             <span className="material-symbols-outlined text-[15px]">edit</span>
-            Düzenle
+            {t('common.edit')}
           </button>
           <button
             onClick={() => onDeactivate(plan)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
           >
             <span className="material-symbols-outlined text-[15px]">visibility_off</span>
-            Pasife Al
+            {t('adminCommon.deactivate')}
           </button>
         </div>
       )}
@@ -492,7 +500,7 @@ export default function PlanManagementPage() {
       setPlans(plansData);
       setAllSubscriptions(subsData);
     } catch {
-      showError('Veriler yüklenemedi');
+      showError(t('adminCommon.loadError'));
     } finally {
       setLoading(false);
     }
@@ -532,7 +540,7 @@ export default function PlanManagementPage() {
       const result = await planService.getPlanSubscribers(plan.id);
       setDeactivateSubscribers(result.subscribers || []);
     } catch {
-      showError('Abone bilgileri alınamadı');
+      showError(t('planManagement.subscribersLoadError'));
       setDeactivateTarget(null);
     } finally {
       setLoadingSubscribers(false);
@@ -547,12 +555,12 @@ export default function PlanManagementPage() {
         });
       }
       await planService.deactivatePlan(deactivateTarget.id);
-      showSuccess(`"${deactivateTarget.name}" planı pasife alındı`);
+      showSuccess(t('planManagement.deactivated', { name: deactivateTarget.name }));
       setDeactivateTarget(null);
       setDeactivateSubscribers([]);
       load();
     } catch (err) {
-      showError(err?.response?.data?.error || 'İşlem başarısız');
+      showError(err?.response?.data?.error || t('adminCommon.actionFailed'));
     }
   };
 
@@ -569,10 +577,10 @@ export default function PlanManagementPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
               <span className="material-symbols-outlined text-4xl text-primary">workspace_premium</span>
-              Plan Yönetimi
+              {t('nav.plans')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Abonelik planlarını görüntüle, düzenle ve yönet
+              {t('planManagement.subtitle')}
             </p>
           </div>
           <button
@@ -580,24 +588,24 @@ export default function PlanManagementPage() {
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             <span className="material-symbols-outlined text-base">add</span>
-            Yeni Plan
+            {t('planManagement.newPlan')}
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {/* İstatistik Kartları */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <StatCard icon="layers"        label="Toplam Plan"          value={plans.length} />
-            <StatCard icon="check_circle"  label="Aktif Plan"           value={activePlans.length}   color="text-green-500" />
-            <StatCard icon="domain"        label="Aktif Gümrük Firması" value={totalBrokers}         color="text-blue-500" />
-            <StatCard icon="visibility_off" label="Pasif Plan"          value={inactivePlans.length} color="text-gray-400" />
+            <StatCard icon="layers"        label={t('planManagement.stats.total')}         value={plans.length} />
+            <StatCard icon="check_circle"  label={t('planManagement.stats.active')}        value={activePlans.length}   color="text-green-500" />
+            <StatCard icon="domain"        label={t('planManagement.stats.activeBrokers')} value={totalBrokers}         color="text-blue-500" />
+            <StatCard icon="visibility_off" label={t('planManagement.stats.inactive')}     value={inactivePlans.length} color="text-gray-400" />
           </div>
 
           {/* İçerik */}
           {loading ? (
             <div className="flex items-center justify-center gap-3 py-20">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              <p className="text-gray-500 dark:text-gray-400">Yükleniyor...</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
             </div>
           ) : plans.length === 0 ? (
             <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center transition-colors">
@@ -605,14 +613,14 @@ export default function PlanManagementPage() {
                 workspace_premium
               </span>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Henüz plan yok. Yeni Plan butonundan ekleyebilirsiniz.
+                {t('planManagement.empty')}
               </p>
               <button
                 onClick={handleNewPlan}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
               >
                 <span className="material-symbols-outlined text-base">add</span>
-                İlk Planı Oluştur
+                {t('planManagement.createFirst')}
               </button>
             </div>
           ) : (
@@ -623,7 +631,7 @@ export default function PlanManagementPage() {
                   <div className="flex items-center gap-2 mb-4">
                     <span className="material-symbols-outlined text-base text-green-500">check_circle</span>
                     <h2 className="text-sm font-semibold text-text-secondary">
-                      Aktif Planlar ({activePlans.length})
+                      {t('planManagement.activePlans', { count: activePlans.length })}
                     </h2>
                   </div>
                   {/* items-start: her kart kendi yüksekliğinde kalır, diğerinden etkilenmez */}
@@ -648,7 +656,7 @@ export default function PlanManagementPage() {
                   <div className="flex items-center gap-2 mb-4">
                     <span className="material-symbols-outlined text-base text-gray-400">visibility_off</span>
                     <h2 className="text-sm font-semibold text-text-secondary">
-                      Pasif Planlar ({inactivePlans.length})
+                      {t('planManagement.inactivePlans', { count: inactivePlans.length })}
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
@@ -675,7 +683,7 @@ export default function PlanManagementPage() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white dark:bg-background-dark rounded-xl p-6 shadow-xl flex items-center gap-4">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-            <p className="text-text-main text-sm font-medium">Abone bilgileri alınıyor...</p>
+            <p className="text-text-main text-sm font-medium">{t('planManagement.loadingSubscribers')}</p>
           </div>
         </div>
       )}

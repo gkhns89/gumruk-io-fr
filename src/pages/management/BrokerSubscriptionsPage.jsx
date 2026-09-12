@@ -7,16 +7,20 @@ import { confirmDialog } from '../../utils/confirmDialog';
 import { paymentService } from '../../api/paymentService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getBalanceTransactionType } from '../../utils/constants';
+import { t, getCurrentLocale } from '../../locales';
 
+// Etiketler getter: çeviri sabit tanımlanırken değil, okunduğunda alınır
 const RESTRICTION_CONFIG = {
-  NONE:         { label: 'Aktif',        icon: 'check_circle', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  WARNING:      { label: 'Uyarı',        icon: 'warning',       cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  WRITE_BLOCKED:{ label: 'Yazma Kısıtlı', icon: 'lock',         cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  FULL_READONLY:{ label: 'Tam Kısıtlı', icon: 'block',          cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  NONE:         { get label() { return t('paymentPage.levels.NONE'); },          icon: 'check_circle', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  WARNING:      { get label() { return t('paymentPage.levels.WARNING'); },       icon: 'warning',       cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  WRITE_BLOCKED:{ get label() { return t('paymentPage.levels.WRITE_BLOCKED'); }, icon: 'lock',         cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  FULL_READONLY:{ get label() { return t('paymentPage.levels.FULL_READONLY'); }, icon: 'block',          cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 };
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('tr-TR') : '—';
-const fmtPrice = (v) => v ? `₺${Number(v).toLocaleString('tr-TR')}` : '—';
+const fmt = (d) => d ? new Date(d).toLocaleDateString(getCurrentLocale()) : '—';
+const fmtPrice = (v) => v ? `₺${Number(v).toLocaleString(getCurrentLocale())}` : '—';
+const fmtNumber = (v) => Number(v).toLocaleString(getCurrentLocale());
+const cycleLabel = (cycle) => (cycle === 'YEARLY' ? t('adminCommon.yearly') : t('adminCommon.monthly'));
 
 export default function BrokerSubscriptionsPage() {
   const [brokers, setBrokers] = useState([]);
@@ -64,7 +68,7 @@ export default function BrokerSubscriptionsPage() {
       setPlans(planList);
       setTemplates(templateList);
     } catch {
-      showError('Veriler yüklenemedi');
+      showError(t('adminCommon.loadError'));
     } finally {
       setLoading(false);
     }
@@ -78,7 +82,7 @@ export default function BrokerSubscriptionsPage() {
       const list = await addonService.getBrokerAddons(brokerId);
       setBrokerAddons(prev => ({ ...prev, [brokerId]: list }));
     } catch {
-      showError('Ek ücretler yüklenemedi');
+      showError(t('brokerSubscriptions.addons.loadError'));
     } finally {
       setAddonLoading(prev => ({ ...prev, [brokerId]: false }));
     }
@@ -88,7 +92,7 @@ export default function BrokerSubscriptionsPage() {
     setAddonForms(prev => ({ ...prev, [brokerId]: { ...(prev[brokerId] ?? {}), [field]: value } }));
     // Şablon seçilince alanları otomatik doldur
     if (field === 'templateId' && value) {
-      const tmpl = templates.find(t => String(t.id) === String(value));
+      const tmpl = templates.find(tpl => String(tpl.id) === String(value));
       if (tmpl) {
         setAddonForms(prev => ({
           ...prev,
@@ -118,12 +122,12 @@ export default function BrokerSubscriptionsPage() {
         notes: form.notes || null,
         dueDate: form.addonType === 'ONE_TIME' && form.dueDate ? form.dueDate : null,
       });
-      showSuccess('Ek ücret eklendi');
+      showSuccess(t('brokerSubscriptions.addons.added'));
       setAddonForms(prev => ({ ...prev, [brokerId]: {} }));
       await loadBrokerAddons(brokerId);
       await load();
     } catch {
-      showError('Ek ücret eklenemedi');
+      showError(t('brokerSubscriptions.addons.addError'));
     } finally {
       setSavingAddon(prev => ({ ...prev, [brokerId]: false }));
     }
@@ -132,11 +136,11 @@ export default function BrokerSubscriptionsPage() {
   const handleRemoveAddon = async (brokerId, addonId) => {
     try {
       await addonService.removeAddon(addonId);
-      showSuccess('Ek ücret kaldırıldı');
+      showSuccess(t('brokerSubscriptions.addons.removed'));
       await loadBrokerAddons(brokerId);
       await load();
     } catch {
-      showError('İşlem başarısız');
+      showError(t('adminCommon.actionFailed'));
     }
   };
 
@@ -155,7 +159,7 @@ export default function BrokerSubscriptionsPage() {
 
   const handleSaveAddonEdit = async (brokerId, addonId) => {
     if (!addonEditForm.amount) {
-      showError('Tutar gereklidir');
+      showError(t('brokerSubscriptions.addons.amountRequired'));
       return;
     }
     setSavingAddonEdit(true);
@@ -164,12 +168,12 @@ export default function BrokerSubscriptionsPage() {
         amount: parseFloat(addonEditForm.amount),
         dueDate: addonEditForm.dueDate || null,
       });
-      showSuccess('Ek ücret güncellendi');
+      showSuccess(t('brokerSubscriptions.addons.updated'));
       handleCancelAddonEdit();
       await loadBrokerAddons(brokerId);
       await load();
     } catch {
-      showError('Güncelleme başarısız');
+      showError(t('adminCommon.updateFailed'));
     } finally {
       setSavingAddonEdit(false);
     }
@@ -219,7 +223,7 @@ export default function BrokerSubscriptionsPage() {
         const u = await brokerSubscriptionService.getCompanyUsers(id);
         setUsers(prev => ({ ...prev, [id]: u }));
       } catch {
-        showError('Kullanıcılar yüklenemedi');
+        showError(t('brokerSubscriptions.responsibles.usersLoadError'));
       } finally {
         setUsersLoading(prev => ({ ...prev, [id]: false }));
       }
@@ -243,10 +247,10 @@ export default function BrokerSubscriptionsPage() {
         customMaxClientCompanies: form.customMaxClientCompanies ? Number(form.customMaxClientCompanies) : null,
         notes: form.notes || null,
       });
-      showSuccess('Abonelik güncellendi');
+      showSuccess(t('brokerSubscriptions.edit.saved'));
       await load();
     } catch {
-      showError('Güncelleme başarısız');
+      showError(t('adminCommon.updateFailed'));
     } finally {
       setSaving(prev => ({ ...prev, [brokerId]: false }));
     }
@@ -286,15 +290,15 @@ export default function BrokerSubscriptionsPage() {
     // Disabling is destructive enough that we confirm; activating is one tap.
     if (!nextEnabled) {
       const ok = await confirmDialog({
-        title: 'G-Radar entegrasyonunu kapat',
-        message: 'Bu firma için G-Radar entegrasyonunu kapatmak üzeresiniz.',
+        title: t('brokerSubscriptions.gRadar.disableTitle'),
+        message: t('brokerSubscriptions.gRadar.disableMessage'),
         details: [
-          'Mevcut kredisi korunur',
-          'Yeni satın alma, sorgu ve talepler engellenir',
-          'Yöneticilere uyarı bildirimi düşer',
+          t('brokerSubscriptions.gRadar.disableKeepsCredits'),
+          t('brokerSubscriptions.gRadar.disableBlocksActions'),
+          t('brokerSubscriptions.gRadar.disableNotifiesAdmins'),
         ],
         intent: 'warning',
-        confirmText: 'Kapat',
+        confirmText: t('common.close'),
       });
       if (!ok) return;
     }
@@ -302,7 +306,7 @@ export default function BrokerSubscriptionsPage() {
     const res = await gRadarCreditService.setBrokerEnabled(brokerId, nextEnabled);
     setTogglingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
-      showSuccess(res.data?.message || (nextEnabled ? 'G-Radar açıldı' : 'G-Radar kapatıldı'));
+      showSuccess(res.data?.message || (nextEnabled ? t('brokerSubscriptions.gRadar.enabled') : t('brokerSubscriptions.gRadar.disabled')));
       if (res.data?.wallet) {
         setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
       } else {
@@ -317,7 +321,7 @@ export default function BrokerSubscriptionsPage() {
     const form = gRadarGrantForms[brokerId] ?? {};
     const credits = parseInt(form.credits, 10);
     if (!credits || credits < 1 || credits > 100) {
-      showError('Kredi miktarı 1-100 arası olmalıdır');
+      showError(t('brokerSubscriptions.gRadar.grantInvalid'));
       return;
     }
     setGrantingGRadar(prev => ({ ...prev, [brokerId]: true }));
@@ -327,11 +331,11 @@ export default function BrokerSubscriptionsPage() {
     });
     setGrantingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
-      showSuccess(`${credits} G-Radar kredisi brokere tanımlandı`);
+      showSuccess(t('brokerSubscriptions.gRadar.granted', { count: credits }));
       setGRadarGrantForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
       setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
-      showError('Master havuzda yeterli kredi yok. Önce G-Radar hesabınıza paket yükleyin.');
+      showError(t('brokerSubscriptions.gRadar.poolUnavailable'));
     } else {
       showError(res.error);
     }
@@ -348,25 +352,25 @@ export default function BrokerSubscriptionsPage() {
     const form = gRadarDebitForms[brokerId] ?? {};
     const credits = parseInt(form.credits, 10);
     if (!credits || credits < 1) {
-      showError('Eksiltilecek kredi 1 veya daha büyük olmalı');
+      showError(t('brokerSubscriptions.gRadar.debitInvalid'));
       return;
     }
     const notes = (form.notes ?? '').trim();
     if (!notes) {
-      showError('Düzeltme nedeni (not) zorunludur');
+      showError(t('brokerSubscriptions.gRadar.reasonRequired'));
       return;
     }
     const ok = await confirmDialog({
-      title: 'Kredi eksiltme onayı',
-      message: `${credits} kredi brokerin cüzdanından FIFO ile düşülecek.`,
+      title: t('brokerSubscriptions.gRadar.debitConfirmTitle'),
+      message: t('brokerSubscriptions.gRadar.debitConfirmMessage', { count: credits }),
       details: [
-        'Bu işlem geri alınamaz — ledger\'a ADMIN_DEBIT olarak kaydedilir.',
-        'Brokere bildirim gönderilir.',
-        'Sadece upstream G-Radar ile cüzdan arasında drift varsa kullanılmalı.',
+        t('brokerSubscriptions.gRadar.debitIrreversible'),
+        t('brokerSubscriptions.gRadar.debitNotifiesBroker'),
+        t('brokerSubscriptions.gRadar.debitDriftOnly'),
       ],
       intent: 'warning',
       icon: 'remove_circle',
-      confirmText: `${credits} Kredi Eksilt`,
+      confirmText: t('brokerSubscriptions.gRadar.debitConfirm', { count: credits }),
     });
     if (!ok) return;
 
@@ -374,11 +378,11 @@ export default function BrokerSubscriptionsPage() {
     const res = await gRadarCreditService.adminDebit(brokerId, { credits, notes });
     setDebitingGRadar(prev => ({ ...prev, [brokerId]: false }));
     if (res.success) {
-      showSuccess(`${credits} kredi cüzdandan eksiltildi`);
+      showSuccess(t('brokerSubscriptions.gRadar.debited', { count: credits }));
       setGRadarDebitForms(prev => ({ ...prev, [brokerId]: { credits: '', notes: '' } }));
       setGRadarWallets(prev => ({ ...prev, [brokerId]: res.data.wallet }));
     } else if (res.code === 'INSUFFICIENT_WALLET') {
-      showError(res.error || 'Cüzdanda yeterli kredi yok');
+      showError(res.error || t('brokerSubscriptions.gRadar.insufficientWallet'));
     } else {
       showError(res.error);
     }
@@ -388,7 +392,7 @@ export default function BrokerSubscriptionsPage() {
     const form = creditForms[brokerId] ?? {};
     const amount = parseFloat(form.amount);
     if (!amount || amount <= 0) {
-      showError('Geçerli bir tutar girin');
+      showError(t('brokerSubscriptions.manualPayment.invalidAmount'));
       return;
     }
     setAddingCredit(prev => ({ ...prev, [brokerId]: true }));
@@ -397,11 +401,14 @@ export default function BrokerSubscriptionsPage() {
         amount,
         note: form.note ?? '',
       });
-      showSuccess(`₺${amount.toLocaleString('tr-TR')} eklendi. Yeni bakiye: ₺${Number(result.newBalance).toLocaleString('tr-TR')}`);
+      showSuccess(t('brokerSubscriptions.manualPayment.added', {
+        amount: fmtNumber(amount),
+        balance: fmtNumber(result.newBalance),
+      }));
       setCreditForms(prev => ({ ...prev, [brokerId]: { amount: '', note: '' } }));
       await Promise.all([load(), loadBalanceHistory(brokerId)]);
     } catch {
-      showError('Kredi eklenemedi');
+      showError(t('brokerSubscriptions.manualPayment.addError'));
     } finally {
       setAddingCredit(prev => ({ ...prev, [brokerId]: false }));
     }
@@ -414,7 +421,7 @@ export default function BrokerSubscriptionsPage() {
       const eligibleUsers = brokerUsers.filter(u => u.globalRole === 'BROKER_ADMIN' || u.globalRole === 'BROKER_USER');
       const responsibleCount = eligibleUsers.filter(u => u.isPaymentResponsible).length;
       if (responsibleCount <= 1) {
-        showError('En az 1 ödeme sorumlusu tanımlı olmalıdır. Önce başka bir kullanıcıyı sorumlu yapın.');
+        showError(t('brokerSubscriptions.responsibles.atLeastOne'));
         return;
       }
     }
@@ -427,9 +434,9 @@ export default function BrokerSubscriptionsPage() {
           u.id === userId ? { ...u, isPaymentResponsible: !current } : u
         )
       }));
-      showSuccess(!current ? 'Ödeme sorumlusu atandı' : 'Ödeme sorumluluğu kaldırıldı');
+      showSuccess(!current ? t('brokerSubscriptions.responsibles.assigned') : t('brokerSubscriptions.responsibles.removed'));
     } catch {
-      showError('İşlem başarısız');
+      showError(t('adminCommon.actionFailed'));
     }
   };
 
@@ -440,10 +447,10 @@ export default function BrokerSubscriptionsPage() {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">subscriptions</span>
-            Gümrük Firmaları — Abonelik Yönetimi
+            {t('brokerSubscriptions.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Broker firmaların ödeme planlarını, fatura döngülerini ve ödeme sorumlularını yönetin
+            {t('brokerSubscriptions.subtitle')}
           </p>
         </div>
 
@@ -452,12 +459,12 @@ export default function BrokerSubscriptionsPage() {
             {loading ? (
               <div className="flex items-center justify-center gap-3 py-16">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-gray-500 dark:text-gray-400">Yükleniyor...</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
               </div>
             ) : brokers.length === 0 ? (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center transition-colors">
                 <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4 block">business</span>
-                <p className="text-gray-500 dark:text-gray-400">Gümrük firması bulunamadı</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('brokerSubscriptions.noBrokers')}</p>
               </div>
             ) : brokers.map(broker => {
               const sub = broker.subscription;
@@ -480,7 +487,7 @@ export default function BrokerSubscriptionsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-text-main truncate">{broker.brokerName}</p>
                       <p className="text-xs text-text-secondary">
-                        {sub ? `${sub.plan?.name ?? '—'} · ${sub.billingCycle === 'YEARLY' ? 'Yıllık' : 'Aylık'}` : 'Abonelik yok'}
+                        {sub ? `${sub.plan?.name ?? '—'} · ${cycleLabel(sub.billingCycle)}` : t('brokerSubscriptions.noSubscription')}
                       </p>
                     </div>
 
@@ -495,12 +502,12 @@ export default function BrokerSubscriptionsPage() {
                     {/* Ödeme tarihi */}
                     {sub?.nextPaymentDue && (
                       <div className="hidden md:block text-right flex-shrink-0">
-                        <p className="text-xs text-text-secondary">Sonraki Ödeme</p>
+                        <p className="text-xs text-text-secondary">{t('paymentPage.nextPayment')}</p>
                         <p className={`text-sm font-semibold ${sub.daysOverdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-text-main'}`}>
                           {fmt(sub.nextPaymentDue)}
                         </p>
                         {sub.daysOverdue > 0 && (
-                          <p className="text-xs text-red-500">{sub.daysOverdue} gün gecikmiş</p>
+                          <p className="text-xs text-red-500">{t('paymentPage.daysOverdue', { count: sub.daysOverdue })}</p>
                         )}
                       </div>
                     )}
@@ -514,20 +521,20 @@ export default function BrokerSubscriptionsPage() {
                   {isOpen && (
                     <div className="border-t border-gray-100 dark:border-gray-700 p-5 space-y-6">
                       {!sub ? (
-                        <p className="text-sm text-text-secondary text-center py-4">Bu firma için aktif abonelik bulunamadı.</p>
+                        <p className="text-sm text-text-secondary text-center py-4">{t('brokerSubscriptions.noActiveSubscription')}</p>
                       ) : (
                         <>
                           {/* Mevcut Durum Özeti */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {[
-                              { label: 'Plan', value: sub.plan?.name ?? '—' },
-                              { label: 'Fatura Dönemi', value: sub.billingCycle === 'YEARLY' ? 'Yıllık' : 'Aylık' },
-                              { label: 'Sonraki Ödeme', value: fmt(sub.nextPaymentDue) },
-                              { label: 'Abonelik Bitiş', value: fmt(sub.endDate) },
-                              { label: 'Plan Ücreti', value: sub.billingCycle === 'YEARLY' ? fmtPrice(sub.plan?.yearlyPrice) : fmtPrice(sub.plan?.monthlyPrice) },
-                              { label: 'Max Kullanıcı', value: sub.plan?.maxBrokerUsers ?? '—' },
-                              { label: 'Max Müşteri', value: sub.plan?.maxClientCompanies ?? '—' },
-                              { label: 'Kısıtlama', value: cfg?.label ?? '—' },
+                              { label: t('paymentPage.gRadar.plan'), value: sub.plan?.name ?? '—' },
+                              { label: t('brokerSubscriptions.summary.billingPeriod'), value: cycleLabel(sub.billingCycle) },
+                              { label: t('paymentPage.nextPayment'), value: fmt(sub.nextPaymentDue) },
+                              { label: t('paymentPage.subscriptionEnd'), value: fmt(sub.endDate) },
+                              { label: t('brokerSubscriptions.summary.planPrice'), value: sub.billingCycle === 'YEARLY' ? fmtPrice(sub.plan?.yearlyPrice) : fmtPrice(sub.plan?.monthlyPrice) },
+                              { label: t('brokerSubscriptions.summary.maxUsers'), value: sub.plan?.maxBrokerUsers ?? '—' },
+                              { label: t('brokerSubscriptions.summary.maxClients'), value: sub.plan?.maxClientCompanies ?? '—' },
+                              { label: t('brokerSubscriptions.summary.restriction'), value: cfg?.label ?? '—' },
                             ].map(({ label, value }) => (
                               <div key={label} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 transition-colors">
                                 <p className="text-xs text-text-secondary mb-0.5">{label}</p>
@@ -537,9 +544,9 @@ export default function BrokerSubscriptionsPage() {
                             {/* Bakiye — tam genişlik */}
                             <div className="col-span-2 sm:col-span-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center justify-between transition-colors">
                               <div>
-                                <p className="text-xs text-text-secondary mb-0.5">Mevcut Bakiye</p>
+                                <p className="text-xs text-text-secondary mb-0.5">{t('paymentPage.currentBalance')}</p>
                                 <p className={`text-lg font-bold ${Number(sub.balance ?? 0) > 0 ? 'text-green-700 dark:text-green-400' : 'text-text-main'}`}>
-                                  ₺{Number(sub.balance ?? 0).toLocaleString('tr-TR')}
+                                  ₺{fmtNumber(sub.balance ?? 0)}
                                 </p>
                               </div>
                               <span className="material-symbols-outlined text-3xl text-green-400 dark:text-green-600">account_balance_wallet</span>
@@ -550,27 +557,27 @@ export default function BrokerSubscriptionsPage() {
                           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 transition-colors">
                             <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                               <span className="material-symbols-outlined text-base text-blue-600 dark:text-blue-400">add_card</span>
-                              Manuel Ödeme Ekle
-                              <span className="text-xs font-normal text-text-secondary">(Bakiye otomatik uygulanır)</span>
+                              {t('brokerSubscriptions.manualPayment.title')}
+                              <span className="text-xs font-normal text-text-secondary">{t('brokerSubscriptions.manualPayment.hint')}</span>
                             </h3>
                             <div className="flex flex-col sm:flex-row gap-3">
                               <div className="flex flex-col gap-1 w-full sm:w-44">
-                                <span className="text-xs font-medium text-text-secondary">Tutar (₺) *</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('adminCommon.amountLabel')}</span>
                                 <input
                                   type="number" min="1" step="0.01"
                                   value={creditForms[broker.brokerId]?.amount ?? ''}
                                   onChange={e => handleCreditFormChange(broker.brokerId, 'amount', e.target.value)}
-                                  placeholder="örn. 14000"
+                                  placeholder={t('brokerSubscriptions.manualPayment.amountPlaceholder')}
                                   className="rounded-lg border border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                 />
                               </div>
                               <div className="flex flex-col gap-1 flex-1">
-                                <span className="text-xs font-medium text-text-secondary">Not</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('adminCommon.note')}</span>
                                 <input
                                   type="text"
                                   value={creditForms[broker.brokerId]?.note ?? ''}
                                   onChange={e => handleCreditFormChange(broker.brokerId, 'note', e.target.value)}
-                                  placeholder="örn. Elden ödeme, 19 Nisan"
+                                  placeholder={t('brokerSubscriptions.manualPayment.notePlaceholder')}
                                   className="rounded-lg border border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                 />
                               </div>
@@ -581,13 +588,15 @@ export default function BrokerSubscriptionsPage() {
                                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                 >
                                   <span className="material-symbols-outlined text-base">add</span>
-                                  {addingCredit[broker.brokerId] ? 'Ekleniyor...' : 'Kredi Ekle'}
+                                  {addingCredit[broker.brokerId] ? t('management.adding') : t('brokerSubscriptions.manualPayment.submit')}
                                 </button>
                               </div>
                             </div>
                             {sub.plan && (
                               <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                                Dönem ücreti: {fmtPrice(sub.billingCycle === 'YEARLY' ? sub.plan.yearlyPrice : sub.plan.monthlyPrice)}
+                                {t('brokerSubscriptions.manualPayment.periodPrice', {
+                                  price: fmtPrice(sub.billingCycle === 'YEARLY' ? sub.plan.yearlyPrice : sub.plan.monthlyPrice),
+                                })}
                               </p>
                             )}
                           </div>
@@ -600,12 +609,12 @@ export default function BrokerSubscriptionsPage() {
                                 <div>
                                   <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
                                     <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">travel_explore</span>
-                                    G-Radar Entegrasyonu
+                                    {t('brokerSubscriptions.gRadar.title')}
                                   </h3>
                                   <p className="text-xs text-text-secondary mt-0.5">
                                     {gRadarWallets[broker.brokerId]?.gRadarEnabled
-                                      ? 'Bu firma için aktif — kredi satın alma ve talepler açık.'
-                                      : 'Bu firma için kapalı — mevcut bakiye saklı, ancak yeni işlemler engellenmiş.'}
+                                      ? t('brokerSubscriptions.gRadar.enabledHint')
+                                      : t('brokerSubscriptions.gRadar.disabledHint')}
                                   </p>
                                 </div>
                                 <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -614,7 +623,7 @@ export default function BrokerSubscriptionsPage() {
                                       ? 'text-green-700 dark:text-green-400'
                                       : 'text-gray-500 dark:text-gray-400'
                                   }`}>
-                                    {gRadarWallets[broker.brokerId]?.gRadarEnabled ? 'Açık' : 'Kapalı'}
+                                    {gRadarWallets[broker.brokerId]?.gRadarEnabled ? t('brokerSubscriptions.gRadar.on') : t('brokerSubscriptions.gRadar.off')}
                                   </span>
                                   <input
                                     type="checkbox"
@@ -629,36 +638,39 @@ export default function BrokerSubscriptionsPage() {
                             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                               <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
                                 <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">payments</span>
-                                Kredi Tanımla
-                                <span className="text-xs font-normal text-text-secondary">(1-100 kredi, master havuzdan düşülür)</span>
+                                {t('brokerSubscriptions.gRadar.grantTitle')}
+                                <span className="text-xs font-normal text-text-secondary">{t('brokerSubscriptions.gRadar.grantHint')}</span>
                               </h3>
                               {gRadarWallets[broker.brokerId] && (
                                 <div className="text-xs text-purple-700 dark:text-purple-400 font-medium">
-                                  Mevcut bakiye: {gRadarWallets[broker.brokerId].currentCredits ?? 0} kredi
+                                  {t('brokerSubscriptions.gRadar.currentBalance', { count: gRadarWallets[broker.brokerId].currentCredits ?? 0 })}
                                   <span className="text-text-secondary ml-2">
-                                    (Toplam alınan: {gRadarWallets[broker.brokerId].lifetimePurchased ?? 0}, kullanılan: {gRadarWallets[broker.brokerId].lifetimeConsumed ?? 0})
+                                    {t('brokerSubscriptions.gRadar.lifetime', {
+                                      purchased: gRadarWallets[broker.brokerId].lifetimePurchased ?? 0,
+                                      consumed: gRadarWallets[broker.brokerId].lifetimeConsumed ?? 0,
+                                    })}
                                   </span>
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3">
                               <div className="flex flex-col gap-1 w-full sm:w-32">
-                                <span className="text-xs font-medium text-text-secondary">Kredi *</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.gRadar.creditsLabel')}</span>
                                 <input
                                   type="number" min="1" max="100"
                                   value={gRadarGrantForms[broker.brokerId]?.credits ?? ''}
                                   onChange={e => handleGRadarGrantFormChange(broker.brokerId, 'credits', e.target.value)}
-                                  placeholder="örn. 50"
+                                  placeholder={t('brokerSubscriptions.gRadar.grantPlaceholder')}
                                   className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                                 />
                               </div>
                               <div className="flex flex-col gap-1 flex-1">
-                                <span className="text-xs font-medium text-text-secondary">Not</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('adminCommon.note')}</span>
                                 <input
                                   type="text"
                                   value={gRadarGrantForms[broker.brokerId]?.notes ?? ''}
                                   onChange={e => handleGRadarGrantFormChange(broker.brokerId, 'notes', e.target.value)}
-                                  placeholder="örn. Sözleşme ile birlikte tanımlandı"
+                                  placeholder={t('brokerSubscriptions.gRadar.grantNotePlaceholder')}
                                   className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                                 />
                               </div>
@@ -671,13 +683,13 @@ export default function BrokerSubscriptionsPage() {
                                   }
                                   title={
                                     !gRadarWallets[broker.brokerId]?.gRadarEnabled
-                                      ? 'Önce G-Radar entegrasyonunu açın'
+                                      ? t('brokerSubscriptions.gRadar.enableFirst')
                                       : undefined
                                   }
                                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                 >
                                   <span className="material-symbols-outlined text-base">add</span>
-                                  {grantingGRadar[broker.brokerId] ? 'Tanımlanıyor...' : 'Kredi Tanımla'}
+                                  {grantingGRadar[broker.brokerId] ? t('brokerSubscriptions.gRadar.granting') : t('brokerSubscriptions.gRadar.grantTitle')}
                                 </button>
                               </div>
                             </div>
@@ -692,29 +704,29 @@ export default function BrokerSubscriptionsPage() {
                             <div className="mt-4 pt-4 border-t border-purple-200/60 dark:border-purple-800/60">
                               <h4 className="text-xs font-semibold text-text-main mb-2 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-sm text-amber-600 dark:text-amber-400">remove_circle</span>
-                                Kredi Eksilt (Düzeltme)
+                                {t('brokerSubscriptions.gRadar.debitTitle')}
                                 <span className="text-[11px] font-normal text-text-secondary">
-                                  Upstream G-Radar ile cüzdan arasında drift varsa kullanın
+                                  {t('brokerSubscriptions.gRadar.debitHint')}
                                 </span>
                               </h4>
                               <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="flex flex-col gap-1 w-full sm:w-32">
-                                  <span className="text-xs font-medium text-text-secondary">Eksilt *</span>
+                                  <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.gRadar.debitLabel')}</span>
                                   <input
                                     type="number" min="1"
                                     value={gRadarDebitForms[broker.brokerId]?.credits ?? ''}
                                     onChange={e => handleGRadarDebitFormChange(broker.brokerId, 'credits', e.target.value)}
-                                    placeholder="örn. 1"
+                                    placeholder={t('brokerSubscriptions.gRadar.debitPlaceholder')}
                                     className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
                                   />
                                 </div>
                                 <div className="flex flex-col gap-1 flex-1">
-                                  <span className="text-xs font-medium text-text-secondary">Neden *</span>
+                                  <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.gRadar.reasonLabel')}</span>
                                   <input
                                     type="text"
                                     value={gRadarDebitForms[broker.brokerId]?.notes ?? ''}
                                     onChange={e => handleGRadarDebitFormChange(broker.brokerId, 'notes', e.target.value)}
-                                    placeholder="örn. G-Radar timing bug — kayıp kredi düzeltmesi"
+                                    placeholder={t('brokerSubscriptions.gRadar.reasonPlaceholder')}
                                     className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
                                   />
                                 </div>
@@ -727,13 +739,13 @@ export default function BrokerSubscriptionsPage() {
                                     }
                                     title={
                                       (gRadarWallets[broker.brokerId]?.currentCredits ?? 0) < 1
-                                        ? 'Eksiltilecek kredi yok'
+                                        ? t('brokerSubscriptions.gRadar.nothingToDebit')
                                         : undefined
                                     }
                                     className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 whitespace-nowrap"
                                   >
                                     <span className="material-symbols-outlined text-base">remove</span>
-                                    {debitingGRadar[broker.brokerId] ? 'Eksiltiliyor...' : 'Kredi Eksilt'}
+                                    {debitingGRadar[broker.brokerId] ? t('brokerSubscriptions.gRadar.debiting') : t('brokerSubscriptions.gRadar.debit')}
                                   </button>
                                 </div>
                               </div>
@@ -744,22 +756,22 @@ export default function BrokerSubscriptionsPage() {
                           <div>
                             <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                               <span className="material-symbols-outlined text-base text-purple-500">history</span>
-                              Bakiye Hareket Geçmişi
+                              {t('paymentPage.balance.title')}
                             </h3>
                             {historyLoading[broker.brokerId] ? (
-                              <p className="text-xs text-text-secondary py-2">Yükleniyor...</p>
+                              <p className="text-xs text-text-secondary py-2">{t('common.loading')}</p>
                             ) : !balanceHistory[broker.brokerId]?.length ? (
-                              <p className="text-xs text-text-secondary py-2">Henüz işlem yok.</p>
+                              <p className="text-xs text-text-secondary py-2">{t('brokerSubscriptions.history.empty')}</p>
                             ) : (
                               <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                                 <table className="w-full text-xs">
                                   <thead className="bg-gray-50 dark:bg-gray-800 text-text-secondary">
                                     <tr>
-                                      <th className="px-3 py-2 text-left font-medium">Tarih</th>
-                                      <th className="px-3 py-2 text-left font-medium">Tür</th>
-                                      <th className="px-3 py-2 text-left font-medium">Açıklama</th>
-                                      <th className="px-3 py-2 text-left font-medium">İşlemi Yapan</th>
-                                      <th className="px-3 py-2 text-right font-medium">Tutar</th>
+                                      <th className="px-3 py-2 text-left font-medium">{t('paymentPage.balance.date')}</th>
+                                      <th className="px-3 py-2 text-left font-medium">{t('paymentPage.balance.type')}</th>
+                                      <th className="px-3 py-2 text-left font-medium">{t('paymentPage.balance.description')}</th>
+                                      <th className="px-3 py-2 text-left font-medium">{t('brokerSubscriptions.history.createdBy')}</th>
+                                      <th className="px-3 py-2 text-right font-medium">{t('payment.amount')}</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
@@ -772,12 +784,12 @@ export default function BrokerSubscriptionsPage() {
                                       const typeColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                                       return (
                                         <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                          <td className="px-3 py-2 text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                                          <td className="px-3 py-2 text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString(getCurrentLocale(), { dateStyle: 'short', timeStyle: 'short' })}</td>
                                           <td className="px-3 py-2"><span className={`font-medium ${typeColor}`}>{typeLabel}</span></td>
                                           <td className="px-3 py-2 text-text-secondary max-w-xs truncate">{tx.description ?? '—'}</td>
                                           <td className="px-3 py-2 text-text-secondary">{tx.createdBy}</td>
                                           <td className={`px-3 py-2 text-right font-semibold ${typeColor}`}>
-                                            {isCredit ? '+' : ''}{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                                            {isCredit ? '+' : ''}{Number(tx.amount).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2 })} ₺
                                           </td>
                                         </tr>
                                       );
@@ -792,18 +804,18 @@ export default function BrokerSubscriptionsPage() {
                           <div>
                             <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                               <span className="material-symbols-outlined text-base text-primary">edit</span>
-                              Abonelik Düzenle
+                              {t('brokerSubscriptions.edit.title')}
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Plan</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('paymentPage.gRadar.plan')}</span>
                                 <select
                                   value={form.newPlanId ?? ''}
                                   onChange={e => handleFormChange(broker.brokerId, 'newPlanId', e.target.value)}
                                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                                 >
-                                  <option value="">— Mevcut planı koru —</option>
+                                  <option value="">{t('brokerSubscriptions.edit.keepPlan')}</option>
                                   {plans.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                   ))}
@@ -811,19 +823,19 @@ export default function BrokerSubscriptionsPage() {
                               </label>
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Fatura Döngüsü</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.edit.billingCycle')}</span>
                                 <select
                                   value={form.billingCycle ?? 'MONTHLY'}
                                   onChange={e => handleFormChange(broker.brokerId, 'billingCycle', e.target.value)}
                                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                                 >
-                                  <option value="MONTHLY">Aylık</option>
-                                  <option value="YEARLY">Yıllık</option>
+                                  <option value="MONTHLY">{t('adminCommon.monthly')}</option>
+                                  <option value="YEARLY">{t('adminCommon.yearly')}</option>
                                 </select>
                               </label>
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Sonraki Ödeme Tarihi</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.edit.nextPaymentDate')}</span>
                                 <input
                                   type="date"
                                   value={form.nextPaymentDue ?? ''}
@@ -833,7 +845,7 @@ export default function BrokerSubscriptionsPage() {
                               </label>
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Abonelik Bitiş</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('paymentPage.subscriptionEnd')}</span>
                                 <input
                                   type="date"
                                   value={form.newEndDate ?? ''}
@@ -843,35 +855,35 @@ export default function BrokerSubscriptionsPage() {
                               </label>
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Özel Kullanıcı Limiti</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.edit.customUserLimit')}</span>
                                 <input
                                   type="number" min="1"
                                   value={form.customMaxBrokerUsers ?? ''}
                                   onChange={e => handleFormChange(broker.brokerId, 'customMaxBrokerUsers', e.target.value)}
-                                  placeholder={`Plan: ${sub.plan?.maxBrokerUsers ?? '—'}`}
+                                  placeholder={t('brokerSubscriptions.edit.planLimitPlaceholder', { value: sub.plan?.maxBrokerUsers ?? '—' })}
                                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                                 />
                               </label>
 
                               <label className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-text-secondary">Özel Müşteri Limiti</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.edit.customClientLimit')}</span>
                                 <input
                                   type="number" min="1"
                                   value={form.customMaxClientCompanies ?? ''}
                                   onChange={e => handleFormChange(broker.brokerId, 'customMaxClientCompanies', e.target.value)}
-                                  placeholder={`Plan: ${sub.plan?.maxClientCompanies ?? '—'}`}
+                                  placeholder={t('brokerSubscriptions.edit.planLimitPlaceholder', { value: sub.plan?.maxClientCompanies ?? '—' })}
                                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                                 />
                               </label>
 
                               <label className="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
-                                <span className="text-xs font-medium text-text-secondary">Notlar</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('management.notes')}</span>
                                 <input
                                   type="text"
                                   value={form.notes ?? ''}
                                   onChange={e => handleFormChange(broker.brokerId, 'notes', e.target.value)}
                                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                                  placeholder="İç not..."
+                                  placeholder={t('brokerSubscriptions.edit.notesPlaceholder')}
                                 />
                               </label>
                             </div>
@@ -883,7 +895,7 @@ export default function BrokerSubscriptionsPage() {
                                 className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                               >
                                 <span className="material-symbols-outlined text-base">save</span>
-                                {saving[broker.brokerId] ? 'Kaydediliyor...' : 'Kaydet'}
+                                {saving[broker.brokerId] ? t('management.saving') : t('common.save')}
                               </button>
                             </div>
                           </div>
@@ -894,11 +906,11 @@ export default function BrokerSubscriptionsPage() {
                       <div>
                         <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-primary">receipt_long</span>
-                          Ek Ücretler
+                          {t('brokerSubscriptions.addons.title')}
                           {sub && (Number(sub.recurringAddonTotal ?? 0) > 0 || Number(sub.pendingOneTimeTotal ?? 0) > 0) && (
                             <span className="text-xs font-normal text-text-secondary">
-                              {Number(sub.recurringAddonTotal ?? 0) > 0 && `+₺${Number(sub.recurringAddonTotal).toLocaleString('tr-TR')}/dönem`}
-                              {Number(sub.pendingOneTimeTotal ?? 0) > 0 && ` · ₺${Number(sub.pendingOneTimeTotal).toLocaleString('tr-TR')} bekleyen`}
+                              {Number(sub.recurringAddonTotal ?? 0) > 0 && t('brokerSubscriptions.addons.recurringTotal', { amount: fmtNumber(sub.recurringAddonTotal) })}
+                              {Number(sub.pendingOneTimeTotal ?? 0) > 0 && ` · ${t('brokerSubscriptions.addons.pendingTotal', { amount: fmtNumber(sub.pendingOneTimeTotal) })}`}
                             </span>
                           )}
                         </h3>
@@ -906,12 +918,12 @@ export default function BrokerSubscriptionsPage() {
                         {addonLoading[broker.brokerId] ? (
                           <div className="text-sm text-text-secondary py-2 flex items-center gap-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                            Yükleniyor...
+                            {t('common.loading')}
                           </div>
                         ) : (
                           <div className="space-y-2 mb-4">
                             {(brokerAddons[broker.brokerId] ?? []).filter(a => a.isActive).length === 0 ? (
-                              <p className="text-xs text-text-secondary italic">Aktif ek ücret yok</p>
+                              <p className="text-xs text-text-secondary italic">{t('brokerSubscriptions.addons.empty')}</p>
                             ) : (brokerAddons[broker.brokerId] ?? []).filter(a => a.isActive).map(addon => (
                               <div key={addon.id} className="flex items-center justify-between gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-2.5 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
@@ -922,7 +934,7 @@ export default function BrokerSubscriptionsPage() {
                                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                       : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                                   }`}>
-                                    {addon.addonType === 'RECURRING' ? 'Dönemsel' : addon.isPaid ? 'Ödendi' : 'Bekliyor'}
+                                    {addon.addonType === 'RECURRING' ? t('addonPayment.recurring') : addon.isPaid ? t('paymentStatus.paid') : t('addonPayment.pending')}
                                   </span>
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-text-main truncate">{addon.name}</p>
@@ -933,7 +945,7 @@ export default function BrokerSubscriptionsPage() {
                                           ? 'text-red-600 dark:text-red-400'
                                           : 'text-orange-600 dark:text-orange-400'
                                       }`}>
-                                        Son ödeme: {new Date(addon.dueDate).toLocaleDateString('tr-TR')}
+                                        {t('addonPayment.dueDate', { date: new Date(addon.dueDate).toLocaleDateString(getCurrentLocale()) })}
                                       </p>
                                     )}
                                   </div>
@@ -962,7 +974,7 @@ export default function BrokerSubscriptionsPage() {
                                         onClick={() => handleSaveAddonEdit(broker.brokerId, addon.id)}
                                         disabled={savingAddonEdit}
                                         className="text-green-600 hover:text-green-700 dark:hover:text-green-400 transition-colors disabled:opacity-50"
-                                        title="Kaydet"
+                                        title={t('common.save')}
                                       >
                                         <span className="material-symbols-outlined text-base">check</span>
                                       </button>
@@ -970,25 +982,25 @@ export default function BrokerSubscriptionsPage() {
                                         onClick={handleCancelAddonEdit}
                                         disabled={savingAddonEdit}
                                         className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors disabled:opacity-50"
-                                        title="İptal"
+                                        title={t('common.cancel')}
                                       >
                                         <span className="material-symbols-outlined text-base">close</span>
                                       </button>
                                     </div>
                                   ) : (
                                     <>
-                                      <p className="text-sm font-semibold text-text-main">₺{Number(addon.amount).toLocaleString('tr-TR')}</p>
+                                      <p className="text-sm font-semibold text-text-main">₺{fmtNumber(addon.amount)}</p>
                                       <button
                                         onClick={() => handleEditAddon(addon)}
                                         className="text-blue-600 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
-                                        title="Düzenle"
+                                        title={t('common.edit')}
                                       >
                                         <span className="material-symbols-outlined text-base">edit</span>
                                       </button>
                                       <button
                                         onClick={() => handleRemoveAddon(broker.brokerId, addon.id)}
                                         className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                                        title="Kaldır"
+                                        title={t('imageUpload.remove')}
                                       >
                                         <span className="material-symbols-outlined text-base">delete</span>
                                       </button>
@@ -1002,45 +1014,51 @@ export default function BrokerSubscriptionsPage() {
 
                         {/* Ek ücret ekleme formu */}
                         <div className="border border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 space-y-3">
-                          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">Yeni Ek Ücret</p>
+                          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{t('brokerSubscriptions.addons.newTitle')}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label className="flex flex-col gap-1">
-                              <span className="text-xs font-medium text-text-secondary">Katalogdan Seç</span>
+                              <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.addons.fromCatalog')}</span>
                               <select
                                 value={addonForms[broker.brokerId]?.templateId ?? ''}
                                 onChange={e => handleAddonFormChange(broker.brokerId, 'templateId', e.target.value)}
                                 className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                               >
-                                <option value="">— Özel tanım —</option>
-                                {templates.filter(t => t.isActive).map(t => (
-                                  <option key={t.id} value={t.id}>{t.name} ({t.addonType === 'RECURRING' ? 'Dönemsel' : 'Tek Seferlik'}) — ₺{Number(t.defaultAmount).toLocaleString('tr-TR')}</option>
+                                <option value="">{t('brokerSubscriptions.addons.customOption')}</option>
+                                {templates.filter(tpl => tpl.isActive).map(tpl => (
+                                  <option key={tpl.id} value={tpl.id}>
+                                    {t('brokerSubscriptions.addons.templateOption', {
+                                      name: tpl.name,
+                                      type: tpl.addonType === 'RECURRING' ? t('addonPayment.recurring') : t('adminCommon.oneTime'),
+                                      amount: fmtNumber(tpl.defaultAmount),
+                                    })}
+                                  </option>
                                 ))}
                               </select>
                             </label>
                             <label className="flex flex-col gap-1">
-                              <span className="text-xs font-medium text-text-secondary">Ad *</span>
+                              <span className="text-xs font-medium text-text-secondary">{t('adminCommon.nameLabel')}</span>
                               <input
                                 type="text"
                                 value={addonForms[broker.brokerId]?.name ?? ''}
                                 onChange={e => handleAddonFormChange(broker.brokerId, 'name', e.target.value)}
-                                placeholder="Ek ücret adı"
+                                placeholder={t('brokerSubscriptions.addons.namePlaceholder')}
                                 className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                               />
                             </label>
                             <label className="flex flex-col gap-1">
-                              <span className="text-xs font-medium text-text-secondary">Tür *</span>
+                              <span className="text-xs font-medium text-text-secondary">{t('adminCommon.typeLabel')}</span>
                               <select
                                 value={addonForms[broker.brokerId]?.addonType ?? ''}
                                 onChange={e => handleAddonFormChange(broker.brokerId, 'addonType', e.target.value)}
                                 className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                               >
-                                <option value="">— Seçin —</option>
-                                <option value="ONE_TIME">Tek Seferlik</option>
-                                <option value="RECURRING">Dönemsel (her dönem)</option>
+                                <option value="">{t('brokerSubscriptions.addons.selectOption')}</option>
+                                <option value="ONE_TIME">{t('adminCommon.oneTime')}</option>
+                                <option value="RECURRING">{t('brokerSubscriptions.addons.recurringOption')}</option>
                               </select>
                             </label>
                             <label className="flex flex-col gap-1">
-                              <span className="text-xs font-medium text-text-secondary">Tutar (₺) *</span>
+                              <span className="text-xs font-medium text-text-secondary">{t('adminCommon.amountLabel')}</span>
                               <input
                                 type="number" min="1" step="0.01"
                                 value={addonForms[broker.brokerId]?.amount ?? ''}
@@ -1050,18 +1068,18 @@ export default function BrokerSubscriptionsPage() {
                               />
                             </label>
                             <label className="flex flex-col gap-1 sm:col-span-2">
-                              <span className="text-xs font-medium text-text-secondary">Not / Açıklama</span>
+                              <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.addons.noteLabel')}</span>
                               <input
                                 type="text"
                                 value={addonForms[broker.brokerId]?.notes ?? ''}
                                 onChange={e => handleAddonFormChange(broker.brokerId, 'notes', e.target.value)}
-                                placeholder="isteğe bağlı"
+                                placeholder={t('adminCommon.optionalPlaceholder')}
                                 className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                               />
                             </label>
                             {(addonForms[broker.brokerId]?.addonType === 'ONE_TIME') && (
                               <label className="flex flex-col gap-1 sm:col-span-2">
-                                <span className="text-xs font-medium text-text-secondary">Son Ödeme Tarihi</span>
+                                <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.addons.dueDate')}</span>
                                 <input
                                   type="date"
                                   value={addonForms[broker.brokerId]?.dueDate ?? ''}
@@ -1078,7 +1096,7 @@ export default function BrokerSubscriptionsPage() {
                               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-base">add</span>
-                              {savingAddon[broker.brokerId] ? 'Ekleniyor...' : 'Ekle'}
+                              {savingAddon[broker.brokerId] ? t('management.adding') : t('common.add')}
                             </button>
                           </div>
                         </div>
@@ -1088,16 +1106,16 @@ export default function BrokerSubscriptionsPage() {
                       <div>
                         <h3 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-primary">manage_accounts</span>
-                          Ödeme Sorumluları
+                          {t('brokerSubscriptions.responsibles.title')}
                         </h3>
 
                         {usersLoading[broker.brokerId] ? (
                           <div className="flex items-center gap-2 py-4 text-text-secondary text-sm">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                            Kullanıcılar yükleniyor...
+                            {t('brokerSubscriptions.responsibles.loading')}
                           </div>
                         ) : brokerUsers.length === 0 ? (
-                          <p className="text-sm text-text-secondary py-2">Kullanıcı bulunamadı</p>
+                          <p className="text-sm text-text-secondary py-2">{t('brokerSubscriptions.responsibles.empty')}</p>
                         ) : (
                           <div className="space-y-2">
                             {brokerUsers
@@ -1113,7 +1131,7 @@ export default function BrokerSubscriptionsPage() {
                                       <p className="text-xs text-text-secondary truncate">{u.email}</p>
                                     </div>
                                     <span className="text-xs text-text-secondary bg-white dark:bg-gray-700 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0">
-                                      {u.globalRole === 'BROKER_ADMIN' ? 'Admin' : 'Kullanıcı'}
+                                      {u.globalRole === 'BROKER_ADMIN' ? t('brokerSubscriptions.responsibles.roleAdmin') : t('brokerSubscriptions.responsibles.roleUser')}
                                     </span>
                                   </div>
 
@@ -1124,12 +1142,12 @@ export default function BrokerSubscriptionsPage() {
                                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
                                         : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                                     }`}
-                                    title={u.isPaymentResponsible ? 'Ödeme sorumluluğunu kaldır' : 'Ödeme sorumlusu yap'}
+                                    title={u.isPaymentResponsible ? t('brokerSubscriptions.responsibles.removeHint') : t('brokerSubscriptions.responsibles.assignHint')}
                                   >
                                     <span className="material-symbols-outlined text-sm">
                                       {u.isPaymentResponsible ? 'account_balance_wallet' : 'add'}
                                     </span>
-                                    {u.isPaymentResponsible ? 'Sorumlu' : 'Sorumlu Değil'}
+                                    {u.isPaymentResponsible ? t('brokerSubscriptions.responsibles.responsible') : t('brokerSubscriptions.responsibles.notResponsible')}
                                   </button>
                                 </div>
                               ))}

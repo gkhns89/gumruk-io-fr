@@ -3,16 +3,18 @@ import { paymentService } from '../../api/paymentService';
 import { gRadarCreditService } from '../../api/gRadarCreditService';
 import MainLayout from '../../components/layout/MainLayout';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 const STATUS_BADGE = {
   PENDING_REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
+// Etiketler getter: çeviri sabit tanımlanırken değil, okunduğunda alınır
 const STATUS_LABEL = {
-  PENDING_REVIEW: 'İnceleme Bekliyor',
-  CONFIRMED: 'Onaylandı',
-  REJECTED: 'Reddedildi',
+  get PENDING_REVIEW() { return t('payment.pending'); },
+  get CONFIRMED() { return t('payment.confirmed'); },
+  get REJECTED() { return t('payment.rejected'); },
 };
 
 export default function PaymentManagementPage() {
@@ -41,7 +43,7 @@ export default function PaymentManagementPage() {
       setAllPayments(all);
       setPaymentMethods(methods);
     } catch {
-      showError('Veriler yüklenirken hata oluştu');
+      showError(t('paymentPage.loadError'));
     } finally {
       setLoading(false);
     }
@@ -52,25 +54,25 @@ export default function PaymentManagementPage() {
   const handleConfirm = async (id) => {
     try {
       await paymentService.confirmPayment(id);
-      showSuccess('Ödeme onaylandı');
+      showSuccess(t('paymentManagement.confirmed'));
       load();
     } catch {
-      showError('Ödeme onaylanamadı');
+      showError(t('paymentManagement.confirmError'));
     }
   };
 
   const handleReject = async (id) => {
     const reason = rejectReasons[id];
     if (!reason?.trim()) {
-      showError('Red gerekçesi zorunludur');
+      showError(t('adminCommon.rejectionReasonRequired'));
       return;
     }
     try {
       await paymentService.rejectPayment(id, reason);
-      showSuccess('Ödeme reddedildi');
+      showSuccess(t('paymentManagement.rejected'));
       load();
     } catch {
-      showError('Ödeme reddedilemedi');
+      showError(t('paymentManagement.rejectError'));
     }
   };
 
@@ -79,17 +81,17 @@ export default function PaymentManagementPage() {
     try {
       if (editingMethod) {
         await paymentService.updatePaymentMethod(editingMethod.id, { ...methodForm, methodType: 'HAVALE_EFT' });
-        showSuccess('Banka hesabı güncellendi');
+        showSuccess(t('paymentManagement.accountUpdated'));
       } else {
         await paymentService.createPaymentMethod({ ...methodForm, methodType: 'HAVALE_EFT' });
-        showSuccess('Banka hesabı eklendi');
+        showSuccess(t('paymentManagement.accountAdded'));
       }
       setShowMethodForm(false);
       setEditingMethod(null);
       setMethodForm({ displayName: '', bankName: '', accountHolder: '', iban: '', description: '' });
       load();
     } catch {
-      showError('İşlem başarısız');
+      showError(t('adminCommon.actionFailed'));
     }
   };
 
@@ -102,24 +104,24 @@ export default function PaymentManagementPage() {
   const handleReceiptView = async (id) => {
     const result = await paymentService.viewReceipt(id);
     if (!result.success) {
-      showError(result.error || 'Dekont açılamadı');
+      showError(result.error || t('api.payment.receiptViewError'));
     }
   };
 
   const handleReceiptDownload = async (id) => {
     const result = await paymentService.downloadReceipt(id);
     if (!result.success) {
-      showError(result.error || 'Dekont indirilemedi');
+      showError(result.error || t('api.payment.receiptDownloadError'));
     }
   };
 
   const handleDeleteMethod = async (id) => {
     try {
       await paymentService.deletePaymentMethod(id);
-      showSuccess('Banka hesabı devre dışı bırakıldı');
+      showSuccess(t('paymentManagement.accountDisabled'));
       load();
     } catch {
-      showError('İşlem başarısız');
+      showError(t('adminCommon.actionFailed'));
     }
   };
 
@@ -135,28 +137,28 @@ export default function PaymentManagementPage() {
     : allPayments;
 
   const TABS = [
-    { key: 'pending', label: 'Bekleyen Ödemeler', icon: 'pending' },
-    { key: 'all', label: 'Tüm Ödemeler', icon: 'receipt_long' },
-    { key: 'g-radar', label: 'G-Radar Satın Almaları', icon: 'travel_explore' },
-    { key: 'methods', label: 'Banka Hesapları', icon: 'account_balance' },
+    { key: 'pending', label: t('payment.pendingPayments'), icon: 'pending' },
+    { key: 'all', label: t('payment.allPayments'), icon: 'receipt_long' },
+    { key: 'g-radar', label: t('paymentManagement.gRadarTab'), icon: 'travel_explore' },
+    { key: 'methods', label: t('payment.bankAccounts'), icon: 'account_balance' },
   ];
 
   const PaymentTable = ({ data }) => (
     data.length === 0 ? (
-      <p className="text-text-secondary text-sm text-center py-8">Ödeme bulunamadı</p>
+      <p className="text-text-secondary text-sm text-center py-8">{t('paymentManagement.empty')}</p>
     ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left border-b border-gray-100 dark:border-gray-700">
-              <th className="pb-3 text-text-secondary font-medium">Firma</th>
-              <th className="pb-3 text-text-secondary font-medium">Tarih</th>
-              <th className="pb-3 text-text-secondary font-medium">Tutar</th>
-              <th className="pb-3 text-text-secondary font-medium">Referans</th>
-              <th className="pb-3 text-text-secondary font-medium">Yöntem</th>
-              <th className="pb-3 text-text-secondary font-medium">Durum</th>
-              <th className="pb-3 text-text-secondary font-medium">Dekont</th>
-              {activeTab === 'pending' && <th className="pb-3 text-text-secondary font-medium">İşlem</th>}
+              <th className="pb-3 text-text-secondary font-medium">{t('paymentManagement.columns.company')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('paymentPage.balance.date')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('payment.amount')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('paymentManagement.columns.reference')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('paymentManagement.columns.method')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('management.status')}</th>
+              <th className="pb-3 text-text-secondary font-medium">{t('payment.receipt')}</th>
+              {activeTab === 'pending' && <th className="pb-3 text-text-secondary font-medium">{t('paymentManagement.columns.action')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -166,10 +168,10 @@ export default function PaymentManagementPage() {
                   {p.brokerCompanyName ?? '-'}
                 </td>
                 <td className="py-3 text-text-secondary">
-                  {p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('tr-TR') : '-'}
+                  {p.submittedAt ? new Date(p.submittedAt).toLocaleDateString(getCurrentLocale()) : '-'}
                 </td>
                 <td className="py-3 text-text-main">
-                  {p.amount ? `₺${Number(p.amount).toLocaleString('tr-TR')}` : '-'}
+                  {p.amount ? `₺${Number(p.amount).toLocaleString(getCurrentLocale())}` : '-'}
                 </td>
                 <td className="py-3 text-text-secondary">{p.referenceNumber || '-'}</td>
                 <td className="py-3 text-text-secondary">{p.methodType ?? '-'}</td>
@@ -189,7 +191,7 @@ export default function PaymentManagementPage() {
                           type="button"
                           onClick={() => handleReceiptView(p.id)}
                           className="text-primary hover:text-primary/80"
-                          title="Görüntüle"
+                          title={t('common.view')}
                         >
                           <span className="material-symbols-outlined text-base">visibility</span>
                         </button>
@@ -197,7 +199,7 @@ export default function PaymentManagementPage() {
                           type="button"
                           onClick={() => handleReceiptDownload(p.id)}
                           className="text-primary hover:text-primary/80"
-                          title="İndir"
+                          title={t('common.download')}
                         >
                           <span className="material-symbols-outlined text-base">download</span>
                         </button>
@@ -205,10 +207,10 @@ export default function PaymentManagementPage() {
                     ) : (
                       <span
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                        title="Dekont dosyası sunucuda bulunamadı"
+                        title={t('paymentPage.history.receiptMissingHint')}
                       >
                         <span className="material-symbols-outlined text-sm">error</span>
-                        Evrak eksik
+                        {t('paymentPage.history.receiptMissing')}
                       </span>
                     )
                   ) : '-'}
@@ -220,14 +222,14 @@ export default function PaymentManagementPage() {
                         onClick={() => handleConfirm(p.id)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
                       >
-                        <span className="material-symbols-outlined text-sm">check</span> Onayla
+                        <span className="material-symbols-outlined text-sm">check</span> {t('payment.confirm')}
                       </button>
                       <div className="flex gap-1">
                         <input
                           type="text"
                           value={rejectReasons[p.id] ?? ''}
                           onChange={e => setRejectReasons(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          placeholder="Red gerekçesi..."
+                          placeholder={t('paymentManagement.rejectionPlaceholder')}
                           className="text-xs rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-2 py-1 focus:outline-none focus:ring-1 focus:ring-red-500 w-32 transition-colors"
                         />
                         <button
@@ -251,7 +253,7 @@ export default function PaymentManagementPage() {
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-6 p-6">
-        <h1 className="text-2xl font-bold text-text-main">Ödeme Yönetimi</h1>
+        <h1 className="text-2xl font-bold text-text-main">{t('payment.management')}</h1>
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-fit transition-colors">
@@ -276,7 +278,7 @@ export default function PaymentManagementPage() {
 
         <div className="bg-white dark:bg-background-dark rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
           {loading ? (
-            <p className="text-text-secondary text-sm text-center py-8">Yükleniyor...</p>
+            <p className="text-text-secondary text-sm text-center py-8">{t('common.loading')}</p>
           ) : (
             <>
               {activeTab === 'pending' && <PaymentTable data={pendingPayments} />}
@@ -292,7 +294,7 @@ export default function PaymentManagementPage() {
                         onChange={e => setFilterBrokerId(e.target.value)}
                         className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer transition-colors"
                       >
-                        <option value="">Tüm Firmalar</option>
+                        <option value="">{t('paymentManagement.allCompanies')}</option>
                         {uniqueBrokers.map(b => (
                           <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
@@ -307,11 +309,11 @@ export default function PaymentManagementPage() {
                         className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-main transition-colors"
                       >
                         <span className="material-symbols-outlined text-base">close</span>
-                        Filtreyi Kaldır
+                        {t('paymentManagement.clearFilter')}
                       </button>
                     )}
                     <span className="text-sm text-text-secondary ml-auto">
-                      {filteredAllPayments.length} ödeme
+                      {t('paymentManagement.paymentCount', { count: filteredAllPayments.length })}
                     </span>
                   </div>
                   <PaymentTable data={filteredAllPayments} />
@@ -323,13 +325,13 @@ export default function PaymentManagementPage() {
               {activeTab === 'methods' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-text-main">Aktif Banka Hesapları</h3>
+                    <h3 className="font-semibold text-text-main">{t('paymentManagement.activeBankAccounts')}</h3>
                     <button
                       onClick={() => { setShowMethodForm(true); setEditingMethod(null); setMethodForm({ displayName: '', bankName: '', accountHolder: '', iban: '', description: '' }); }}
                       className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                     >
                       <span className="material-symbols-outlined text-base">add</span>
-                      Hesap Ekle
+                      {t('paymentManagement.addAccount')}
                     </button>
                   </div>
                   {paymentMethods.map(method => (
@@ -351,18 +353,18 @@ export default function PaymentManagementPage() {
                     </div>
                   ))}
                   {paymentMethods.length === 0 && (
-                    <p className="text-text-secondary text-sm text-center py-8">Henüz banka hesabı tanımlanmamış</p>
+                    <p className="text-text-secondary text-sm text-center py-8">{t('paymentManagement.noBankAccounts')}</p>
                   )}
                   {showMethodForm && (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 transition-colors">
-                      <h4 className="font-medium text-text-main mb-3">{editingMethod ? 'Hesap Düzenle' : 'Yeni Hesap Ekle'}</h4>
+                      <h4 className="font-medium text-text-main mb-3">{editingMethod ? t('paymentManagement.editAccount') : t('paymentManagement.newAccount')}</h4>
                       <form onSubmit={handleSaveMethod} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {[
-                          { key: 'displayName', label: 'Görünen Ad *', required: true },
-                          { key: 'bankName', label: 'Banka Adı' },
-                          { key: 'accountHolder', label: 'Hesap Sahibi' },
-                          { key: 'iban', label: 'IBAN' },
-                          { key: 'description', label: 'Açıklama' },
+                          { key: 'displayName', label: t('paymentManagement.displayName'), required: true },
+                          { key: 'bankName', label: t('payment.bankName') },
+                          { key: 'accountHolder', label: t('payment.accountHolder') },
+                          { key: 'iban', label: t('payment.iban') },
+                          { key: 'description', label: t('adminCommon.description') },
                         ].map(({ key, label, required }) => (
                           <label key={key} className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-text-secondary">{label}</span>
@@ -376,8 +378,8 @@ export default function PaymentManagementPage() {
                           </label>
                         ))}
                         <div className="sm:col-span-2 flex gap-3 justify-end mt-1">
-                          <button type="button" onClick={() => setShowMethodForm(false)} className="px-4 py-2 text-text-secondary hover:text-text-main text-sm transition-colors">İptal</button>
-                          <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Kaydet</button>
+                          <button type="button" onClick={() => setShowMethodForm(false)} className="px-4 py-2 text-text-secondary hover:text-text-main text-sm transition-colors">{t('common.cancel')}</button>
+                          <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">{t('common.save')}</button>
                         </div>
                       </form>
                     </div>
@@ -421,11 +423,11 @@ function GRadarApprovalsPanel({ onChange }) {
   const handleApprove = async (id) => {
     const res = await gRadarCreditService.approvePurchase(id);
     if (res.success) {
-      showSuccess('Satın alma onaylandı, krediler brokere eklendi');
+      showSuccess(t('paymentManagement.gRadar.approved'));
       load();
       onChange?.();
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
-      showError('Master G-Radar havuzunda yeterli kredi yok. Önce G-Radar tarafından paket yükleyin.');
+      showError(t('paymentManagement.gRadar.poolUnavailable'));
     } else {
       showError(res.error);
     }
@@ -433,12 +435,12 @@ function GRadarApprovalsPanel({ onChange }) {
 
   const handleReject = async (id) => {
     if (!rejectReason.trim()) {
-      showError('Red gerekçesi zorunludur');
+      showError(t('adminCommon.rejectionReasonRequired'));
       return;
     }
     const res = await gRadarCreditService.rejectPurchase(id, rejectReason.trim());
     if (res.success) {
-      showSuccess('Satın alma reddedildi');
+      showSuccess(t('paymentManagement.gRadar.rejected'));
       setRejectingId(null);
       setRejectReason('');
       load();
@@ -449,7 +451,7 @@ function GRadarApprovalsPanel({ onChange }) {
   };
 
   if (loading) {
-    return <p className="text-text-secondary text-sm text-center py-8">Yükleniyor...</p>;
+    return <p className="text-text-secondary text-sm text-center py-8">{t('common.loading')}</p>;
   }
 
   if (purchases.length === 0) {
@@ -458,7 +460,7 @@ function GRadarApprovalsPanel({ onChange }) {
         <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-2 block">
           inbox
         </span>
-        <p className="text-text-secondary text-sm">Bekleyen G-Radar satın alması yok</p>
+        <p className="text-text-secondary text-sm">{t('paymentManagement.gRadar.empty')}</p>
       </div>
     );
   }
@@ -466,9 +468,7 @@ function GRadarApprovalsPanel({ onChange }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-text-secondary mb-2">
-        Onayladığınızda krediler brokerin cüzdanına eklenir ve master havuzdan
-        düşülür. Master havuzda yeterli kredi yoksa onay reddedilir, broker
-        kullanıcıya destek talebi göstergesi düşer.
+        {t('paymentManagement.gRadar.hint')}
       </p>
       {purchases.map((p) => (
         <div key={p.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
@@ -476,14 +476,14 @@ function GRadarApprovalsPanel({ onChange }) {
             <div className="flex-1 min-w-[260px]">
               <p className="font-semibold text-text-main">{p.brokerCompanyName}</p>
               <p className="text-xs text-text-secondary mt-0.5">
-                {p.requestedByEmail} • {new Date(p.requestedAt).toLocaleString('tr-TR')}
+                {p.requestedByEmail} • {new Date(p.requestedAt).toLocaleString(getCurrentLocale())}
               </p>
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                <Info label="Kredi" value={`${p.creditAmount} adet`} />
-                <Info label="Birim USD" value={`$${Number(p.unitPriceUsd).toFixed(2)}`} />
-                <Info label="Kur" value={`₺${Number(p.exchangeRateUsed).toFixed(4)}`} />
-                <Info label="Toplam" value={`₺${Number(p.totalAmountTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`} highlight />
-                <Info label="Havale Ref" value={p.transferReference || '—'} />
+                <Info label={t('paymentManagement.gRadar.credits')} value={t('paymentManagement.gRadar.creditCount', { count: p.creditAmount })} />
+                <Info label={t('paymentManagement.gRadar.unitUsd')} value={`$${Number(p.unitPriceUsd).toFixed(2)}`} />
+                <Info label={t('paymentManagement.gRadar.rate')} value={`₺${Number(p.exchangeRateUsed).toFixed(4)}`} />
+                <Info label={t('paymentPage.gRadar.total')} value={`₺${Number(p.totalAmountTry).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2 })}`} highlight />
+                <Info label={t('paymentManagement.gRadar.transferRef')} value={p.transferReference || '—'} />
               </div>
               {p.notes && (
                 <p className="text-xs text-text-secondary mt-2 italic">"{p.notes}"</p>
@@ -495,14 +495,14 @@ function GRadarApprovalsPanel({ onChange }) {
                 className="flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <span className="material-symbols-outlined text-base">check</span>
-                Onayla
+                {t('payment.confirm')}
               </button>
               <button
                 onClick={() => { setRejectingId(p.id); setRejectReason(''); }}
                 className="flex items-center gap-1 px-3 py-2 border border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
               >
                 <span className="material-symbols-outlined text-base">close</span>
-                Reddet
+                {t('payment.reject')}
               </button>
             </div>
           </div>
@@ -512,20 +512,20 @@ function GRadarApprovalsPanel({ onChange }) {
                 type="text"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Red gerekçesi (zorunlu)"
+                placeholder={t('adminCommon.rejectionReasonPlaceholder')}
                 className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button
                 onClick={() => handleReject(p.id)}
                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
               >
-                Onayla Reddi
+                {t('paymentManagement.gRadar.confirmReject')}
               </button>
               <button
                 onClick={() => { setRejectingId(null); setRejectReason(''); }}
                 className="px-3 py-2 text-text-secondary hover:text-text-main text-sm transition-colors"
               >
-                İptal
+                {t('common.cancel')}
               </button>
             </div>
           )}
