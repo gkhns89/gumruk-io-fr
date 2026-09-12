@@ -25,9 +25,20 @@ npm run preview   # serve the built dist/
 There is **no test framework in this project** — no Vitest/Jest, no test files. Don't
 invent a `npm test`; verify changes by running the app.
 
-Deployment is Vercel and automatic: pushing to `main` ships production. `vercel.json`
-holds the SPA rewrite (everything → `/index.html`) and the immutable cache header for
-`/assets/*`.
+Deployment is Vercel and automatic, in two lanes. Pushing to `staging` deploys the Preview
+build behind `staging.gumruk.io` (Vercel Authentication in front, `X-Robots-Tag: noindex`
+from `vercel.json`); pushing to `main` ships production. Work goes feature branch →
+`staging` → `main`, and the backend repo follows the same flow (`staging` → `master`).
+
+`VITE_API_BASE_URL` is set per Vercel environment (Production → `api.gumruk.io`, Preview →
+`api-staging.gumruk.io`). Vite bakes it in at build time, so changing it needs a redeploy.
+If it is missing, `axios.js` falls back to the production API only on the production
+hostnames; every other build talks to staging. `vercel.json` also holds the SPA rewrite
+(everything → `/index.html`) and the immutable cache header for `/assets/*`.
+
+Production builds drop `console.log`/`info`/`debug` during minification (esbuild `pure` in
+`vite.config.js`); only `warn` and `error` survive. Don't rely on `console.log` to debug
+staging or production, and never log tokens or raw API payloads.
 
 ## Stack notes that bite
 
