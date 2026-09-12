@@ -552,7 +552,7 @@ export default function AddTransactionModal({
         const uniqueSenders = [
           ...new Set(
             result.data
-              .map((t) => t.senderName)
+              .map((tx) => tx.senderName)
               .filter((name) => name && name.trim() !== "")
           ),
         ].sort((a, b) => a.localeCompare(b, "tr"));
@@ -560,7 +560,7 @@ export default function AddTransactionModal({
         const uniqueWarehouses = [
           ...new Set(
             result.data
-              .map((t) => t.customsWarehouse)
+              .map((tx) => tx.customsWarehouse)
               .filter((name) => name && name.trim() !== "")
           ),
         ].sort((a, b) => a.localeCompare(b, "tr"));
@@ -615,7 +615,7 @@ export default function AddTransactionModal({
     if (!value || value === "") return "";
     const num = typeof value === "string" ? parseFloat(value) : value;
     if (isNaN(num)) return "";
-    return num.toLocaleString("tr-TR", {
+    return num.toLocaleString(locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });
@@ -817,15 +817,15 @@ export default function AddTransactionModal({
     const todayString = getTodayDateString();
     if (value > todayString) {
       const errorMessages = {
-        warehouseArrivalDate: "Antrepo varış tarihi gelecekte olamaz",
-        registrationDate: "Tescil tarihi gelecekte olamaz",
-        lineClosureDate: "Kapanma tarihi gelecekte olamaz",
-        withdrawalDate: "Çekilme tarihi gelecekte olamaz"
+        warehouseArrivalDate: t("transactions.validation.warehouseArrivalDateFuture"),
+        registrationDate: t("transactions.validation.registrationDateFuture"),
+        lineClosureDate: t("transactions.validation.lineClosureDateFuture"),
+        withdrawalDate: t("transactions.validation.withdrawalDateFuture")
       };
 
       setFieldErrors(prev => ({
         ...prev,
-        [name]: errorMessages[name] || "Tarih gelecekte olamaz"
+        [name]: errorMessages[name] || t("transactions.validation.dateFuture")
       }));
       return;
     }
@@ -837,7 +837,7 @@ export default function AddTransactionModal({
       if (value > newFormData.registrationDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Antrepo varış tarihi, tescil tarihinden sonra olamaz"
+          [name]: t("transactions.validation.arrivalAfterRegistration")
         }));
         return;
       }
@@ -847,14 +847,14 @@ export default function AddTransactionModal({
       if (newFormData.warehouseArrivalDate && value < newFormData.warehouseArrivalDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Tescil tarihi, antrepo varış tarihinden önce olamaz"
+          [name]: t("transactions.validation.registrationBeforeArrival")
         }));
         return;
       }
       if (newFormData.lineClosureDate && value > newFormData.lineClosureDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Tescil tarihi, kapanma tarihinden sonra olamaz"
+          [name]: t("transactions.validation.registrationAfterClosure")
         }));
         return;
       }
@@ -864,14 +864,14 @@ export default function AddTransactionModal({
       if (newFormData.registrationDate && value < newFormData.registrationDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Kapanma tarihi, tescil tarihinden önce olamaz"
+          [name]: t("transactions.validation.closureBeforeRegistration")
         }));
         return;
       }
       if (newFormData.withdrawalDate && value > newFormData.withdrawalDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Kapanma tarihi, çekilme tarihinden sonra olamaz"
+          [name]: t("transactions.validation.closureAfterWithdrawal")
         }));
         return;
       }
@@ -881,7 +881,7 @@ export default function AddTransactionModal({
       if (value < newFormData.lineClosureDate) {
         setFieldErrors(prev => ({
           ...prev,
-          [name]: "Çekilme tarihi, kapanma tarihinden önce olamaz"
+          [name]: t("transactions.validation.withdrawalBeforeClosure")
         }));
         return;
       }
@@ -912,7 +912,7 @@ export default function AddTransactionModal({
     if (trimmedValue.length < 10) {
       setFieldErrors(prev => ({
         ...prev,
-        [fieldName]: "Gecikme nedeni en az 10 karakter olmalıdır"
+        [fieldName]: t("transactions.delay.minLength")
       }));
     } else {
       // Hata varsa temizle
@@ -932,52 +932,52 @@ export default function AddTransactionModal({
 
     // Check broker company (only for SUPER_ADMIN)
     if (isSuperAdmin && !formData.brokerCompanyId) {
-      errors.brokerCompany = "Broker firması seçimi zorunludur";
+      errors.brokerCompany = t("transactions.validation.brokerRequired");
     }
 
     // Check client company
     if (!formData.clientCompanyId) {
-      errors.clientCompany = "Müşteri firması seçimi zorunludur";
+      errors.clientCompany = t("transactions.validation.clientRequired");
     }
 
     // Vekalet kontrolü
     if (formData.clientCompanyId) {
       const agreement = clientAgreements[parseInt(formData.clientCompanyId)];
       if (!agreement || agreement.agreementStatus !== 'ACTIVE') {
-        errors.clientCompany = "Seçili müşteri ile aktif vekalet anlaşmanız bulunmuyor";
+        errors.clientCompany = t("transactions.validation.noActiveAgreement");
       }
     }
 
     // Check each required field - only add error if field is empty
     if (!formData.fileNo || !formData.fileNo.trim()) {
-      errors.fileNo = "Dosya numarası zorunludur";
+      errors.fileNo = t("transactions.validation.fileNoRequired");
     }
     if (!formData.customsId) {
-      errors.customsId = "Gümrük seçimi zorunludur";
+      errors.customsId = t("transactions.validation.customsRequired");
     }
     if (!warehouseSearchTerm || !warehouseSearchTerm.trim()) {
-      errors.customsWarehouse = "Antrepo zorunludur";
+      errors.customsWarehouse = t("transactions.validation.warehouseRequired");
     }
     if (!formData.containerAmount) {
-      errors.containerAmount = "Konteyner miktarı zorunludur";
+      errors.containerAmount = t("transactions.validation.containerAmountRequired");
     }
     if (!formData.gate) {
-      errors.gate = "Hat seçimi zorunludur";
+      errors.gate = t("transactions.validation.gateRequired");
     }
     if (!formData.weight) {
-      errors.weight = "Kilo zorunludur";
+      errors.weight = t("transactions.validation.weightRequired");
     }
     // Bir evrak peşin vergili, teminatlı ya da ikisi birden olabilir: en az biri dolu olmalı
     const isEmptyAmount = (value) => value === '' || value === null || value === undefined;
     if (isEmptyAmount(formData.tax) && isEmptyAmount(formData.guaranteeAmount)) {
-      errors.tax = "Vergi veya teminattan en az biri zorunludur";
-      errors.guaranteeAmount = "Vergi veya teminattan en az biri zorunludur";
+      errors.tax = t("transactions.validation.taxOrGuaranteeRequired");
+      errors.guaranteeAmount = t("transactions.validation.taxOrGuaranteeRequired");
     }
     if (!senderSearchTerm || !senderSearchTerm.trim()) {
-      errors.senderName = "Gönderici adı zorunludur";
+      errors.senderName = t("transactions.validation.senderRequired");
     }
     if (!formData.warehouseArrivalDate) {
-      errors.warehouseArrivalDate = "Antrepo varış tarihi zorunludur";
+      errors.warehouseArrivalDate = t("transactions.validation.arrivalDateRequired");
     }
 
     // Beyanname No ve Tescil Tarihi birbirine bağlı validasyon
@@ -985,15 +985,15 @@ export default function AddTransactionModal({
     const hasRegistrationDate = formData.registrationDate;
 
     if (hasDeclarationNumber && !hasRegistrationDate) {
-      errors.registrationDate = "Beyanname numarası girildiğinde tescil tarihi zorunludur";
+      errors.registrationDate = t("transactions.validation.registrationDateRequired");
     }
     if (hasRegistrationDate && !hasDeclarationNumber) {
-      errors.declarationNumber = "Tescil tarihi girildiğinde beyanname numarası zorunludur";
+      errors.declarationNumber = t("transactions.validation.declarationNumberRequired");
     }
 
     // Beyanname numarası 18 karakter kontrolü
     if (hasDeclarationNumber && formData.declarationNumber.trim().length !== 18) {
-      errors.declarationNumber = "Beyanname numarası 18 karakter olmalıdır";
+      errors.declarationNumber = t("transactions.validation.declarationNumberLength");
     }
 
     setFieldErrors(errors);
@@ -1008,14 +1008,14 @@ export default function AddTransactionModal({
     // Validate required fields first
     if (!validateRequiredFields()) {
       setLoading(false);
-      showError("Lütfen tüm zorunlu alanları doldurun");
+      showError(t("transactions.form.fillRequired"));
       return;
     }
 
     // Check if there are any field-level validation errors
     if (Object.keys(fieldErrors).length > 0) {
       setLoading(false);
-      showError("Lütfen formdaki hataları düzeltin");
+      showError(t("transactions.form.fixErrors"));
       return;
     }
 
@@ -1025,7 +1025,7 @@ export default function AddTransactionModal({
       if (delays.arrivalToRegistration && formData.delayReasons?.arrivalToRegistration) {
         const reason = formData.delayReasons.arrivalToRegistration.trim();
         if (reason.length > 0 && reason.length < 10) {
-          showError("Antrepo varış - Tescil gecikme nedeni en az 10 karakter olmalıdır");
+          showError(t("transactions.delay.arrivalToRegistrationMin"));
           setLoading(false);
           return;
         }
@@ -1034,7 +1034,7 @@ export default function AddTransactionModal({
       if (delays.registrationToClosure && formData.delayReasons?.registrationToClosure) {
         const reason = formData.delayReasons.registrationToClosure.trim();
         if (reason.length > 0 && reason.length < 10) {
-          showError("Tescil - Kapanma gecikme nedeni en az 10 karakter olmalıdır");
+          showError(t("transactions.delay.registrationToClosureMin"));
           setLoading(false);
           return;
         }
@@ -1043,7 +1043,7 @@ export default function AddTransactionModal({
       if (delays.closureToWithdrawal && formData.delayReasons?.closureToWithdrawal) {
         const reason = formData.delayReasons.closureToWithdrawal.trim();
         if (reason.length > 0 && reason.length < 10) {
-          showError("Kapanma - Çekilme gecikme nedeni en az 10 karakter olmalıdır");
+          showError(t("transactions.delay.closureToWithdrawalMin"));
           setLoading(false);
           return;
         }
@@ -1099,13 +1099,13 @@ export default function AddTransactionModal({
 
       if (result.success) {
         console.log("✅ İşlem başarıyla oluşturuldu");
-        showSuccess('İşlem başarıyla oluşturuldu!');
+        showSuccess(t("transactions.form.createSuccess"));
         onSuccess();
       } else {
         handleApiResponse(result, null, setError, "İşlem oluşturma");
       }
     } catch (err) {
-      handleError(err, setError, "İşlem oluşturma", "İşlem oluşturulurken beklenmeyen bir hata oluştu.");
+      handleError(err, setError, "İşlem oluşturma", t("transactions.form.createError"));
     } finally {
       setLoading(false);
     }
@@ -1272,7 +1272,7 @@ export default function AddTransactionModal({
                 {t("transaction.addNew")}
               </h2>
               <p className="text-text-secondary text-sm mt-1">
-                Lütfen işlem detaylarını girin ve kaydedin.
+                {t("transactions.form.addSubtitle")}
               </p>
             </div>
             <button
@@ -1312,10 +1312,10 @@ export default function AddTransactionModal({
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">
-                        Bu firma ile aktif vekalet anlaşmanız bulunmuyor
+                        {t("transactions.form.noAgreementTitle")}
                       </p>
                       <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                        İşlem oluşturmak için lütfen yöneticinizle iletişime geçin.
+                        {t("transactions.form.noAgreementHint")}
                       </p>
                     </div>
                   </div>
@@ -1328,7 +1328,7 @@ export default function AddTransactionModal({
                   {t("transaction.recipient")} *
                   {selectedClientInfo && selectedClientInfo.shortName && (
                     <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">
-                      (Firma kısa adı otomatik dolduruldu)
+                      {t("transactions.form.shortNameAutofilled")}
                     </span>
                   )}
                 </p>
@@ -1340,7 +1340,7 @@ export default function AddTransactionModal({
                   disabled={true}
                   required
                   className="form-input w-full rounded-lg text-text-main dark:text-gray-300 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 h-12 placeholder:text-neutral dark:placeholder:text-gray-500 p-3 text-base font-normal cursor-not-allowed transition-colors"
-                  placeholder={toUpperCase(t("placeholders.firstSelectClient"))}
+                  placeholder={t("placeholders.firstSelectClient").toLocaleUpperCase(locale)}
                 />
               </label>
 
@@ -1357,7 +1357,7 @@ export default function AddTransactionModal({
                       )}
                       {!loadingBrokers && availableBrokers.length > 0 && (
                         <span className="text-xs text-gray-500 ml-2">
-                          ({availableBrokers.length} broker kayıtlı)
+                          {t("transactions.form.brokersRegistered", { count: availableBrokers.length })}
                         </span>
                       )}
                     </p>
@@ -1380,9 +1380,7 @@ export default function AddTransactionModal({
                         }}
                         onFocus={() => setShowBrokerDropdown(true)}
                         onKeyDown={brokerKeyboard.handleKeyDown}
-                        placeholder={toUpperCase(
-                          t("placeholders.typeToSearch")
-                        )}
+                        placeholder={t("placeholders.typeToSearch").toLocaleUpperCase(locale)}
                         disabled={loadingBrokers}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                           fieldErrors.brokerCompany
@@ -1438,7 +1436,7 @@ export default function AddTransactionModal({
                                   warning
                                 </span>
                                 <p className="text-sm">
-                                  Kayıtlı broker bulunamadı.
+                                  {t("transactions.form.noBrokers")}
                                 </p>
                               </>
                             ) : (
@@ -1447,7 +1445,7 @@ export default function AddTransactionModal({
                                   search_off
                                 </span>
                                 <p className="text-sm">
-                                  "{brokerSearchTerm}" için sonuç bulunamadı
+                                  {t("header.noResultsFor", { query: brokerSearchTerm })}
                                 </p>
                               </>
                             )}
@@ -1504,8 +1502,7 @@ export default function AddTransactionModal({
                               availableBrokers.length > 100 && (
                                 <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                   <p className="text-xs text-yellow-800">
-                                    İlk 100 sonuç gösteriliyor. Daha spesifik
-                                    arama yapın.
+                                    {t("transactions.form.firstResults", { count: 100 })}
                                   </p>
                                 </div>
                               )}
@@ -1561,7 +1558,7 @@ export default function AddTransactionModal({
                     )}
                     {!loadingClients && availableClients.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
-                        ({availableClients.length} firma kayıtlı)
+                        {t("transactions.form.companiesRegistered", { count: availableClients.length })}
                       </span>
                     )}
                   </p>
@@ -1587,7 +1584,7 @@ export default function AddTransactionModal({
                       <span className="material-symbols-outlined text-sm">
                         info
                       </span>
-                      Önce yukarıdan broker firması seçin
+                      {t("transactions.form.selectBrokerFirst")}
                     </p>
                   </div>
                 )}
@@ -1609,7 +1606,7 @@ export default function AddTransactionModal({
                       }}
                       onFocus={() => setShowClientDropdown(true)}
                       onKeyDown={clientKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.typeToSearch"))}
+                      placeholder={t("placeholders.typeToSearch").toLocaleUpperCase(locale)}
                       disabled={
                         loadingClients ||
                         (isSuperAdmin && !formData.brokerCompanyId)
@@ -1666,7 +1663,7 @@ export default function AddTransactionModal({
                                 warning
                               </span>
                               <p className="text-sm">
-                                Kayıtlı firma bulunamadı.
+                                {t("transactions.form.noCompanies")}
                               </p>
                               <button
                                 type="button"
@@ -1676,7 +1673,7 @@ export default function AddTransactionModal({
                                 }}
                                 className="mt-2 text-xs text-primary hover:underline"
                               >
-                                Hemen yeni firma ekle →
+                                {t("transactions.form.addCompanyNow")}
                               </button>
                             </>
                           ) : (
@@ -1685,7 +1682,7 @@ export default function AddTransactionModal({
                                 search_off
                               </span>
                               <p className="text-sm">
-                                "{clientSearchTerm}" için sonuç bulunamadı
+                                {t("header.noResultsFor", { query: clientSearchTerm })}
                               </p>
                             </>
                           )}
@@ -1739,19 +1736,19 @@ export default function AddTransactionModal({
                                     {/* Agreement Badge */}
                                     {isActive ? (
                                       <span className="px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700 rounded-full">
-                                        Aktif
+                                        {t("transactions.common.active")}
                                       </span>
                                     ) : agreement?.agreementStatus === 'PENDING' ? (
                                       <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700 rounded-full">
-                                        Onay Bekliyor
+                                        {t("transactions.form.agreementPending")}
                                       </span>
                                     ) : agreement?.agreementStatus === 'INACTIVE' ? (
                                       <span className="px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full">
-                                        Pasif
+                                        {t("transactions.form.agreementInactive")}
                                       </span>
                                     ) : (
                                       <span className="px-2 py-1 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-full">
-                                        Vekalet Yok
+                                        {t("transactions.form.noAgreement")}
                                       </span>
                                     )}
 
@@ -1770,8 +1767,7 @@ export default function AddTransactionModal({
                             availableClients.length > 100 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                 <p className="text-xs text-yellow-800">
-                                  İlk 100 sonuç gösteriliyor. Daha spesifik
-                                  arama yapın.
+                                  {t("transactions.form.firstResults", { count: 100 })}
                                 </p>
                               </div>
                             )}
@@ -1814,7 +1810,7 @@ export default function AddTransactionModal({
                     </span>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">
-                        Seçili Firma: {selectedClientInfo.name}
+                        {t("transactions.form.selectedCompany", { name: selectedClientInfo.name })}
                       </p>
                     </div>
                   </div>
@@ -1843,7 +1839,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t("placeholders.enterFileNo"))}
+                  placeholder={t("placeholders.enterFileNo").toLocaleUpperCase(locale)}
                   style={{ textTransform: "uppercase" }}
                 />
                 {/* Error Message */}
@@ -1871,7 +1867,7 @@ export default function AddTransactionModal({
                     )}
                     {!loadingCustoms && availableCustoms.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
-                        ({availableCustoms.length} kayıtlı)
+                        {t("transactions.form.savedCount", { count: availableCustoms.length })}
                       </span>
                     )}
                   </p>
@@ -1893,7 +1889,7 @@ export default function AddTransactionModal({
                       }}
                       onFocus={() => setShowCustomsDropdown(true)}
                       onKeyDown={customsKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.customsId
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -1946,10 +1942,10 @@ export default function AddTransactionModal({
                             account_balance
                           </span>
                           <p className="text-sm">
-                            Henüz kayıtlı gümrük yok.
+                            {t("transactions.form.noCustoms")}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yeni gümrük adı yazarak ekleyebilirsiniz.
+                            {t("transactions.form.addCustomsHint")}
                           </p>
                         </div>
                       ) : filteredCustoms.length === 0 && customsSearchTerm.trim() ? (
@@ -1958,10 +1954,10 @@ export default function AddTransactionModal({
                             search_off
                           </span>
                           <p className="text-sm">
-                            "{customsSearchTerm}" ile eşleşen gümrük bulunamadı.
+                            {t("transactions.form.noCustomsMatch", { query: customsSearchTerm })}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            {t("transactions.form.addNewHint")}
                           </p>
                         </div>
                       ) : (
@@ -2003,7 +1999,7 @@ export default function AddTransactionModal({
                             availableCustoms.length > 50 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                 <p className="text-xs text-yellow-800">
-                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  {t("transactions.form.firstResults", { count: 50 })}
                                 </p>
                               </div>
                             )}
@@ -2038,7 +2034,7 @@ export default function AddTransactionModal({
                     )}
                     {!loadingWarehouses && availableWarehouses.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
-                        ({availableWarehouses.length} kayıtlı)
+                        {t("transactions.form.savedCount", { count: availableWarehouses.length })}
                       </span>
                     )}
                   </p>
@@ -2064,7 +2060,7 @@ export default function AddTransactionModal({
                       }}
                       onFocus={() => setShowWarehouseDropdown(true)}
                       onKeyDown={warehouseKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.customsWarehouse
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -2123,10 +2119,10 @@ export default function AddTransactionModal({
                             </span>
                             <div>
                               <p className="font-medium text-sm text-green-700">
-                                "{toUpperCase(warehouseSearchTerm.trim(), locale)}" olarak ekle
+                                {t("transactions.form.addAs", { value: toUpperCase(warehouseSearchTerm.trim(), locale) })}
                               </p>
                               <p className="text-xs text-green-600">
-                                Yeni antrepo olarak kullan
+                                {t("transactions.form.useAsNewWarehouse")}
                               </p>
                             </div>
                           </div>
@@ -2139,10 +2135,10 @@ export default function AddTransactionModal({
                             warehouse
                           </span>
                           <p className="text-sm">
-                            Henüz kayıtlı antrepo yok.
+                            {t("transactions.form.noWarehouses")}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yeni antrepo adı yazarak ekleyebilirsiniz.
+                            {t("transactions.form.addWarehouseHint")}
                           </p>
                         </div>
                       ) : filteredWarehouses.length === 0 && warehouseSearchTerm.trim() ? (
@@ -2151,10 +2147,10 @@ export default function AddTransactionModal({
                             search_off
                           </span>
                           <p className="text-sm">
-                            "{warehouseSearchTerm}" ile eşleşen antrepo bulunamadı.
+                            {t("transactions.form.noWarehouseMatch", { query: warehouseSearchTerm })}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yukarıdaki butona tıklayarak yeni olarak ekleyebilirsiniz.
+                            {t("transactions.form.addNewHint")}
                           </p>
                         </div>
                       ) : (
@@ -2196,7 +2192,7 @@ export default function AddTransactionModal({
                             availableWarehouses.length > 50 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                 <p className="text-xs text-yellow-800">
-                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama yapın.
+                                  {t("transactions.form.firstResults", { count: 50 })}
                                 </p>
                               </div>
                             )}
@@ -2242,7 +2238,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t("placeholders.enterContainerAmount"))}
+                  placeholder={t("placeholders.enterContainerAmount").toLocaleUpperCase(locale)}
                 />
                 {/* Error Message */}
                 {fieldErrors.containerAmount && (
@@ -2274,7 +2270,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t("placeholders.enterWeight"))}
+                  placeholder={t("placeholders.enterWeight").toLocaleUpperCase(locale)}
                 />
                 {/* Error Message */}
                 {fieldErrors.weight && (
@@ -2306,7 +2302,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t("placeholders.enterTax"))}
+                  placeholder={t("placeholders.enterTax").toLocaleUpperCase(locale)}
                 />
                 {/* Error Message */}
                 {fieldErrors.tax && (
@@ -2338,7 +2334,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t("placeholders.enterGuaranteeAmount"))}
+                  placeholder={t("placeholders.enterGuaranteeAmount").toLocaleUpperCase(locale)}
                 />
                 {/* Error Message */}
                 {fieldErrors.guaranteeAmount && (
@@ -2365,7 +2361,7 @@ export default function AddTransactionModal({
                     )}
                     {!loadingSenders && availableSenders.length > 0 && (
                       <span className="text-xs text-gray-500 ml-2">
-                        ({availableSenders.length} kayıtlı)
+                        {t("transactions.form.savedCount", { count: availableSenders.length })}
                       </span>
                     )}
                   </p>
@@ -2392,7 +2388,7 @@ export default function AddTransactionModal({
                       }}
                       onFocus={() => setShowSenderDropdown(true)}
                       onKeyDown={senderKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                       className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 ${
                         fieldErrors.senderName
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -2455,12 +2451,10 @@ export default function AddTransactionModal({
                               </span>
                               <div>
                                 <p className="font-medium text-sm text-green-700">
-                                  "
-                                  {toUpperCase(senderSearchTerm.trim(), locale)}
-                                  " olarak ekle
+                                  {t("transactions.form.addAs", { value: toUpperCase(senderSearchTerm.trim(), locale) })}
                                 </p>
                                 <p className="text-xs text-green-600">
-                                  Yeni gönderici olarak kullan
+                                  {t("transactions.form.useAsNewSender")}
                                 </p>
                               </div>
                             </div>
@@ -2474,10 +2468,10 @@ export default function AddTransactionModal({
                             local_shipping
                           </span>
                           <p className="text-sm">
-                            Henüz kayıtlı gönderici yok.
+                            {t("transactions.form.noSenders")}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yeni gönderici adı yazarak ekleyebilirsiniz.
+                            {t("transactions.form.addSenderHint")}
                           </p>
                         </div>
                       ) : filteredSenders.length === 0 &&
@@ -2487,12 +2481,10 @@ export default function AddTransactionModal({
                             search_off
                           </span>
                           <p className="text-sm">
-                            "{senderSearchTerm}" ile eşleşen gönderici
-                            bulunamadı.
+                            {t("transactions.form.noSenderMatch", { query: senderSearchTerm })}
                           </p>
                           <p className="text-xs text-text-secondary mt-1">
-                            Yukarıdaki butona tıklayarak yeni olarak
-                            ekleyebilirsiniz.
+                            {t("transactions.form.addNewHint")}
                           </p>
                         </div>
                       ) : (
@@ -2534,8 +2526,7 @@ export default function AddTransactionModal({
                             availableSenders.length > 50 && (
                               <div className="p-3 bg-yellow-50 border-t border-yellow-200 text-center">
                                 <p className="text-xs text-yellow-800">
-                                  İlk 50 sonuç gösteriliyor. Daha spesifik arama
-                                  yapın.
+                                  {t("transactions.form.firstResults", { count: 50 })}
                                 </p>
                               </div>
                             )}
@@ -2580,7 +2571,7 @@ export default function AddTransactionModal({
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                  placeholder={toUpperCase(t('placeholders.enterDeclarationNumber'))}
+                  placeholder={t("placeholders.enterDeclarationNumber").toLocaleUpperCase(locale)}
                   style={{ textTransform: "uppercase" }}
                 />
                 {/* Error Message */}
@@ -2617,7 +2608,7 @@ export default function AddTransactionModal({
                       : 'border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary'
                   } bg-white dark:bg-gray-800 h-12 p-3 text-base font-normal transition-colors`}
                 >
-                  <option value="">{toUpperCase(t("gates.select"))}</option>
+                  <option value="">{t("gates.select").toLocaleUpperCase(locale)}</option>
                   {GATE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {getGateDisplayLabel(option)}
@@ -2644,7 +2635,7 @@ export default function AddTransactionModal({
                     calendar_month
                   </span>
                   <h3 className="text-text-main text-base font-bold">
-                    Tarih Bilgileri
+                    {t("transactions.form.dateInfo")}
                   </h3>
                 </div>
 
@@ -2774,7 +2765,7 @@ export default function AddTransactionModal({
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
-                        Antrepo Varış → Tescil Gecikme Nedeni * (4 günden fazla)
+                        {t("transactions.delay.arrivalToRegistration")} * {t("transactions.delay.overFourDays")}
                       </p>
                     </div>
                     {formData.delayReasons.arrivalToRegistration.length > 0 && (
@@ -2798,7 +2789,7 @@ export default function AddTransactionModal({
                           }
                         }}
                         className="p-1 hover:bg-yellow-200 rounded-full transition-colors"
-                        title="İçeriği temizle"
+                        title={t("transactions.form.clearContent")}
                       >
                         <span className="material-symbols-outlined text-yellow-700 dark:text-yellow-300 text-lg">
                           close
@@ -2828,7 +2819,7 @@ export default function AddTransactionModal({
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                         : 'border-yellow-300 dark:border-yellow-700 focus:ring-yellow-500 focus:border-yellow-500'
                     } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                    placeholder="Lütfen antrepo varış ve tescil tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
+                    placeholder={t("transactions.delay.arrivalToRegistrationPlaceholder")}
                   />
                   {/* Error Message */}
                   {fieldErrors.arrivalToRegistration && (
@@ -2851,7 +2842,7 @@ export default function AddTransactionModal({
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-orange-600 dark:text-orange-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
-                        Tescil → Kapanma Gecikme Nedeni * (4 günden fazla)
+                        {t("transactions.delay.registrationToClosure")} * {t("transactions.delay.overFourDays")}
                       </p>
                     </div>
                     {formData.delayReasons.registrationToClosure.length > 0 && (
@@ -2875,7 +2866,7 @@ export default function AddTransactionModal({
                           }
                         }}
                         className="p-1 hover:bg-orange-200 rounded-full transition-colors"
-                        title="İçeriği temizle"
+                        title={t("transactions.form.clearContent")}
                       >
                         <span className="material-symbols-outlined text-orange-700 dark:text-orange-300 text-lg">
                           close
@@ -2905,7 +2896,7 @@ export default function AddTransactionModal({
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                         : 'border-orange-300 dark:border-orange-700 focus:ring-orange-500 focus:border-orange-500'
                     } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                    placeholder="Lütfen tescil ve kapanma tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
+                    placeholder={t("transactions.delay.registrationToClosurePlaceholder")}
                   />
                   {/* Error Message */}
                   {fieldErrors.registrationToClosure && (
@@ -2928,7 +2919,7 @@ export default function AddTransactionModal({
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-red-600 dark:text-red-400">warning</span>
                       <p className="text-text-main text-sm font-bold">
-                        Kapanma → Çekilme Gecikme Nedeni * (4 günden fazla)
+                        {t("transactions.delay.closureToWithdrawal")} * {t("transactions.delay.overFourDays")}
                       </p>
                     </div>
                     {formData.delayReasons.closureToWithdrawal.length > 0 && (
@@ -2952,7 +2943,7 @@ export default function AddTransactionModal({
                           }
                         }}
                         className="p-1 hover:bg-red-200 rounded-full transition-colors"
-                        title="İçeriği temizle"
+                        title={t("transactions.form.clearContent")}
                       >
                         <span className="material-symbols-outlined text-red-700 dark:text-red-300 text-lg">
                           close
@@ -2982,7 +2973,7 @@ export default function AddTransactionModal({
                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                         : 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500'
                     } bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors`}
-                    placeholder="Lütfen kapanma ve çekilme tarihi arasındaki gecikme nedenini açıklayın (minimum 10 karakter)"
+                    placeholder={t("transactions.delay.closureToWithdrawalPlaceholder")}
                   />
                   {/* Error Message */}
                   {fieldErrors.closureToWithdrawal && (

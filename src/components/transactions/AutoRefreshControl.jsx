@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { t } from '../../locales';
 
 export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, isFilterOpen, onOpen, isScrolled = false }) {
   // ===== STATE MANAGEMENT =====
@@ -147,13 +148,11 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Az önce';
-    if (diffMins === 1) return '1 dakika önce';
-    if (diffMins < 60) return `${diffMins} dakika önce`;
-    if (diffHours === 1) return '1 saat önce';
-    if (diffHours < 24) return `${diffHours} saat önce`;
-    if (diffDays === 1) return '1 gün önce';
-    return `${diffDays} gün önce`;
+    if (diffMins < 1) return t('transactions.autoRefresh.justNow');
+    if (diffMins < 60) return t('notifications.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('notifications.hoursAgo', { count: diffHours });
+    if (diffDays === 1) return t('transactions.autoRefresh.oneDayAgo');
+    return t('notifications.daysAgo', { count: diffDays });
   };
 
   // ===== EVENT HANDLERS =====
@@ -204,12 +203,12 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
         className={`flex items-center justify-center bg-white dark:bg-background-dark border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold relative transition-all duration-300 ${
           isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
         }`}
-        title="Otomatik Yenileme"
+        title={t('transactions.autoRefresh.title')}
       >
         <span className={`material-symbols-outlined text-primary text-[20px] transition-transform ${(loading || isRefreshing) ? 'animate-spin' : ''}`}>
           refresh
         </span>
-        {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">Oto-Yenileme</span>}
+        {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">{t('transactions.autoRefresh.short')}</span>}
         {isEnabled && (
           <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
         )}
@@ -227,17 +226,17 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">schedule</span>
-                  <h3 className="text-sm font-semibold text-text-main">Otomatik Yenileme</h3>
+                  <h3 className="text-sm font-semibold text-text-main">{t('transactions.autoRefresh.title')}</h3>
                   {isEnabled && (
                     <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
-                      Aktif
+                      {t('transactions.common.active')}
                     </span>
                   )}
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  title="Kapat"
+                  title={t('common.close')}
                 >
                   <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-xl">close</span>
                 </button>
@@ -253,7 +252,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                     {isEnabled ? 'toggle_on' : 'toggle_off'}
                   </span>
                   <span className="text-sm font-medium text-text-main">
-                    Otomatik yenileme
+                    {t('transactions.autoRefresh.toggle')}
                   </span>
                 </div>
                 <button
@@ -271,16 +270,16 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               {/* Interval Selection */}
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-2">
-                  Yenileme Aralığı
+                  {t('transactions.autoRefresh.interval')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 60000, label: '1 dakika' },
-                    { value: 300000, label: '5 dakika' },
-                    { value: 900000, label: '15 dakika' },
-                    { value: 1800000, label: '30 dakika' },
-                    { value: 3600000, label: '1 saat' },
-                    { value: 7200000, label: '2 saat' }
+                    { value: 60000, label: t('transactions.autoRefresh.minutes', { count: 1 }) },
+                    { value: 300000, label: t('transactions.autoRefresh.minutes', { count: 5 }) },
+                    { value: 900000, label: t('transactions.autoRefresh.minutes', { count: 15 }) },
+                    { value: 1800000, label: t('transactions.autoRefresh.minutes', { count: 30 }) },
+                    { value: 3600000, label: t('dashboard.courier.hours', { count: 1 }) },
+                    { value: 7200000, label: t('dashboard.courier.hours', { count: 2 }) }
                   ].map(option => (
                     <button
                       key={option.value}
@@ -302,7 +301,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               {/* Last Refresh Info */}
               <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <span className="material-symbols-outlined text-base">history</span>
-                <span>Son yenileme: {formatLastRefresh(lastRefreshTime)}</span>
+                <span>{t('transactions.autoRefresh.lastRefresh', { time: formatLastRefresh(lastRefreshTime) })}</span>
               </div>
 
               {/* Manual Refresh Button */}
@@ -317,7 +316,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                 >
                   refresh
                 </span>
-                <span>Şimdi Yenile</span>
+                <span>{t('transactions.autoRefresh.refreshNow')}</span>
               </button>
 
               {/* Smart Pause Indicator */}
@@ -325,7 +324,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                 <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg transition-colors">
                   <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">pause_circle</span>
                   <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                    Modal açıkken otomatik yenileme duraklatıldı
+                    {t('transactions.autoRefresh.paused')}
                   </span>
                 </div>
               )}
@@ -336,7 +335,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
               >
                 <span className="material-symbols-outlined text-base">close</span>
-                <span>Kapat</span>
+                <span>{t('common.close')}</span>
               </button>
             </div>
           </div>
@@ -350,17 +349,17 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">schedule</span>
-                <h3 className="text-sm font-semibold text-text-main">Otomatik Yenileme</h3>
+                <h3 className="text-sm font-semibold text-text-main">{t('transactions.autoRefresh.title')}</h3>
                 {isEnabled && (
                   <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
-                    Aktif
+                    {t('transactions.common.active')}
                   </span>
                 )}
               </div>
               <button
                 onClick={() => setIsOpen(false)}
                 className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title="Kapat"
+                title={t('common.close')}
               >
                 <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-xl">close</span>
               </button>
@@ -376,7 +375,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
                   {isEnabled ? 'toggle_on' : 'toggle_off'}
                 </span>
                 <span className="text-sm font-medium text-text-main">
-                  Otomatik yenileme
+                  {t('transactions.autoRefresh.toggle')}
                 </span>
               </div>
               <button
@@ -394,16 +393,16 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             {/* Interval Selection */}
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-2">
-                Yenileme Aralığı
+                {t('transactions.autoRefresh.interval')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: 60000, label: '1 dakika' },
-                  { value: 300000, label: '5 dakika' },
-                  { value: 900000, label: '15 dakika' },
-                  { value: 1800000, label: '30 dakika' },
-                  { value: 3600000, label: '1 saat' },
-                  { value: 7200000, label: '2 saat' }
+                  { value: 60000, label: t('transactions.autoRefresh.minutes', { count: 1 }) },
+                  { value: 300000, label: t('transactions.autoRefresh.minutes', { count: 5 }) },
+                  { value: 900000, label: t('transactions.autoRefresh.minutes', { count: 15 }) },
+                  { value: 1800000, label: t('transactions.autoRefresh.minutes', { count: 30 }) },
+                  { value: 3600000, label: t('dashboard.courier.hours', { count: 1 }) },
+                  { value: 7200000, label: t('dashboard.courier.hours', { count: 2 }) }
                 ].map(option => (
                   <button
                     key={option.value}
@@ -425,7 +424,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
             {/* Last Refresh Info */}
             <div className="flex items-center gap-2 text-xs text-text-secondary">
               <span className="material-symbols-outlined text-base">history</span>
-              <span>Son yenileme: {formatLastRefresh(lastRefreshTime)}</span>
+              <span>{t('transactions.autoRefresh.lastRefresh', { time: formatLastRefresh(lastRefreshTime) })}</span>
             </div>
 
             {/* Manual Refresh Button */}
@@ -440,7 +439,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               >
                 refresh
               </span>
-              <span>Şimdi Yenile</span>
+              <span>{t('transactions.autoRefresh.refreshNow')}</span>
             </button>
 
             {/* Smart Pause Indicator */}
@@ -448,7 +447,7 @@ export default function AutoRefreshControl({ onRefresh, loading, isModalOpen, is
               <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg transition-colors">
                 <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">pause_circle</span>
                 <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                  Modal açıkken otomatik yenileme duraklatıldı
+                  {t('transactions.autoRefresh.paused')}
                 </span>
               </div>
             )}

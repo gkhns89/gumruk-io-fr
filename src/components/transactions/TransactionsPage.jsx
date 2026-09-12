@@ -10,16 +10,17 @@ import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import AutoRefreshControl from "./AutoRefreshControl";
+import { t } from "../../locales";
 
 // Kapanmış (Çekildi/İptal) işlemler için ilk yükleme penceresi. Açık işlemler
 // her zaman gelir; kapanmışlardan yalnızca seçilen dönem içindekiler çekilir,
 // böylece binlerce geçmiş kaydı olan brokerlarda sayfa hızlı açılır.
 // 0 = pencere yok (tüm geçmiş).
 const CLOSED_WINDOW_OPTIONS = [
-  { value: 15, label: "Son 15 gün" },
-  { value: 30, label: "Son 30 gün" },
-  { value: 90, label: "Son 90 gün" },
-  { value: 0, label: "Tümü" },
+  { value: 15, get label() { return t("transactions.page.lastDays", { days: 15 }); } },
+  { value: 30, get label() { return t("transactions.page.lastDays", { days: 30 }); } },
+  { value: 90, get label() { return t("transactions.page.lastDays", { days: 90 }); } },
+  { value: 0, get label() { return t("transactions.page.allTime"); } },
 ];
 const CLOSED_WINDOW_DEFAULT = 30;
 const CLOSED_WINDOW_STORAGE_KEY = "transactionsClosedWindowDays";
@@ -131,7 +132,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     const editId = searchParams.get('edit');
     if (editId && transactions.length > 0) {
-      const transaction = transactions.find(t => t.id === parseInt(editId));
+      const transaction = transactions.find(tx => tx.id === parseInt(editId));
       if (transaction) {
         setSelectedTransaction(transaction);
         setShowEditModal(true);
@@ -173,7 +174,7 @@ export default function TransactionsPage() {
         handleApiResponse(result, null, setError, 'loading transactions');
       }
     } catch (err) {
-      handleError(err, setError, 'loading transactions', 'Veriler yüklenirken bir hata oluştu.');
+      handleError(err, setError, 'loading transactions', t("transactions.page.loadError"));
     } finally {
       setLoading(false);
     }
@@ -189,109 +190,109 @@ export default function TransactionsPage() {
     let result = [...transactions];
 
     if (filters.status) {
-      result = result.filter(t => t.status === filters.status);
+      result = result.filter(tx => tx.status === filters.status);
     }
 
     // Gecikme filtresi: TG (tescil→kapanma) / GG (genel) / ANY (herhangi)
     if (filters.delay === "TG") {
-      result = result.filter(t => t.systemDelayFlags?.includes("TG"));
+      result = result.filter(tx => tx.systemDelayFlags?.includes("TG"));
     } else if (filters.delay === "GG") {
-      result = result.filter(t => t.systemDelayFlags?.includes("GG"));
+      result = result.filter(tx => tx.systemDelayFlags?.includes("GG"));
     } else if (filters.delay === "ANY") {
-      result = result.filter(t => !!t.systemDelayFlags);
+      result = result.filter(tx => !!tx.systemDelayFlags);
     }
 
     if (filters.clientSearch) {
       const searchLower = filters.clientSearch.toLowerCase();
-      result = result.filter(t =>
-        t.clientCompany?.name?.toLowerCase().includes(searchLower)
+      result = result.filter(tx =>
+        tx.clientCompany?.name?.toLowerCase().includes(searchLower)
       );
     }
 
     if (filters.customsOffice) {
       const customsLower = filters.customsOffice.toLowerCase();
-      result = result.filter(t =>
-        t.customs?.customsShortName?.toLowerCase().includes(customsLower)
+      result = result.filter(tx =>
+        tx.customs?.customsShortName?.toLowerCase().includes(customsLower)
       );
     }
 
     if (filters.warehouse) {
       const warehouseLower = filters.warehouse.toLowerCase();
-      result = result.filter(t =>
-        t.customsWarehouse?.toLowerCase().includes(warehouseLower)
+      result = result.filter(tx =>
+        tx.customsWarehouse?.toLowerCase().includes(warehouseLower)
       );
     }
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      result = result.filter(t =>
-        t.fileNo?.toLowerCase().includes(searchLower) ||
-        t.declarationNumber?.toLowerCase().includes(searchLower) ||
-        t.recipientName?.toLowerCase().includes(searchLower) ||
-        t.senderName?.toLowerCase().includes(searchLower) ||
+      result = result.filter(tx =>
+        tx.fileNo?.toLowerCase().includes(searchLower) ||
+        tx.declarationNumber?.toLowerCase().includes(searchLower) ||
+        tx.recipientName?.toLowerCase().includes(searchLower) ||
+        tx.senderName?.toLowerCase().includes(searchLower) ||
         // Antrepodan aktarılan kayıtlar kaynak beyanname/dosya no ile de bulunsun
-        t.warehouseDeclarationNo?.toLowerCase().includes(searchLower) ||
-        t.warehouseFileNo?.toLowerCase().includes(searchLower)
+        tx.warehouseDeclarationNo?.toLowerCase().includes(searchLower) ||
+        tx.warehouseFileNo?.toLowerCase().includes(searchLower)
       );
     }
 
     // Antrepo varış tarihi filtreleri
     if (filters.dateFrom) {
-      result = result.filter(t => {
-        if (!t.warehouseArrivalDate) return false;
-        return new Date(t.warehouseArrivalDate) >= new Date(filters.dateFrom);
+      result = result.filter(tx => {
+        if (!tx.warehouseArrivalDate) return false;
+        return new Date(tx.warehouseArrivalDate) >= new Date(filters.dateFrom);
       });
     }
 
     if (filters.dateTo) {
-      result = result.filter(t => {
-        if (!t.warehouseArrivalDate) return false;
-        return new Date(t.warehouseArrivalDate) <= new Date(filters.dateTo);
+      result = result.filter(tx => {
+        if (!tx.warehouseArrivalDate) return false;
+        return new Date(tx.warehouseArrivalDate) <= new Date(filters.dateTo);
       });
     }
 
     // Tescil tarihi filtreleri
     if (filters.registrationDateFrom) {
-      result = result.filter(t => {
-        if (!t.registrationDate) return false;
-        return new Date(t.registrationDate) >= new Date(filters.registrationDateFrom);
+      result = result.filter(tx => {
+        if (!tx.registrationDate) return false;
+        return new Date(tx.registrationDate) >= new Date(filters.registrationDateFrom);
       });
     }
 
     if (filters.registrationDateTo) {
-      result = result.filter(t => {
-        if (!t.registrationDate) return false;
-        return new Date(t.registrationDate) <= new Date(filters.registrationDateTo);
+      result = result.filter(tx => {
+        if (!tx.registrationDate) return false;
+        return new Date(tx.registrationDate) <= new Date(filters.registrationDateTo);
       });
     }
 
     // Kapanma tarihi filtreleri
     if (filters.closureDateFrom) {
-      result = result.filter(t => {
-        if (!t.lineClosureDate) return false;
-        return new Date(t.lineClosureDate) >= new Date(filters.closureDateFrom);
+      result = result.filter(tx => {
+        if (!tx.lineClosureDate) return false;
+        return new Date(tx.lineClosureDate) >= new Date(filters.closureDateFrom);
       });
     }
 
     if (filters.closureDateTo) {
-      result = result.filter(t => {
-        if (!t.lineClosureDate) return false;
-        return new Date(t.lineClosureDate) <= new Date(filters.closureDateTo);
+      result = result.filter(tx => {
+        if (!tx.lineClosureDate) return false;
+        return new Date(tx.lineClosureDate) <= new Date(filters.closureDateTo);
       });
     }
 
     // Çekilme tarihi filtreleri
     if (filters.withdrawalDateFrom) {
-      result = result.filter(t => {
-        if (!t.withdrawalDate) return false;
-        return new Date(t.withdrawalDate) >= new Date(filters.withdrawalDateFrom);
+      result = result.filter(tx => {
+        if (!tx.withdrawalDate) return false;
+        return new Date(tx.withdrawalDate) >= new Date(filters.withdrawalDateFrom);
       });
     }
 
     if (filters.withdrawalDateTo) {
-      result = result.filter(t => {
-        if (!t.withdrawalDate) return false;
-        return new Date(t.withdrawalDate) <= new Date(filters.withdrawalDateTo);
+      result = result.filter(tx => {
+        if (!tx.withdrawalDate) return false;
+        return new Date(tx.withdrawalDate) <= new Date(filters.withdrawalDateTo);
       });
     }
 
@@ -504,11 +505,11 @@ export default function TransactionsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
               <h1 className={`font-bold text-text-main transition-all duration-300 ${isScrolled ? "text-base md:text-lg" : "text-2xl md:text-3xl"}`}>
-                İşlem Takip
+                {t("nav.transactionTracking")}
               </h1>
               <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
                 <p className="text-text-secondary text-sm mt-1 overflow-hidden">
-                  {isClientUser ? "Gümrük işlemlerinizi görüntüleyin" : "Gümrük işlemlerinizi yönetin"}
+                  {isClientUser ? t("transactions.page.subtitleView") : t("transactions.page.subtitleManage")}
                 </p>
               </div>
             </div>
@@ -520,11 +521,11 @@ export default function TransactionsPage() {
               {!isScrolled && (
                 <div
                   className="hidden lg:flex items-center gap-2 pl-3 pr-2 py-[7px] bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg"
-                  title="Çekilen ve iptal edilen işlemlerden yalnızca bu dönem içindekiler yüklenir. Açık işlemler her zaman listelenir."
+                  title={t("transactions.page.closedWindowHint")}
                 >
                   <span className="material-symbols-outlined text-primary text-[20px]">history</span>
                   <span className="text-sm font-medium text-text-main dark:text-gray-300 whitespace-nowrap">
-                    Çekilen/İptal
+                    {t("transactions.page.closedShort")}
                   </span>
                   <select
                     value={closedWindowDays}
@@ -547,10 +548,10 @@ export default function TransactionsPage() {
                 className={`flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${
                   isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
                 }`}
-                title="Filtreler"
+                title={t("transactions.page.filters")}
               >
                 <span className="material-symbols-outlined text-primary text-[20px]">tune</span>
-                {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">Filtreler</span>}
+                {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">{t("transactions.page.filters")}</span>}
                 {hasActiveFilters && (
                   <span className={`bg-primary text-white font-medium transition-all duration-300 ${
                     isScrolled
@@ -579,10 +580,10 @@ export default function TransactionsPage() {
                   className={`flex items-center justify-center bg-primary text-white rounded-lg font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isCreateBlocked ? '' : 'hover:bg-primary/90'
                   } ${isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"}`}
-                  title={isCreateBlocked ? "Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor" : "Yeni İşlem Ekle"}
+                  title={isCreateBlocked ? t("payment.restrictionWarning") : t("transaction.addNew")}
                 >
                   <span className="material-symbols-outlined text-[20px]">{isCreateBlocked ? 'lock' : 'add'}</span>
-                  {!isScrolled && <span className="whitespace-nowrap text-sm hidden md:inline">Yeni İşlem</span>}
+                  {!isScrolled && <span className="whitespace-nowrap text-sm hidden md:inline">{t("transactions.page.newTransaction")}</span>}
                 </button>
               )}
             </div>
@@ -595,7 +596,7 @@ export default function TransactionsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">filter_alt</span>
-                    <h3 className="text-sm font-semibold text-text-main">Filtreler</h3>
+                    <h3 className="text-sm font-semibold text-text-main">{t("transactions.page.filters")}</h3>
                     {hasActiveFilters && (
                       <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">
                         {getActiveFiltersCount()}
@@ -609,7 +610,7 @@ export default function TransactionsPage() {
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800"
                     >
                       <span className="material-symbols-outlined text-sm">close</span>
-                      Filtreleri Temizle
+                      {t("transactions.filters.clear")}
                     </button>
                   )}
                 </div>
@@ -619,7 +620,7 @@ export default function TransactionsPage() {
                 {/* Search Input - Full width */}
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                    Genel Arama
+                    {t("transactions.filters.generalSearch")}
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -627,7 +628,7 @@ export default function TransactionsPage() {
                     </span>
                     <input
                       type="text"
-                      placeholder="Dosya No, Beyanname No, Alıcı/Gönderici..."
+                      placeholder={t("transactions.filters.searchPlaceholder")}
                       value={filters.search}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary dark:bg-gray-800 dark:text-gray-100 text-sm bg-white transition-all"
@@ -648,7 +649,7 @@ export default function TransactionsPage() {
                   {/* Status Filter */}
                   <div>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                      Durum
+                      {t("dashboard.recent.columns.status")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -665,13 +666,13 @@ export default function TransactionsPage() {
                         }}
                         className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
                       >
-                        <option value="">Tüm Durumlar</option>
-                        <option value="PENDING">Bekliyor</option>
-                        <option value="REGISTERED">Tescil Edildi</option>
-                        <option value="INSPECTION">Muayene Sürecinde</option>
-                        <option value="CP_COMPLETED">Gümrük İşlemleri Tamamlandı</option>
-                        <option value="WITHDRAWN">Çekildi</option>
-                        <option value="CANCELLED">İptal</option>
+                        <option value="">{t("transactions.filters.allStatuses")}</option>
+                        <option value="PENDING">{t("transactions.filters.statusPending")}</option>
+                        <option value="REGISTERED">{t("transactions.filters.statusRegistered")}</option>
+                        <option value="INSPECTION">{t("status.inspection")}</option>
+                        <option value="CP_COMPLETED">{t("transactions.filters.statusCompleted")}</option>
+                        <option value="WITHDRAWN">{t("status.withdrawn")}</option>
+                        <option value="CANCELLED">{t("transactions.filters.statusCancelled")}</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
                         expand_more
@@ -679,7 +680,7 @@ export default function TransactionsPage() {
                     </div>
                     {isClosedWindowed && (filters.status === 'WITHDRAWN' || filters.status === 'CANCELLED') && (
                       <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
-                        Son {closedWindowDays} gün yüklü — daha eskisi için Çekilen/İptal seçimini “Tümü” yapın.
+                        {t("transactions.filters.closedStatusHint", { days: closedWindowDays })}
                       </p>
                     )}
                   </div>
@@ -687,7 +688,7 @@ export default function TransactionsPage() {
                   {/* Delay Filter */}
                   <div>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                      Gecikme
+                      {t("transactions.filters.delay")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -704,10 +705,10 @@ export default function TransactionsPage() {
                         }}
                         className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
                       >
-                        <option value="">Tüm Kayıtlar</option>
-                        <option value="ANY">Tüm Gecikmeler</option>
-                        <option value="TG">İthalat Gecikmesi (TG)</option>
-                        <option value="GG">Genel Gecikme (GG)</option>
+                        <option value="">{t("transactions.filters.allRecords")}</option>
+                        <option value="ANY">{t("transactions.filters.allDelays")}</option>
+                        <option value="TG">{t("transactions.filters.importDelay")}</option>
+                        <option value="GG">{t("transactions.filters.generalDelay")}</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
                         expand_more
@@ -718,7 +719,7 @@ export default function TransactionsPage() {
                   {/* Customs Filter */}
                   <div>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                      Gümrük
+                      {t("transaction.customsName")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -726,7 +727,7 @@ export default function TransactionsPage() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Gümrük ara..."
+                        placeholder={t("transactions.filters.searchCustoms")}
                         value={filters.customsOffice}
                         onChange={(e) => handleFilterChange('customsOffice', e.target.value)}
                         className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
@@ -745,7 +746,7 @@ export default function TransactionsPage() {
                   {/* Warehouse Filter */}
                   <div>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                      Antrepo
+                      {t("transaction.customsWarehouse")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -753,7 +754,7 @@ export default function TransactionsPage() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Antrepo ara..."
+                        placeholder={t("transactions.filters.searchWarehouse")}
                         value={filters.warehouse}
                         onChange={(e) => handleFilterChange('warehouse', e.target.value)}
                         className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
@@ -773,7 +774,7 @@ export default function TransactionsPage() {
                   {!isClientUser && (
                     <div>
                       <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                        Müşteri
+                        {t("transactions.common.client")}
                       </label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -781,7 +782,7 @@ export default function TransactionsPage() {
                         </span>
                         <input
                           type="text"
-                          placeholder="Müşteri ara..."
+                          placeholder={t("transactions.filters.searchClient")}
                           value={filters.clientSearch}
                           onChange={(e) => handleFilterChange('clientSearch', e.target.value)}
                           className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
@@ -803,7 +804,7 @@ export default function TransactionsPage() {
                     gizli olduğu için burada gösterilir. */}
                 <div className="pt-3 border-t border-gray-100 dark:border-gray-700 lg:hidden">
                   <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                    Çekilen / İptal edilen işlemler
+                    {t("transactions.filters.closedTransactions")}
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">
@@ -831,7 +832,7 @@ export default function TransactionsPage() {
                     </span>
                   </div>
                   <p className="mt-1.5 text-xs text-text-secondary">
-                    Açık işlemler her zaman listelenir; kapanmışlardan yalnızca seçilen dönem yüklenir.
+                    {t("transactions.filters.closedWindowNote")}
                   </p>
                 </div>
 
@@ -843,11 +844,11 @@ export default function TransactionsPage() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
-                      <h4 className="text-xs font-semibold text-text-main">Tarih Filtreleri</h4>
+                      <h4 className="text-xs font-semibold text-text-main">{t("transactions.filters.dateFilters")}</h4>
                       {(filters.dateFrom || filters.dateTo || filters.registrationDateFrom || filters.registrationDateTo ||
                         filters.closureDateFrom || filters.closureDateTo || filters.withdrawalDateFrom || filters.withdrawalDateTo) && (
                         <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
-                          Aktif
+                          {t("transactions.common.active")}
                         </span>
                       )}
                     </div>
@@ -860,8 +861,8 @@ export default function TransactionsPage() {
                     <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                       <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">info</span>
                       <p className="text-xs text-amber-800 dark:text-amber-300">
-                        Seçtiğiniz tarih aralığı, yüklenen çekilen/iptal işlem penceresinden (son {closedWindowDays} gün) daha eskiye gidiyor.
-                        Bu kayıtları görmek için üstteki <strong>Çekilen/İptal</strong> seçimini <strong>Tümü</strong> yapın.
+                        {t("transactions.filters.dateRangeBeyondWindow", { days: closedWindowDays })}{" "}
+                        {t("transactions.filters.seeOlderBefore")} <strong>{t("transactions.page.closedShort")}</strong> {t("transactions.filters.seeOlderMiddle")} <strong>{t("transactions.page.allTime")}</strong>{t("transactions.filters.seeOlderAfter")}
                       </p>
                     </div>
                   )}
@@ -874,11 +875,11 @@ export default function TransactionsPage() {
                       <div className="flex items-center justify-center h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg transition-colors">
                         <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">warehouse</span>
                       </div>
-                      <h3 className="text-sm font-semibold text-text-main">Antrepo Varış Tarihi</h3>
+                      <h3 className="text-sm font-semibold text-text-main">{t("transaction.warehouseArrivalDate")}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                         <input
                           type="date"
                           value={filters.dateFrom}
@@ -887,7 +888,7 @@ export default function TransactionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                         <input
                           type="date"
                           value={filters.dateTo}
@@ -904,11 +905,11 @@ export default function TransactionsPage() {
                       <div className="flex items-center justify-center h-8 w-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg transition-colors">
                         <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">assignment</span>
                       </div>
-                      <h3 className="text-sm font-semibold text-text-main">Tescil Tarihi</h3>
+                      <h3 className="text-sm font-semibold text-text-main">{t("transaction.registrationDate")}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                         <input
                           type="date"
                           value={filters.registrationDateFrom}
@@ -917,7 +918,7 @@ export default function TransactionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                         <input
                           type="date"
                           value={filters.registrationDateTo}
@@ -934,11 +935,11 @@ export default function TransactionsPage() {
                       <div className="flex items-center justify-center h-8 w-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg transition-colors">
                         <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-base">lock</span>
                       </div>
-                      <h3 className="text-sm font-semibold text-text-main">Hat Kapanma Tarihi</h3>
+                      <h3 className="text-sm font-semibold text-text-main">{t("transactions.common.lineClosureDateLong")}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                         <input
                           type="date"
                           value={filters.closureDateFrom}
@@ -947,7 +948,7 @@ export default function TransactionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                         <input
                           type="date"
                           value={filters.closureDateTo}
@@ -964,11 +965,11 @@ export default function TransactionsPage() {
                       <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg transition-colors">
                         <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-base">check_circle</span>
                       </div>
-                      <h3 className="text-sm font-semibold text-text-main">Çekilme Tarihi</h3>
+                      <h3 className="text-sm font-semibold text-text-main">{t("transaction.withdrawalDate")}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                         <input
                           type="date"
                           value={filters.withdrawalDateFrom}
@@ -977,7 +978,7 @@ export default function TransactionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                        <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                         <input
                           type="date"
                           value={filters.withdrawalDateTo}
@@ -1056,7 +1057,7 @@ export default function TransactionsPage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
                   <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">inventory</span>
                   <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                    Toplam: <strong className="font-bold">{transactions.length}</strong>
+                    {t("transactions.common.total")}: <strong className="font-bold">{transactions.length}</strong>
                   </span>
                 </div>
 
@@ -1065,11 +1066,11 @@ export default function TransactionsPage() {
                 {isClosedWindowed && (
                   <div
                     className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
-                    title="Çekilen ve iptal edilen işlemlerden yalnızca bu dönem yüklendi. Açık işlemlerin tamamı listede."
+                    title={t("transactions.page.closedWindowLoadedHint")}
                   >
                     <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base">history</span>
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Çekilen/İptal: <strong className="font-bold">son {closedWindowDays} gün</strong>
+                      {t("transactions.page.closedShort")}: <strong className="font-bold">{t("transactions.page.lastDaysLower", { days: closedWindowDays })}</strong>
                     </span>
                   </div>
                 )}
@@ -1078,7 +1079,7 @@ export default function TransactionsPage() {
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">
                     <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base">filter_alt</span>
                     <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                      Filtrelenmiş: <strong className="font-bold">{filteredTransactions.length}</strong>
+                      {t("transactions.page.filtered")} <strong className="font-bold">{filteredTransactions.length}</strong>
                     </span>
                   </div>
                 )}
@@ -1086,7 +1087,7 @@ export default function TransactionsPage() {
                 {isClientUser && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 transition-colors">
                     <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">visibility</span>
-                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Görüntüleme</span>
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">{t("transactions.page.viewOnly")}</span>
                   </div>
                 )}
               </div>
@@ -1095,7 +1096,7 @@ export default function TransactionsPage() {
               <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors">
                 <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">description</span>
                 <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                  Gösterilen: <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTransactions.length)}</strong> / <strong className="font-bold">{filteredTransactions.length}</strong>
+                  {t("transactions.page.shown")} <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredTransactions.length)}</strong> / <strong className="font-bold">{filteredTransactions.length}</strong>
                 </span>
               </div>
 
@@ -1107,7 +1108,7 @@ export default function TransactionsPage() {
                   className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
                   <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_left</span>
-                  <span className="hidden xl:inline">Önceki</span>
+                  <span className="hidden xl:inline">{t("transactions.page.previous")}</span>
                 </button>
 
                 {totalPages > 1 ? (
@@ -1136,7 +1137,7 @@ export default function TransactionsPage() {
                   disabled={currentPage === totalPages || totalPages <= 1}
                   className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
-                  <span className="hidden xl:inline">Sonraki</span>
+                  <span className="hidden xl:inline">{t("transactions.page.next")}</span>
                   <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_right</span>
                 </button>
               </div>
@@ -1146,7 +1147,7 @@ export default function TransactionsPage() {
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                 <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-base">inventory</span>
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {loading ? "Yükleniyor..." : "Veri yok"}
+                  {loading ? t("common.loading") : t("transactions.page.noData")}
                 </span>
               </div>
             </div>

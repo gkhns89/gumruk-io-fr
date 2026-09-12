@@ -3,6 +3,7 @@ import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { warehouseOriginLabel } from "../../utils/warehouseOrigin";
+import { t, getCurrentLocale } from "../../locales";
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -35,16 +36,16 @@ const getStatusRowBgClass = (status) => {
 // Vergi ve teminat tek sütunda gösteriliyor — dolu olanların dökümü
 const getAmountBreakdown = (transaction) => {
   const rows = [
-    { type: "Vergi", amount: transaction.tax },
-    { type: "Teminat", amount: transaction.guaranteeAmount },
+    { type: "tax", label: t("transactions.table.tax"), amount: transaction.tax },
+    { type: "guarantee", label: t("transactions.table.guarantee"), amount: transaction.guaranteeAmount },
   ];
   return rows
     .filter(({ amount }) => amount)
-    .map(({ type, amount }) => ({ type, amount: Number(amount) }));
+    .map(({ type, label, amount }) => ({ type, label, amount: Number(amount) }));
 };
 
 const formatAmount = (amount) =>
-  amount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  amount.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
 export default function TransactionsFullTable({
   transactions,
@@ -75,12 +76,12 @@ export default function TransactionsFullTable({
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      PENDING:      { color: "pending",    label: "BEKLİYOR"         },
-      REGISTERED:   { color: "registered", label: "TESCİL EDİLDİ"    },
-      INSPECTION:   { color: "inspection", label: "MUAYENEDE"         },
-      CP_COMPLETED: { color: "completed",  label: "TAMAMLANDI"        },
-      WITHDRAWN:    { color: "withdrawn",  label: "ÇEKİLDİ"           },
-      CANCELLED:    { color: "cancelled",  label: "İPTAL"             },
+      PENDING:      { color: "pending",    label: t("dashboard.recent.transactionStatus.PENDING")         },
+      REGISTERED:   { color: "registered", label: t("dashboard.recent.transactionStatus.REGISTERED")    },
+      INSPECTION:   { color: "inspection", label: t("dashboard.recent.transactionStatus.INSPECTION")         },
+      CP_COMPLETED: { color: "completed",  label: t("dashboard.recent.transactionStatus.CP_COMPLETED")        },
+      WITHDRAWN:    { color: "withdrawn",  label: t("dashboard.recent.transactionStatus.WITHDRAWN")           },
+      CANCELLED:    { color: "cancelled",  label: t("dashboard.recent.transactionStatus.CANCELLED")             },
     };
     const statusInfo = statusMap[status] || { color: "default", label: status };
     const colors = {
@@ -97,11 +98,11 @@ export default function TransactionsFullTable({
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("tr-TR");
+    return new Date(dateString).toLocaleDateString(getCurrentLocale());
   };
 
-  const handleEdit   = (t) => { setSelectedTransaction(t); setShowEditModal(true); };
-  const handleDelete = (t) => { setSelectedTransaction(t); setShowDeleteModal(true); };
+  const handleEdit   = (row) => { setSelectedTransaction(row); setShowEditModal(true); };
+  const handleDelete = (row) => { setSelectedTransaction(row); setShowDeleteModal(true); };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
@@ -128,7 +129,7 @@ export default function TransactionsFullTable({
     return (
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-text-secondary">İşlemler yükleniyor...</p>
+        <p className="text-text-secondary">{t("dashboard.recent.transactionsLoading")}</p>
       </div>
     );
   }
@@ -139,7 +140,7 @@ export default function TransactionsFullTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-red-500">error</span>
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
+          <p className="text-red-600 font-semibold mb-2">{t("dashboard.recent.errorTitle")}</p>
           <p className="text-text-secondary text-sm mb-4">{error}</p>
           {onRetry && (
             <button
@@ -148,7 +149,7 @@ export default function TransactionsFullTable({
             >
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg">refresh</span>
-                Tekrar Dene
+                {t("dashboard.recent.retry")}
               </span>
             </button>
           )}
@@ -163,9 +164,9 @@ export default function TransactionsFullTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-text-secondary">inbox</span>
         <div className="text-center">
-          <p className="text-text-main font-semibold mb-2">İşlem Bulunamadı</p>
+          <p className="text-text-main font-semibold mb-2">{t("transactions.table.emptyTitle")}</p>
           <p className="text-text-secondary text-sm">
-            Filtreleri değiştirerek tekrar deneyin veya yeni işlem ekleyin.
+            {t("transactions.table.emptyHint")}
           </p>
         </div>
       </div>
@@ -208,25 +209,25 @@ export default function TransactionsFullTable({
           <table className="w-full text-left min-w-max border-spacing-0 border-separate">
             <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-20">
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Dosya No</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Beyanname No</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Alıcı</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Gönderici</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Antrepo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Gümrük</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Hat</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kap</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kilo (Kg)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Vergi / Teminat</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Durum</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Antrepo Varış</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Tescil Tarihi</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Kapanma Tarihi</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Çekilme Tarihi</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">İşlem Süresi (Gün)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Toplam Süre (Gün)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">İşlemler</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Broker Firma</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.fileNo")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.declarationNumber")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.recipient")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.sender")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.customsWarehouse")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.customsName")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.gate")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.containerAmount")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.weight")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.taxGuarantee")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("dashboard.recent.columns.status")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.warehouseArrival")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.registrationDate")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.lineClosureDate")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.withdrawalDate")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.processingDays")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.totalDays")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider text-right whitespace-nowrap">{t("transactions.table.columns.actions")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.brokerCompany")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -285,7 +286,7 @@ export default function TransactionsFullTable({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-right">
                       {transaction.weight
-                        ? transaction.weight.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        ? transaction.weight.toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -297,7 +298,7 @@ export default function TransactionsFullTable({
                           <div className="space-y-0.5">
                             {breakdown.map((item) => (
                               <div key={item.type} className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-400 dark:text-gray-500 w-[52px] shrink-0">{item.type}</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500 w-[52px] shrink-0">{item.label}</span>
                                 <span className="text-xs font-semibold text-text-main dark:text-gray-300 tabular-nums">
                                   {formatAmount(item.amount)}
                                 </span>
@@ -306,7 +307,7 @@ export default function TransactionsFullTable({
                             ))}
                             {breakdown.length > 1 && (
                               <div className="pt-1 mt-1 border-t border-gray-200 dark:border-gray-700 flex items-center gap-1.5">
-                                <span className="text-xs text-primary dark:text-primary-light w-[52px] shrink-0 font-medium">Toplam</span>
+                                <span className="text-xs text-primary dark:text-primary-light w-[52px] shrink-0 font-medium">{t("transactions.common.total")}</span>
                                 <span className="text-xs font-bold text-primary dark:text-primary-light tabular-nums">
                                   {formatAmount(total)}
                                 </span>
@@ -345,7 +346,7 @@ export default function TransactionsFullTable({
                         <button
                           onClick={(e) => { e.stopPropagation(); handleEdit(transaction); }}
                           className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
-                          title={isReadOnly ? "Görüntüle" : "Düzenle"}
+                          title={isReadOnly ? t("common.view") : t("common.edit")}
                         >
                           <span className="material-symbols-outlined text-lg">
                             {isReadOnly ? "visibility" : "edit"}
@@ -355,7 +356,7 @@ export default function TransactionsFullTable({
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDelete(transaction); }}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Sil"
+                            title={t("common.delete")}
                           >
                             <span className="material-symbols-outlined text-lg">delete</span>
                           </button>

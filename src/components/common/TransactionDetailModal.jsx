@@ -3,6 +3,7 @@ import { toPng } from "html-to-image";
 import { toast } from "react-toastify";
 import WarehouseTransferHistory from "../warehouse/WarehouseTransferHistory";
 import { isFromWarehouse, transferTypeLabel } from "../../utils/warehouseOrigin";
+import { t, getCurrentLocale } from "../../locales";
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -23,7 +24,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
   const copyToClipboard = (text, label) => {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
-      toast.success(`${label} kopyalandı`, {
+      toast.success(t('transactions.detail.copied', { label }), {
         position: 'bottom-center',
         autoClose: 2000,
         hideProgressBar: true,
@@ -34,17 +35,17 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('tr-TR');
+    return new Date(dateString).toLocaleDateString(getCurrentLocale());
   };
 
   const statusDateMap = {
-    PENDING:     { label: 'Antrepo Varış Tarihi', value: formatDate(transaction.warehouseArrivalDate) },
-    REGISTERED:  { label: 'Tescil Tarihi',        value: formatDate(transaction.registrationDate) },
-    INSPECTION:  { label: 'Tescil Tarihi',        value: formatDate(transaction.registrationDate) },
-    CP_COMPLETED:{ label: 'Hat Kapanma Tarihi',   value: formatDate(transaction.lineClosureDate) },
-    WITHDRAWN:   { label: 'Çekilme Tarihi',       value: formatDate(transaction.withdrawalDate) },
+    PENDING:     { label: t('transaction.warehouseArrivalDate'), value: formatDate(transaction.warehouseArrivalDate) },
+    REGISTERED:  { label: t('transaction.registrationDate'),        value: formatDate(transaction.registrationDate) },
+    INSPECTION:  { label: t('transaction.registrationDate'),        value: formatDate(transaction.registrationDate) },
+    CP_COMPLETED:{ label: t('transactions.common.lineClosureDateLong'),   value: formatDate(transaction.lineClosureDate) },
+    WITHDRAWN:   { label: t('transaction.withdrawalDate'),       value: formatDate(transaction.withdrawalDate) },
   };
-  const statusDate = statusDateMap[transaction.status] ?? { label: 'Tarih', value: '-' };
+  const statusDate = statusDateMap[transaction.status] ?? { label: t('transactions.detail.date'), value: '-' };
 
   // Parse delay reasons from JSON
   const delayReasons = (() => {
@@ -57,12 +58,12 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
 
   const getStatusBadgeClass = (status) => {
     const statusMap = {
-      'PENDING': { color: 'pending', label: 'BEKLİYOR' },
-      'REGISTERED': { color: 'registered', label: 'TESCİL EDİLDİ' },
-      'INSPECTION': { color: 'inspection', label: 'MUAYENEDE' },
-      'CP_COMPLETED': { color: 'completed', label: 'TAMAMLANDI' },
-      'WITHDRAWN': { color: 'withdrawn', label: 'ÇEKİLDİ' },
-      'CANCELLED': { color: 'cancelled', label: 'İPTAL' },
+      'PENDING': { color: 'pending', label: t('dashboard.recent.transactionStatus.PENDING') },
+      'REGISTERED': { color: 'registered', label: t('dashboard.recent.transactionStatus.REGISTERED') },
+      'INSPECTION': { color: 'inspection', label: t('dashboard.recent.transactionStatus.INSPECTION') },
+      'CP_COMPLETED': { color: 'completed', label: t('dashboard.recent.transactionStatus.CP_COMPLETED') },
+      'WITHDRAWN': { color: 'withdrawn', label: t('dashboard.recent.transactionStatus.WITHDRAWN') },
+      'CANCELLED': { color: 'cancelled', label: t('dashboard.recent.transactionStatus.CANCELLED') },
     };
 
     const statusInfo = statusMap[status] || { color: 'default', label: status };
@@ -115,7 +116,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
         await navigator.clipboard.write([
           new ClipboardItem({ 'image/png': blob }),
         ]);
-        toast.success('İşlem detayları panoya kaydedildi!', {
+        toast.success(t('transactions.detail.snapshotCopied'), {
           position: 'bottom-center',
           autoClose: 3000,
           hideProgressBar: false,
@@ -127,7 +128,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
         link.download = `islem-${transaction.fileNo || 'detay'}.png`;
         link.href = dataUrl;
         link.click();
-        toast.success('Görsel indirildi — e-postanıza ek olarak ekleyebilirsiniz.', {
+        toast.success(t('transactions.detail.imageDownloaded'), {
           position: 'bottom-center',
           autoClose: 4000,
           hideProgressBar: false,
@@ -136,7 +137,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
       }
     } catch (err) {
       console.error('[Snapshot] Hata:', err);
-      toast.error('Görsel oluşturulamadı, lütfen tekrar deneyin.', {
+      toast.error(t('transactions.detail.imageError'), {
         position: 'bottom-center',
         autoClose: 3000,
       });
@@ -163,14 +164,14 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white">
                 <span className="material-symbols-outlined text-xl">description</span>
               </div>
-              <h2 className="text-text-main text-lg font-bold">İşlem Detayları</h2>
+              <h2 className="text-text-main text-lg font-bold">{t('transaction.details')}</h2>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleCopySnapshot}
                 disabled={copying}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                title="İşlem detaylarını görüntü olarak kopyala"
+                title={t('transactions.detail.copyAsImage')}
               >
                 {copying ? (
                   <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
@@ -178,7 +179,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                   <span className="material-symbols-outlined text-lg">screenshot</span>
                 )}
                 <span className="hidden sm:inline">
-                  {copying ? 'Kopyalanıyor...' : 'Kopyala'}
+                  {copying ? t('transactions.detail.copying') : t('transactions.detail.copy')}
                 </span>
               </button>
               <button
@@ -199,12 +200,12 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               {/* Dosya No satırı */}
               <div className="flex items-center justify-between px-6 py-3 bg-primary/5 dark:bg-primary/10 border-b border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={() => copyToClipboard(transaction.fileNo, 'Dosya No')}
+                  onClick={() => copyToClipboard(transaction.fileNo, t('transaction.fileNo'))}
                   className="flex items-center gap-2 group"
-                  title="Kopyala"
+                  title={t('transactions.detail.copy')}
                 >
                   <span className="material-symbols-outlined text-primary text-base">tag</span>
-                  <span className="text-xs text-text-secondary">Dosya No</span>
+                  <span className="text-xs text-text-secondary">{t('transaction.fileNo')}</span>
                   <span className="text-sm font-bold text-text-main">{transaction.fileNo}</span>
                   <span className="material-symbols-outlined text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
                 </button>
@@ -222,18 +223,18 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               {/* Key info */}
               <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700 bg-gray-50 dark:bg-gray-800/40">
                 <div className="px-6 py-3">
-                  <p className="text-xs text-text-secondary mb-0.5">Alıcı Firma</p>
+                  <p className="text-xs text-text-secondary mb-0.5">{t('dashboard.recent.columns.recipient')}</p>
                   <p className="text-sm font-semibold text-text-main truncate">
                     {transaction.clientCompany?.name || transaction.recipientName || '-'}
                   </p>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(transaction.declarationNumber, 'Beyanname No')}
+                  onClick={() => copyToClipboard(transaction.declarationNumber, t('transaction.declarationNumber'))}
                   className="px-6 py-3 text-left group w-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-                  title="Kopyala"
+                  title={t('transactions.detail.copy')}
                 >
                   <div className="flex items-center gap-1">
-                    <p className="text-xs text-text-secondary mb-0.5">Beyanname No</p>
+                    <p className="text-xs text-text-secondary mb-0.5">{t('transaction.declarationNumber')}</p>
                     <span className="material-symbols-outlined text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity mb-0.5">content_copy</span>
                   </div>
                   <p className="text-sm font-semibold text-text-main">
@@ -252,57 +253,57 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
             {/* Info Grid — 7 kart */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Gönderici Firma</p>
+                <p className="text-text-secondary text-sm mb-1">{t('dashboard.recent.columns.sender')}</p>
                 <p className="text-text-main font-semibold">
                   {transaction.senderName || '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Gümrük</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transaction.customsName')}</p>
                 <p className="text-text-main font-semibold">
                   {transaction.customs?.customsName || '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Gümrük Antrepo</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transactions.detail.customsWarehouse')}</p>
                 <p className="text-text-main font-semibold">
                   {transaction.customsWarehouse || '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Vergi Tutarı</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transactions.detail.taxAmount')}</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.tax ? `${Number(transaction.tax).toLocaleString('tr-TR')} ₺` : '-'}
+                  {transaction.tax ? `${Number(transaction.tax).toLocaleString(getCurrentLocale())} ₺` : '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Teminat Tutarı</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transactions.detail.guaranteeAmount')}</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.guaranteeAmount ? `${Number(transaction.guaranteeAmount).toLocaleString('tr-TR')} ₺` : '-'}
+                  {transaction.guaranteeAmount ? `${Number(transaction.guaranteeAmount).toLocaleString(getCurrentLocale())} ₺` : '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Kap</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transaction.containerAmount')}</p>
                 <p className="text-text-main font-semibold">
                   {transaction.containerAmount || '-'}
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Ağırlık</p>
+                <p className="text-text-secondary text-sm mb-1">{t('transactions.detail.weight')}</p>
                 <p className="text-text-main font-semibold">
-                  {transaction.weight ? `${transaction.weight.toLocaleString('tr-TR')} kg` : '-'}
+                  {transaction.weight ? `${transaction.weight.toLocaleString(getCurrentLocale())} kg` : '-'}
                 </p>
               </div>
 
               {transaction.description && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 col-span-full transition-colors">
-                  <p className="text-text-secondary text-sm mb-1">Açıklama</p>
+                  <p className="text-text-secondary text-sm mb-1">{t('transaction.description')}</p>
                   <p className="text-text-main">
                     {transaction.description}
                   </p>
@@ -315,7 +316,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               <div className="mt-6 rounded-xl border border-emerald-200 dark:border-emerald-800 overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
                   <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-base">warehouse</span>
-                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wider">ANTREPO KAYNAĞI</span>
+                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wider">{t('transactions.detail.warehouseSource')}</span>
                   {transferTypeLabel(transaction.warehouseTransferType) && (
                     <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-white/70 dark:bg-black/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                       {transferTypeLabel(transaction.warehouseTransferType)}
@@ -325,13 +326,13 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                   <div>
-                    <p className="text-xs text-text-secondary mb-0.5">Antrepo Dosya No</p>
+                    <p className="text-xs text-text-secondary mb-0.5">{t('transactions.detail.warehouseFileNo')}</p>
                     <p className="text-sm font-semibold font-mono text-text-main">
                       {transaction.warehouseFileNo || '-'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-secondary mb-0.5">Ant. Beyanname No</p>
+                    <p className="text-xs text-text-secondary mb-0.5">{t('transactions.detail.warehouseDeclarationNo')}</p>
                     <p className="text-sm font-semibold font-mono text-text-main">
                       {transaction.warehouseDeclarationNo || '-'}
                     </p>
@@ -341,12 +342,12 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                 {transaction.warehouseDeclarationId && (
                   <div className="border-t border-emerald-200 dark:border-emerald-800">
                     <p className="px-4 pt-3 pb-1 text-xs font-semibold text-text-secondary tracking-wider">
-                      AYNI ANTREPO KAYDINDAN ÇIKAN DİĞER İŞLEMLER
+                      {t('transactions.detail.otherTransfers')}
                     </p>
                     <WarehouseTransferHistory
                       declarationId={transaction.warehouseDeclarationId}
                       excludeTransactionId={transaction.id}
-                      emptyText="Bu antrepo kaydından başka işlem oluşturulmamış."
+                      emptyText={t('transactions.detail.noOtherTransfers')}
                     />
                   </div>
                 )}
@@ -356,14 +357,14 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
             {/* Gecikme Nedenleri */}
             {((delayReasons.arrivalToRegistration?.length > 0) || (delayReasons.registrationToClosure?.length > 0) || (delayReasons.closureToWithdrawal?.length > 0)) && (
               <div className="space-y-3 mt-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Gecikme Nedenleri</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('transactions.detail.delayReasons')}</h3>
 
                 {(delayReasons.arrivalToRegistration?.length > 0) && (
                   <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-yellow-600">warning</span>
                       <p className="text-sm font-bold text-gray-800">
-                        Antrepo Varış → Tescil Gecikme Nedeni
+                        {t('transactions.delay.arrivalToRegistration')}
                       </p>
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -377,7 +378,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-orange-600">warning</span>
                       <p className="text-sm font-bold text-gray-800">
-                        Tescil → Kapanma Gecikme Nedeni
+                        {t('transactions.delay.registrationToClosure')}
                       </p>
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -391,7 +392,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-red-600">warning</span>
                       <p className="text-sm font-bold text-gray-800">
-                        Kapanma → Çekilme Gecikme Nedeni
+                        {t('transactions.delay.closureToWithdrawal')}
                       </p>
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -410,14 +411,14 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
               onClick={onClose}
               className="w-full md:w-auto px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
-              Kapat
+              {t('common.close')}
             </button>
             <button
               onClick={() => onEdit && onEdit(transaction)}
               className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              İşlemi Düzenle
+              {t('transactions.detail.editTransaction')}
             </button>
           </div>
         </div>
