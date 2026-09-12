@@ -411,6 +411,8 @@ export const en = {
     pin: "Pin",
     unpin: "Unpin",
     reportIssue: "Report an Issue / Suggest",
+    currencyTicker: "CBRT exchange rate",
+    currencyTickerWithDate: "CBRT exchange rate — {{date}} (pauses on hover)",
   },
 
   // Language selection
@@ -1830,6 +1832,7 @@ export const en = {
       sessionEnded: "Your session has ended. Please sign in again.",
       sessionInvalidated: "Someone signed in from another device, so your session was ended.",
       sessionExpired: "Your session has expired. Please sign in again.",
+      sessionTimedOut: "Your session timed out. Please sign in again.",
     },
     agreement: {
       checkError: "Could not check the agreement",

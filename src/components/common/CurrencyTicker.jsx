@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { tcmbService } from '../../api/tcmbService';
+import { t, getCurrentLocale } from '../../locales';
 
 /**
  * News-channel ticker bug: vertical stack of every cached TCMB rate slides
@@ -78,11 +79,11 @@ export default function CurrencyTicker() {
       if (!withTransition) setWithTransition(true);
       return undefined;
     }
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setWithTransition(false);
       setOffset(0);
     }, SLIDE_MS);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offset, rates.length]);
 
@@ -98,8 +99,8 @@ export default function CurrencyTicker() {
       onMouseEnter={() => { pausedRef.current = true; }}
       onMouseLeave={() => { pausedRef.current = false; }}
       title={sourceDate
-        ? `TCMB kuru — ${new Date(sourceDate).toLocaleDateString('tr-TR')} (üstüne gelince durur)`
-        : 'TCMB kuru'}
+        ? t('layout.currencyTickerWithDate', { date: new Date(sourceDate).toLocaleDateString(getCurrentLocale()) })
+        : t('layout.currencyTicker')}
     >
       {/* Scrolling column (code + rate). overflow-hidden + fixed height
           clips everything except the row currently in the viewport. */}
@@ -134,7 +135,7 @@ export default function CurrencyTicker() {
 }
 
 function CurrencyRow({ rate }) {
-  const formatted = Number(rate.rate).toLocaleString('tr-TR', {
+  const formatted = Number(rate.rate).toLocaleString(getCurrentLocale(), {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   });

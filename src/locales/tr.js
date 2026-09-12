@@ -411,6 +411,8 @@ export const tr = {
     pin: "Sabitle",
     unpin: "Sabitlemeyi Kaldır",
     reportIssue: "Sorun Bildir / Öneri",
+    currencyTicker: "TCMB kuru",
+    currencyTickerWithDate: "TCMB kuru — {{date}} (üstüne gelince durur)",
   },
 
   // Dil seçimi
@@ -1831,6 +1833,7 @@ export const tr = {
       sessionEnded: "Oturumunuz sonlandı. Lütfen tekrar giriş yapın.",
       sessionInvalidated: "Başka bir cihazdan giriş yapıldı. Oturumunuz sonlandırıldı.",
       sessionExpired: "Oturumunuz süresi doldu. Lütfen tekrar giriş yapın.",
+      sessionTimedOut: "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
     },
     agreement: {
       checkError: "Anlaşma kontrolü yapılamadı",

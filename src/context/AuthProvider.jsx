@@ -6,6 +6,8 @@ import { tokenManager } from '../utils/tokenManager';
 import { logError } from '../utils/errorUtils';
 import { showWarning } from '../utils/toastUtils';
 import { fetchAuthedImageDataUrl, saveLoginProfile } from '../utils/imageUtils';
+// Giriş paketinde: sözlükleri runtime köprüsünden kullan (bkz. CLAUDE.md "Language and i18n")
+import { t } from '../locales/runtime';
 
 /**
  * Başarılı giriş sonrası firma/profil görsellerini ve adlarını bu makineye (localStorage)
@@ -44,7 +46,7 @@ export default function AuthProvider({ children }) {
     setIsAuthenticated(false);
 
     if (!window.location.pathname.includes('/login')) {
-      showWarning('Oturum süreniz doldu. Lütfen tekrar giriş yapın.', {
+      showWarning(t('api.auth.sessionTimedOut'), {
         autoClose: 6000,
         onClose: () => window.location.href = '/login'
       });
