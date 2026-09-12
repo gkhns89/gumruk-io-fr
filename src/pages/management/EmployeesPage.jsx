@@ -11,6 +11,7 @@ import DeleteEmployeeModal from '../../components/employees/DeleteEmployeeModal'
 import ImageUploadField from '../../components/common/ImageUploadField';
 import { userService } from '../../api/userService';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 const EmployeesPage = () => {
   const { user } = useAuth();
@@ -53,10 +54,10 @@ const EmployeesPage = () => {
         if (result.success) {
           setBrokers(result.data);
         } else {
-          setBrokersError(result.error || 'Gümrük firmaları yüklenemedi');
+          setBrokersError(result.error || t('management.brokersLoadError'));
         }
       })
-      .catch(() => setBrokersError('Gümrük firmaları yüklenirken bir hata oluştu'))
+      .catch(() => setBrokersError(t('management.brokersLoadErrorUnexpected')))
       .finally(() => setBrokersLoading(false));
   }, [isSuperAdmin]);
 
@@ -88,7 +89,7 @@ const EmployeesPage = () => {
         setLimits(limitsResult.data);
       }
     } catch (err) {
-      handleError(err, setError, 'Çalışanlar yükleme', 'Çalışanlar yüklenirken bir hata oluştu');
+      handleError(err, setError, 'Çalışanlar yükleme', t('employees.page.loadError'));
     } finally {
       setLoading(false);
     }
@@ -105,13 +106,13 @@ const EmployeesPage = () => {
         bg: 'bg-purple-100 dark:bg-purple-900/30',
         text: 'text-purple-800 dark:text-purple-300',
         border: 'border-purple-300 dark:border-purple-700',
-        label: 'Broker Yöneticisi'
+        label: t('roles.brokerAdmin')
       },
       BROKER_USER: {
         bg: 'bg-blue-100 dark:bg-blue-900/30',
         text: 'text-blue-800 dark:text-blue-300',
         border: 'border-blue-300 dark:border-blue-700',
-        label: 'Broker Kullanıcısı'
+        label: t('roles.brokerUser')
       }
     };
     return badges[role] || {
@@ -127,12 +128,12 @@ const EmployeesPage = () => {
       bg: 'bg-green-100 dark:bg-green-900/30',
       text: 'text-green-800 dark:text-green-300',
       border: 'border-green-300 dark:border-green-700',
-      label: 'Aktif'
+      label: t('employee.statuses.active')
     } : {
       bg: 'bg-yellow-100 dark:bg-yellow-900/30',
       text: 'text-yellow-800 dark:text-yellow-300',
       border: 'border-yellow-300 dark:border-yellow-700',
-      label: 'Beklemede'
+      label: t('employee.statuses.pending')
     };
   };
 
@@ -160,21 +161,21 @@ const EmployeesPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">badge</span>
-                Çalışan Yönetimi
+                {t('nav.employees')}
               </h1>
               <p className="text-text-secondary mt-2">
                 {isSuperAdmin
                   ? selectedBroker
-                    ? `${selectedBroker.name} — çalışanlar`
-                    : 'Çalışanları görüntülemek için bir gümrük firması seçin'
-                  : 'Broker firması çalışanlarınızı yönetin'}
+                    ? t('employees.page.subtitleBroker', { name: selectedBroker.name })
+                    : t('employees.page.subtitleSelectBroker')
+                  : t('employees.page.subtitle')}
               </p>
               {limits && (
                 <p className="text-sm text-gray-500 mt-1">
                   <span className="font-semibold">{limits.currentBrokerUsers || 0}</span> /
-                  <span className="font-semibold"> {limits.maxBrokerUsers || 0}</span> broker kullanıcı
+                  <span className="font-semibold"> {limits.maxBrokerUsers || 0}</span> {t('employees.common.brokerUsers')}
                   {!canAddEmployee && (
-                    <span className="ml-2 text-red-600 font-semibold">• Limit doldu!</span>
+                    <span className="ml-2 text-red-600 font-semibold">• {t('employees.common.limitReached')}</span>
                   )}
                 </p>
               )}
@@ -185,10 +186,10 @@ const EmployeesPage = () => {
                 onClick={() => setShowAddModal(true)}
                 disabled={!canAddEmployee || isAddBlocked}
                 className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : !canAddEmployee ? 'Çalışan limiti doldu' : 'Yeni çalışan ekle'}
+                title={isAddBlocked ? t('payment.restrictionWarning') : !canAddEmployee ? t('employee.quotaExceeded') : t('employees.page.addHint')}
               >
                 <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'person_add'}</span>
-                Yeni Çalışan Ekle
+                {t('employee.addNew')}
               </button>
             )}
           </div>
@@ -202,12 +203,12 @@ const EmployeesPage = () => {
             {isSuperAdmin && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
                 <label htmlFor="broker-select" className="block text-sm font-medium text-text-main mb-2">
-                  Gümrük Firması Seçin
+                  {t('management.selectBroker')}
                 </label>
                 {brokersLoading ? (
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span className="text-sm">Yükleniyor...</span>
+                    <span className="text-sm">{t('common.loading')}</span>
                   </div>
                 ) : brokersError ? (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 py-2">
@@ -230,7 +231,7 @@ const EmployeesPage = () => {
                       }}
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors appearance-none cursor-pointer"
                     >
-                      <option value="">— Firma seçin —</option>
+                      <option value="">{t('management.selectCompanyOption')}</option>
                       {brokers.map(broker => (
                         <option key={broker.id} value={broker.id}>
                           {broker.name}{broker.shortName ? ` (${broker.shortName})` : ''}
@@ -251,9 +252,9 @@ const EmployeesPage = () => {
                 <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4 block">
                   business
                 </span>
-                <h3 className="text-xl font-semibold text-text-main mb-2">Gümrük Firması Seçin</h3>
+                <h3 className="text-xl font-semibold text-text-main mb-2">{t('management.selectBroker')}</h3>
                 <p className="text-text-secondary">
-                  Çalışanları görüntülemek için yukarıdan bir gümrük firması seçin
+                  {t('employees.page.selectBrokerHint')}
                 </p>
               </div>
             )}
@@ -265,40 +266,40 @@ const EmployeesPage = () => {
                 <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-main mb-2">Çalışan Ara</label>
+                      <label className="block text-sm font-medium text-text-main mb-2">{t('employees.page.search')}</label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
                         <input
                           type="text"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="İsim veya email ile ara..."
+                          placeholder={t('employees.page.searchPlaceholder')}
                           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-main mb-2">Rol Filtresi</label>
+                      <label className="block text-sm font-medium text-text-main mb-2">{t('employees.page.roleFilter')}</label>
                       <select
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                       >
-                        <option value="ALL">Tümü</option>
-                        <option value="BROKER_ADMIN">Broker Yöneticisi</option>
-                        <option value="BROKER_USER">Broker Kullanıcısı</option>
+                        <option value="ALL">{t('management.all')}</option>
+                        <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
+                        <option value="BROKER_USER">{t('roles.brokerUser')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-main mb-2">Durum Filtresi</label>
+                      <label className="block text-sm font-medium text-text-main mb-2">{t('management.statusFilter')}</label>
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                       >
-                        <option value="ALL">Tümü</option>
-                        <option value="ACTIVE">Aktif</option>
-                        <option value="PENDING">Beklemede</option>
+                        <option value="ALL">{t('management.all')}</option>
+                        <option value="ACTIVE">{t('employee.statuses.active')}</option>
+                        <option value="PENDING">{t('employee.statuses.pending')}</option>
                       </select>
                     </div>
                   </div>
@@ -309,7 +310,7 @@ const EmployeesPage = () => {
                   <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-center gap-3">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-text-secondary">Yükleniyor...</p>
+                      <p className="text-text-secondary">{t('common.loading')}</p>
                     </div>
                   </div>
                 )}
@@ -330,13 +331,13 @@ const EmployeesPage = () => {
                     <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-600 mb-4 block">badge</span>
                     <h3 className="text-xl font-semibold text-text-main mb-2">
                       {searchTerm || roleFilter !== 'ALL' || statusFilter !== 'ALL'
-                        ? 'Filtre kriterlerine uygun çalışan bulunamadı'
-                        : 'Henüz çalışan kaydınız bulunmuyor'}
+                        ? t('employees.page.emptyFiltered')
+                        : t('employees.page.empty')}
                     </h3>
                     <p className="text-text-secondary mb-6">
                       {searchTerm || roleFilter !== 'ALL' || statusFilter !== 'ALL'
-                        ? 'Farklı filtreler deneyerek arama yapabilirsiniz'
-                        : 'Yeni çalışan eklemek için "Yeni Çalışan Ekle" butonuna tıklayın'}
+                        ? t('management.filterEmptyHint')
+                        : t('employees.page.emptyHint')}
                     </p>
                     {!searchTerm && roleFilter === 'ALL' && statusFilter === 'ALL' && canAddEmployee && !isAddBlocked && (
                       <button
@@ -344,7 +345,7 @@ const EmployeesPage = () => {
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         <span className="material-symbols-outlined">person_add</span>
-                        Yeni Çalışan Ekle
+                        {t('employee.addNew')}
                       </button>
                     )}
                   </div>
@@ -357,12 +358,12 @@ const EmployeesPage = () => {
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">Çalışan</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kayıt Tarihi</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">{t('employees.table.employee')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('employee.email')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('employee.role')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('employee.status')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('employee.createdAt')}</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('management.actions')}</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
@@ -405,7 +406,7 @@ const EmployeesPage = () => {
                                     <div className="ml-4">
                                       <div className="text-sm font-medium text-text-main">
                                         {employee.username}
-                                        {isSelf && <span className="ml-2 text-xs text-gray-500">(Siz)</span>}
+                                        {isSelf && <span className="ml-2 text-xs text-gray-500">{t('employees.table.you')}</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -421,10 +422,10 @@ const EmployeesPage = () => {
                                     {employee.isPaymentResponsible && (
                                       <span
                                         className="inline-flex items-center gap-0.5 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
-                                        title="Ödeme sorumlusu"
+                                        title={t('employees.table.paymentResponsibleHint')}
                                       >
                                         <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>account_balance</span>
-                                        Ödeme Sorumlusu
+                                        {t('payment.paymentResponsible')}
                                       </span>
                                     )}
                                   </div>
@@ -435,21 +436,21 @@ const EmployeesPage = () => {
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                  {employee.createdAt ? new Date(employee.createdAt).toLocaleDateString('tr-TR') : '-'}
+                                  {employee.createdAt ? new Date(employee.createdAt).toLocaleDateString(getCurrentLocale()) : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <div className="flex items-center justify-end gap-2">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowViewModal(true); }}
                                       className="text-blue-600 hover:text-blue-800 transition-colors"
-                                      title="Detayları Görüntüle"
+                                      title={t('management.viewDetails')}
                                     >
                                       <span className="material-symbols-outlined">visibility</span>
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowEditModal(true); }}
                                       className="text-primary hover:text-primary/80 transition-colors"
-                                      title="Düzenle"
+                                      title={t('common.edit')}
                                     >
                                       <span className="material-symbols-outlined">edit</span>
                                     </button>
@@ -457,7 +458,7 @@ const EmployeesPage = () => {
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowDeleteModal(true); }}
                                       disabled={isSelf}
                                       className="text-red-600 hover:text-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                      title={isSelf ? 'Kendinizi silemezsiniz' : 'Sil'}
+                                      title={isSelf ? t('employees.table.cannotDeleteSelf') : t('common.delete')}
                                     >
                                       <span className="material-symbols-outlined">delete</span>
                                     </button>

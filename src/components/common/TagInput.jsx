@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toUpperCase } from '../../utils/textUtils';
+import { t } from '../../locales';
 
 /**
  * Reusable tag/badge input component for multi-value strings
@@ -14,7 +15,7 @@ import { toUpperCase } from '../../utils/textUtils';
 export default function TagInput({
   value = [],
   onChange,
-  placeholder = "Type and press Enter",
+  placeholder = t('tagInput.placeholder'),
   uppercase = true,
   maxLength = 50,
   disabled = false

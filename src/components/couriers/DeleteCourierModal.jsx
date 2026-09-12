@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { courierService } from '../../api/courierService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t } from '../../locales';
 
 export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
   const [loading, setLoading] = useState(false);
+
+  const courierName = courier.shortName || courier.name;
+  // Kalın yazılan parçalar için metin yer tutucunun iki yanından bölünüyor
+  const [confirmBefore, confirmAfter] = t('couriers.delete.confirmMessage').split('{{name}}');
+  const [schedulesBefore, schedulesAfter] = t('couriers.delete.schedulesWarning').split('{{schedules}}');
 
   const handleDelete = async () => {
     setLoading(true);
@@ -12,14 +18,14 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
       const result = await courierService.deleteCourierCompany(courier.id);
 
       if (result.success) {
-        showSuccess(`${courier.shortName || courier.name} başarıyla silindi!`);
+        showSuccess(t('management.deletedSuccess', { name: courierName }));
         onSuccess();
         onClose();
       } else {
-        showError(result.error || 'Kurye firması silinemedi');
+        showError(result.error || t('couriers.delete.error'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -46,10 +52,10 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-text-main">
-                Kurye Firmasını Sil
+                {t('couriers.delete.title')}
               </h2>
               <p className="text-sm text-text-secondary mt-1">
-                Bu işlem geri alınamaz
+                {t('management.irreversible')}
               </p>
             </div>
           </div>
@@ -67,7 +73,7 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-text-main">
-                  {courier.shortName || courier.name}
+                  {courierName}
                 </p>
                 {courier.shortName && (
                   <p className="text-xs text-text-secondary">{courier.name}</p>
@@ -76,21 +82,21 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <p className="text-text-secondary">Durum</p>
+                <p className="text-text-secondary">{t('management.status')}</p>
                 <p className="text-text-main font-medium">
-                  {courier.active ? 'Aktif' : 'Pasif'}
+                  {courier.active ? t('transactions.common.active') : t('management.inactive')}
                 </p>
               </div>
               <div>
-                <p className="text-text-secondary">Kalkış Saati</p>
+                <p className="text-text-secondary">{t('couriers.delete.departureTimes')}</p>
                 <p className="text-text-main font-medium">
-                  {courier.schedules?.length || 0} adet
+                  {t('couriers.delete.count', { count: courier.schedules?.length || 0 })}
                 </p>
               </div>
             </div>
             {courier.contactPhone && (
               <div className="mt-2 text-xs">
-                <p className="text-text-secondary">İletişim</p>
+                <p className="text-text-secondary">{t('couriers.delete.contact')}</p>
                 <p className="text-text-main font-medium">{courier.contactPhone}</p>
               </div>
             )}
@@ -99,8 +105,7 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
           {/* Warning message */}
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 transition-colors duration-300">
             <p className="text-red-800 dark:text-red-300 text-sm">
-              <span className="font-semibold">{courier.shortName || courier.name}</span> adlı kurye firmasını silmek üzeresiniz.
-              Bu işlem kurye firmasını ve tüm kalkış saatlerini sistemden kalıcı olarak kaldıracaktır.
+              {confirmBefore}<span className="font-semibold">{courierName}</span>{confirmAfter}
             </p>
           </div>
 
@@ -110,8 +115,9 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
               <div className="flex items-start gap-2">
                 <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-sm mt-0.5">schedule</span>
                 <p className="text-amber-800 dark:text-amber-300 text-xs">
-                  Bu kurye firmasına ait <span className="font-semibold">{courier.schedules.length} adet kalkış saati</span> bulunmaktadır.
-                  Silme işlemi tüm kalkış saatlerini de kaldıracaktır.
+                  {schedulesBefore}
+                  <span className="font-semibold">{t('couriers.delete.schedulesCount', { count: courier.schedules.length })}</span>
+                  {schedulesAfter}
                 </p>
               </div>
             </div>
@@ -124,14 +130,14 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             onClick={handleClose}
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleDelete}
             disabled={loading}
             className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Siliniyor...' : 'Sil'}
+            {loading ? t('management.deleting') : t('common.delete')}
           </button>
         </div>
       </div>

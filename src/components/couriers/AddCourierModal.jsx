@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { courierService } from '../../api/courierService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t } from '../../locales';
 
 export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = null }) {
   const [formData, setFormData] = useState({
@@ -42,7 +43,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
 
     // Validate required fields
     if (!formData.name.trim()) {
-      showError('Kurye firması adı zorunludur');
+      showError(t('couriers.form.nameRequired'));
       return;
     }
 
@@ -50,7 +51,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
     if (formData.contactEmail && formData.contactEmail.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.contactEmail)) {
-        setEmailError('Geçerli bir email adresi giriniz');
+        setEmailError(t('management.invalidEmail'));
         return;
       }
     }
@@ -68,7 +69,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
       }, brokerCompanyId);
 
       if (result.success) {
-        showSuccess(`${formData.name} başarıyla eklendi!`);
+        showSuccess(t('management.addedSuccess', { name: formData.name }));
         onSuccess(result.data);
 
         // Reset form and close
@@ -81,10 +82,10 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         });
         onClose();
       } else {
-        showError(result.error || 'Kurye firması oluşturulamadı');
+        showError(result.error || t('couriers.add.createError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -115,10 +116,10 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Yeni Kurye Firması Ekle
+              {t('couriers.add.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              Yeni bir kurye firması kaydı oluşturun
+              {t('couriers.add.subtitle')}
             </p>
           </div>
           <button
@@ -135,7 +136,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             {/* Company Name */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kurye Firması Adı <span className="text-red-500">*</span>
+                {t('couriers.form.name')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -143,7 +144,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
                 value={formData.name}
                 onChange={handleChange}
                 required
-                placeholder="Örn: HIZLI GÖTÜR KURYE"
+                placeholder={t('couriers.form.namePlaceholder')}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
               />
             </div>
@@ -151,33 +152,33 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             {/* Short Name */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kısa Ad
+                {t('company.shortName')}
               </label>
               <input
                 type="text"
                 name="shortName"
                 value={formData.shortName}
                 onChange={handleChange}
-                placeholder="Örn: HGK"
+                placeholder={t('couriers.form.shortNamePlaceholder')}
                 maxLength={100}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
               />
               <p className="text-xs text-text-secondary mt-1">
-                Gösterim için kısa ad (opsiyonel)
+                {t('couriers.form.shortNameHint')}
               </p>
             </div>
 
             {/* Contact Phone */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                İletişim Telefonu
+                {t('couriers.form.phone')}
               </label>
               <input
                 type="tel"
                 name="contactPhone"
                 value={formData.contactPhone}
                 onChange={handleChange}
-                placeholder="Örn: 0212 555 1234"
+                placeholder={t('couriers.form.phonePlaceholder')}
                 maxLength={100}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
               />
@@ -186,14 +187,14 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             {/* Contact Email */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                İletişim Email
+                {t('couriers.form.email')}
               </label>
               <input
                 type="email"
                 name="contactEmail"
                 value={formData.contactEmail}
                 onChange={handleChange}
-                placeholder="Örn: info@kuryefirmasi.com"
+                placeholder={t('couriers.form.emailPlaceholder')}
                 maxLength={255}
                 className={`w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
                   emailError
@@ -209,13 +210,13 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Notlar
+                {t('management.notes')}
               </label>
               <textarea
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                placeholder="Kurye firması hakkında notlar..."
+                placeholder={t('couriers.form.notesPlaceholder')}
                 rows={3}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none"
               />
@@ -230,14 +231,14 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             type="button"
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Ekleniyor...' : 'Ekle'}
+            {loading ? t('management.adding') : t('common.add')}
           </button>
         </div>
       </div>

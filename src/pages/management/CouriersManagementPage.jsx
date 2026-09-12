@@ -6,6 +6,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import AddCourierModal from '../../components/couriers/AddCourierModal';
 import EditCourierModal from '../../components/couriers/EditCourierModal';
 import DeleteCourierModal from '../../components/couriers/DeleteCourierModal';
+import { t } from '../../locales';
 
 export default function CouriersManagementPage() {
   const { user } = useAuth();
@@ -40,10 +41,10 @@ export default function CouriersManagementPage() {
         if (result.success) {
           setBrokers(result.data);
         } else {
-          setBrokersError(result.error || 'Gümrük firmaları yüklenemedi');
+          setBrokersError(result.error || t('management.brokersLoadError'));
         }
       })
-      .catch(() => setBrokersError('Gümrük firmaları yüklenirken bir hata oluştu'))
+      .catch(() => setBrokersError(t('management.brokersLoadErrorUnexpected')))
       .finally(() => setBrokersLoading(false));
   }, [isSuperAdmin]);
 
@@ -73,7 +74,7 @@ export default function CouriersManagementPage() {
     return (
       <MainLayout>
         <div className="p-6 text-center">
-          <p className="text-red-600 dark:text-red-400">Bu sayfaya erişim yetkiniz yok.</p>
+          <p className="text-red-600 dark:text-red-400">{t('management.noAccess')}</p>
         </div>
       </MainLayout>
     );
@@ -86,14 +87,14 @@ export default function CouriersManagementPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              Kurye Yönetimi
+              {t('nav.couriers')}
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {isSuperAdmin
                 ? selectedBroker
-                  ? `${selectedBroker.name} — kurye firmaları`
-                  : 'Kurye firmalarını görüntülemek için bir gümrük firması seçin'
-                : 'Kurye firmalarını ve kalkış saatlerini yönetin'}
+                  ? t('couriers.page.subtitleBroker', { name: selectedBroker.name })
+                  : t('couriers.page.subtitleSelectBroker')
+                : t('couriers.page.subtitle')}
             </p>
           </div>
           {(!isSuperAdmin || selectedBroker) && (
@@ -102,7 +103,7 @@ export default function CouriersManagementPage() {
               onClick={() => setShowAddModal(true)}
             >
               <span className="material-symbols-outlined text-xl">add</span>
-              <span>Yeni Kurye Firması</span>
+              <span>{t('couriers.page.add')}</span>
             </button>
           )}
         </div>
@@ -111,12 +112,12 @@ export default function CouriersManagementPage() {
         {isSuperAdmin && (
           <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 mb-6 transition-colors">
             <label htmlFor="broker-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Gümrük Firması Seçin
+              {t('management.selectBroker')}
             </label>
             {brokersLoading ? (
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                <span className="text-sm">Yükleniyor...</span>
+                <span className="text-sm">{t('common.loading')}</span>
               </div>
             ) : brokersError ? (
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400 py-2">
@@ -138,7 +139,7 @@ export default function CouriersManagementPage() {
                   }}
                   className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors appearance-none cursor-pointer"
                 >
-                  <option value="">— Firma seçin —</option>
+                  <option value="">{t('management.selectCompanyOption')}</option>
                   {brokers.map(broker => (
                     <option key={broker.id} value={broker.id}>
                       {broker.name}{broker.shortName ? ` (${broker.shortName})` : ''}
@@ -160,10 +161,10 @@ export default function CouriersManagementPage() {
               business
             </span>
             <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-              Gümrük Firması Seçin
+              {t('management.selectBroker')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Kurye firmalarını görüntülemek için yukarıdan bir gümrük firması seçin
+              {t('couriers.page.selectBrokerHint')}
             </p>
           </div>
         )}
@@ -183,19 +184,19 @@ export default function CouriersManagementPage() {
                   two_wheeler
                 </span>
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  Henüz kurye firması eklenmemiş
+                  {t('couriers.page.empty')}
                 </p>
                 <button
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                   onClick={() => setShowAddModal(true)}
                 >
-                  İlk Kurye Firmasını Ekle
+                  {t('couriers.page.addFirst')}
                 </button>
               </div>
             ) : (
               <>
                 <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                  {couriers.length} kurye firması bulundu
+                  {t('couriers.page.found', { count: couriers.length })}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {couriers.map(courier => (
@@ -217,7 +218,7 @@ export default function CouriersManagementPage() {
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                             : 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
                         }`}>
-                          {courier.active ? 'Aktif' : 'Pasif'}
+                          {courier.active ? t('transactions.common.active') : t('management.inactive')}
                         </span>
                       </div>
 
@@ -225,7 +226,7 @@ export default function CouriersManagementPage() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="material-symbols-outlined text-sm text-gray-600">schedule</span>
                           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {courier.schedules?.length || 0} kalkış saati
+                            {t('couriers.common.departureCount', { count: courier.schedules?.length || 0 })}
                           </p>
                         </div>
                         {courier.contactPhone && (
@@ -242,7 +243,7 @@ export default function CouriersManagementPage() {
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         >
                           <span className="material-symbols-outlined text-sm">edit</span>
-                          <span className="text-sm font-medium">Düzenle</span>
+                          <span className="text-sm font-medium">{t('common.edit')}</span>
                         </button>
                         <button
                           onClick={() => { setSelectedCourier(courier); setShowDeleteModal(true); }}

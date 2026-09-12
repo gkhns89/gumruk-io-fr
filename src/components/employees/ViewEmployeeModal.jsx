@@ -1,19 +1,20 @@
 import React from 'react';
+import { t, getCurrentLocale } from '../../locales';
 
 export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
 
   // Get role display text
   const getRoleText = (role) => {
     const roles = {
-      BROKER_ADMIN: 'Broker Yöneticisi',
-      BROKER_USER: 'Broker Kullanıcısı'
+      BROKER_ADMIN: t('roles.brokerAdmin'),
+      BROKER_USER: t('roles.brokerUser')
     };
     return roles[role] || role;
   };
 
   // Get status display text
   const getStatusText = (isActive) => {
-    return isActive ? 'Aktif' : 'Beklemede';
+    return isActive ? t('employee.statuses.active') : t('employee.statuses.pending');
   };
 
   // Get status badge styling
@@ -22,12 +23,12 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
       bg: 'bg-green-100 dark:bg-green-900/30',
       text: 'text-green-800 dark:text-green-300',
       border: 'border-green-300 dark:border-green-700',
-      label: 'Aktif'
+      label: t('employee.statuses.active')
     } : {
       bg: 'bg-yellow-100 dark:bg-yellow-900/30',
       text: 'text-yellow-800 dark:text-yellow-300',
       border: 'border-yellow-300 dark:border-yellow-700',
-      label: 'Beklemede'
+      label: t('employee.statuses.pending')
     };
   };
 
@@ -68,10 +69,10 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Çalışan Detayları
+              {t('employee.details')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              Çalışan bilgilerini görüntüleyin
+              {t('employees.view.subtitle')}
             </p>
           </div>
           <button
@@ -110,7 +111,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {/* Username */}
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Kullanıcı Adı
+                {t('management.username')}
               </label>
               <p className="text-text-main font-medium">{employee.username}</p>
             </div>
@@ -118,7 +119,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Email
+                {t('employee.email')}
               </label>
               <p className="text-text-main font-medium">{employee.email}</p>
             </div>
@@ -126,7 +127,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {/* Role */}
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Rol
+                {t('employee.role')}
               </label>
               <p className="text-text-main font-medium">{getRoleText(employee.globalRole)}</p>
             </div>
@@ -134,7 +135,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {/* Status */}
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Durum
+                {t('employee.status')}
               </label>
               <p className="text-text-main font-medium">{getStatusText(employee.isActive)}</p>
             </div>
@@ -143,10 +144,10 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {employee.createdAt && (
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1">
-                  Kayıt Tarihi
+                  {t('employee.createdAt')}
                 </label>
                 <p className="text-text-main font-medium">
-                  {new Date(employee.createdAt).toLocaleDateString('tr-TR', {
+                  {new Date(employee.createdAt).toLocaleDateString(getCurrentLocale(), {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -159,18 +160,18 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             {employee.emailVerified !== undefined && (
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1">
-                  Email Doğrulama
+                  {t('employees.view.emailVerification')}
                 </label>
                 <p className="text-text-main font-medium">
                   {employee.emailVerified ? (
                     <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">check_circle</span>
-                      Doğrulandı
+                      {t('employees.view.verified')}
                     </span>
                   ) : (
                     <span className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">pending</span>
-                      Beklemede
+                      {t('employee.statuses.pending')}
                     </span>
                   )}
                 </p>
@@ -181,18 +182,18 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
           {/* Company Information */}
           {employee.company && (
             <div className="pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
-              <h4 className="text-sm font-semibold text-text-main mb-3">Firma Bilgileri</h4>
+              <h4 className="text-sm font-semibold text-text-main mb-3">{t('management.companyInfo')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1">
-                    Firma Adı
+                    {t('company.name')}
                   </label>
                   <p className="text-text-main font-medium">{employee.company.name}</p>
                 </div>
                 {employee.company.shortName && (
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Kısa Ad
+                      {t('company.shortName')}
                     </label>
                     <p className="text-text-main font-medium">{employee.company.shortName}</p>
                   </div>
@@ -208,7 +209,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             onClick={onClose}
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
           >
-            Kapat
+            {t('common.close')}
           </button>
           <button
             onClick={() => {
@@ -218,7 +219,7 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
             className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined">edit</span>
-            Düzenle
+            {t('common.edit')}
           </button>
         </div>
       </div>

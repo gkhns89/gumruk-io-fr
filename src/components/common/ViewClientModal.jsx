@@ -3,7 +3,7 @@ import { companyService } from '../../api/companyService';
 import SectorSelect from './SectorSelect';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { toUpperCase } from '../../utils/textUtils';
-import { getCurrentLocale } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 
@@ -79,7 +79,7 @@ export default function ViewClientModal({
       });
 
       if (result.success) {
-        showSuccess('Müşteri bilgileri başarıyla güncellendi!');
+        showSuccess(t('clients.view.updateSuccess'));
         onSuccess(result.data);
         setIsEditing(false);
         onClose();
@@ -87,7 +87,7 @@ export default function ViewClientModal({
         handleApiResponse(result, null, null, 'ViewClientModal - updateClientCompany');
       }
     } catch (err) {
-      handleError(err, null, 'ViewClientModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
+      handleError(err, null, 'ViewClientModal - handleSubmit', t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function ViewClientModal({
         <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              {isEditing ? 'Müşteri Bilgilerini Düzenle' : 'Müşteri Detayları'}
+              {isEditing ? t('clients.view.editTitle') : t('clients.view.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
               {client.name}
@@ -131,7 +131,7 @@ export default function ViewClientModal({
             {/* Sol Kolon - Firma Bilgileri */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-text-main border-b border-gray-200 dark:border-gray-700 pb-2">
-                Firma Bilgileri
+                {t('management.companyInfo')}
               </h3>
 
               {isEditing ? (
@@ -139,7 +139,7 @@ export default function ViewClientModal({
                   {/* Firma Adı */}
                   <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
-                      Firma Adı *
+                      {t('company.name')} *
                     </label>
                     <input
                       type="text"
@@ -157,7 +157,7 @@ export default function ViewClientModal({
                   {/* Kısa Ad */}
                   <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
-                      Kısa Ad *
+                      {t('company.shortName')} *
                     </label>
                     <input
                       type="text"
@@ -175,7 +175,7 @@ export default function ViewClientModal({
                   {/* Sektör */}
                   <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
-                      Sektör
+                      {t('clients.common.sector')}
                     </label>
                     <SectorSelect
                       value={formData.sectorIds}
@@ -187,7 +187,7 @@ export default function ViewClientModal({
                   {/* Açıklama */}
                   <div>
                     <label className="block text-sm font-medium text-text-main mb-2">
-                      Açıklama
+                      {t('company.description')}
                     </label>
                     <textarea
                       value={formData.description}
@@ -214,14 +214,14 @@ export default function ViewClientModal({
                       }}
                       className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                     >
-                      İptal
+                      {t('common.cancel')}
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
                       className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                      {loading ? t('management.saving') : t('common.save')}
                     </button>
                   </div>
                 </form>
@@ -230,7 +230,7 @@ export default function ViewClientModal({
                   {/* Firma Adı */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Firma Adı
+                      {t('company.name')}
                     </label>
                     <p className="text-base font-semibold text-text-main">
                       {client.name}
@@ -240,7 +240,7 @@ export default function ViewClientModal({
                   {/* Kısa Ad */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Kısa Ad
+                      {t('company.shortName')}
                     </label>
                     <p className="text-base font-semibold text-text-main">
                       {client.shortName || '-'}
@@ -250,7 +250,7 @@ export default function ViewClientModal({
                   {/* Sektör */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Sektör
+                      {t('clients.common.sector')}
                     </label>
                     {client.sectors?.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5 mt-1">
@@ -271,7 +271,7 @@ export default function ViewClientModal({
                   {/* Açıklama */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Açıklama
+                      {t('company.description')}
                     </label>
                     <p className="text-base text-text-main">
                       {client.description || '-'}
@@ -281,7 +281,7 @@ export default function ViewClientModal({
                   {/* Giriş Hesabı */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Giriş Hesabı
+                      {t('clients.common.loginAccount')}
                     </label>
                     {client.account ? (
                       <div className="mt-1">
@@ -295,22 +295,22 @@ export default function ViewClientModal({
                               : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                           }`}
                         >
-                          {client.account.isActive ? 'Aktif' : 'Pasif'}
+                          {client.account.isActive ? t('transactions.common.active') : t('management.inactive')}
                         </span>
                       </div>
                     ) : (
-                      <p className="text-base text-text-main">Hesap açılmamış</p>
+                      <p className="text-base text-text-main">{t('clients.view.noAccount')}</p>
                     )}
                   </div>
 
                   {/* Oluşturulma Tarihi */}
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                      Oluşturulma Tarihi
+                      {t('clients.view.createdAt')}
                     </label>
                     <p className="text-base text-text-main">
                       {client.createdAt
-                        ? new Date(client.createdAt).toLocaleDateString('tr-TR', {
+                        ? new Date(client.createdAt).toLocaleDateString(getCurrentLocale(), {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
@@ -326,7 +326,7 @@ export default function ViewClientModal({
                       className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                     >
                       <span className="material-symbols-outlined">edit</span>
-                      Firma Bilgilerini Düzenle
+                      {t('clients.view.editCompany')}
                     </button>
                   )}
                 </div>
@@ -336,7 +336,7 @@ export default function ViewClientModal({
             {/* Sağ Kolon - Vekalet Bilgileri */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-text-main border-b border-gray-200 dark:border-gray-700 pb-2">
-                Vekalet Bilgileri
+                {t('clients.view.agreementInfo')}
               </h3>
 
               {/* Agreement Info Panel */}
@@ -358,7 +358,7 @@ export default function ViewClientModal({
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
                 >
                   <span className="material-symbols-outlined">edit_document</span>
-                  Vekalet Bilgilerini Düzenle
+                  {t('clients.view.editAgreement')}
                 </button>
               )}
             </div>
@@ -371,7 +371,7 @@ export default function ViewClientModal({
             onClick={handleClose}
             className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors"
           >
-            Kapat
+            {t('common.close')}
           </button>
         </div>
       </div>

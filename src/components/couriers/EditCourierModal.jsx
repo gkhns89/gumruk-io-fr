@@ -62,10 +62,10 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
       if (result.success) {
         setSchedules(result.data || []);
       } else {
-        showError('Kalkış saatleri yüklenemedi');
+        showError(t('couriers.schedules.loadError'));
       }
     } catch {
-      showError('Kalkış saatleri yüklenirken hata oluştu');
+      showError(t('couriers.schedules.loadErrorUnexpected'));
     } finally {
       setLoadingSchedules(false);
     }
@@ -88,10 +88,10 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
           setNewSchedule(prev => ({ ...prev, customsId: result.data[0].id }));
         }
       } else {
-        showError('Gümrük listesi yüklenemedi');
+        showError(t('couriers.schedules.customsLoadError'));
       }
     } catch {
-      showError('Gümrük listesi yüklenirken hata oluştu');
+      showError(t('couriers.schedules.customsLoadErrorUnexpected'));
     } finally {
       setLoadingCustoms(false);
     }
@@ -124,7 +124,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
 
     // Validate required fields
     if (!formData.name.trim()) {
-      showError('Kurye firması adı zorunludur');
+      showError(t('couriers.form.nameRequired'));
       return;
     }
 
@@ -132,7 +132,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
     if (formData.contactEmail && formData.contactEmail.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.contactEmail)) {
-        setEmailError('Geçerli bir email adresi giriniz');
+        setEmailError(t('management.invalidEmail'));
         return;
       }
     }
@@ -150,14 +150,14 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
       });
 
       if (result.success) {
-        showSuccess(`${formData.name} başarıyla güncellendi!`);
+        showSuccess(t('management.updatedSuccess', { name: formData.name }));
         onSuccess(result.data);
         onClose();
       } else {
-        showError(result.error || 'Kurye firması güncellenemedi');
+        showError(result.error || t('couriers.edit.updateError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -166,12 +166,12 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
   const handleAddSchedule = async () => {
     const stopId = isClientStop ? newSchedule.clientCompanyId : newSchedule.customsId;
     if (!stopId) {
-      showError(isClientStop ? t('courierStops.selectClient') : 'Lütfen gümrük müdürlüğü seçin');
+      showError(isClientStop ? t('courierStops.selectClient') : t('couriers.schedules.selectCustoms'));
       return;
     }
 
     if (!newSchedule.departureTime) {
-      showError('Lütfen kalkış saati girin');
+      showError(t('couriers.schedules.enterTime'));
       return;
     }
 
@@ -187,7 +187,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
       });
 
       if (result.success) {
-        showSuccess('Kalkış saati eklendi');
+        showSuccess(t('couriers.schedules.added'));
         setSchedulesModified(true); // Mark as modified
         loadSchedules(); // Reload schedules
         // Reset form (durak tipi korunur)
@@ -199,15 +199,15 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
           notes: ''
         });
       } else {
-        showError(result.error || 'Kalkış saati eklenemedi');
+        showError(result.error || t('couriers.schedules.addError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     }
   };
 
   const handleDeleteSchedule = async (scheduleId) => {
-    if (!confirm('Bu kalkış saatini silmek istediğinize emin misiniz?')) {
+    if (!confirm(t('couriers.schedules.deleteConfirm'))) {
       return;
     }
 
@@ -215,14 +215,14 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
       const result = await courierService.deleteSchedule(scheduleId);
 
       if (result.success) {
-        showSuccess('Kalkış saati silindi');
+        showSuccess(t('couriers.schedules.deleted'));
         setSchedulesModified(true); // Mark as modified
         loadSchedules(); // Reload schedules
       } else {
-        showError(result.error || 'Kalkış saati silinemedi');
+        showError(result.error || t('couriers.schedules.deleteError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     }
   };
 
@@ -275,7 +275,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Kurye Firmasını Düzenle
+              {t('couriers.edit.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
               {courier.shortName || courier.name}
@@ -299,7 +299,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                 : 'text-text-secondary hover:text-text-main'
             }`}
           >
-            Firma Bilgileri
+            {t('management.companyInfo')}
             {activeTab === 'info' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -312,7 +312,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                 : 'text-text-secondary hover:text-text-main'
             }`}
           >
-            Kalkış Saatleri ({schedules.length})
+            {t('couriers.edit.schedulesTab', { count: schedules.length })}
             {activeTab === 'schedules' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -326,7 +326,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               {/* Company Name */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Kurye Firması Adı <span className="text-red-500">*</span>
+                  {t('couriers.form.name')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -341,7 +341,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               {/* Short Name */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Kısa Ad
+                  {t('company.shortName')}
                 </label>
                 <input
                   type="text"
@@ -363,17 +363,17 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                     onChange={handleChange}
                     className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-text-main">Aktif</span>
+                  <span className="text-sm font-medium text-text-main">{t('transactions.common.active')}</span>
                 </label>
                 <p className="text-xs text-text-secondary mt-1">
-                  Pasif kurye firmaları dashboard'da gösterilmez
+                  {t('couriers.edit.inactiveHint')}
                 </p>
               </div>
 
               {/* Contact Phone */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  İletişim Telefonu
+                  {t('couriers.form.phone')}
                 </label>
                 <input
                   type="tel"
@@ -388,7 +388,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               {/* Contact Email */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  İletişim Email
+                  {t('couriers.form.email')}
                 </label>
                 <input
                   type="email"
@@ -410,7 +410,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               {/* Notes */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Notlar
+                  {t('management.notes')}
                 </label>
                 <textarea
                   name="notes"
@@ -426,13 +426,13 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               {/* Add New Schedule Form */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-text-main">Yeni Kalkış Saati Ekle</h3>
+                  <h3 className="text-sm font-semibold text-text-main">{t('couriers.schedules.addTitle')}</h3>
                   <button
                     onClick={() => setShowBatchModal(true)}
                     className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">playlist_add</span>
-                    Toplu Ekle
+                    {t('couriers.schedules.batchAdd')}
                   </button>
                 </div>
 
@@ -467,7 +467,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {/* Day of Week */}
                   <div>
-                    <label className="block text-xs font-medium text-text-main mb-1">Gün</label>
+                    <label className="block text-xs font-medium text-text-main mb-1">{t('couriers.schedules.day')}</label>
                     <select
                       value={newSchedule.dayOfWeek}
                       onChange={(e) => setNewSchedule(prev => ({ ...prev, dayOfWeek: e.target.value }))}
@@ -504,7 +504,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                       </>
                     ) : (
                       <>
-                        <label className="block text-xs font-medium text-text-main mb-1">Gümrük</label>
+                        <label className="block text-xs font-medium text-text-main mb-1">{t('courierStops.customs')}</label>
                         <select
                           value={newSchedule.customsId}
                           onChange={(e) => setNewSchedule(prev => ({ ...prev, customsId: e.target.value }))}
@@ -523,7 +523,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
 
                   {/* Time */}
                   <div>
-                    <label className="block text-xs font-medium text-text-main mb-1">Saat</label>
+                    <label className="block text-xs font-medium text-text-main mb-1">{t('couriers.schedules.time')}</label>
                     <input
                       type="time"
                       value={newSchedule.departureTime}
@@ -538,7 +538,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                       onClick={handleAddSchedule}
                       className="w-full px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors"
                     >
-                      Ekle
+                      {t('common.add')}
                     </button>
                   </div>
                 </div>
@@ -546,11 +546,11 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
 
               {/* Schedules List */}
               {loadingSchedules ? (
-                <div className="text-center py-8 text-text-secondary">Yükleniyor...</div>
+                <div className="text-center py-8 text-text-secondary">{t('common.loading')}</div>
               ) : schedules.length === 0 ? (
                 <div className="text-center py-8 text-text-secondary">
                   <span className="material-symbols-outlined text-4xl mb-2">schedule</span>
-                  <p className="text-sm">Henüz kalkış saati eklenmemiş</p>
+                  <p className="text-sm">{t('couriers.schedules.empty')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -606,14 +606,14 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               type="button"
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Güncelleniyor...' : 'Güncelle'}
+              {loading ? t('management.updating') : t('common.update')}
             </button>
           </div>
         )}

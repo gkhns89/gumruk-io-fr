@@ -4,6 +4,7 @@ import { companyService } from '../../api/companyService';
 import { configService } from '../../api/configService';
 import { handleError, handleApiResponse, logError } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t } from '../../locales';
 
 const CreateAgreementModal = ({
   isOpen,
@@ -111,8 +112,8 @@ const CreateAgreementModal = ({
 
     return (
       <p className="mt-2 text-xs text-text-secondary">
-        Maksimum dosya boyutu: <strong>{uploadConfig.maxFileSizeMB} MB</strong> |
-        İzin verilen formatlar: <strong>{uploadConfig.allowedFormats}</strong>
+        {t('agreements.form.maxFileSize')} <strong>{uploadConfig.maxFileSizeMB} MB</strong> |{' '}
+        {t('agreements.form.allowedFormats')} <strong>{uploadConfig.allowedFormats}</strong>
       </p>
     );
   };
@@ -120,13 +121,15 @@ const CreateAgreementModal = ({
   // Mode seçimi ekranı
   if (!mode) {
     const canProceed = !showClientSelector || selectedClientId;
+    // Firma adı kalın yazıldığı için metin {{name}} yer tutucusunun iki yanından bölünüyor
+    const [chooseMethodBefore, chooseMethodAfter] = t('agreements.create.chooseMethodFor').split('{{name}}');
 
     return (
       <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4" onClick={onClose}>
         <div className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-2xl w-full p-8 transition-colors duration-300" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-text-main">
-              Vekalet Anlaşması Oluştur
+              {t('agreements.create.title')}
             </h2>
             <button
               onClick={onClose}
@@ -140,16 +143,16 @@ const CreateAgreementModal = ({
           {showClientSelector && (
             <div className="mb-6">
               <label className="block text-sm font-medium text-text-main mb-2">
-                Müşteri Firma Seçin *
+                {t('agreements.create.selectClient')} *
               </label>
               {loadingClients ? (
                 <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg text-center transition-colors">
-                  <p className="text-sm text-text-secondary">Firmalar yükleniyor...</p>
+                  <p className="text-sm text-text-secondary">{t('agreements.create.clientsLoading')}</p>
                 </div>
               ) : availableClients.length === 0 ? (
                 <div className="p-4 border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg transition-colors">
                   <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    Aktif vekaleti olmayan müşteri firmanız bulunmuyor.
+                    {t('agreements.create.noClients')}
                   </p>
                 </div>
               ) : (
@@ -163,7 +166,7 @@ const CreateAgreementModal = ({
                   }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
-                  <option value="">-- Firma Seçiniz --</option>
+                  <option value="">{t('agreements.create.selectClientOption')}</option>
                   {availableClients.map(client => (
                     <option key={client.id} value={client.id}>
                       {client.name} {client.shortName && `(${client.shortName})`}
@@ -178,14 +181,14 @@ const CreateAgreementModal = ({
             {showClientSelector ? (
               selectedClientName ? (
                 <>
-                  <strong>{selectedClientName}</strong> için vekalet anlaşması oluşturma yöntemini seçin:
+                  {chooseMethodBefore}<strong>{selectedClientName}</strong>{chooseMethodAfter}
                 </>
               ) : (
-                'Vekalet anlaşması oluşturma yöntemini seçin:'
+                t('agreements.create.chooseMethod')
               )
             ) : (
               <>
-                <strong>{selectedClientName || clientCompanyName}</strong> için vekalet anlaşması oluşturma yöntemini seçin:
+                {chooseMethodBefore}<strong>{selectedClientName || clientCompanyName}</strong>{chooseMethodAfter}
               </>
             )}
           </p>
@@ -195,7 +198,7 @@ const CreateAgreementModal = ({
             <button
               onClick={() => {
                 if (!canProceed) {
-                  showError('Lütfen önce bir müşteri firma seçin');
+                  showError(t('agreements.create.selectClientFirst'));
                   return;
                 }
                 setMode('quick');
@@ -213,10 +216,10 @@ const CreateAgreementModal = ({
                 bolt
               </span>
               <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-text-main' : 'text-text-secondary'}`}>
-                Hızlı Oluştur
+                {t('agreements.create.quick')}
               </h3>
               <p className={`text-sm ${canProceed ? 'text-text-secondary' : 'text-gray-400 dark:text-gray-500'}`}>
-                Tek adımda tüm bilgileri girin ve anlaşmayı hemen aktifleştirin.
+                {t('agreements.create.quickHint')}
               </p>
             </button>
 
@@ -224,7 +227,7 @@ const CreateAgreementModal = ({
             <button
               onClick={() => {
                 if (!canProceed) {
-                  showError('Lütfen önce bir müşteri firma seçin');
+                  showError(t('agreements.create.selectClientFirst'));
                   return;
                 }
                 setMode('wizard');
@@ -242,10 +245,10 @@ const CreateAgreementModal = ({
                 checklist
               </span>
               <h3 className={`text-lg font-bold mb-2 ${canProceed ? 'text-text-main' : 'text-text-secondary'}`}>
-                Adım Adım
+                {t('agreements.create.wizard')}
               </h3>
               <p className={`text-sm ${canProceed ? 'text-text-secondary' : 'text-gray-400 dark:text-gray-500'}`}>
-                Anlaşmayı oluşturun, belge yükleyin, sonra aktifleştirin.
+                {t('agreements.create.wizardHint')}
               </p>
             </button>
           </div>
@@ -260,12 +263,12 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.document) {
-        showError('Vekalet belgesi seçmelisiniz');
+        showError(t('agreements.create.documentRequired'));
         return;
       }
 
       if (!formData.startDate || !formData.endDate) {
-        showError('Başlangıç ve bitiş tarihleri zorunludur');
+        showError(t('agreements.form.datesRequired'));
         return;
       }
 
@@ -285,14 +288,14 @@ const CreateAgreementModal = ({
         const result = await agencyAgreementService.createAndActivateAgreement(formDataToSend);
 
         if (result.success) {
-          showSuccess(result.message || 'Vekalet başarıyla oluşturuldu!');
+          showSuccess(result.message || t('agreements.create.createSuccess'));
           onSuccess();
           onClose();
         } else {
           handleApiResponse(result, null, null, 'Vekaletname oluşturma (quick mode)');
         }
       } catch (err) {
-        handleError(err, null, 'Vekaletname oluşturma (quick mode)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (quick mode)', t('management.unexpectedError'));
       } finally {
         setLoading(false);
       }
@@ -304,7 +307,7 @@ const CreateAgreementModal = ({
           <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
             <div>
               <h2 className="text-2xl font-bold text-text-main">
-                Hızlı Vekalet Oluştur
+                {t('agreements.create.quickTitle')}
               </h2>
               <p className="text-sm text-text-secondary mt-1">{showClientSelector ? selectedClientName : clientCompanyName}</p>
             </div>
@@ -318,10 +321,10 @@ const CreateAgreementModal = ({
 
           <form onSubmit={handleQuickCreate} className="p-6">
             <div className="space-y-4">
-              {/* Başlangıç Tarihi */}
+              {/* {t('agreements.form.startDate')} */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Başlangıç Tarihi *
+                  {t('agreements.form.startDate')} *
                 </label>
                 <input
                   type="date"
@@ -333,10 +336,10 @@ const CreateAgreementModal = ({
                 />
               </div>
 
-              {/* Bitiş Tarihi */}
+              {/* {t('agreements.form.endDate')} */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Bitiş Tarihi *
+                  {t('agreements.form.endDate')} *
                 </label>
                 <input
                   type="date"
@@ -348,10 +351,10 @@ const CreateAgreementModal = ({
                 />
               </div>
 
-              {/* Vekalet Belgesi */}
+              {/* {t('agreements.form.document')} */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Vekalet Belgesi *
+                  {t('agreements.form.document')} *
                 </label>
                 <input
                   type="file"
@@ -371,7 +374,7 @@ const CreateAgreementModal = ({
               {/* Notlar */}
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Notlar (İsteğe Bağlı)
+                  {t('agreements.form.notesOptional')}
                 </label>
                 <textarea
                   name="notes"
@@ -379,7 +382,7 @@ const CreateAgreementModal = ({
                   onChange={handleChange}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Anlaşma ile ilgili notlarınız..."
+                  placeholder={t('agreements.form.notesPlaceholder')}
                 />
               </div>
             </div>
@@ -390,14 +393,14 @@ const CreateAgreementModal = ({
                 onClick={() => setMode(null)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
-                Geri
+                {t('common.back')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Oluşturuluyor...' : 'Oluştur ve Aktifleştir'}
+                {loading ? t('management.creating') : t('agreements.create.createAndActivate')}
               </button>
             </div>
           </form>
@@ -427,7 +430,7 @@ const CreateAgreementModal = ({
           handleApiResponse(result, null, null, 'Vekaletname oluşturma (step 1)');
         }
       } catch (err) {
-        handleError(err, null, 'Vekaletname oluşturma (step 1)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (step 1)', t('management.unexpectedError'));
       } finally {
         setLoading(false);
       }
@@ -439,7 +442,7 @@ const CreateAgreementModal = ({
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-text-main">
-                Adım 1/3: Anlaşma Bilgileri
+                {t('agreements.create.step1Title')}
               </h2>
               <button
                 onClick={onClose}
@@ -460,16 +463,16 @@ const CreateAgreementModal = ({
           <form onSubmit={handleCreateAgreement} className="p-6">
             <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors">
               <p className="text-sm text-blue-800 dark:text-blue-300">
-                <strong>Müşteri:</strong> {showClientSelector ? selectedClientName : clientCompanyName}
+                <strong>{t('agreements.create.clientLabel')}</strong> {showClientSelector ? selectedClientName : clientCompanyName}
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                İlk adımda anlaşma taslağı oluşturulacak (INACTIVE durumunda)
+                {t('agreements.create.step1Hint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Notlar (İsteğe Bağlı)
+                {t('agreements.form.notesOptional')}
               </label>
               <textarea
                 name="notes"
@@ -477,7 +480,7 @@ const CreateAgreementModal = ({
                 onChange={handleChange}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Anlaşma ile ilgili notlarınız..."
+                placeholder={t('agreements.form.notesPlaceholder')}
               />
             </div>
 
@@ -487,14 +490,14 @@ const CreateAgreementModal = ({
                 onClick={() => setMode(null)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
-                Geri
+                {t('common.back')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50"
               >
-                {loading ? 'Oluşturuluyor...' : 'Devam Et'}
+                {loading ? t('management.creating') : t('agreements.create.continue')}
               </button>
             </div>
           </form>
@@ -509,7 +512,7 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.document) {
-        showError('Lütfen bir belge seçin');
+        showError(t('agreements.create.selectDocument'));
         return;
       }
 
@@ -527,7 +530,7 @@ const CreateAgreementModal = ({
           handleApiResponse(result, null, null, 'Vekaletname belgesi yükleme');
         }
       } catch (err) {
-        handleError(err, null, 'Vekaletname belgesi yükleme', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname belgesi yükleme', t('management.unexpectedError'));
       } finally {
         setLoading(false);
       }
@@ -539,7 +542,7 @@ const CreateAgreementModal = ({
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-text-main">
-                Adım 2/3: Vekalet Belgesi Yükle
+                {t('agreements.create.step2Title')}
               </h2>
               <button
                 onClick={onClose}
@@ -560,16 +563,16 @@ const CreateAgreementModal = ({
           <form onSubmit={handleUploadDocument} className="p-6">
             <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg transition-colors">
               <p className="text-sm text-green-800 dark:text-green-300">
-                ✓ Anlaşma oluşturuldu (INACTIVE)
+                ✓ {t('agreements.create.step2Created')}
               </p>
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Agreement ID: {createdAgreementId}
+                {t('agreements.create.agreementId', { id: createdAgreementId })}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Vekalet Belgesi *
+                {t('agreements.form.document')} *
               </label>
               <input
                 type="file"
@@ -593,14 +596,14 @@ const CreateAgreementModal = ({
                 onClick={() => setWizardStep(1)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
-                Geri
+                {t('common.back')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50"
               >
-                {loading ? 'Yükleniyor...' : 'Devam Et'}
+                {loading ? t('agreements.form.uploading') : t('agreements.create.continue')}
               </button>
             </div>
           </form>
@@ -615,7 +618,7 @@ const CreateAgreementModal = ({
       e.preventDefault();
 
       if (!formData.startDate || !formData.endDate) {
-        showError('Başlangıç ve bitiş tarihleri zorunludur');
+        showError(t('agreements.form.datesRequired'));
         return;
       }
 
@@ -632,14 +635,14 @@ const CreateAgreementModal = ({
         );
 
         if (result.success) {
-          showSuccess(result.message || 'Vekalet başarıyla aktifleştirildi!');
+          showSuccess(result.message || t('agreements.create.activateSuccess'));
           onSuccess();
           onClose();
         } else {
           handleApiResponse(result, null, null, 'Vekaletname oluşturma (wizard complete)');
         }
       } catch (err) {
-        handleError(err, null, 'Vekaletname oluşturma (wizard complete)', 'Beklenmeyen bir hata oluştu');
+        handleError(err, null, 'Vekaletname oluşturma (wizard complete)', t('management.unexpectedError'));
       } finally {
         setLoading(false);
       }
@@ -651,7 +654,7 @@ const CreateAgreementModal = ({
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-text-main">
-                Adım 3/3: Anlaşmayı Aktifleştir
+                {t('agreements.create.step3Title')}
               </h2>
               <button
                 onClick={onClose}
@@ -672,17 +675,17 @@ const CreateAgreementModal = ({
           <form onSubmit={handleActivate} className="p-6">
             <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg transition-colors">
               <p className="text-sm text-green-800 dark:text-green-300">
-                ✓ Vekalet belgesi yüklendi (PENDING)
+                ✓ {t('agreements.create.step3Uploaded')}
               </p>
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Son adım: Başlangıç ve bitiş tarihlerini belirleyin
+                {t('agreements.create.step3Hint')}
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Başlangıç Tarihi *
+                  {t('agreements.form.startDate')} *
                 </label>
                 <input
                   type="date"
@@ -696,7 +699,7 @@ const CreateAgreementModal = ({
 
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Bitiş Tarihi *
+                  {t('agreements.form.endDate')} *
                 </label>
                 <input
                   type="date"
@@ -715,14 +718,14 @@ const CreateAgreementModal = ({
                 onClick={() => setWizardStep(2)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
               >
-                Geri
+                {t('common.back')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
               >
-                {loading ? 'Aktifleştiriliyor...' : 'Aktifleştir ve Bitir'}
+                {loading ? t('agreements.create.activating') : t('agreements.create.activateAndFinish')}
               </button>
             </div>
           </form>

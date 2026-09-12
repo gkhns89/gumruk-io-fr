@@ -3,7 +3,7 @@ import { companyService } from '../../api/companyService';
 import SectorSelect from './SectorSelect';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { getCurrentLocale } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 
 /**
  * Unified Add Client Modal
@@ -34,7 +34,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
 
     // Validate brokerCompanyId
     if (!brokerCompanyId || isNaN(brokerCompanyId)) {
-      showError('Broker firma bilgisi eksik. Lütfen sayfayı yenileyin.');
+      showError(t('clients.add.brokerMissing'));
       return;
     }
 
@@ -48,7 +48,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
 
       if (result.success) {
         // Success feedback
-        showSuccess(`${formData.name} başarıyla eklendi!`);
+        showSuccess(t('management.addedSuccess', { name: formData.name }));
         onSuccess(result.data);
 
         // Reset form and close
@@ -56,11 +56,11 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
         onClose();
       } else {
         // API error - show as toast
-        showError(result.error || 'Müşteri firma oluşturulamadı');
+        showError(result.error || t('clients.add.createError'));
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -92,10 +92,10 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
         <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Yeni Müşteri Firması Ekle
+              {t('clients.add.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              Yeni bir müşteri firma kaydı oluşturun
+              {t('clients.add.subtitle')}
             </p>
           </div>
           <button
@@ -112,7 +112,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
             {/* Firma Adı - UPPERCASE transformation from AddTransaction */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Firma Adı *
+                {t('company.name')} *
               </label>
               <input
                 type="text"
@@ -122,7 +122,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                   name: toUpperCase(e.target.value, locale)
                 }))}
                 required
-                placeholder="Örn: ABC DIŞ TİCARET LTD. ŞTİ."
+                placeholder={t('clients.add.namePlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
@@ -131,7 +131,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
             {/* Kısa Ad - UPPERCASE transformation + Required */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kısa Ad *
+                {t('company.shortName')} *
               </label>
               <input
                 type="text"
@@ -141,19 +141,19 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                   shortName: toUpperCase(e.target.value, locale)
                 }))}
                 required
-                placeholder="Örn: ABC DT"
+                placeholder={t('clients.add.shortNamePlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
               <p className="mt-1 text-xs text-text-secondary">
-                Belgelerde ve raporlarda kullanılacak kısa ad
+                {t('clients.add.shortNameHint')}
               </p>
             </div>
 
             {/* Sektör - Optional, duyuru hedeflemesi için */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Sektör (İsteğe Bağlı)
+                {t('clients.add.sectorOptional')}
               </label>
               <SectorSelect
                 value={formData.sectorIds}
@@ -161,14 +161,14 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                 disabled={loading}
               />
               <p className="mt-2 text-xs text-text-secondary">
-                Duyuruları sektöre göre hedefleyebilmek için kullanılır. Birden fazla seçilebilir.
+                {t('clients.add.sectorHint')}
               </p>
             </div>
 
             {/* Açıklama - Optional, NO uppercase */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Açıklama (İsteğe Bağlı)
+                {t('clients.add.descriptionOptional')}
               </label>
               <textarea
                 value={formData.description}
@@ -177,7 +177,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
                   description: e.target.value
                 }))}
                 rows={3}
-                placeholder="Firma hakkında notlar..."
+                placeholder={t('clients.add.descriptionPlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
             </div>
@@ -190,14 +190,14 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
               onClick={handleClose}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Oluşturuluyor...' : 'Müşteri Ekle'}
+              {loading ? t('management.creating') : t('clients.add.submit')}
             </button>
           </div>
         </form>

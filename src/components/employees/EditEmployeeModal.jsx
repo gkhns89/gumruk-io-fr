@@ -3,7 +3,7 @@ import { employeeService } from '../../api/employeeService';
 import { paymentService } from '../../api/paymentService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { getCurrentLocale } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 
 export default function EditEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
   const locale = getCurrentLocale();
@@ -43,7 +43,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setEmailError('Geçerli bir email adresi giriniz');
+      setEmailError(t('management.invalidEmail'));
       return;
     }
 
@@ -69,16 +69,16 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
       }
 
       if (result.success) {
-        showSuccess('Çalışan bilgileri başarıyla güncellendi!');
+        showSuccess(t('employee.messages.updateSuccess'));
         onSuccess(result.data);
         onClose();
       } else {
         // API error - show as toast
-        showError(result.error || 'Çalışan güncellenemedi');
+        showError(result.error || t('employee.messages.updateError'));
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -102,10 +102,10 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Çalışan Düzenle
+              {t('employee.edit')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              {isEditingSelf ? 'Kendi bilgilerinizi düzenleyin' : 'Çalışan bilgilerini güncelleyin'}
+              {isEditingSelf ? t('employees.edit.subtitleSelf') : t('employees.edit.subtitle')}
             </p>
           </div>
           <button
@@ -125,7 +125,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">info</span>
                   <p className="text-blue-800 dark:text-blue-300 text-sm">
-                    Kendi rolünüzü ve durumunuzu değiştiremezsiniz
+                    {t('employees.edit.selfWarning')}
                   </p>
                 </div>
               </div>
@@ -134,7 +134,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
             {/* Username - UPPERCASE transformation */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kullanıcı Adı *
+                {t('management.username')} *
               </label>
               <input
                 type="text"
@@ -144,7 +144,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                   username: toUpperCase(e.target.value, locale)
                 }))}
                 required
-                placeholder="AHMET YILMAZ"
+                placeholder={t('employees.common.usernamePlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
@@ -153,7 +153,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
             {/* Email - lowercase transformation */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Email *
+                {t('employee.email')} *
               </label>
               <input
                 type="text"
@@ -166,7 +166,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                   if (emailError) setEmailError('');
                 }}
                 required
-                placeholder="ahmet.yilmaz@example.com"
+                placeholder={t('employee.placeholders.email')}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary lowercase bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors ${
                   emailError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -180,7 +180,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
             {/* Role Selection - Disabled when editing self */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Rol *
+                {t('employee.role')} *
               </label>
               <select
                 value={formData.globalRole}
@@ -192,12 +192,12 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
               >
-                <option value="BROKER_USER">Broker Kullanıcısı</option>
-                <option value="BROKER_ADMIN">Broker Yöneticisi</option>
+                <option value="BROKER_USER">{t('roles.brokerUser')}</option>
+                <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
               </select>
               {isEditingSelf && (
                 <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                  Kendi rolünüzü değiştiremezsiniz
+                  {t('employees.edit.cannotChangeOwnRole')}
                 </p>
               )}
             </div>
@@ -205,7 +205,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
             {/* Status Selection - Disabled when editing self */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Durum *
+                {t('employee.status')} *
               </label>
               <select
                 value={formData.isActive ? 'true' : 'false'}
@@ -217,12 +217,12 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
               >
-                <option value="true">Aktif</option>
-                <option value="false">Beklemede</option>
+                <option value="true">{t('employee.statuses.active')}</option>
+                <option value="false">{t('employee.statuses.pending')}</option>
               </select>
               {isEditingSelf && (
                 <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                  Kendi durumunuzu değiştiremezsiniz
+                  {t('employees.edit.cannotChangeOwnStatus')}
                 </p>
               )}
             </div>
@@ -232,8 +232,8 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
             {!isEditingSelf && isBrokerStaffRole(formData.globalRole) && (
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-text-main">Ödeme Sorumlusu</p>
-                  <p className="text-xs text-text-secondary mt-0.5">Bu kullanıcı ödeme bildirimlerini gönderebilir</p>
+                  <p className="text-sm font-medium text-text-main">{t('payment.paymentResponsible')}</p>
+                  <p className="text-xs text-text-secondary mt-0.5">{t('employees.edit.paymentResponsibleHint')}</p>
                 </div>
                 <button
                   type="button"
@@ -257,14 +257,14 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
               onClick={handleClose}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Güncelleniyor...' : 'Güncelle'}
+              {loading ? t('management.updating') : t('common.update')}
             </button>
           </div>
         </form>

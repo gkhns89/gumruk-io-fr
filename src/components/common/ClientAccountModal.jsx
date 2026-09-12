@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { clientUserService } from '../../api/clientUserService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { getCurrentLocale } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 
 // Backend UserCreateRequest en az 8 karakter istiyor; formda da aynı eşik.
 const MIN_PASSWORD_LENGTH = 8;
@@ -57,19 +57,19 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
     const errors = {};
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Geçerli bir e-posta adresi giriniz';
+      errors.email = t('clients.account.invalidEmail');
     }
 
     if (!formData.username.trim()) {
-      errors.username = 'Kullanıcı adı zorunludur';
+      errors.username = t('clients.account.usernameRequired');
     } else if (formData.username.trim().length < 3) {
-      errors.username = 'Kullanıcı adı en az 3 karakter olmalıdır';
+      errors.username = t('clients.account.usernameMin');
     }
 
     // Düzenlemede boş parola "değiştirme" anlamına geliyor, o yüzden serbest.
     const passwordRequired = !isEdit || formData.password.length > 0;
     if (passwordRequired && formData.password.length < MIN_PASSWORD_LENGTH) {
-      errors.password = `Parola en az ${MIN_PASSWORD_LENGTH} karakter olmalıdır`;
+      errors.password = t('clients.account.passwordMin', { min: MIN_PASSWORD_LENGTH });
     }
 
     setFieldErrors(errors);
@@ -97,15 +97,15 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
 
       if (result.success) {
         showSuccess(isEdit
-          ? 'Giriş hesabı güncellendi'
-          : `${client.name} için giriş hesabı oluşturuldu`);
+          ? t('clients.account.updateSuccess')
+          : t('clients.account.createSuccess', { name: client.name }));
         onSuccess();
         onClose();
       } else {
         showError(result.error);
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -124,14 +124,14 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
         isActive: !account.isActive,
       });
       if (result.success) {
-        showSuccess(account.isActive ? 'Hesap pasife alındı' : 'Hesap aktifleştirildi');
+        showSuccess(account.isActive ? t('clients.account.deactivated') : t('clients.account.activated'));
         onSuccess();
         onClose();
       } else {
         showError(result.error);
       }
     } catch (err) {
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
         <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              {isEdit ? 'Giriş Hesabını Düzenle' : 'Giriş Hesabı Oluştur'}
+              {isEdit ? t('clients.account.editTitle') : t('clients.account.createTitle')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">{client.name}</p>
           </div>
@@ -172,7 +172,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
             {/* E-posta */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                E-Posta *
+                {t('clients.account.email')} *
               </label>
               <input
                 type="text"
@@ -182,7 +182,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                   if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
                 }}
                 required
-                placeholder="muhasebe@musterifirma.com"
+                placeholder={t('clients.account.emailPlaceholder')}
                 className={`${inputClass('email')} lowercase`}
                 style={{ textTransform: 'lowercase' }}
               />
@@ -190,7 +190,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
               ) : (
                 <p className="mt-1 text-xs text-text-secondary">
-                  Müşterinin sisteme gireceği adres
+                  {t('clients.account.emailHint')}
                 </p>
               )}
             </div>
@@ -198,7 +198,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
             {/* Kullanıcı adı */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kullanıcı Adı *
+                {t('management.username')} *
               </label>
               <input
                 type="text"
@@ -211,7 +211,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                   if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: undefined }));
                 }}
                 required
-                placeholder="ABC DIŞ TİCARET"
+                placeholder={t('clients.account.usernamePlaceholder')}
                 className={`${inputClass('username')} uppercase`}
                 style={{ textTransform: 'uppercase' }}
               />
@@ -219,7 +219,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
               ) : (
                 <p className="mt-1 text-xs text-text-secondary">
-                  Sistemde görünecek ad — genelde firmanın kısa adı
+                  {t('clients.account.usernameHint')}
                 </p>
               )}
             </div>
@@ -228,7 +228,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-text-main">
-                  {isEdit ? 'Yeni Parola' : 'Parola *'}
+                  {isEdit ? t('clients.account.newPassword') : `${t('clients.account.password')} *`}
                 </label>
                 <button
                   type="button"
@@ -236,7 +236,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                   className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
                   <span className="material-symbols-outlined text-sm">casino</span>
-                  Parola üret
+                  {t('clients.account.generatePassword')}
                 </button>
               </div>
               <div className="relative">
@@ -248,14 +248,14 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                     if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
                   }}
                   required={!isEdit}
-                  placeholder={isEdit ? 'Değiştirmek istemiyorsanız boş bırakın' : `En az ${MIN_PASSWORD_LENGTH} karakter`}
+                  placeholder={isEdit ? t('clients.account.passwordKeepPlaceholder') : t('clients.account.passwordMinHint', { min: MIN_PASSWORD_LENGTH })}
                   className={`${inputClass('password')} pr-10 font-mono`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-secondary"
-                  title={showPassword ? 'Gizle' : 'Göster'}
+                  title={showPassword ? t('clients.account.hide') : t('clients.account.show')}
                 >
                   <span className="material-symbols-outlined">
                     {showPassword ? 'visibility_off' : 'visibility'}
@@ -267,8 +267,8 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
               ) : (
                 <p className="mt-1 text-xs text-text-secondary">
                   {isEdit
-                    ? 'Boş bırakırsanız mevcut parola korunur'
-                    : `En az ${MIN_PASSWORD_LENGTH} karakter`}
+                    ? t('clients.account.passwordKeepHint')
+                    : t('clients.account.passwordMinHint', { min: MIN_PASSWORD_LENGTH })}
                 </p>
               )}
             </div>
@@ -279,8 +279,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                 <div className="flex items-start gap-2">
                   <span className="material-symbols-outlined text-amber-600 text-sm mt-0.5">key</span>
                   <p className="text-amber-800 dark:text-amber-300 text-sm">
-                    Bu parola yalnızca burada görünür. Kaydettikten sonra bir daha
-                    gösterilemez — müşteriye iletmeyi unutmayın.
+                    {t('clients.account.passwordOnceWarning')}
                   </p>
                 </div>
               </div>
@@ -294,8 +293,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                     gpp_maybe
                   </span>
                   <p className="text-red-800 dark:text-red-300 text-sm">
-                    Bu firmanın aktif vekaleti yok. Hesabı şimdi açabilirsiniz ancak
-                    vekalet aktifleşene kadar müşteri sisteme giriş yapamaz.
+                    {t('clients.account.noAgreementWarning')}
                   </p>
                 </div>
               </div>
@@ -305,11 +303,11 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
             {isEdit && (
               <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-text-main">Hesap durumu</p>
+                  <p className="text-sm font-medium text-text-main">{t('clients.account.status')}</p>
                   <p className="text-xs text-text-secondary">
                     {account.isActive
-                      ? 'Aktif — müşteri sisteme girebiliyor'
-                      : 'Pasif — giriş denemeleri reddediliyor'}
+                      ? t('clients.account.statusActive')
+                      : t('clients.account.statusInactive')}
                   </p>
                 </div>
                 <button
@@ -322,7 +320,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                       : 'text-green-600 dark:text-green-400 border-green-300 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30'
                   }`}
                 >
-                  {account.isActive ? 'Pasife al' : 'Aktifleştir'}
+                  {account.isActive ? t('management.deactivate') : t('management.activate')}
                 </button>
               </div>
             )}
@@ -335,14 +333,14 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
               onClick={onClose}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Kaydediliyor...' : isEdit ? 'Kaydet' : 'Hesabı Oluştur'}
+              {loading ? t('management.saving') : isEdit ? t('common.save') : t('clients.account.submitCreate')}
             </button>
           </div>
         </form>

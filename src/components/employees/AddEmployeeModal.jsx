@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { getCurrentLocale } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 
 export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, currentLimits }) {
   const locale = getCurrentLocale();
@@ -27,26 +27,26 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
 
     // Validate broker company ID
     if (!brokerCompanyId || isNaN(brokerCompanyId)) {
-      showError('Firma bilgisi eksik. Lütfen sayfayı yenileyin.');
+      showError(t('employees.add.companyMissing'));
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setEmailError('Geçerli bir email adresi giriniz');
+      setEmailError(t('management.invalidEmail'));
       return;
     }
 
     // Validate password length
     if (formData.password.length < 6) {
-      setPasswordError('Şifre en az 6 karakter olmalıdır');
+      setPasswordError(t('employees.add.passwordMin'));
       return;
     }
 
     // Check quota
     if (currentLimits && (currentLimits.canAddUser === false || currentLimits.remainingUserQuota <= 0)) {
-      showError('Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.');
+      showError(t('employees.add.quotaExceeded'));
       return;
     }
 
@@ -59,7 +59,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
       });
 
       if (result.success) {
-        showSuccess(`${formData.username} başarıyla eklendi!`);
+        showSuccess(t('management.addedSuccess', { name: formData.username }));
         onSuccess(result.data);
 
         // Reset form and close
@@ -67,11 +67,11 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
         onClose();
       } else {
         // API error - show as toast
-        showError(result.error || 'Çalışan oluşturulamadı');
+        showError(result.error || t('employee.messages.createError'));
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -99,16 +99,16 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Yeni Çalışan Ekle
+              {t('employee.addNew')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              Yeni bir çalışan kaydı oluşturun
+              {t('employees.add.subtitle')}
             </p>
             {currentLimits && (
               <p className="text-xs text-text-secondary mt-1">
-                {currentLimits.currentBrokerUsers} / {currentLimits.maxBrokerUsers} broker kullanıcı
+                {currentLimits.currentBrokerUsers} / {currentLimits.maxBrokerUsers} {t('employees.common.brokerUsers')}
                 {isQuotaExceeded && (
-                  <span className="ml-2 text-red-600 dark:text-red-400 font-semibold">• Limit doldu!</span>
+                  <span className="ml-2 text-red-600 dark:text-red-400 font-semibold">• {t('employees.common.limitReached')}</span>
                 )}
               </p>
             )}
@@ -127,7 +127,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
             {/* Username - UPPERCASE transformation */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Kullanıcı Adı *
+                {t('management.username')} *
               </label>
               <input
                 type="text"
@@ -137,19 +137,19 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                   username: toUpperCase(e.target.value, locale)
                 }))}
                 required
-                placeholder="AHMET YILMAZ"
+                placeholder={t('employees.common.usernamePlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary uppercase transition-colors"
                 style={{ textTransform: 'uppercase' }}
               />
               <p className="mt-1 text-xs text-text-secondary">
-                Çalışanın adı ve soyadı
+                {t('employees.add.usernameHint')}
               </p>
             </div>
 
             {/* Email - lowercase transformation */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Email *
+                {t('employee.email')} *
               </label>
               <input
                 type="text"
@@ -162,7 +162,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                   if (emailError) setEmailError('');
                 }}
                 required
-                placeholder="ahmet.yilmaz@example.com"
+                placeholder={t('employee.placeholders.email')}
                 className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-primary lowercase transition-colors ${
                   emailError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -172,7 +172,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 <p className="mt-1 text-xs text-red-600">{emailError}</p>
               ) : (
                 <p className="mt-1 text-xs text-text-secondary">
-                  Giriş için kullanılacak email adresi
+                  {t('employees.add.emailHint')}
                 </p>
               )}
             </div>
@@ -180,7 +180,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Şifre *
+                {t('employee.password')} *
               </label>
               <input
                 type="password"
@@ -194,7 +194,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 }}
                 required
                 minLength={6}
-                placeholder="En az 6 karakter"
+                placeholder={t('employee.placeholders.password')}
                 className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${
                   passwordError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -203,7 +203,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 <p className="mt-1 text-xs text-red-600">{passwordError}</p>
               ) : (
                 <p className="mt-1 text-xs text-text-secondary">
-                  Minimum 6 karakter
+                  {t('employees.add.passwordHint')}
                 </p>
               )}
             </div>
@@ -211,7 +211,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
             {/* Role Selection */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Rol *
+                {t('employee.role')} *
               </label>
               <select
                 value={formData.globalRole}
@@ -222,11 +222,11 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               >
-                <option value="BROKER_USER">Broker Kullanıcısı</option>
-                <option value="BROKER_ADMIN">Broker Yöneticisi</option>
+                <option value="BROKER_USER">{t('roles.brokerUser')}</option>
+                <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
               </select>
               <p className="mt-1 text-xs text-text-secondary">
-                Broker Yöneticisi: Tüm yetkilere sahip • Broker Kullanıcısı: İşlem yönetimi
+                {t('employees.add.roleHint')}
               </p>
             </div>
 
@@ -236,7 +236,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-600 text-sm">warning</span>
                   <p className="text-amber-800 dark:text-amber-300 text-sm">
-                    Çalışan limiti doldu. Yeni çalışan ekleyebilmek için aboneliğinizi yükseltin.
+                    {t('employees.add.quotaWarning')}
                   </p>
                 </div>
               </div>
@@ -250,14 +250,14 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
               onClick={handleClose}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || isQuotaExceeded}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Oluşturuluyor...' : 'Çalışan Ekle'}
+              {loading ? t('management.creating') : t('employees.add.submit')}
             </button>
           </div>
         </form>

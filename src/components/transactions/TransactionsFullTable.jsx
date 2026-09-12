@@ -3,7 +3,14 @@ import EditTransactionModal from "./EditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { warehouseOriginLabel } from "../../utils/warehouseOrigin";
+import { getGateOption } from "../../utils/constants";
 import { t, getCurrentLocale } from "../../locales";
+
+// Hat değeri (SARI / KIRMIZI) veridir; ekranda sözlükteki karşılığı gösterilir
+const getGateLabel = (gate) => {
+  const option = getGateOption(gate);
+  return option ? t(option.labelKey) : gate;
+};
 
 // Hat badge renkleri
 const getGateBadge = (gate) => {
@@ -275,7 +282,7 @@ export default function TransactionsFullTable({
                     <td className="px-4 py-3 whitespace-nowrap">
                       {transaction.gate ? (
                         <span className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full w-20 ${gateBadgeClass}`}>
-                          {transaction.gate}
+                          {getGateLabel(transaction.gate)}
                         </span>
                       ) : (
                         <span className="text-sm text-text-secondary">-</span>

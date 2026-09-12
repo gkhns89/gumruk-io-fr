@@ -9,6 +9,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import Pagination from '../../components/common/Pagination';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 const PAGE_SIZE = 10;
 
@@ -49,10 +50,10 @@ const AgreementsPage = () => {
         if (result.success) {
           setBrokers(result.data);
         } else {
-          setBrokersError(result.error || 'Gümrük firmaları yüklenemedi');
+          setBrokersError(result.error || t('management.brokersLoadError'));
         }
       })
-      .catch(() => setBrokersError('Gümrük firmaları yüklenirken bir hata oluştu'))
+      .catch(() => setBrokersError(t('management.brokersLoadErrorUnexpected')))
       .finally(() => setBrokersLoading(false));
   }, [isSuperAdmin]);
 
@@ -70,7 +71,7 @@ const AgreementsPage = () => {
       handleApiResponse(result, () => setAgreements(result.data), setError, 'Anlaşmalar yükleme');
       if (!result.success) setAgreements([]);
     } catch (err) {
-      handleError(err, setError, 'Anlaşmalar yükleme', 'Anlaşmalar yüklenirken bir hata oluştu');
+      handleError(err, setError, 'Anlaşmalar yükleme', t('agreements.page.loadError'));
       setAgreements([]);
     } finally {
       setLoading(false);
@@ -88,23 +89,23 @@ const AgreementsPage = () => {
     setScanning(false);
     if (result.success) {
       if (result.clearedCount > 0) {
-        showSuccess(`${result.clearedCount} vekaletin kayıp belge kaydı temizlendi. İlgili firmalar belgeyi yeniden yükleyebilir.`);
+        showSuccess(t('agreements.page.scanCleared', { count: result.clearedCount }));
       } else {
-        showSuccess('Tüm vekalet belgeleri yerinde — temizlenecek kayıt bulunamadı.');
+        showSuccess(t('agreements.page.scanNothing'));
       }
       loadAgreements();
     } else {
-      showError(result.error || 'Belge taraması yapılamadı');
+      showError(result.error || t('agreements.page.scanError'));
     }
   };
 
   const getStatusBadge = (status) => {
     const badges = {
-      ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', border: 'border-green-300 dark:border-green-700', label: 'Aktif' },
-      PENDING: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300', border: 'border-yellow-300 dark:border-yellow-700', label: 'Onay Bekliyor' },
-      INACTIVE: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-800 dark:text-gray-300', border: 'border-gray-300 dark:border-gray-600', label: 'Pasif' },
-      SUSPENDED: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-300', border: 'border-orange-300 dark:border-orange-700', label: 'Askıda' },
-      TERMINATED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300', border: 'border-red-300 dark:border-red-700', label: 'Sonlandırıldı' }
+      ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', border: 'border-green-300 dark:border-green-700', label: t('agreements.status.ACTIVE') },
+      PENDING: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300', border: 'border-yellow-300 dark:border-yellow-700', label: t('agreements.status.PENDING') },
+      INACTIVE: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-800 dark:text-gray-300', border: 'border-gray-300 dark:border-gray-600', label: t('agreements.status.INACTIVE') },
+      SUSPENDED: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-300', border: 'border-orange-300 dark:border-orange-700', label: t('agreements.status.SUSPENDED') },
+      TERMINATED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300', border: 'border-red-300 dark:border-red-700', label: t('agreements.status.TERMINATED') }
     };
     return badges[status] || badges.INACTIVE;
   };
@@ -130,14 +131,14 @@ const AgreementsPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
                 <span className="material-symbols-outlined text-4xl text-primary">verified</span>
-                Vekalet Yönetimi
+                {t('nav.agreements')}
               </h1>
               <p className="text-text-secondary mt-2">
                 {isSuperAdmin
                   ? selectedBroker
-                    ? `${selectedBroker.name} — vekalet anlaşmaları`
-                    : 'Vekalet anlaşmalarını görüntülemek için bir gümrük firması seçin'
-                  : 'Müşteri firmalarınızla olan vekalet anlaşmalarınızı yönetin'}
+                    ? t('agreements.page.subtitleBroker', { name: selectedBroker.name })
+                    : t('agreements.page.subtitleSelectBroker')
+                  : t('agreements.page.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -146,12 +147,12 @@ const AgreementsPage = () => {
                   onClick={handleReconcile}
                   disabled={scanning}
                   className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Tüm vekaletleri tarar; dosyası sunucuda bulunamayan kayıtların belge yolunu temizler"
+                  title={t('agreements.page.scanHint')}
                 >
                   <span className={`material-symbols-outlined ${scanning ? 'animate-spin' : ''}`}>
                     {scanning ? 'progress_activity' : 'fact_check'}
                   </span>
-                  {scanning ? 'Taranıyor...' : 'Eksik Belgeleri Tara'}
+                  {scanning ? t('agreements.page.scanning') : t('agreements.page.scanMissing')}
                 </button>
               )}
               {(!isSuperAdmin || selectedBroker) && (
@@ -159,10 +160,10 @@ const AgreementsPage = () => {
                   onClick={() => !isAddBlocked && setShowCreateModal(true)}
                   disabled={isAddBlocked}
                   className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={isAddBlocked ? 'Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor' : 'Yeni vekalet ekle'}
+                  title={isAddBlocked ? t('payment.restrictionWarning') : t('agreements.page.addHint')}
                 >
                   <span className="material-symbols-outlined">{isAddBlocked ? 'lock' : 'add'}</span>
-                  Yeni Vekalet Ekle
+                  {t('agreements.page.add')}
                 </button>
               )}
             </div>
@@ -177,12 +178,12 @@ const AgreementsPage = () => {
             {isSuperAdmin && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
                 <label htmlFor="broker-select" className="block text-sm font-medium text-text-main mb-2">
-                  Gümrük Firması Seçin
+                  {t('management.selectBroker')}
                 </label>
                 {brokersLoading ? (
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span className="text-sm">Yükleniyor...</span>
+                    <span className="text-sm">{t('common.loading')}</span>
                   </div>
                 ) : brokersError ? (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 py-2">
@@ -203,7 +204,7 @@ const AgreementsPage = () => {
                       }}
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors appearance-none cursor-pointer"
                     >
-                      <option value="">— Firma seçin —</option>
+                      <option value="">{t('management.selectCompanyOption')}</option>
                       {brokers.map(broker => (
                         <option key={broker.id} value={broker.id}>
                           {broker.name}{broker.shortName ? ` (${broker.shortName})` : ''}
@@ -220,9 +221,9 @@ const AgreementsPage = () => {
             {isSuperAdmin && !selectedBroker && !brokersLoading && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
                 <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4 block">business</span>
-                <h3 className="text-xl font-semibold text-text-main mb-2">Gümrük Firması Seçin</h3>
+                <h3 className="text-xl font-semibold text-text-main mb-2">{t('management.selectBroker')}</h3>
                 <p className="text-text-secondary">
-                  Vekalet anlaşmalarını görüntülemek için yukarıdan bir gümrük firması seçin
+                  {t('agreements.page.selectBrokerHint')}
                 </p>
               </div>
             )}
@@ -234,29 +235,29 @@ const AgreementsPage = () => {
                 <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-main mb-2">Durum Filtresi</label>
+                      <label className="block text-sm font-medium text-text-main mb-2">{t('management.statusFilter')}</label>
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                       >
-                        <option value="ALL">Tümü</option>
-                        <option value="ACTIVE">Aktif</option>
-                        <option value="PENDING">Onay Bekliyor</option>
-                        <option value="INACTIVE">Pasif</option>
-                        <option value="SUSPENDED">Askıda</option>
-                        <option value="TERMINATED">Sonlandırıldı</option>
+                        <option value="ALL">{t('management.all')}</option>
+                        <option value="ACTIVE">{t('agreements.status.ACTIVE')}</option>
+                        <option value="PENDING">{t('agreements.status.PENDING')}</option>
+                        <option value="INACTIVE">{t('agreements.status.INACTIVE')}</option>
+                        <option value="SUSPENDED">{t('agreements.status.SUSPENDED')}</option>
+                        <option value="TERMINATED">{t('agreements.status.TERMINATED')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-main mb-2">Müşteri Ara</label>
+                      <label className="block text-sm font-medium text-text-main mb-2">{t('management.clientSearch')}</label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
                         <input
                           type="text"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Müşteri adı ile ara..."
+                          placeholder={t('agreements.page.searchPlaceholder')}
                           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                         />
                       </div>
@@ -269,7 +270,7 @@ const AgreementsPage = () => {
                   <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center border border-gray-200 dark:border-gray-700 transition-colors">
                     <div className="flex items-center justify-center gap-3">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-text-secondary">Yükleniyor...</p>
+                      <p className="text-text-secondary">{t('common.loading')}</p>
                     </div>
                   </div>
                 )}
@@ -290,13 +291,13 @@ const AgreementsPage = () => {
                     <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-500 mb-4 block">verified</span>
                     <h3 className="text-xl font-semibold text-text-main mb-2">
                       {searchTerm || statusFilter !== 'ALL'
-                        ? 'Filtre kriterlerine uygun anlaşma bulunamadı'
-                        : 'Henüz vekalet anlaşması bulunmuyor'}
+                        ? t('agreements.page.emptyFiltered')
+                        : t('agreements.page.empty')}
                     </h3>
                     <p className="text-text-secondary mb-6">
                       {searchTerm || statusFilter !== 'ALL'
-                        ? 'Farklı filtreler deneyerek arama yapabilirsiniz'
-                        : 'Müşterileriniz ile vekalet anlaşması oluşturmak için "Yeni Vekalet Ekle" butonuna tıklayın'}
+                        ? t('management.filterEmptyHint')
+                        : t('agreements.page.emptyHint')}
                     </p>
                     {!searchTerm && statusFilter === 'ALL' && !isAddBlocked && (
                       <button
@@ -304,7 +305,7 @@ const AgreementsPage = () => {
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         <span className="material-symbols-outlined">add</span>
-                        Yeni Vekalet Ekle
+                        {t('agreements.page.add')}
                       </button>
                     )}
                   </div>
@@ -317,12 +318,12 @@ const AgreementsPage = () => {
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">Müşteri Firma</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Durum</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Başlangıç</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Bitiş</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Kalan Süre</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">İşlemler</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">{t('management.clientCompany')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('management.status')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('agreements.common.start')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('agreements.common.end')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('agreements.common.remaining')}</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">{t('management.actions')}</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
@@ -361,24 +362,24 @@ const AgreementsPage = () => {
                                     {needsDocument && (
                                       <span
                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                                        title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+                                        title={t('agreements.common.documentMissingHint')}
                                       >
                                         <span className="material-symbols-outlined text-sm">error</span>
-                                        Belge eksik
+                                        {t('agreements.common.documentMissing')}
                                       </span>
                                     )}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                  {agreement.startDate ? new Date(agreement.startDate).toLocaleDateString('tr-TR') : '-'}
+                                  {agreement.startDate ? new Date(agreement.startDate).toLocaleDateString(getCurrentLocale()) : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                  {agreement.endDate ? new Date(agreement.endDate).toLocaleDateString('tr-TR') : '-'}
+                                  {agreement.endDate ? new Date(agreement.endDate).toLocaleDateString(getCurrentLocale()) : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   {remainingDays !== null ? (
                                     <span className={`text-sm font-semibold ${remainingDays < 30 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                      {remainingDays} gün{remainingDays < 30 && ' ⚠️'}
+                                      {t('agreements.common.daysLeft', { count: remainingDays })}{remainingDays < 30 && ' ⚠️'}
                                     </span>
                                   ) : (
                                     <span className="text-sm text-text-secondary">-</span>
@@ -388,7 +389,7 @@ const AgreementsPage = () => {
                                   <button
                                     onClick={() => { setSelectedAgreement(agreement); setShowEditModal(true); }}
                                     className="text-primary hover:text-primary/80 transition-colors"
-                                    title="Vekaleti Düzenle"
+                                    title={t('agreements.page.editHint')}
                                   >
                                     <span className="material-symbols-outlined">edit</span>
                                   </button>

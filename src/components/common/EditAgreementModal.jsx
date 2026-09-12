@@ -3,6 +3,7 @@ import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { configService } from '../../api/configService';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t } from '../../locales';
 
 /**
  * Vekalet Düzenleme Modalı
@@ -105,11 +106,11 @@ export default function EditAgreementModal({
       }
 
       // Başarılı
-      showSuccess('Vekalet başarıyla güncellendi!');
+      showSuccess(t('agreements.edit.success'));
       onSuccess();
       onClose();
     } catch (err) {
-      handleError(err, null, 'EditAgreementModal - handleSubmit', 'Beklenmeyen bir hata oluştu');
+      handleError(err, null, 'EditAgreementModal - handleSubmit', t('management.unexpectedError'));
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -145,8 +146,8 @@ export default function EditAgreementModal({
 
     return (
       <p className="mt-2 text-xs text-text-secondary">
-        Maksimum dosya boyutu: <strong>{uploadConfig.maxFileSizeMB} MB</strong> |
-        İzin verilen formatlar: <strong>{uploadConfig.allowedFormats}</strong>
+        {t('agreements.form.maxFileSize')} <strong>{uploadConfig.maxFileSizeMB} MB</strong> |{' '}
+        {t('agreements.form.allowedFormats')} <strong>{uploadConfig.allowedFormats}</strong>
       </p>
     );
   };
@@ -163,10 +164,10 @@ export default function EditAgreementModal({
         <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              Vekalet Anlaşmasını Düzenle
+              {t('agreements.edit.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              {clientInfo?.name || 'Müşteri'}
+              {clientInfo?.name || t('transactions.common.client')}
             </p>
           </div>
           <button
@@ -184,7 +185,7 @@ export default function EditAgreementModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Başlangıç Tarihi *
+                  {t('agreements.form.startDate')} *
                 </label>
                 <input
                   type="date"
@@ -197,7 +198,7 @@ export default function EditAgreementModal({
 
               <div>
                 <label className="block text-sm font-medium text-text-main mb-2">
-                  Bitiş Tarihi *
+                  {t('agreements.form.endDate')} *
                 </label>
                 <input
                   type="date"
@@ -212,32 +213,32 @@ export default function EditAgreementModal({
             {/* Durum */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Durum *
+                {t('management.status')} *
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               >
-                <option value="ACTIVE">✅ Aktif - Vekalet geçerli ve kullanımda</option>
-                <option value="SUSPENDED">⏸️ Askıda - Geçici olarak durdurulmuş</option>
-                <option value="TERMINATED">🚫 Sonlandırılmış - Kalıcı olarak iptal edilmiş</option>
+                <option value="ACTIVE">{t('agreements.edit.optionActive')}</option>
+                <option value="SUSPENDED">{t('agreements.edit.optionSuspended')}</option>
+                <option value="TERMINATED">{t('agreements.edit.optionTerminated')}</option>
               </select>
               <p className="mt-1 text-xs text-text-secondary">
-                💡 Not: PENDING ve INACTIVE durumları yalnızca belge yükleme işlemi sırasında otomatik olarak ayarlanır.
+                {t('agreements.edit.statusNote')}
               </p>
             </div>
 
             {/* Notlar */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Notlar
+                {t('management.notes')}
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={4}
-                placeholder="Anlaşma hakkında notlar..."
+                placeholder={t('agreements.edit.notesPlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
             </div>
@@ -245,7 +246,7 @@ export default function EditAgreementModal({
             {/* Belge Yükleme */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                Vekalet Belgesi
+                {t('agreements.form.document')}
               </label>
               <div className="flex items-center gap-4">
                 <label className="flex-1 cursor-pointer">
@@ -254,7 +255,7 @@ export default function EditAgreementModal({
                       upload_file
                     </span>
                     <span className="text-sm text-text-secondary">
-                      {selectedFile ? selectedFile.name : 'Yeni belge seç (opsiyonel)'}
+                      {selectedFile ? selectedFile.name : t('agreements.edit.chooseNewDocument')}
                     </span>
                   </div>
                   <input
@@ -276,7 +277,7 @@ export default function EditAgreementModal({
               </div>
               {renderUploadConstraints() || (
                 <p className="mt-1 text-xs text-text-secondary">
-                  PDF, JPG veya PNG formatında, maksimum 10MB
+                  {t('agreements.edit.defaultConstraints')}
                 </p>
               )}
 
@@ -285,7 +286,7 @@ export default function EditAgreementModal({
                 <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors">
                   <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                     <span className="material-symbols-outlined text-lg">description</span>
-                    <span>Mevcut belge kayıtlı</span>
+                    <span>{t('agreements.edit.currentDocument')}</span>
                   </div>
                 </div>
               )}
@@ -295,7 +296,7 @@ export default function EditAgreementModal({
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-text-secondary">
-                  <span>Yükleniyor...</span>
+                  <span>{t('agreements.form.uploading')}</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors">
@@ -316,14 +317,14 @@ export default function EditAgreementModal({
               disabled={loading}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+              {loading ? t('management.saving') : t('agreements.edit.saveChanges')}
             </button>
           </div>
         </form>

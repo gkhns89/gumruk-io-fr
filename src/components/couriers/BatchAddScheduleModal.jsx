@@ -62,11 +62,11 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
       if (result.success) {
         setCustomsList(result.data || []);
       } else {
-        showError(result.error || 'Gümrük listesi yüklenemedi');
+        showError(result.error || t('couriers.schedules.customsLoadError'));
       }
     } catch (err) {
       console.error('Error loading customs:', err);
-      showError('Gümrük listesi yüklenirken hata oluştu');
+      showError(t('couriers.schedules.customsLoadErrorUnexpected'));
     } finally {
       setLoadingCustoms(false);
     }
@@ -103,7 +103,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
   const toggleTime = (time) => {
     setSelectedTimes(prev =>
       prev.includes(time)
-        ? prev.filter(t => t !== time)
+        ? prev.filter(selected => selected !== time)
         : [...prev, time]
     );
   };
@@ -148,16 +148,16 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
 
   // Select morning times (07:00-12:00)
   const selectMorningTimes = () => {
-    setSelectedTimes(timeTemplates.filter(t => {
-      const hour = parseInt(t.split(':')[0]);
+    setSelectedTimes(timeTemplates.filter(time => {
+      const hour = parseInt(time.split(':')[0]);
       return hour >= 7 && hour < 12;
     }));
   };
 
   // Select afternoon times (12:00-18:00)
   const selectAfternoonTimes = () => {
-    setSelectedTimes(timeTemplates.filter(t => {
-      const hour = parseInt(t.split(':')[0]);
+    setSelectedTimes(timeTemplates.filter(time => {
+      const hour = parseInt(time.split(':')[0]);
       return hour >= 12 && hour < 18;
     }));
   };
@@ -175,17 +175,17 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
 
     // Validation
     if (selectedDays.length === 0) {
-      showError('En az bir gün seçmelisiniz');
+      showError(t('couriers.batch.selectDay'));
       return;
     }
 
     if (selectedStops.length === 0) {
-      showError(isClientStop ? t('courierStops.selectAtLeastOneClient') : 'En az bir gümrük müdürlüğü seçmelisiniz');
+      showError(isClientStop ? t('courierStops.selectAtLeastOneClient') : t('couriers.batch.selectCustoms'));
       return;
     }
 
     if (selectedTimes.length === 0) {
-      showError('En az bir kalkış saati seçmelisiniz');
+      showError(t('couriers.batch.selectTime'));
       return;
     }
 
@@ -216,7 +216,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
               }
             } catch (err) {
               failCount++;
-              errors.push(`Beklenmeyen hata: ${err.message}`);
+              errors.push(t('couriers.batch.unexpectedError', { message: err.message }));
             }
           }
         }
@@ -224,12 +224,12 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
 
       // Show results
       if (successCount > 0) {
-        showSuccess(`${successCount} kalkış saati başarıyla eklendi`);
+        showSuccess(t('couriers.batch.success', { count: successCount }));
         onSuccess();
       }
 
       if (failCount > 0) {
-        showError(`${failCount} kayıt eklenemedi. ${errors[0] || ''}`);
+        showError(t('couriers.batch.partialFailure', { count: failCount, error: errors[0] || '' }));
       }
 
       // Close modal if at least some succeeded
@@ -238,7 +238,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
       }
     } catch (err) {
       console.error('Batch add error:', err);
-      showError('Toplu ekleme sırasında hata oluştu');
+      showError(t('couriers.batch.error'));
     } finally {
       setLoading(false);
     }
@@ -259,10 +259,10 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
         <div className="sticky top-0 bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Toplu Kalkış Saati Ekle
+              {t('couriers.batch.title')}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {courier.shortName || courier.name} - Birden fazla gün ve durak için tek seferde ekle
+              {courier.shortName || courier.name} - {t('couriers.batch.subtitle')}
             </p>
           </div>
           <button
@@ -280,7 +280,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Günler Seçin
+                {t('couriers.batch.selectDays')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -288,21 +288,21 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                   onClick={selectWeekdays}
                   className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50"
                 >
-                  Hafta İçi
+                  {t('couriers.batch.weekdays')}
                 </button>
                 <button
                   type="button"
                   onClick={selectAllDays}
                   className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50"
                 >
-                  Tümü
+                  {t('management.all')}
                 </button>
                 <button
                   type="button"
                   onClick={clearDays}
                   className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
-                  Temizle
+                  {t('common.clear')}
                 </button>
               </div>
             </div>
@@ -325,7 +325,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
             </div>
             {selectedDays.length > 0 && (
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                {selectedDays.length} gün seçildi
+                {t('couriers.batch.daysSelected', { count: selectedDays.length })}
               </p>
             )}
           </div>
@@ -361,7 +361,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
 
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {isClientStop ? t('courierStops.clientStops') : 'Gümrük Müdürlükleri'}
+                {isClientStop ? t('courierStops.clientStops') : t('couriers.batch.customsOffices')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -369,14 +369,14 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                   onClick={selectAllStops}
                   className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
                 >
-                  Tümünü Seç
+                  {t('common.selectAll')}
                 </button>
                 <button
                   type="button"
                   onClick={clearStops}
                   className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
-                  Temizle
+                  {t('common.clear')}
                 </button>
               </div>
             </div>
@@ -418,9 +418,9 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                 </>
               )
             ) : loadingCustoms ? (
-              <div className="text-center py-4 text-gray-500">Gümrükler yükleniyor...</div>
+              <div className="text-center py-4 text-gray-500">{t('couriers.batch.customsLoading')}</div>
             ) : customsList.length === 0 ? (
-              <div className="text-center py-4 text-red-600">Gümrük bulunamadı</div>
+              <div className="text-center py-4 text-red-600">{t('couriers.batch.noCustoms')}</div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -447,7 +447,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                 </div>
                 {selectedCustoms.length > 0 && (
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                    {selectedCustoms.length} gümrük seçildi
+                    {t('couriers.batch.customsSelected', { count: selectedCustoms.length })}
                   </p>
                 )}
               </>
@@ -458,7 +458,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Kalkış Saatleri (15dk aralıklarla)
+                {t('couriers.batch.times')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -466,28 +466,28 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                   onClick={selectMorningTimes}
                   className="text-xs px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded hover:bg-amber-100 dark:hover:bg-amber-900/50"
                 >
-                  Sabah
+                  {t('couriers.batch.morning')}
                 </button>
                 <button
                   type="button"
                   onClick={selectAfternoonTimes}
                   className="text-xs px-2 py-1 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded hover:bg-orange-100 dark:hover:bg-orange-900/50"
                 >
-                  Öğleden Sonra
+                  {t('couriers.batch.afternoon')}
                 </button>
                 <button
                   type="button"
                   onClick={selectAllTimes}
                   className="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50"
                 >
-                  Tümü
+                  {t('management.all')}
                 </button>
                 <button
                   type="button"
                   onClick={clearTimes}
                   className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
-                  Temizle
+                  {t('common.clear')}
                 </button>
               </div>
             </div>
@@ -511,7 +511,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
 
             {selectedTimes.length > 0 && (
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                {selectedTimes.length} saat seçildi
+                {t('couriers.batch.timesSelected', { count: selectedTimes.length })}
               </p>
             )}
           </div>
@@ -524,15 +524,15 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
                   info
                 </span>
                 <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">
-                  Özet
+                  {t('couriers.batch.summary')}
                 </p>
               </div>
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                <span className="font-bold">{totalSchedules} adet</span> kalkış saati eklenecek
+                <span className="font-bold">{t('couriers.batch.summaryCount', { count: totalSchedules })}</span> {t('couriers.batch.summaryWillAdd')}
                 <br />
                 {isClientStop
                   ? `(${t('courierStops.summaryClients', { days: selectedDays.length, stops: selectedClients.length, times: selectedTimes.length })})`
-                  : `(${selectedDays.length} gün × ${selectedCustoms.length} gümrük × ${selectedTimes.length} saat)`}
+                  : `(${t('couriers.batch.summaryCustoms', { days: selectedDays.length, stops: selectedCustoms.length, times: selectedTimes.length })})`}
               </p>
             </div>
           )}
@@ -545,7 +545,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               disabled={loading}
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -555,12 +555,12 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
               {loading ? (
                 <>
                   <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                  Ekleniyor...
+                  {t('management.adding')}
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined">add_circle</span>
-                  Hepsini Ekle ({totalSchedules})
+                  {t('couriers.batch.addAll', { count: totalSchedules })}
                 </>
               )}
             </button>

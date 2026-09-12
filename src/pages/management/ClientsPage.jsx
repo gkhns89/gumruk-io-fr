@@ -11,6 +11,7 @@ import CreateAgreementModal from '../../components/common/CreateAgreementModal';
 import ImageUploadField from '../../components/common/ImageUploadField';
 import Pagination from '../../components/common/Pagination';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 const PAGE_SIZE = 10;
 
@@ -55,10 +56,10 @@ const ClientsPage = () => {
         if (result.success) {
           setBrokers(result.data);
         } else {
-          setBrokersError(result.error || 'Gümrük firmaları yüklenemedi');
+          setBrokersError(result.error || t('management.brokersLoadError'));
         }
       })
-      .catch(() => setBrokersError('Gümrük firmaları yüklenirken bir hata oluştu'))
+      .catch(() => setBrokersError(t('management.brokersLoadErrorUnexpected')))
       .finally(() => setBrokersLoading(false));
   }, [isSuperAdmin]);
 
@@ -75,7 +76,7 @@ const ClientsPage = () => {
       const result = await companyService.getClientCompanies(brokerCompanyId);
       handleApiResponse(result, () => setClients(result.data), setError, 'Müşteri firmaları yükleme');
     } catch (err) {
-      handleError(err, setError, 'Müşteri firmaları yükleme', 'Müşteri firmaları yüklenirken bir hata oluştu');
+      handleError(err, setError, 'Müşteri firmaları yükleme', t('clients.page.loadError'));
     } finally {
       setLoading(false);
     }
@@ -118,26 +119,26 @@ const ClientsPage = () => {
         bg: 'bg-green-100 dark:bg-green-900/30',
         text: 'text-green-800 dark:text-green-300',
         border: 'border-green-300 dark:border-green-700',
-        label: 'Aktif Vekalet'
+        label: t('clients.agreementStatus.ACTIVE')
       },
       PENDING: {
         bg: 'bg-yellow-100 dark:bg-yellow-900/30',
         text: 'text-yellow-800 dark:text-yellow-300',
         border: 'border-yellow-300 dark:border-yellow-700',
-        label: 'Onay Bekliyor'
+        label: t('clients.agreementStatus.PENDING')
       },
       INACTIVE: {
         bg: 'bg-gray-100 dark:bg-gray-800',
         text: 'text-gray-800 dark:text-gray-300',
         border: 'border-gray-300 dark:border-gray-600',
-        label: 'Pasif Vekalet'
+        label: t('clients.agreementStatus.INACTIVE')
       }
     };
     return badges[agreementStatus] || {
       bg: 'bg-gray-50 dark:bg-gray-800',
       text: 'text-gray-500 dark:text-gray-400',
       border: 'border-gray-200 dark:border-gray-600',
-      label: 'Vekalet Yok'
+      label: t('clients.agreementStatus.NONE')
     };
   };
 
@@ -152,14 +153,14 @@ const ClientsPage = () => {
                 <span className="material-symbols-outlined text-4xl text-primary">
                   corporate_fare
                 </span>
-                Müşteri Firmaları
+                {t('nav.clients')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 {isSuperAdmin
                   ? selectedBroker
-                    ? `${selectedBroker.name} — müşteri firmaları`
-                    : 'Müşterilerini görüntülemek için bir gümrük firması seçin'
-                  : 'Gümrük işlemlerini takip ettiğiniz müşteri firmalarınızı yönetin'}
+                    ? t('clients.page.subtitleBroker', { name: selectedBroker.name })
+                    : t('clients.page.subtitleSelectBroker')
+                  : t('clients.page.subtitle')}
               </p>
             </div>
 
@@ -169,7 +170,7 @@ const ClientsPage = () => {
                 className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md"
               >
                 <span className="material-symbols-outlined">add</span>
-                Yeni Müşteri Ekle
+                {t('clients.page.add')}
               </button>
             )}
           </div>
@@ -183,12 +184,12 @@ const ClientsPage = () => {
             {isSuperAdmin && (
               <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4 transition-colors">
                 <label htmlFor="broker-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Gümrük Firması Seçin
+                  {t('management.selectBroker')}
                 </label>
                 {brokersLoading ? (
                   <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span className="text-sm">Yükleniyor...</span>
+                    <span className="text-sm">{t('common.loading')}</span>
                   </div>
                 ) : brokersError ? (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 py-2">
@@ -211,7 +212,7 @@ const ClientsPage = () => {
                       }}
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors appearance-none cursor-pointer"
                     >
-                      <option value="">— Firma seçin —</option>
+                      <option value="">{t('management.selectCompanyOption')}</option>
                       {brokers.map(broker => (
                         <option key={broker.id} value={broker.id}>
                           {broker.name}{broker.shortName ? ` (${broker.shortName})` : ''}
@@ -233,10 +234,10 @@ const ClientsPage = () => {
                   business
                 </span>
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Gümrük Firması Seçin
+                  {t('management.selectBroker')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Müşteri firmalarını görüntülemek için yukarıdan bir gümrük firması seçin
+                  {t('clients.page.selectBrokerHint')}
                 </p>
               </div>
             )}
@@ -249,7 +250,7 @@ const ClientsPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Müşteri Ara
+                        {t('management.clientSearch')}
                       </label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -259,7 +260,7 @@ const ClientsPage = () => {
                           type="text"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Firma adı veya kısa adı ile ara..."
+                          placeholder={t('clients.page.searchPlaceholder')}
                           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                         />
                       </div>
@@ -267,7 +268,7 @@ const ClientsPage = () => {
 
                     <div>
                       <label htmlFor="sector-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Sektör
+                        {t('clients.common.sector')}
                       </label>
                       <select
                         id="sector-filter"
@@ -275,7 +276,7 @@ const ClientsPage = () => {
                         onChange={(e) => setSectorFilter(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors cursor-pointer"
                       >
-                        <option value="">Tüm sektörler</option>
+                        <option value="">{t('clients.page.allSectors')}</option>
                         {sectors.map(sector => (
                           <option key={sector.id} value={String(sector.id)}>
                             {sector.name}
@@ -291,7 +292,7 @@ const ClientsPage = () => {
                   <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-12 text-center transition-colors">
                     <div className="flex items-center justify-center gap-3">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-gray-600 dark:text-gray-400">Yükleniyor...</p>
+                      <p className="text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
                     </div>
                   </div>
                 )}
@@ -314,13 +315,13 @@ const ClientsPage = () => {
                     </span>
                     <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
                       {searchTerm || sectorFilter
-                        ? 'Arama kriterine uygun müşteri bulunamadı'
-                        : 'Henüz müşteri firmanız bulunmuyor'}
+                        ? t('clients.page.emptyFiltered')
+                        : t('clients.page.empty')}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
                       {searchTerm || sectorFilter
-                        ? 'Farklı anahtar kelimeler veya sektör seçerek arama yapabilirsiniz'
-                        : 'Yeni müşteri eklemek için "Yeni Müşteri Ekle" butonuna tıklayın'}
+                        ? t('clients.page.emptyFilteredHint')
+                        : t('clients.page.emptyHint')}
                     </p>
                     {!searchTerm && !sectorFilter && (
                       <button
@@ -328,7 +329,7 @@ const ClientsPage = () => {
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         <span className="material-symbols-outlined">add</span>
-                        Yeni Müşteri Ekle
+                        {t('clients.page.add')}
                       </button>
                     )}
                   </div>
@@ -341,12 +342,12 @@ const ClientsPage = () => {
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">Müşteri Firma</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Vekalet Durumu</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Giriş Hesabı</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Başlangıç</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Bitiş</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">İşlemler</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-main uppercase tracking-wider">{t('management.clientCompany')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('clients.table.agreementStatus')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('clients.common.loginAccount')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('agreements.common.start')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">{t('agreements.common.end')}</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">{t('management.actions')}</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-background-dark divide-y divide-gray-200 dark:divide-gray-700">
@@ -407,10 +408,10 @@ const ClientsPage = () => {
                                     {needsDocument && (
                                       <span
                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                                        title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+                                        title={t('agreements.common.documentMissingHint')}
                                       >
                                         <span className="material-symbols-outlined text-sm">error</span>
-                                        Belge eksik
+                                        {t('agreements.common.documentMissing')}
                                       </span>
                                     )}
                                   </div>
@@ -423,53 +424,53 @@ const ClientsPage = () => {
                                       </div>
                                       {!client.account.isActive && (
                                         <span className="inline-flex mt-1 px-2 py-0.5 text-[11px] font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                                          Pasif
+                                          {t('management.inactive')}
                                         </span>
                                       )}
                                     </div>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 text-sm text-text-secondary">
                                       <span className="material-symbols-outlined text-base">person_off</span>
-                                      Hesap yok
+                                      {t('clients.table.noAccount')}
                                     </span>
                                   )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                  {client.agreementStartDate ? new Date(client.agreementStartDate).toLocaleDateString('tr-TR') : '-'}
+                                  {client.agreementStartDate ? new Date(client.agreementStartDate).toLocaleDateString(getCurrentLocale()) : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                  {client.agreementEndDate ? new Date(client.agreementEndDate).toLocaleDateString('tr-TR') : '-'}
+                                  {client.agreementEndDate ? new Date(client.agreementEndDate).toLocaleDateString(getCurrentLocale()) : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <div className="flex items-center justify-end gap-2">
                                     <button
                                       onClick={() => { setSelectedClient(client); setShowViewModal(true); }}
                                       className="inline-flex items-center gap-1 px-3 py-1.5 text-primary bg-primary/10 dark:bg-primary/20 rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
-                                      title="Detayları Görüntüle"
+                                      title={t('management.viewDetails')}
                                     >
                                       <span className="material-symbols-outlined text-lg">visibility</span>
-                                      Detay
+                                      {t('clients.table.details')}
                                     </button>
                                     {canManageAccounts && (
                                       <button
                                         onClick={() => { setSelectedClient(client); setShowAccountModal(true); }}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                                        title={client.account ? 'Giriş hesabını düzenle' : 'Giriş hesabı oluştur'}
+                                        title={client.account ? t('clients.table.editAccountHint') : t('clients.table.createAccountHint')}
                                       >
                                         <span className="material-symbols-outlined text-lg">
                                           {client.account ? 'manage_accounts' : 'person_add'}
                                         </span>
-                                        {client.account ? 'Hesap' : 'Hesap Aç'}
+                                        {client.account ? t('clients.table.account') : t('clients.table.openAccount')}
                                       </button>
                                     )}
                                     {!hasAgreement && (
                                       <button
                                         onClick={() => { setSelectedClient(client); setShowCreateAgreementModal(true); }}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
-                                        title="Vekalet Ekle"
+                                        title={t('agreements.common.add')}
                                       >
                                         <span className="material-symbols-outlined text-lg">add_circle</span>
-                                        Vekalet
+                                        {t('clients.table.agreement')}
                                       </button>
                                     )}
                                   </div>

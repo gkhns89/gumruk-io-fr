@@ -1,6 +1,7 @@
 import React from 'react';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { showError } from '../../utils/toastUtils';
+import { t, getCurrentLocale } from '../../locales';
 
 /**
  * Vekalet bilgilerini gösteren panel
@@ -15,7 +16,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
 
     const result = await agencyAgreementService.downloadDocument(agreement.agreementId);
     if (!result.success) {
-      showError(result.error || 'Belge indirilemedi');
+      showError(result.error || t('agreements.info.downloadError'));
     }
   };
 
@@ -26,37 +27,37 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
         bg: 'bg-green-100 dark:bg-green-900/30',
         text: 'text-green-800 dark:text-green-300',
         border: 'border-green-300 dark:border-green-700',
-        label: 'Aktif'
+        label: t('agreements.status.ACTIVE')
       },
       PENDING: {
         bg: 'bg-yellow-100 dark:bg-yellow-900/30',
         text: 'text-yellow-800 dark:text-yellow-300',
         border: 'border-yellow-300 dark:border-yellow-700',
-        label: 'Onay Bekliyor'
+        label: t('agreements.status.PENDING')
       },
       INACTIVE: {
         bg: 'bg-gray-100 dark:bg-gray-800',
         text: 'text-gray-800 dark:text-gray-300',
         border: 'border-gray-300 dark:border-gray-600',
-        label: 'Pasif'
+        label: t('agreements.status.INACTIVE')
       },
       SUSPENDED: {
         bg: 'bg-orange-100 dark:bg-orange-900/30',
         text: 'text-orange-800 dark:text-orange-300',
         border: 'border-orange-300 dark:border-orange-700',
-        label: 'Askıda'
+        label: t('agreements.status.SUSPENDED')
       },
       TERMINATED: {
         bg: 'bg-red-100 dark:bg-red-900/30',
         text: 'text-red-800 dark:text-red-300',
         border: 'border-red-300 dark:border-red-700',
-        label: 'Sonlandırıldı'
+        label: t('agreements.status.TERMINATED')
       },
       NO_AGREEMENT: {
         bg: 'bg-gray-100 dark:bg-gray-800',
         text: 'text-gray-600 dark:text-gray-400',
         border: 'border-gray-300 dark:border-gray-600',
-        label: 'Anlaşma Yok'
+        label: t('agreements.status.NO_AGREEMENT')
       }
     };
 
@@ -84,7 +85,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                 </span>
               </div>
               <p className="text-sm sm:text-xs text-gray-500 dark:text-gray-400 mt-1.5 sm:mt-1">
-                Bu müşteri ile vekalet anlaşmanız bulunmamaktadır
+                {t('agreements.info.noAgreement')}
               </p>
             </div>
           </div>
@@ -96,7 +97,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
               className={`flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors ${compact ? 'w-full' : 'w-full sm:w-auto'} whitespace-nowrap`}
             >
               <span className="material-symbols-outlined text-lg">add</span>
-              Vekalet Ekle
+              {t('agreements.common.add')}
             </button>
           )}
         </div>
@@ -153,9 +154,9 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                       event
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Başlangıç</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{t('agreements.common.start')}</p>
                       <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                        {new Date(agreement.agreementStartDate).toLocaleDateString('tr-TR')}
+                        {new Date(agreement.agreementStartDate).toLocaleDateString(getCurrentLocale())}
                       </p>
                     </div>
                   </div>
@@ -168,9 +169,9 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                       event
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Bitiş</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{t('agreements.common.end')}</p>
                       <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                        {new Date(agreement.agreementEndDate).toLocaleDateString('tr-TR')}
+                        {new Date(agreement.agreementEndDate).toLocaleDateString(getCurrentLocale())}
                       </p>
                     </div>
                   </div>
@@ -183,11 +184,11 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
                       schedule
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Kalan Süre</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{t('agreements.common.remaining')}</p>
                       <p className={`text-sm font-semibold ${
                         remainingDays < 30 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-200'
                       }`}>
-                        {remainingDays} gün
+                        {t('agreements.common.daysLeft', { count: remainingDays })}
                         {remainingDays < 30 && ' ⚠️'}
                       </p>
                     </div>
@@ -199,7 +200,7 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
             {/* PENDING durumu için uyarı */}
             {agreement.agreementStatus === 'PENDING' && (
               <p className="text-sm sm:text-xs text-yellow-700 dark:text-yellow-300 mt-3 sm:mt-2 p-2.5 sm:p-2 bg-yellow-100/50 dark:bg-yellow-900/20 rounded-lg">
-                ⏳ Anlaşma onay bekliyor. Aktifleştirme için yöneticinizle iletişime geçin.
+                ⏳ {t('agreements.info.pendingNote')}
               </p>
             )}
           </div>
@@ -215,17 +216,17 @@ const AgreementInfoPanel = ({ agreement, clientName, onCreateAgreement, compact 
             } whitespace-nowrap`}
           >
             <span className="material-symbols-outlined text-lg">download</span>
-            Belge İndir
+            {t('agreements.info.downloadDocument')}
           </button>
         ) : documentMissing ? (
           <span
             className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700 ${
               compact ? 'w-full mt-3' : 'w-full lg:w-auto lg:flex-shrink-0'
             } whitespace-nowrap`}
-            title="Vekalet dosyası sunucuda bulunamadı — belgenin yeniden yüklenmesi gerekiyor"
+            title={t('agreements.common.documentMissingHint')}
           >
             <span className="material-symbols-outlined text-base">error</span>
-            Belge eksik — yeniden yükleyin
+            {t('agreements.info.documentMissingReupload')}
           </span>
         ) : null}
       </div>

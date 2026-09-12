@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { companyService } from '../api/companyService';
 import ImageUploadField from '../components/common/ImageUploadField';
+import { t } from '../locales';
 
 /**
  * Firma Ayarları — firma logosu yönetimi.
@@ -41,6 +42,9 @@ export default function CompanySettingsPage() {
     ? (user?.company?.name || user?.companyDetails?.name)
     : brokers.find((b) => b.id === Number(selectedBrokerId))?.name;
 
+  // Firma adı kalın yazıldığı için metin {{name}} yer tutucusunun iki yanından bölünüyor
+  const [logoForBefore, logoForAfter] = t('companySettings.logoFor').split('{{name}}');
+
   const handleLogoChanged = async () => {
     setLogoBust((n) => n + 1);
     if (isSuperAdmin) loadBrokers();
@@ -54,10 +58,10 @@ export default function CompanySettingsPage() {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">domain</span>
-            Firma Ayarları
+            {t('nav.companySettings')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Firma logosunu buradan yönetin. Logo; header, kontrol paneli ve giriş ekranında görünür.
+            {t('companySettings.subtitle')}
           </p>
         </div>
 
@@ -65,7 +69,7 @@ export default function CompanySettingsPage() {
           {!hasAccess ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400 dark:text-gray-500 gap-3">
               <span className="material-symbols-outlined text-[56px]">lock</span>
-              <p className="text-base">Bu sayfaya erişim yetkiniz yok.</p>
+              <p className="text-base">{t('management.noAccess')}</p>
             </div>
           ) : (
             <div className="max-w-2xl">
@@ -73,11 +77,11 @@ export default function CompanySettingsPage() {
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">image</span>
                   <div>
-                    <h2 className="font-semibold text-text-main">Firma Logosu</h2>
+                    <h2 className="font-semibold text-text-main">{t('companySettings.logoTitle')}</h2>
                     <p className="text-xs text-text-secondary mt-0.5">
                       {isSuperAdmin
-                        ? 'Bir gümrük firması seçin ve logosunu yükleyin/değiştirin.'
-                        : 'Gümrük firmanızın logosunu yükleyin veya değiştirin.'}
+                        ? t('companySettings.logoHintSuperAdmin')
+                        : t('companySettings.logoHint')}
                     </p>
                   </div>
                 </div>
@@ -87,7 +91,7 @@ export default function CompanySettingsPage() {
                   {isSuperAdmin && (
                     <div>
                       <label htmlFor="broker-select" className="block text-sm font-medium text-text-main mb-1.5">
-                        Gümrük Firması
+                        {t('companySettings.broker')}
                       </label>
                       <select
                         id="broker-select"
@@ -98,7 +102,7 @@ export default function CompanySettingsPage() {
                                    bg-white dark:bg-gray-800 text-text-main text-sm
                                    focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                       >
-                        <option value="">{brokersLoading ? 'Yükleniyor...' : 'Firma seçin...'}</option>
+                        <option value="">{brokersLoading ? t('common.loading') : t('placeholders.selectCompany')}</option>
                         {brokers.map((b) => (
                           <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
@@ -111,7 +115,7 @@ export default function CompanySettingsPage() {
                     <div>
                       {targetCompanyName && (
                         <p className="text-xs text-text-secondary mb-3">
-                          <span className="font-medium text-text-main">{targetCompanyName}</span> için logo
+                          {logoForBefore}<span className="font-medium text-text-main">{targetCompanyName}</span>{logoForAfter}
                         </p>
                       )}
                       <ImageUploadField
@@ -131,7 +135,7 @@ export default function CompanySettingsPage() {
                     </div>
                   ) : (
                     isSuperAdmin && (
-                      <p className="text-sm text-text-secondary">Logosunu yönetmek için bir firma seçin.</p>
+                      <p className="text-sm text-text-secondary">{t('companySettings.selectCompanyHint')}</p>
                     )
                   )}
                 </div>

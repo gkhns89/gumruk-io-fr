@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { sectorService } from '../../api/sectorService';
+import { t } from '../../locales';
 
 /**
  * Sektör çoklu seçimi — açılır liste içinde satır satır işaretleme.
@@ -29,7 +30,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
         if (result.success) {
           setSectors(result.data);
         } else {
-          setError(result.error || 'Sektörler yüklenemedi');
+          setError(result.error || t('sectors.select.loadError'));
         }
       })
       .finally(() => {
@@ -83,7 +84,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
     return (
       <div className="flex items-center gap-2 text-text-secondary py-2">
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-        <span className="text-sm">Sektörler yükleniyor...</span>
+        <span className="text-sm">{t('sectors.select.loading')}</span>
       </div>
     );
   }
@@ -119,7 +120,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
                 <span
                   role="button"
                   tabIndex={-1}
-                  aria-label={`${sector.name} seçimini kaldır`}
+                  aria-label={t('sectors.select.removeSelection', { name: sector.name })}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!disabled) toggle(sector.id);
@@ -132,7 +133,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
             ))}
           </span>
         ) : (
-          <span className="text-sm text-text-secondary">Sektör seçin</span>
+          <span className="text-sm text-text-secondary">{t('sectors.select.placeholder')}</span>
         )}
         <span className="material-symbols-outlined text-text-secondary flex-shrink-0">
           {open ? 'expand_less' : 'expand_more'}
@@ -148,7 +149,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Sektör ara..."
+                placeholder={t('sectors.select.searchPlaceholder')}
                 autoFocus
                 className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-text-main focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
@@ -158,7 +159,7 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
           <div className="max-h-56 overflow-y-auto py-1" role="listbox" aria-multiselectable="true">
             {visibleSectors.length === 0 ? (
               <p className="px-3 py-3 text-sm text-text-secondary text-center">
-                Eşleşen sektör yok
+                {t('sectors.select.noMatch')}
               </p>
             ) : (
               visibleSectors.map((sector) => {
@@ -186,14 +187,14 @@ export default function SectorSelect({ value = [], onChange, disabled = false })
           {selectedSectors.length > 0 && (
             <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-gray-100 dark:border-gray-700">
               <span className="text-xs text-text-secondary">
-                {selectedSectors.length} sektör seçili
+                {t('sectors.select.selectedCount', { count: selectedSectors.length })}
               </span>
               <button
                 type="button"
                 onClick={() => onChange([])}
                 className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
               >
-                Temizle
+                {t('common.clear')}
               </button>
             </div>
           )}

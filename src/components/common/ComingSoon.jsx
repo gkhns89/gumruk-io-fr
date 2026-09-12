@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../layout/MainLayout';
+import { t } from '../../locales';
 
 const ComingSoon = ({
   icon = "construction",
-  title = "Yakında",
-  description = "Bu sayfa şu anda geliştirme aşamasındadır.",
+  title = t('comingSoon.title'),
+  description = t('comingSoon.description'),
   featureName
 }) => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const ComingSoon = ({
                   check_circle
                 </span>
                 <p className="text-sm font-medium text-text-main">
-                  Kullanıcı Dostu Arayüz
+                  {t('comingSoon.userFriendly')}
                 </p>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors duration-300">
@@ -48,7 +49,7 @@ const ComingSoon = ({
                   speed
                 </span>
                 <p className="text-sm font-medium text-text-main">
-                  Hızlı ve Güvenli
+                  {t('comingSoon.fastSecure')}
                 </p>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors duration-300">
@@ -56,7 +57,7 @@ const ComingSoon = ({
                   phone_iphone
                 </span>
                 <p className="text-sm font-medium text-text-main">
-                  Mobil Uyumlu
+                  {t('comingSoon.mobileReady')}
                 </p>
               </div>
             </div>
@@ -69,14 +70,14 @@ const ComingSoon = ({
               <span className="material-symbols-outlined">
                 home
               </span>
-              <span>Ana Sayfaya Dön</span>
+              <span>{t('comingSoon.backHome')}</span>
             </button>
           </div>
 
           {/* Additional Info */}
           <div className="mt-6 text-center">
             <p className="text-sm text-text-secondary">
-              Sorularınız için iletişime geçebilirsiniz
+              {t('comingSoon.contactNote')}
             </p>
           </div>
         </div>

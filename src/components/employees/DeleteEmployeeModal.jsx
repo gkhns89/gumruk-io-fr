@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { t } from '../../locales';
 
 export default function DeleteEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -11,15 +12,18 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
   // Get role display text
   const getRoleText = (role) => {
     const roles = {
-      BROKER_ADMIN: 'Broker Yöneticisi',
-      BROKER_USER: 'Broker Kullanıcısı'
+      BROKER_ADMIN: t('roles.brokerAdmin'),
+      BROKER_USER: t('roles.brokerUser')
     };
     return roles[role] || role;
   };
 
+  // Çalışan adı kalın yazıldığı için metin {{name}} yer tutucusunun iki yanından bölünüyor
+  const [confirmBefore, confirmAfter] = t('employees.delete.confirmMessage').split('{{name}}');
+
   const handleDelete = async () => {
     if (isDeletingSelf) {
-      showError('Kendi hesabınızı silemezsiniz');
+      showError(t('employee.cannotDeleteSelf'));
       return;
     }
 
@@ -29,16 +33,16 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
       const result = await employeeService.deleteEmployee(employee.id);
 
       if (result.success) {
-        showSuccess(`${employee.username} başarıyla silindi!`);
+        showSuccess(t('management.deletedSuccess', { name: employee.username }));
         onSuccess();
         onClose();
       } else {
         // API error - show as toast
-        showError(result.error || 'Çalışan silinemedi');
+        showError(result.error || t('employee.messages.deleteError'));
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || 'Beklenmeyen bir hata oluştu');
+      showError(err.response?.data?.error || t('management.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -65,10 +69,10 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
             </div>
             <div>
               <h2 className="text-xl font-bold text-text-main">
-                Çalışanı Sil
+                {t('employees.delete.title')}
               </h2>
               <p className="text-sm text-text-secondary mt-1">
-                Bu işlem geri alınamaz
+                {t('management.irreversible')}
               </p>
             </div>
           </div>
@@ -82,9 +86,9 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">block</span>
                 <div>
-                  <p className="text-amber-900 dark:text-amber-300 font-semibold">Kendi Hesabınızı Silemezsiniz</p>
+                  <p className="text-amber-900 dark:text-amber-300 font-semibold">{t('employees.delete.selfTitle')}</p>
                   <p className="text-amber-800 dark:text-amber-400 text-sm mt-1">
-                    Hesabınızı silmek için bir yöneticiye başvurun.
+                    {t('employees.delete.selfHint')}
                   </p>
                 </div>
               </div>
@@ -106,13 +110,13 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <p className="text-text-secondary">Rol</p>
+                    <p className="text-text-secondary">{t('employee.role')}</p>
                     <p className="text-text-main font-medium">{getRoleText(employee.globalRole)}</p>
                   </div>
                   <div>
-                    <p className="text-text-secondary">Durum</p>
+                    <p className="text-text-secondary">{t('employee.status')}</p>
                     <p className="text-text-main font-medium">
-                      {employee.isActive ? 'Aktif' : 'Beklemede'}
+                      {employee.isActive ? t('employee.statuses.active') : t('employee.statuses.pending')}
                     </p>
                   </div>
                 </div>
@@ -121,8 +125,7 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
               {/* Warning message */}
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 transition-colors duration-300">
                 <p className="text-red-800 dark:text-red-300 text-sm">
-                  <span className="font-semibold">{employee.username}</span> adlı çalışanı silmek üzeresiniz.
-                  Bu çalışanın hesabı devre dışı bırakılacaktır.
+                  {confirmBefore}<span className="font-semibold">{employee.username}</span>{confirmAfter}
                 </p>
               </div>
 
@@ -131,8 +134,7 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
                 <div className="flex items-start gap-2">
                   <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm mt-0.5">info</span>
                   <p className="text-blue-800 dark:text-blue-300 text-xs">
-                    Bu işlem çalışanı sistemden tamamen kaldırmaz, hesabı devre dışı bırakır.
-                    Gerekirse daha sonra yeniden aktif hale getirilebilir.
+                    {t('employees.delete.softDeleteInfo')}
                   </p>
                 </div>
               </div>
@@ -146,14 +148,14 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
             onClick={handleClose}
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-text-main rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleDelete}
             disabled={loading || isDeletingSelf}
             className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Siliniyor...' : 'Sil'}
+            {loading ? t('management.deleting') : t('common.delete')}
           </button>
         </div>
       </div>

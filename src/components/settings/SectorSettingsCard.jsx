@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { sectorService } from '../../api/sectorService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { t } from '../../locales';
 
 const EMPTY_FORM = { name: '', displayOrder: '' };
 
@@ -60,13 +61,13 @@ export default function SectorSettingsCard() {
 
     const name = form.name.trim();
     if (name.length < 2) {
-      showError('Sektör adı en az 2 karakter olmalıdır');
+      showError(t('sectors.settings.nameMin'));
       return;
     }
 
     const displayOrder = form.displayOrder === '' ? undefined : Number(form.displayOrder);
     if (displayOrder !== undefined && !Number.isInteger(displayOrder)) {
-      showError('Sıralama tam sayı olmalıdır');
+      showError(t('sectors.settings.orderInteger'));
       return;
     }
 
@@ -77,7 +78,7 @@ export default function SectorSettingsCard() {
     setSaving(false);
 
     if (result.success) {
-      showSuccess(editingId ? 'Sektör güncellendi' : 'Sektör eklendi');
+      showSuccess(editingId ? t('sectors.settings.updated') : t('sectors.settings.created'));
       closeForm();
       load();
     } else {
@@ -92,7 +93,7 @@ export default function SectorSettingsCard() {
     });
 
     if (result.success) {
-      showSuccess(sector.isActive ? 'Sektör pasife alındı' : 'Sektör aktifleştirildi');
+      showSuccess(sector.isActive ? t('sectors.settings.deactivated') : t('sectors.settings.activated'));
       load();
     } else {
       showError(result.error);
@@ -101,16 +102,16 @@ export default function SectorSettingsCard() {
 
   const handleDelete = async (sector) => {
     const ok = await confirmDialog({
-      title: 'Sektörü sil',
-      message: `"${sector.name}" kalıcı olarak silinecek.`,
+      title: t('sectors.settings.deleteTitle'),
+      message: t('sectors.settings.deleteMessage', { name: sector.name }),
       intent: 'danger',
-      confirmText: 'Sil',
+      confirmText: t('common.delete'),
     });
     if (!ok) return;
 
     const result = await sectorService.deleteSector(sector.id);
     if (result.success) {
-      showSuccess('Sektör silindi');
+      showSuccess(t('sectors.settings.deleted'));
       load();
       return;
     }
@@ -118,10 +119,10 @@ export default function SectorSettingsCard() {
     // Kullanımdaysa silmek yerine pasife almayı öner — atamalar kaybolmasın.
     if (result.inUse) {
       const deactivate = await confirmDialog({
-        title: 'Sektör kullanımda',
-        message: `${result.error}\n\nPasife alınsın mı? Mevcut atamalar korunur, yeni formlarda listelenmez.`,
+        title: t('sectors.settings.inUseTitle'),
+        message: `${result.error}\n\n${t('sectors.settings.inUseMessage')}`,
         intent: 'warning',
-        confirmText: 'Pasife al',
+        confirmText: t('management.deactivate'),
       });
       if (deactivate) handleToggleActive(sector);
       return;
@@ -136,9 +137,9 @@ export default function SectorSettingsCard() {
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-[22px] text-primary">category</span>
           <div>
-            <h2 className="font-semibold text-text-main">Sektörler</h2>
+            <h2 className="font-semibold text-text-main">{t('sectors.settings.title')}</h2>
             <p className="text-xs text-text-secondary mt-0.5">
-              Müşteri firmalarına atanan ve duyuru hedeflemesinde kullanılacak katalog
+              {t('sectors.settings.subtitle')}
             </p>
           </div>
         </div>
@@ -148,7 +149,7 @@ export default function SectorSettingsCard() {
                      hover:bg-primary/90 transition flex-shrink-0"
         >
           <span className="material-symbols-outlined text-[16px]">add</span>
-          Ekle
+          {t('common.add')}
         </button>
       </div>
 
@@ -156,17 +157,17 @@ export default function SectorSettingsCard() {
         {formOpen && (
           <form onSubmit={handleSave} className="mb-5 p-4 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 space-y-3">
             <p className="text-sm font-semibold text-text-main">
-              {editingId ? 'Sektörü Düzenle' : 'Yeni Sektör'}
+              {editingId ? t('sectors.settings.editSector') : t('sectors.settings.newSector')}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-text-secondary mb-1">Sektör Adı</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{t('sectors.settings.name')}</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Örn: Enerji ve Yenilenebilir Kaynaklar"
+                  placeholder={t('sectors.settings.namePlaceholder')}
                   required
                   className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                              bg-white dark:bg-gray-800 text-text-main text-sm
@@ -174,12 +175,12 @@ export default function SectorSettingsCard() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Sıralama</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{t('sectors.settings.order')}</label>
                 <input
                   type="number"
                   value={form.displayOrder}
                   onChange={(e) => setForm(prev => ({ ...prev, displayOrder: e.target.value }))}
-                  placeholder="Boşsa sona"
+                  placeholder={t('sectors.settings.orderPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                              bg-white dark:bg-gray-800 text-text-main text-sm
                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -189,8 +190,7 @@ export default function SectorSettingsCard() {
 
             {editingId && (
               <p className="text-xs text-text-secondary">
-                Sektörün sistem kodu ilk oluşturulduğunda sabitlenir; ad değişse de
-                mevcut atamalar ve raporlar bozulmaz.
+                {t('sectors.settings.codeNote')}
               </p>
             )}
 
@@ -202,7 +202,7 @@ export default function SectorSettingsCard() {
                            hover:bg-primary/90 transition disabled:opacity-60"
               >
                 {saving && <span className="material-symbols-outlined text-[15px] animate-spin">progress_activity</span>}
-                {saving ? 'Kaydediliyor...' : 'Kaydet'}
+                {saving ? t('management.saving') : t('common.save')}
               </button>
               <button
                 type="button"
@@ -210,7 +210,7 @@ export default function SectorSettingsCard() {
                 className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                            text-sm text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
-                İptal
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -222,7 +222,7 @@ export default function SectorSettingsCard() {
           </div>
         ) : sectors.length === 0 ? (
           <div className="text-center py-8 text-text-secondary text-sm">
-            Henüz sektör eklenmemiş
+            {t('sectors.settings.empty')}
           </div>
         ) : (
           <div className="space-y-2">
@@ -243,11 +243,11 @@ export default function SectorSettingsCard() {
                 </div>
 
                 <span className="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
-                  {sector.companyCount > 0 ? `${sector.companyCount} firma` : 'kullanılmıyor'}
+                  {sector.companyCount > 0 ? t('sectors.settings.companyCount', { count: sector.companyCount }) : t('sectors.settings.unused')}
                 </span>
                 {!sector.isActive && (
                   <span className="text-[10px] text-gray-400 flex-shrink-0 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600">
-                    Pasif
+                    {t('management.inactive')}
                   </span>
                 )}
                 <span className="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
@@ -257,7 +257,7 @@ export default function SectorSettingsCard() {
                 <button
                   onClick={() => handleToggleActive(sector)}
                   className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                  title={sector.isActive ? 'Pasife al' : 'Aktifleştir'}
+                  title={sector.isActive ? t('management.deactivate') : t('management.activate')}
                 >
                   <span className="material-symbols-outlined text-[16px] text-text-secondary">
                     {sector.isActive ? 'visibility_off' : 'visibility'}
@@ -266,14 +266,14 @@ export default function SectorSettingsCard() {
                 <button
                   onClick={() => openEdit(sector)}
                   className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                  title="Düzenle"
+                  title={t('common.edit')}
                 >
                   <span className="material-symbols-outlined text-[16px] text-text-secondary">edit</span>
                 </button>
                 <button
                   onClick={() => handleDelete(sector)}
                   className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-                  title="Sil"
+                  title={t('common.delete')}
                 >
                   <span className="material-symbols-outlined text-[16px] text-red-500">delete</span>
                 </button>
