@@ -14,7 +14,7 @@ if (import.meta.env.PROD) {
     import.meta.env.VITE_API_BASE_URL ||
     (PROD_HOSTS.includes(window.location.hostname)
       ? "https://api.gumruk.io/api"
-      : "https://api-beta.gumruk.io/api");
+      : "https://api-staging.gumruk.io/api");
 } else {
   // 2. LOKAL GELİŞTİRME / ARKADAŞINLA EV TESTİ ORTAMI
   const currentHost = window.location.hostname;

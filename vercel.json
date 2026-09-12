@@ -8,7 +8,7 @@
   "headers": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "beta.gumruk.io" }],
+      "has": [{ "type": "host", "value": "staging.gumruk.io" }],
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
