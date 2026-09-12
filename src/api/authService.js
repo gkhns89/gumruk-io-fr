@@ -1,7 +1,7 @@
 import axiosInstance from './axios';
 import { tokenManager } from '../utils/tokenManager';
 import { logError } from '../utils/errorUtils';
-import { t } from '../locales';
+import { t } from '../locales/runtime';
 
 export const authService = {
   // Login işlemi

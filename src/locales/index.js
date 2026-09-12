@@ -16,6 +16,7 @@
 
 import { tr } from './tr';
 import { en } from './en';
+import { registerTranslator } from './runtime';
 
 // Desteklenen diller
 export const SUPPORTED_LANGUAGES = {
@@ -167,6 +168,9 @@ export const getTranslationGroup = (prefix) => {
  * @returns {Array} Dil listesi
  */
 export const getSupportedLanguages = () => Object.values(SUPPORTED_LANGUAGES);
+
+// Giriş paketindeki modüller t'yi runtime.js üzerinden kullanır; sözlükler yüklenince onlara bağlan.
+registerTranslator(t);
 
 export default {
   t,

@@ -4,7 +4,7 @@
  */
 
 import { showError } from './toastUtils';
-import { t } from '../locales';
+import { t } from '../locales/runtime';
 
 // Hassas bilgi içerebilecek anahtar kelimeler
 const SENSITIVE_KEYWORDS = [

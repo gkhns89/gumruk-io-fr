@@ -7,10 +7,12 @@ import ThemeProvider from './context/ThemeProvider'
 import AuthProvider from './context/AuthProvider'
 import PaymentRestrictionProvider from './context/PaymentRestrictionProvider'
 import FeatureFlagProvider from './context/FeatureFlagProvider'
+import { tokenManager } from './utils/tokenManager'
+import { loadTranslations } from './locales/runtime'
 import './index.css'
 import App from './App.jsx'
 
-createRoot(document.getElementById('root')).render(
+const render = () => createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <ThemeProvider>
@@ -35,3 +37,11 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Oturum varsa sağlayıcılar açılışta API çağırıp mesajlarını çevirir: önce sözlükleri yükle. Oturumsuz ziyaretçi
+// (tanıtım sayfası) sözlükleri indirmez; giriş ve uygulama sayfaları onları kendi lazy chunk'larıyla getirir.
+if (tokenManager.getToken()) {
+  loadTranslations().finally(render)
+} else {
+  render()
+}

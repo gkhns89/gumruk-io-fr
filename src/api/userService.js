@@ -1,6 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
-import { t } from '../locales';
+import { t } from '../locales/runtime';
 
 export const userService = {
   // Kullanıcı profili

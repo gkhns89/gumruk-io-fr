@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { t } from '../locales';
+import { t } from '../locales/runtime';
 
 export const paymentService = {
   // ===== ÖDEME YÖNTEMLERİ =====
