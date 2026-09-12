@@ -1,115 +1,92 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
+import { t } from '../locales';
+
+// Önizleme sunucuda Bakanlık sitesinden Word dosyasını indirip ayrıştırıyor; varsayılan 20 sn yetmeyebilir.
+const REFRESH_TIMEOUT_MS = 120000;
 
 /**
- * Customs API Service
- * Handles API calls for customs offices (Gümrük İdareleri)
+ * Gümrük idareleri API servisi.
+ * Liste güncellemesi (önizle → doğrula → uygula) yalnızca SUPER_ADMIN içindir.
  */
 export const customsService = {
 
-  /**
-   * Get all active customs offices (for dropdown)
-   */
+  /** Aktif gümrük idareleri (açılır listeler için) */
   getActiveCustoms: async () => {
     try {
-      console.log("📋 Fetching active customs offices...");
-
       const response = await axiosInstance.get('/customs/active');
-
-      console.log(`✅ ${response.data.length} active customs loaded`);
-
       return { success: true, data: response.data };
     } catch (error) {
       logError('CustomsService - getActiveCustoms', error);
-
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to load customs offices',
-      };
+      return { success: false, error: getApiErrorMessage(error, t('api.customs.loadError')) };
     }
   },
 
-  /**
-   * Get all customs offices (for admin panel)
-   */
+  /** Tüm gümrük idareleri, pasifler dahil (yönetim paneli) */
   getAllCustoms: async () => {
     try {
-      console.log("📋 Fetching all customs offices...");
-
       const response = await axiosInstance.get('/customs/all');
-
-      console.log(`✅ ${response.data.length} customs loaded`);
-
       return { success: true, data: response.data };
     } catch (error) {
       logError('CustomsService - getAllCustoms', error);
-
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to load customs offices',
-      };
+      return { success: false, error: getApiErrorMessage(error, t('api.customs.loadError')) };
     }
   },
 
-  /**
-   * Get customs by ID
-   */
+  /** Tek gümrük idaresi */
   getCustomsById: async (id) => {
     try {
       const response = await axiosInstance.get(`/customs/${id}`);
       return { success: true, data: response.data };
     } catch (error) {
       logError('CustomsService - getCustomsById', error);
+      return { success: false, error: getApiErrorMessage(error, t('api.customs.notFound')) };
+    }
+  },
 
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Customs not found',
-      };
+  /** Mevcut liste özeti, kaynak bilgisi ve son güncelleme denemeleri (SUPER_ADMIN) */
+  getRefreshStatus: async () => {
+    try {
+      const response = await axiosInstance.get('/customs/refresh/status');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CustomsService - getRefreshStatus', error);
+      return { success: false, error: getApiErrorMessage(error, t('api.customs.statusError')) };
     }
   },
 
   /**
-   * Manual refresh (admin only)
+   * Kaynaktan listeyi çekip veritabanına dokunmadan farkı ve doğrulama sonucunu döndürür (SUPER_ADMIN).
+   * Kaynak erişilemezse sunucu 502 + `code: CUSTOMS_SOURCE_UNAVAILABLE` döner.
    */
-  manualRefresh: async () => {
+  previewRefresh: async () => {
     try {
-      console.log("🔄 Triggering manual customs refresh...");
-
-      const response = await axiosInstance.patch('/customs/refresh');
-
-      console.log("✅ Customs refresh completed:", response.data);
-
+      const response = await axiosInstance.post('/customs/refresh/preview', null, { timeout: REFRESH_TIMEOUT_MS });
       return { success: true, data: response.data };
     } catch (error) {
-      logError('CustomsService - manualRefresh', error);
-
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to refresh customs',
-      };
+      logError('CustomsService - previewRefresh', error);
+      const fallback = error.response?.data?.code === 'CUSTOMS_SOURCE_UNAVAILABLE'
+        ? t('api.customs.sourceUnavailable')
+        : t('api.customs.previewError');
+      return { success: false, error: getApiErrorMessage(error, fallback) };
     }
   },
 
   /**
-   * Test scheduled job (admin only)
-   * Manually trigger the same update that runs every 15 days
+   * Önizlemeyi uygular (SUPER_ADMIN). `force` doğrulamadan geçemeyen önizlemeyi yine de uygular.
+   * Dönen değer kaydedilen güncelleme denemesidir.
    */
-  testScheduledUpdate: async () => {
+  applyRefresh: async (previewId, force = false) => {
     try {
-      console.log("🧪 Testing scheduled job (15-day update)...");
-
-      const response = await axiosInstance.patch('/customs/test-scheduled-update');
-
-      console.log("✅ Scheduled job test completed:", response.data);
-
+      const response = await axiosInstance.post(
+        '/customs/refresh/apply',
+        { previewId, force: !!force },
+        { timeout: REFRESH_TIMEOUT_MS },
+      );
       return { success: true, data: response.data };
     } catch (error) {
-      logError('CustomsService - testScheduledUpdate', error);
-
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Failed to test scheduled job',
-      };
+      logError('CustomsService - applyRefresh', error);
+      return { success: false, error: getApiErrorMessage(error, t('api.customs.applyError')) };
     }
-  }
+  },
 };

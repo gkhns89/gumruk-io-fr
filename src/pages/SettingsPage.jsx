@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import SectorSettingsCard from '../components/settings/SectorSettingsCard';
+import CustomsListSettingsCard from '../components/settings/CustomsListSettingsCard';
 import { useAuth } from '../hooks/useAuth';
 import { feedbackService } from '../api/feedbackService';
 import { contactService } from '../api/contactService';
@@ -908,6 +909,11 @@ const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Gümrük İdareleri Listesi — kaynaktan önizle, doğrula, uygula */}
+              <div className="mb-6 break-inside-avoid">
+                <CustomsListSettingsCard />
               </div>
 
               {/* Sektör Kataloğu Yönetim Kartı */}

@@ -2120,6 +2120,15 @@ export const tr = {
       statusError: "Gönderi durumu güncellenemedi",
       summaryError: "Gönderi özeti alınamadı",
     },
+    // customsService — liste okuma ve SUPER_ADMIN liste güncellemesi
+    customs: {
+      loadError: "Gümrük idareleri yüklenemedi",
+      notFound: "Gümrük idaresi bulunamadı",
+      statusError: "Liste güncelleme durumu alınamadı",
+      previewError: "Önizleme hazırlanamadı",
+      sourceUnavailable: "Bakanlık sitesine ulaşılamadı. Mevcut liste korunuyor.",
+      applyError: "Güncelleme uygulanamadı",
+    },
     customsNews: {
       loadError: "Haberler alınamadı",
       refreshed: "Haberler yenilendi",
@@ -3112,6 +3121,71 @@ export const tr = {
       PENDING: "Kuyruğa Alındı",
       SYNCED: "Aktarıldı",
       FAILED: "Aktarım Hatası",
+    },
+  },
+
+  // Gümrük idareleri listesi ve kaynaktan güncelleme (Ayarlar, SUPER_ADMIN)
+  customsAdmin: {
+    title: "Gümrük İdareleri Listesi",
+    subtitle: "Ticaret Bakanlığı listesinden güncellenir; değişiklikler önizlenip doğrulandıktan sonra uygulanır",
+    summary: {
+      total: "Toplam",
+      lastSourceUpdate: "Kaynaktan son güncelleme: {{date}}",
+      never: "Henüz kaynaktan güncellenmedi",
+      schedule: "Otomatik güncelleme zamanlaması:",
+      source: "Kaynak sayfayı aç",
+    },
+    runs: {
+      title: "Son güncelleme denemeleri",
+      empty: "Henüz güncelleme denemesi yok",
+      counts: "Eklenen: {{added}}, pasife alınan: {{deactivated}}, yeniden aktif: {{reactivated}}",
+      // Backend enum değeri → etiket
+      trigger: {
+        SCHEDULED: "Otomatik",
+        MANUAL: "Manuel",
+      },
+      outcome: {
+        APPLIED: "Uygulandı",
+        REJECTED: "Reddedildi",
+        FAILED: "Başarısız",
+      },
+    },
+    preview: {
+      button: "Kaynaktan önizle",
+      loading: "Kaynak okunuyor...",
+      hint: "Önizleme mevcut listeyi değiştirmez.",
+      title: "Önizleme",
+      fetched: "Kaynakta {{total}} idare bulundu: {{active}} aktif, {{inactive}} pasif",
+      unchanged: "Değişmeyecek: {{count}}",
+      valid: "Kontroller geçti",
+      invalid: "Kontroller geçmedi",
+      more: "+{{count}} daha",
+      expiry: "Önizleme 10 dakika geçerli",
+      expiryUntil: "Önizleme 10 dakika geçerli ({{time}} saatine kadar)",
+      close: "Önizlemeyi kapat",
+      lists: {
+        added: "Eklenecek",
+        deactivated: "Pasife alınacak",
+        reactivated: "Yeniden aktif",
+        missing: "Kaynakta yok — dokunulmayacak",
+      },
+    },
+    apply: {
+      button: "Uygula",
+      applying: "Uygulanıyor...",
+      force: "Kontrollere rağmen uygula",
+      forceMessage: "Kaynaktan gelen liste doğrulamadan geçemedi. Yine de uygularsanız gümrük idareleri listesi bu önizlemeye göre değişecek.",
+      forceConfirm: "Yine de uygula",
+      success: "Liste güncellendi: {{added}} eklendi, {{deactivated}} pasife alındı, {{reactivated}} yeniden aktif edildi",
+      notApplied: "Güncelleme uygulanmadı. Ayrıntılar son denemeler listesinde.",
+    },
+    list: {
+      title: "Mevcut liste",
+      searchPlaceholder: "Gümrük idaresi ara...",
+      matches: "{{count}} sonuç",
+      showingFirst: "ilk {{shown}} gösteriliyor",
+      empty: "Kayıtlı gümrük idaresi yok",
+      noMatch: "Aramayla eşleşen gümrük idaresi yok",
     },
   },
 };

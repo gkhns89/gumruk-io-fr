@@ -2119,6 +2119,15 @@ export const en = {
       statusError: "Could not update the shipment status",
       summaryError: "Could not load the shipment summary",
     },
+    // customsService — reading the list and the SUPER_ADMIN list refresh
+    customs: {
+      loadError: "Could not load customs offices",
+      notFound: "Customs office not found",
+      statusError: "Could not load the list refresh status",
+      previewError: "Could not prepare the preview",
+      sourceUnavailable: "The ministry site could not be reached. The current list is kept.",
+      applyError: "Could not apply the update",
+    },
     customsNews: {
       loadError: "Could not load news",
       refreshed: "News refreshed",
@@ -3111,6 +3120,71 @@ export const en = {
       PENDING: "Queued",
       SYNCED: "Synced",
       FAILED: "Sync Error",
+    },
+  },
+
+  // Customs office list and refreshing it from the source (Settings, SUPER_ADMIN)
+  customsAdmin: {
+    title: "Customs Office List",
+    subtitle: "Updated from the Ministry of Trade list; changes are previewed and validated before they are applied",
+    summary: {
+      total: "Total",
+      lastSourceUpdate: "Last updated from source: {{date}}",
+      never: "Not updated from the source yet",
+      schedule: "Automatic update schedule:",
+      source: "Open the source page",
+    },
+    runs: {
+      title: "Recent update attempts",
+      empty: "No update attempts yet",
+      counts: "Added: {{added}}, deactivated: {{deactivated}}, reactivated: {{reactivated}}",
+      // Backend enum value → label
+      trigger: {
+        SCHEDULED: "Scheduled",
+        MANUAL: "Manual",
+      },
+      outcome: {
+        APPLIED: "Applied",
+        REJECTED: "Rejected",
+        FAILED: "Failed",
+      },
+    },
+    preview: {
+      button: "Preview from source",
+      loading: "Reading the source...",
+      hint: "Previewing does not change the current list.",
+      title: "Preview",
+      fetched: "Found {{total}} offices in the source: {{active}} active, {{inactive}} inactive",
+      unchanged: "Unchanged: {{count}}",
+      valid: "Checks passed",
+      invalid: "Checks failed",
+      more: "+{{count}} more",
+      expiry: "The preview is valid for 10 minutes",
+      expiryUntil: "The preview is valid for 10 minutes (until {{time}})",
+      close: "Close preview",
+      lists: {
+        added: "To be added",
+        deactivated: "To be deactivated",
+        reactivated: "To be reactivated",
+        missing: "Missing from the source — left untouched",
+      },
+    },
+    apply: {
+      button: "Apply",
+      applying: "Applying...",
+      force: "Apply despite the failed checks",
+      forceMessage: "The list from the source failed validation. If you apply it anyway, the customs office list will change to match this preview.",
+      forceConfirm: "Apply anyway",
+      success: "List updated: {{added}} added, {{deactivated}} deactivated, {{reactivated}} reactivated",
+      notApplied: "The update was not applied. See the recent attempts for details.",
+    },
+    list: {
+      title: "Current list",
+      searchPlaceholder: "Search customs offices...",
+      matches: "{{count}} results",
+      showingFirst: "showing the first {{shown}}",
+      empty: "No customs offices on record",
+      noMatch: "No customs offices match the search",
     },
   },
 };
