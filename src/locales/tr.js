@@ -827,7 +827,7 @@ export const tr = {
       reasonPlaceholder: "İptal nedenini belirtin...",
       cancelling: "İptal Ediliyor...",
       confirm: "İptal Et",
-      success: "İşlem başarıyla silindi!",
+      success: "İşlem başarıyla iptal edildi!",
       unexpectedError: "İşlem iptal edilirken beklenmeyen bir hata oluştu.",
     },
     autoRefresh: {
