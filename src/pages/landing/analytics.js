@@ -12,9 +12,10 @@
  *    değildir; KVKK kapsamında açık rıza gerekir.
  */
 
-// TODO: gerçek GA4 ölçüm kimliğiyle değiştirilecek (G- ile başlar).
+// Kimlik VITE_GA_MEASUREMENT_ID'den gelir ve Vercel'de yalnızca Production'da tanımlıdır:
+// staging/preview build'lerinde değişken yok, yer tutucuya düşer ve ölçüm tamamen kapalı kalır.
 const PLACEHOLDER_ID = "G-XXXXXXXXXX";
-export const GA_MEASUREMENT_ID = PLACEHOLDER_ID;
+export const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || PLACEHOLDER_ID;
 
 const CONSENT_KEY = "cookieConsent"; // "granted" | "denied"
 
