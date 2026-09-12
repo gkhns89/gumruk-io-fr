@@ -86,7 +86,8 @@ export default function NotificationCenter() {
           const prev = prevUnreadRef.current ?? 0;
 
           // Yeni bildirim(ler) geldi
-          if (newCount > prev && !isOpen) {
+          const hasNewArrivals = newCount > prev && !isOpen;
+          if (hasNewArrivals) {
             setHasNewNotif(true);
             try {
               const notifResult = await notificationService.getAll();
@@ -98,10 +99,13 @@ export default function NotificationCenter() {
                 });
               }
             } catch { /* ignore */ }
+            // Yeni gelenin baloncuğu zaten gösterildi: aynı turda bir de "N okunmamış" hatırlatması
+            // çıkmasın, 5 dakikalık hatırlatma süresi de bu andan başlasın.
+            lastReminderRef.current = Date.now();
           }
 
           // Uzun süredir okunmamış bildirim hatırlatması — her 5 dakikada tekrarlar
-          if (newCount > 0 && !isOpen) {
+          if (!hasNewArrivals && newCount > 0 && !isOpen) {
             const elapsedSinceOpen = Date.now() - lastDropdownOpenRef.current;
             const elapsedSinceReminder = Date.now() - lastReminderRef.current;
             if (elapsedSinceOpen > 120000 && elapsedSinceReminder > 300000) {
