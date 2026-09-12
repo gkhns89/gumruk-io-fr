@@ -632,6 +632,7 @@ export const tr = {
     show: "Duyuruları Göster",
     title: "Duyurular",
     viewAll: "Tüm Duyuruları Görüntüle",
+    empty: "Henüz duyuru yok",
   },
 
   // Sayfalama

@@ -1,39 +1,16 @@
 import { useState, useEffect } from "react";
 import { t } from "../../locales";
 
-const announcements = [
-  {
-    title: "Yeni Gümrük Vergisi Oranları",
-    description:
-      "1 Mayıs 2024 itibarıyla geçerli olacak yeni vergi oranları yayınlanmıştır.",
-    link: "Devamını Oku",
-    date: "01.05.2024",
-    icon: "receipt_long",
-  },
-  {
-    title: "Bayram Tatili Çalışma Saatleri",
-    description:
-      "Ramazan Bayramı süresince çalışma saatlerimiz güncellenmiştir.",
-    link: "Detaylar için...",
-    date: "05.04.2024",
-    icon: "schedule",
-  },
-  {
-    title: "Sistem Bakım Çalışması",
-    description:
-      "10 Mayıs 22:00 - 23:00 saatleri arasında sistemlerimizde bakım yapılacaktır.",
-    link: "Daha Fazla Bilgi",
-    date: "10.05.2024",
-    icon: "build",
-  },
-];
-
 /**
  * Header'a yerleştirilen duyurular bileşeni.
  * Buton header akışında durur; drawer + overlay fixed pozisyonla tüm sayfayı örter.
+ *
+ * Henüz bir duyuru kaynağı yok: liste `announcements` prop'u ile gelir, verilmezse boştur.
+ * Öğe biçimi: { title, description, date, icon?, link?, href? }
  */
-export default function AnnouncementsDrawer() {
+export default function AnnouncementsDrawer({ announcements = [] }) {
   const [isOpen, setIsOpen] = useState(false);
+  const count = announcements.length;
 
   // ESC ile kapat
   useEffect(() => {
@@ -61,9 +38,9 @@ export default function AnnouncementsDrawer() {
         <span className="material-symbols-outlined text-text-main">campaign</span>
 
         {/* Duyuru sayısı badge'i */}
-        {announcements.length > 0 && (
+        {count > 0 && (
           <span className="absolute top-1 right-1 h-4 w-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
-            {announcements.length > 9 ? "9+" : announcements.length}
+            {count > 9 ? "9+" : count}
           </span>
         )}
       </button>
@@ -99,9 +76,11 @@ export default function AnnouncementsDrawer() {
             <h2 className="text-lg font-bold text-text-main dark:text-gray-100 tracking-tight">
               {t("announcements.title")}
             </h2>
-            <span className="px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-xs font-semibold">
-              {announcements.length}
-            </span>
+            {count > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-xs font-semibold">
+                {count}
+              </span>
+            )}
           </div>
           <button
             onClick={() => setIsOpen(false)}
@@ -114,39 +93,52 @@ export default function AnnouncementsDrawer() {
 
         {/* Duyuru Listesi */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {announcements.map((announcement, index) => (
-            <div
-              key={index}
-              className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-primary/40 transition-colors group"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
-                  <span className="material-symbols-outlined text-primary dark:text-primary-light text-base">
-                    {announcement.icon}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm text-text-main dark:text-gray-100 leading-tight mb-1">
-                    {announcement.title}
-                  </h3>
-                  <p className="text-xs text-text-secondary dark:text-gray-400 leading-relaxed mb-2">
-                    {announcement.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <a
-                      href="#"
-                      className="text-xs text-primary dark:text-primary-light hover:underline font-medium"
-                    >
-                      {announcement.link} →
-                    </a>
-                    <span className="text-[10px] text-text-secondary dark:text-gray-500">
-                      {announcement.date}
+          {count === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-text-secondary dark:text-gray-400">
+              <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600">
+                campaign
+              </span>
+              <p className="text-sm">{t("announcements.empty")}</p>
+            </div>
+          ) : (
+            announcements.map((announcement, index) => (
+              <div
+                key={announcement.id ?? index}
+                className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-primary/40 transition-colors group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
+                    <span className="material-symbols-outlined text-primary dark:text-primary-light text-base">
+                      {announcement.icon || "campaign"}
                     </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-text-main dark:text-gray-100 leading-tight mb-1">
+                      {announcement.title}
+                    </h3>
+                    <p className="text-xs text-text-secondary dark:text-gray-400 leading-relaxed mb-2">
+                      {announcement.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      {announcement.link && announcement.href ? (
+                        <a
+                          href={announcement.href}
+                          className="text-xs text-primary dark:text-primary-light hover:underline font-medium"
+                        >
+                          {announcement.link} →
+                        </a>
+                      ) : (
+                        <span />
+                      )}
+                      <span className="text-[10px] text-text-secondary dark:text-gray-500">
+                        {announcement.date}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Alt link */}

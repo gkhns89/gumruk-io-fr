@@ -632,6 +632,7 @@ export const en = {
     show: "Show announcements",
     title: "Announcements",
     viewAll: "View All Announcements",
+    empty: "No announcements yet",
   },
 
   // Pagination
