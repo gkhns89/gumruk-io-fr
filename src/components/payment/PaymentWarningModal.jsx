@@ -2,35 +2,33 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/authContext';
 import { useContext } from 'react';
+// Giriş paketinde (App.jsx statik import eder): sözlükleri tanıtım sayfasına taşımamak için runtime köprüsü
+import { t } from '../../locales/runtime';
 
+// Başlık ve metin `paymentWarning.<seviye>` altında
 const LEVEL_CONFIG = {
   WARNING: {
     icon: 'warning',
     iconColor: 'text-yellow-600',
     iconBg: 'bg-yellow-100',
-    title: 'Ödeme Uyarısı',
-    message: (days) => `Abonelik ödemeniz ${days} gündür gecikmiş durumda. Lütfen en kısa sürede ödeme yapınız.`,
   },
   WRITE_BLOCKED: {
     icon: 'block',
     iconColor: 'text-orange-600',
     iconBg: 'bg-orange-100',
-    title: 'Yeni Kayıt Engellendi',
-    message: (days) => `Ödeme ${days} gündür geciktiği için yeni kayıt oluşturma işlemi engellenmiştir. Mevcut kayıtları düzenleyebilirsiniz.`,
   },
   FULL_READONLY: {
     icon: 'lock',
     iconColor: 'text-red-600',
     iconBg: 'bg-red-100',
-    title: 'Salt Okunur Mod',
-    message: (days) => `Ödeme ${days} gündür geciktiği için tüm yazma işlemleri engellenmiştir. Sistemi yalnızca görüntüleyebilirsiniz.`,
   },
 };
 
 export default function PaymentWarningModal({ level, daysOverdue, onClose }) {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const config = LEVEL_CONFIG[level] ?? LEVEL_CONFIG.WARNING;
+  const levelKey = LEVEL_CONFIG[level] ? level : 'WARNING';
+  const config = LEVEL_CONFIG[levelKey];
 
   const canPay = user?.isPaymentResponsible || user?.globalRole === 'BROKER_ADMIN';
 
@@ -49,14 +47,14 @@ export default function PaymentWarningModal({ level, daysOverdue, onClose }) {
             <span className={`material-symbols-outlined ${config.iconColor} text-2xl`}>{config.icon}</span>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-main">{config.title}</h2>
-            <p className="text-text-secondary text-sm mt-1">{daysOverdue} gün gecikme</p>
+            <h2 className="text-xl font-bold text-text-main">{t(`paymentWarning.${levelKey}.title`)}</h2>
+            <p className="text-text-secondary text-sm mt-1">{t('paymentWarning.daysOverdue', { days: daysOverdue })}</p>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-6">
-          <p className="text-text-secondary text-sm">{config.message(daysOverdue)}</p>
+          <p className="text-text-secondary text-sm">{t(`paymentWarning.${levelKey}.message`, { days: daysOverdue })}</p>
         </div>
 
         {/* Footer */}
@@ -66,7 +64,7 @@ export default function PaymentWarningModal({ level, daysOverdue, onClose }) {
             onClick={onClose}
             className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
           >
-            Kapat
+            {t('common.close')}
           </button>
           {canPay && (
             <button
@@ -74,7 +72,7 @@ export default function PaymentWarningModal({ level, daysOverdue, onClose }) {
               className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90 transition-colors font-semibold"
             >
               <span className="material-symbols-outlined">account_balance</span>
-              Ödeme Yap
+              {t('payment.title')}
             </button>
           )}
         </div>

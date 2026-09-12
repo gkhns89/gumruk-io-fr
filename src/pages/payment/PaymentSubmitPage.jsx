@@ -7,16 +7,18 @@ import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getBalanceTransactionType } from '../../utils/constants';
+import { t, getCurrentLocale } from '../../locales';
 
 const STATUS_BADGE = {
   PENDING_REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700',
   CONFIRMED:      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-700',
   REJECTED:       'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-700',
 };
-const STATUS_LABEL = {
-  PENDING_REVIEW: 'İnceleme Bekliyor',
-  CONFIRMED:      'Onaylandı',
-  REJECTED:       'Reddedildi',
+// Etiketler render anında t() ile okunur
+const STATUS_LABEL_KEY = {
+  PENDING_REVIEW: 'payment.pending',
+  CONFIRMED:      'payment.confirmed',
+  REJECTED:       'payment.rejected',
 };
 const STATUS_ICON = {
   PENDING_REVIEW: 'schedule',
@@ -24,15 +26,17 @@ const STATUS_ICON = {
   REJECTED:       'cancel',
 };
 
+// Etiket `paymentPage.levels.<seviye>` altında
 const RESTRICTION_CONFIG = {
-  NONE:         { icon: 'check_circle', label: 'Aktif',         bg: 'bg-green-50 dark:bg-green-900/20',   border: 'border-green-200 dark:border-green-800',   text: 'text-green-700 dark:text-green-400' },
-  WARNING:      { icon: 'warning',      label: 'Uyarı',         bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-700 dark:text-yellow-400' },
-  WRITE_BLOCKED:{ icon: 'lock',         label: 'Yazma Kısıtlı', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-400' },
-  FULL_READONLY:{ icon: 'block',        label: 'Tam Kısıtlı',   bg: 'bg-red-50 dark:bg-red-900/20',       border: 'border-red-200 dark:border-red-800',       text: 'text-red-700 dark:text-red-400' },
+  NONE:         { icon: 'check_circle', bg: 'bg-green-50 dark:bg-green-900/20',   border: 'border-green-200 dark:border-green-800',   text: 'text-green-700 dark:text-green-400' },
+  WARNING:      { icon: 'warning',      bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-700 dark:text-yellow-400' },
+  WRITE_BLOCKED:{ icon: 'lock',         bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-400' },
+  FULL_READONLY:{ icon: 'block',        bg: 'bg-red-50 dark:bg-red-900/20',       border: 'border-red-200 dark:border-red-800',       text: 'text-red-700 dark:text-red-400' },
 };
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('tr-TR') : '-';
-const fmtMoney = (v) => v != null ? `₺${Number(v).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '-';
+const fmt = (d) => d ? new Date(d).toLocaleDateString(getCurrentLocale()) : '-';
+const fmtAmount = (v) => Number(v).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2 });
+const fmtMoney = (v) => v != null ? `₺${fmtAmount(v)}` : '-';
 
 export default function PaymentSubmitPage() {
   const { user } = useAuth();
@@ -80,7 +84,7 @@ export default function PaymentSubmitPage() {
       setAddons(addonList.filter(a => !a.isPaid && a.isActive) || []);
       setBalanceHistory(balanceTxs);
     } catch {
-      showError('Veriler yüklenirken hata oluştu');
+      showError(t('paymentPage.loadError'));
     } finally {
       setDataLoading(false);
     }
@@ -120,6 +124,9 @@ export default function PaymentSubmitPage() {
       cycle === 'YEARLY' ? n.setFullYear(n.getFullYear() + 1) : n.setMonth(n.getMonth() + 1);
       return n;
     };
+    const periodLabel = (d) => cycle === 'YEARLY'
+      ? t('paymentPage.form.yearlyPeriod', { year: d.getFullYear() })
+      : d.toLocaleDateString(getCurrentLocale(), { month: 'long', year: 'numeric' });
 
     let cur = new Date(npd + 'T00:00:00');
     // Vadesi geçmiş dönemler
@@ -127,9 +134,7 @@ export default function PaymentSubmitPage() {
       const start = new Date(cur);
       const next = advance(cur);
       const end = new Date(next); end.setDate(end.getDate() - 1);
-      const label = cycle === 'YEARLY'
-        ? `${start.getFullYear()} Yıllık`
-        : start.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+      const label = periodLabel(start);
       periods.push({ startDate: toStr(start), endDate: toStr(end), label, isOverdue: true });
       cur = next;
     }
@@ -137,9 +142,7 @@ export default function PaymentSubmitPage() {
     const start = new Date(cur);
     const next = advance(cur);
     const end = new Date(next); end.setDate(end.getDate() - 1);
-    const label = (cycle === 'YEARLY'
-      ? `${start.getFullYear()} Yıllık`
-      : start.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })) + ' (Yaklaşan)';
+    const label = t('paymentPage.form.upcomingPeriod', { period: periodLabel(start) });
     periods.push({ startDate: toStr(start), endDate: toStr(end), label, isOverdue: false });
     return periods;
   })();
@@ -161,14 +164,14 @@ export default function PaymentSubmitPage() {
   const handleReceiptView = async (id) => {
     const result = await paymentService.viewReceipt(id);
     if (!result.success) {
-      showError(result.error || 'Dekont açılamadı');
+      showError(result.error || t('api.payment.receiptViewError'));
     }
   };
 
   const handleReceiptDownload = async (id) => {
     const result = await paymentService.downloadReceipt(id);
     if (!result.success) {
-      showError(result.error || 'Dekont indirilemedi');
+      showError(result.error || t('api.payment.receiptDownloadError'));
     }
   };
 
@@ -183,10 +186,10 @@ export default function PaymentSubmitPage() {
     if (!file || !reuploadTargetId) return;
     const result = await paymentService.replaceReceipt(reuploadTargetId, file);
     if (result.success) {
-      showSuccess('Dekont yeniden yüklendi');
+      showSuccess(t('paymentPage.history.receiptReuploaded'));
       load();
     } else {
-      showError(result.error || 'Dekont yüklenemedi');
+      showError(result.error || t('api.payment.receiptUploadError'));
     }
     setReuploadTargetId(null);
   };
@@ -194,7 +197,7 @@ export default function PaymentSubmitPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedMethodId || !amount) {
-      showError('Lütfen zorunlu alanları doldurun');
+      showError(t('paymentPage.form.requiredFields'));
       return;
     }
     // Seçili dönemlerden start/end türet
@@ -205,13 +208,13 @@ export default function PaymentSubmitPage() {
     setSubmitting(true);
     try {
       await paymentService.submitPayment({ paymentMethodId: selectedMethodId, amount, referenceNumber, billingPeriodStart, billingPeriodEnd, notes, receipt });
-      showSuccess('Ödeme bildirimi gönderildi');
+      showSuccess(t('paymentPage.form.submitted'));
       setAmount(''); setReferenceNumber(''); setSelectedPeriods([]);
       setNotes(''); setReceipt(null); setSelectedMethodId('');
       load();
       setTab('history');
     } catch {
-      showError('Ödeme bildirimi gönderilemedi');
+      showError(t('paymentPage.form.submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -227,7 +230,7 @@ export default function PaymentSubmitPage() {
   const handleMarkAddonPaid = async (addonId, useBalance) => {
     const result = await paymentService.markAddonAsPaid(addonId, { useBalance });
     if (result?.status === 'PAID_WITH_BALANCE') {
-      showSuccess('Ek ödeme bakiyenizden başarıyla düşüldü');
+      showSuccess(t('paymentPage.addonPaidWithBalance'));
       load();
     }
     return result;
@@ -246,7 +249,8 @@ export default function PaymentSubmitPage() {
     const due = subscriptionStatus.nextPaymentDue ? new Date(subscriptionStatus.nextPaymentDue) : null;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const daysLeft = due ? Math.round((due - today) / 86400000) : null;
-    const cycleLabel = subscriptionStatus.billingCycle === 'YEARLY' ? 'Yıllık' : 'Aylık';
+    const levelKey = RESTRICTION_CONFIG[subscriptionStatus.level] ? subscriptionStatus.level : 'NONE';
+    const isYearly = subscriptionStatus.billingCycle === 'YEARLY';
 
     return (
       <div className={`rounded-2xl border p-5 transition-colors ${cfg.bg} ${cfg.border}`}>
@@ -256,16 +260,16 @@ export default function PaymentSubmitPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-semibold text-text-main">
-                  {subscriptionStatus.planName ?? 'Abonelik'} Planı
+                  {t('paymentPage.planName', { name: subscriptionStatus.planName ?? t('paymentPage.defaultPlanName') })}
                 </h2>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                  {cfg.label}
+                  {t(`paymentPage.levels.${levelKey}`)}
                 </span>
               </div>
               <p className="text-sm text-text-secondary mt-0.5">
-                {cycleLabel} fatura
+                {isYearly ? t('paymentPage.billedYearly') : t('paymentPage.billedMonthly')}
                 {subscriptionStatus.planPrice && (
-                  <> · <span className="font-medium text-text-main">{fmtMoney(subscriptionStatus.planPrice)}/{subscriptionStatus.billingCycle === 'YEARLY' ? 'yıl' : 'ay'}</span></>
+                  <> · <span className="font-medium text-text-main">{t(isYearly ? 'paymentPage.pricePerYear' : 'paymentPage.pricePerMonth', { price: fmtMoney(subscriptionStatus.planPrice) })}</span></>
                 )}
               </p>
             </div>
@@ -273,9 +277,9 @@ export default function PaymentSubmitPage() {
 
           <div className="flex gap-6 flex-wrap">
             <div className="text-right">
-              <p className="text-xs text-text-secondary">Sonraki Ödeme</p>
+              <p className="text-xs text-text-secondary">{t('paymentPage.nextPayment')}</p>
               <p className={`text-sm font-semibold ${subscriptionStatus.daysOverdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-text-main'}`}>
-                {due ? due.toLocaleDateString('tr-TR') : '—'}
+                {due ? due.toLocaleDateString(getCurrentLocale()) : '—'}
               </p>
               {daysLeft !== null && (
                 <p className={`text-xs font-medium ${
@@ -284,26 +288,26 @@ export default function PaymentSubmitPage() {
                   : 'text-green-600 dark:text-green-400'
                 }`}>
                   {subscriptionStatus.daysOverdue > 0
-                    ? `${subscriptionStatus.daysOverdue} gün gecikmiş`
-                    : daysLeft === 0 ? 'Bugün vadesi doluyor'
-                    : `${daysLeft} gün kaldı`}
+                    ? t('paymentPage.daysOverdue', { count: subscriptionStatus.daysOverdue })
+                    : daysLeft === 0 ? t('paymentPage.dueToday')
+                    : t('paymentPage.daysLeft', { count: daysLeft })}
                 </p>
               )}
             </div>
 
             <div className="text-right">
-                <p className="text-xs text-text-secondary">Mevcut Bakiye</p>
+                <p className="text-xs text-text-secondary">{t('paymentPage.currentBalance')}</p>
                 <p className={`text-sm font-semibold ${Number(subscriptionStatus.balance ?? 0) > 0 ? 'text-green-600 dark:text-green-400' : 'text-text-secondary'}`}>
                   {fmtMoney(subscriptionStatus.balance ?? 0)}
                 </p>
-                <p className="text-xs text-text-secondary">Dönem kredisi</p>
+                <p className="text-xs text-text-secondary">{t('paymentPage.periodCredit')}</p>
               </div>
 
             {subscriptionStatus.subscriptionEndDate && (
               <div className="text-right">
-                <p className="text-xs text-text-secondary">Abonelik Bitiş</p>
+                <p className="text-xs text-text-secondary">{t('paymentPage.subscriptionEnd')}</p>
                 <p className="text-sm font-semibold text-text-main">
-                  {new Date(subscriptionStatus.subscriptionEndDate).toLocaleDateString('tr-TR')}
+                  {new Date(subscriptionStatus.subscriptionEndDate).toLocaleDateString(getCurrentLocale())}
                 </p>
               </div>
             )}
@@ -312,17 +316,17 @@ export default function PaymentSubmitPage() {
 
         {subscriptionStatus.level === 'WARNING' && (
           <p className="mt-3 text-sm text-yellow-700 dark:text-yellow-300">
-            Ödeme geciktiği için uyarı modundasınız. Yeni kayıt oluşturmaya devam edebilirsiniz ancak ödemenizi en kısa sürede yapmanız önerilir.
+            {t('paymentPage.levelHints.WARNING')}
           </p>
         )}
         {subscriptionStatus.level === 'WRITE_BLOCKED' && (
           <p className="mt-3 text-sm text-orange-700 dark:text-orange-300">
-            Ödeme gecikmesi nedeniyle yeni kayıt oluşturma kısıtlandı. Mevcut kayıtları düzenleyebilirsiniz.
+            {t('paymentPage.levelHints.WRITE_BLOCKED')}
           </p>
         )}
         {subscriptionStatus.level === 'FULL_READONLY' && (
           <p className="mt-3 text-sm text-red-700 dark:text-red-300">
-            Ödeme gecikmesi kritik seviyede. Tüm yazma işlemleri kısıtlandı. Aşağıdan ödeme bildirin.
+            {t('paymentPage.levelHints.FULL_READONLY')}
           </p>
         )}
       </div>
@@ -344,9 +348,9 @@ export default function PaymentSubmitPage() {
         <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark flex-shrink-0 transition-colors">
           <h1 className="text-3xl font-bold text-text-main flex items-center gap-3">
             <span className="material-symbols-outlined text-4xl text-primary">account_balance</span>
-            Abonelik &amp; Ödeme
+            {t('paymentPage.title')}
           </h1>
-          <p className="text-text-secondary mt-1">Abonelik durumunuzu görüntüleyin ve ödeme bildirin</p>
+          <p className="text-text-secondary mt-1">{t('paymentPage.subtitle')}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -356,7 +360,7 @@ export default function PaymentSubmitPage() {
             {dataLoading ? (
               <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-100 dark:border-gray-700 p-8 flex items-center justify-center gap-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-                <span className="text-text-secondary">Yükleniyor...</span>
+                <span className="text-text-secondary">{t('common.loading')}</span>
               </div>
             ) : renderStatusCard()}
 
@@ -372,7 +376,7 @@ export default function PaymentSubmitPage() {
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">payment</span>
-                  Ödeme Yap
+                  {t('payment.title')}
                 </button>
                 <button
                   onClick={() => setTab('history')}
@@ -383,7 +387,7 @@ export default function PaymentSubmitPage() {
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">history</span>
-                  Ödeme Geçmişi
+                  {t('payment.history')}
                   {pendingCount > 0 && (
                     <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-yellow-400 text-yellow-900 text-xs font-bold">
                       {pendingCount}
@@ -399,7 +403,7 @@ export default function PaymentSubmitPage() {
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
-                  Bakiye Hareketleri
+                  {t('paymentPage.balanceTab')}
                 </button>
                 {user?.globalRole === 'BROKER_ADMIN' && (
                   <button
@@ -411,7 +415,7 @@ export default function PaymentSubmitPage() {
                     }`}
                   >
                     <span className="material-symbols-outlined text-xl">travel_explore</span>
-                    G-Radar Kredisi
+                    {t('balanceTransaction.gRadarCreditPurchase.label')}
                   </button>
                 )}
               </div>
@@ -424,14 +428,14 @@ export default function PaymentSubmitPage() {
                     <div>
                       <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">account_balance</span>
-                        Banka Bilgileri
+                        {t('payment.bankInfo')}
                       </h2>
                       <div className="grid gap-3">
                         {paymentMethods.map(method => (
                           <div key={method.id} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 transition-colors">
                             <p className="font-semibold text-text-main">{method.displayName}</p>
-                            {method.bankName && <p className="text-text-secondary text-sm mt-1">Banka: {method.bankName}</p>}
-                            {method.accountHolder && <p className="text-text-secondary text-sm">Hesap Sahibi: {method.accountHolder}</p>}
+                            {method.bankName && <p className="text-text-secondary text-sm mt-1">{t('paymentPage.bank')}: {method.bankName}</p>}
+                            {method.accountHolder && <p className="text-text-secondary text-sm">{t('payment.accountHolder')}: {method.accountHolder}</p>}
                             {method.iban && (
                               <div className="flex items-center gap-2 mt-2">
                                 <code className="text-sm font-mono text-text-main bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 tracking-wider">
@@ -440,12 +444,12 @@ export default function PaymentSubmitPage() {
                                 <button
                                   onClick={() => handleCopyIban(method.iban)}
                                   className="flex items-center gap-1 text-sm text-primary hover:opacity-70 transition-opacity"
-                                  title="IBAN Kopyala"
+                                  title={t('payment.copyIban')}
                                 >
                                   <span className="material-symbols-outlined text-lg">
                                     {copiedIban === method.iban ? 'check' : 'content_copy'}
                                   </span>
-                                  {copiedIban === method.iban ? 'Kopyalandı' : 'Kopyala'}
+                                  {copiedIban === method.iban ? t('payment.copied') : t('paymentPage.copy')}
                                 </button>
                               </div>
                             )}
@@ -458,7 +462,7 @@ export default function PaymentSubmitPage() {
 
                   {paymentMethods.length === 0 && !dataLoading && (
                     <div className="text-center py-4 text-text-secondary text-sm">
-                      Şu an tanımlı banka hesabı bulunmuyor. Yönetici ile iletişime geçin.
+                      {t('paymentPage.noBankAccounts')}
                     </div>
                   )}
 
@@ -467,7 +471,7 @@ export default function PaymentSubmitPage() {
                     <div ref={addonsSectionRef}>
                       <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">receipt</span>
-                        Ek Ödemeler
+                        {t('paymentPage.addons')}
                       </h2>
                       <div className="grid gap-3">
                         {addons.map(addon => (
@@ -488,26 +492,26 @@ export default function PaymentSubmitPage() {
                     <div ref={transferFormRef}>
                       <h2 className="text-base font-semibold text-text-main mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">send</span>
-                        Ödeme Bildir
+                        {t('payment.submit')}
                       </h2>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Ödeme Yöntemi *</span>
+                            <span className="text-sm font-medium text-text-main">{t('payment.paymentMethod')} *</span>
                             <select
                               value={selectedMethodId}
                               onChange={e => setSelectedMethodId(e.target.value)}
                               required
                               className="form-select rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                             >
-                              <option value="">Seçiniz...</option>
+                              <option value="">{t('paymentPage.form.selectPlaceholder')}</option>
                               {paymentMethods.map(m => (
                                 <option key={m.id} value={m.id}>{m.displayName}</option>
                               ))}
                             </select>
                           </label>
                           <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Tutar (₺) *</span>
+                            <span className="text-sm font-medium text-text-main">{t('payment.amount')} (₺) *</span>
                             <input
                               type="number" min="0" step="0.01"
                               value={amount} onChange={e => setAmount(e.target.value)}
@@ -517,15 +521,15 @@ export default function PaymentSubmitPage() {
                             />
                           </label>
                           <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Referans No</span>
+                            <span className="text-sm font-medium text-text-main">{t('payment.referenceNumber')}</span>
                             <input
                               type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
                               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                              placeholder="EFT/Havale referans numarası"
+                              placeholder={t('paymentPage.form.referencePlaceholder')}
                             />
                           </label>
                           <label className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-text-main">Dekont <span className="text-text-secondary font-normal">(PDF/PNG/JPG, max 10MB)</span></span>
+                            <span className="text-sm font-medium text-text-main">{t('payment.receipt')} <span className="text-text-secondary font-normal">{t('paymentPage.form.receiptHint')}</span></span>
                             <input
                               type="file" accept=".pdf,.png,.jpg,.jpeg"
                               onChange={e => setReceipt(e.target.files[0])}
@@ -538,8 +542,8 @@ export default function PaymentSubmitPage() {
                         {availablePeriods.length > 0 && (
                           <div className="flex flex-col gap-2">
                             <span className="text-sm font-medium text-text-main">
-                              Hangi Dönem(ler) İçin?
-                              <span className="ml-1 text-text-secondary font-normal">(isteğe bağlı)</span>
+                              {t('paymentPage.form.periods')}
+                              <span className="ml-1 text-text-secondary font-normal">{t('paymentPage.form.periodsOptional')}</span>
                             </span>
                             <div className="flex flex-col gap-1.5 bg-gray-50 dark:bg-gray-800/60 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700">
                               {availablePeriods.map(period => {
@@ -555,7 +559,7 @@ export default function PaymentSubmitPage() {
                                     <span className={`text-sm ${period.isOverdue ? 'font-medium text-red-600 dark:text-red-400' : 'text-text-secondary'}`}>
                                       {period.label}
                                       {period.isOverdue && (
-                                        <span className="ml-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full">Gecikmiş</span>
+                                        <span className="ml-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full">{t('paymentPage.overdue')}</span>
                                       )}
                                     </span>
                                   </label>
@@ -564,19 +568,19 @@ export default function PaymentSubmitPage() {
                             </div>
                             {selectedPeriods.length > 0 && (
                               <p className="text-xs text-text-secondary">
-                                Seçilen: <span className="font-medium text-primary">{selectedPeriods.length} dönem</span>
+                                {t('paymentPage.form.selected')} <span className="font-medium text-primary">{t('paymentPage.form.periodCount', { count: selectedPeriods.length })}</span>
                                 {' '}({[...selectedPeriods].sort((a,b) => a.startDate.localeCompare(b.startDate))[0].startDate} — {[...selectedPeriods].sort((a,b) => b.endDate.localeCompare(a.endDate))[0].endDate})
                               </p>
                             )}
                           </div>
                         )}
                         <label className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-text-main">Notlar</span>
+                          <span className="text-sm font-medium text-text-main">{t('payment.notes')}</span>
                           <textarea
                             value={notes} onChange={e => setNotes(e.target.value)}
                             rows={3}
                             className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary transition-colors resize-none"
-                            placeholder="Ek bilgi..."
+                            placeholder={t('paymentPage.form.notesPlaceholder')}
                           />
                         </label>
                         <div className="flex justify-end">
@@ -585,7 +589,7 @@ export default function PaymentSubmitPage() {
                             className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="material-symbols-outlined">send</span>
-                            {submitting ? 'Gönderiliyor...' : 'Ödeme Bildir'}
+                            {submitting ? t('paymentPage.form.sending') : t('payment.submit')}
                           </button>
                         </div>
                       </form>
@@ -593,7 +597,7 @@ export default function PaymentSubmitPage() {
                   ) : (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 text-center text-text-secondary text-sm">
                       <span className="material-symbols-outlined text-3xl text-gray-400 mb-2 block">lock</span>
-                      Ödeme bildirme yetkisine sahip değilsiniz. Firma yöneticinizle iletişime geçin.
+                      {t('paymentPage.form.noPermission')}
                     </div>
                   )}
                 </div>
@@ -614,14 +618,14 @@ export default function PaymentSubmitPage() {
                           CONFIRMED:      active ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
                           REJECTED:       active ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                         };
-                        const labels = { ALL: 'Tümü', PENDING_REVIEW: 'Bekleyen', CONFIRMED: 'Onaylanan', REJECTED: 'Reddedilen' };
+                        const label = s === 'ALL' ? t('management.all') : t(`paymentPage.history.filters.${s}`);
                         return (
                           <button
                             key={s}
                             onClick={() => setHistoryFilter(s)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${colors[s]}`}
                           >
-                            {labels[s]}
+                            {label}
                             <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-black/10 dark:bg-white/20 text-xs font-bold">
                               {count}
                             </span>
@@ -632,23 +636,23 @@ export default function PaymentSubmitPage() {
                     <button
                       onClick={load}
                       className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-main transition-colors"
-                      title="Yenile"
+                      title={t('paymentPage.history.refresh')}
                     >
                       <span className="material-symbols-outlined text-base">refresh</span>
-                      Yenile
+                      {t('paymentPage.history.refresh')}
                     </button>
                   </div>
 
                   {dataLoading ? (
                     <div className="flex items-center justify-center gap-3 py-12">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-                      <span className="text-text-secondary">Yükleniyor...</span>
+                      <span className="text-text-secondary">{t('common.loading')}</span>
                     </div>
                   ) : filteredPayments.length === 0 ? (
                     <div className="text-center py-12">
                       <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-3 block">receipt_long</span>
                       <p className="text-text-secondary text-sm">
-                        {historyFilter === 'ALL' ? 'Henüz ödeme bildirimi bulunmuyor' : 'Bu kritere uygun ödeme yok'}
+                        {historyFilter === 'ALL' ? t('paymentPage.history.empty') : t('paymentPage.history.emptyFiltered')}
                       </p>
                       {historyFilter === 'ALL' && canSubmit && (
                         <button
@@ -656,7 +660,7 @@ export default function PaymentSubmitPage() {
                           className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
                         >
                           <span className="material-symbols-outlined text-base">add</span>
-                          Ödeme Bildir
+                          {t('payment.submit')}
                         </button>
                       )}
                     </div>
@@ -664,7 +668,7 @@ export default function PaymentSubmitPage() {
                     <div className="space-y-3">
                       {filteredPayments.map(p => {
                         const badge = STATUS_BADGE[p.status] ?? '';
-                        const label = STATUS_LABEL[p.status] ?? p.status;
+                        const label = STATUS_LABEL_KEY[p.status] ? t(STATUS_LABEL_KEY[p.status]) : p.status;
                         const icon  = STATUS_ICON[p.status] ?? 'info';
                         return (
                           <div
@@ -681,10 +685,10 @@ export default function PaymentSubmitPage() {
                                 <div>
                                   <p className="text-base font-semibold text-text-main">{fmtMoney(p.amount)}</p>
                                   <p className="text-xs text-text-secondary mt-0.5">
-                                    Dönem: {fmt(p.billingPeriodStart)} — {fmt(p.billingPeriodEnd)}
+                                    {t('paymentPage.history.period', { start: fmt(p.billingPeriodStart), end: fmt(p.billingPeriodEnd) })}
                                   </p>
                                   {p.referenceNumber && (
-                                    <p className="text-xs text-text-secondary">Ref: {p.referenceNumber}</p>
+                                    <p className="text-xs text-text-secondary">{t('paymentPage.history.reference', { reference: p.referenceNumber })}</p>
                                   )}
                                 </div>
                               </div>
@@ -701,7 +705,7 @@ export default function PaymentSubmitPage() {
                                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                       >
                                         <span className="material-symbols-outlined text-base">visibility</span>
-                                        Görüntüle
+                                        {t('common.view')}
                                       </button>
                                       <button
                                         type="button"
@@ -709,17 +713,17 @@ export default function PaymentSubmitPage() {
                                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                       >
                                         <span className="material-symbols-outlined text-base">download</span>
-                                        İndir
+                                        {t('common.download')}
                                       </button>
                                     </div>
                                   ) : (
                                     <div className="flex flex-col items-end gap-1">
                                       <span
                                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                                        title="Dekont dosyası sunucuda bulunamadı"
+                                        title={t('paymentPage.history.receiptMissingHint')}
                                       >
                                         <span className="material-symbols-outlined text-sm">error</span>
-                                        Evrak eksik
+                                        {t('paymentPage.history.receiptMissing')}
                                       </span>
                                       {canSubmit && (
                                         <button
@@ -728,7 +732,7 @@ export default function PaymentSubmitPage() {
                                           className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                         >
                                           <span className="material-symbols-outlined text-base">upload_file</span>
-                                          Yeniden Yükle
+                                          {t('paymentPage.history.reupload')}
                                         </button>
                                       )}
                                     </div>
@@ -749,7 +753,7 @@ export default function PaymentSubmitPage() {
                             {p.status === 'CONFIRMED' && p.reviewedAt && (
                               <p className="mt-2 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                                 <span className="material-symbols-outlined text-base">verified</span>
-                                {fmt(p.reviewedAt)} tarihinde onaylandı
+                                {t('paymentPage.history.confirmedOn', { date: fmt(p.reviewedAt) })}
                               </p>
                             )}
                           </div>
@@ -765,22 +769,22 @@ export default function PaymentSubmitPage() {
                 <div className="p-6">
                   <h2 className="text-sm font-semibold text-text-main mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-purple-500">history</span>
-                    Bakiye Hareket Geçmişi
+                    {t('paymentPage.balance.title')}
                   </h2>
                   {balanceHistory.length === 0 ? (
                     <div className="text-center py-10">
                       <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-3 block">account_balance_wallet</span>
-                      <p className="text-text-secondary text-sm">Henüz bakiye hareketi bulunmuyor</p>
+                      <p className="text-text-secondary text-sm">{t('paymentPage.balance.empty')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50 dark:bg-gray-800 text-text-secondary text-xs">
                           <tr>
-                            <th className="px-4 py-2.5 text-left font-medium">Tarih</th>
-                            <th className="px-4 py-2.5 text-left font-medium">Tür</th>
-                            <th className="px-4 py-2.5 text-left font-medium">Açıklama</th>
-                            <th className="px-4 py-2.5 text-right font-medium">Tutar</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('paymentPage.balance.date')}</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('paymentPage.balance.type')}</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('paymentPage.balance.description')}</th>
+                            <th className="px-4 py-2.5 text-right font-medium">{t('payment.amount')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-background-dark">
@@ -794,14 +798,14 @@ export default function PaymentSubmitPage() {
                             return (
                               <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                 <td className="px-4 py-3 text-text-secondary text-xs whitespace-nowrap">
-                                  {new Date(tx.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  {new Date(tx.createdAt).toLocaleString(getCurrentLocale(), { dateStyle: 'short', timeStyle: 'short' })}
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className={`font-medium text-xs ${amountColor}`}>{typeLabel}</span>
                                 </td>
                                 <td className="px-4 py-3 text-text-secondary text-xs max-w-xs truncate">{tx.description ?? '—'}</td>
                                 <td className={`px-4 py-3 text-right font-semibold ${amountColor}`}>
-                                  {isCredit ? '+' : ''}{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                                  {isCredit ? '+' : ''}{fmtAmount(tx.amount)} ₺
                                 </td>
                               </tr>
                             );
@@ -898,15 +902,12 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
     });
     setSubmitting(false);
     if (res.success) {
-      showSuccess(res.data?.message || 'Krediler hesabınıza eklendi');
+      showSuccess(res.data?.message || t('paymentPage.gRadar.purchased'));
       setNotes('');
       // Reload the surrounding subscription status so the balance figure refreshes.
       window.location.reload();
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
-      showError(
-        'G-Radar kredisi şu anda satın alınamıyor. Lütfen yöneticiyle iletişime geçin. ' +
-        'Bakiyenizden hiçbir kesinti yapılmadı.'
-      );
+      showError(t('paymentPage.gRadar.poolUnavailable'));
     } else {
       showError(res.error);
     }
@@ -915,7 +916,7 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
   const handleSubmitTransfer = async () => {
     if (!quote) return;
     if (!referenceNumber.trim()) {
-      showError('Havale referans numarası zorunludur');
+      showError(t('paymentPage.gRadar.referenceRequired'));
       return;
     }
     setSubmitting(true);
@@ -924,7 +925,7 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
     });
     setSubmitting(false);
     if (res.success) {
-      showSuccess(res.data?.message || 'Havale bildirimi gönderildi');
+      showSuccess(res.data?.message || t('paymentPage.gRadar.transferSubmitted'));
       setReferenceNumber('');
       setNotes('');
     } else {
@@ -940,12 +941,10 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
             lock
           </span>
           <h3 className="text-base font-semibold text-yellow-800 dark:text-yellow-300">
-            G-Radar entegrasyonu hesabınıza tanımlanmamış
+            {t('paymentPage.gRadar.notEnabledTitle')}
           </h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-2">
-            Yöneticinizle iletişime geçerek bu firmaya G-Radar entegrasyonunu
-            tanımlatabilirsiniz. Tanımlandıktan sonra buradan kredi satın
-            alabilirsiniz.
+            {t('paymentPage.gRadar.notEnabledHint')}
           </p>
         </div>
       </div>
@@ -957,18 +956,17 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
         <h2 className="text-base font-semibold text-text-main flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">travel_explore</span>
-          G-Radar Kredisi Satın Al
+          {t('paymentPage.gRadar.title')}
         </h2>
         <p className="text-xs text-text-secondary mt-1">
-          Her G-Radar kredisi bir gemi veya uçak yükünün takibe alınmasında
-          kullanılır. Krediler 1 yıl geçerlidir ve en eski lot önce harcanır.
+          {t('paymentPage.gRadar.intro')}
         </p>
       </div>
 
       {/* Kredi seçimi */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-text-secondary">Kredi miktarı (1-100)</span>
+          <span className="text-xs font-medium text-text-secondary">{t('paymentPage.gRadar.creditAmount')}</span>
           <input
             type="number"
             min={1}
@@ -979,59 +977,59 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-text-secondary">Bakiyem</span>
+          <span className="text-xs font-medium text-text-secondary">{t('paymentPage.gRadar.myBalance')}</span>
           <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-text-main">
-            ₺{Number(currentBalanceTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+            ₺{fmtAmount(currentBalanceTry)}
           </div>
         </label>
       </div>
 
       {/* Quote */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/40">
-        <h3 className="text-sm font-semibold text-text-main mb-2">Fiyat Önizleme</h3>
+        <h3 className="text-sm font-semibold text-text-main mb-2">{t('paymentPage.gRadar.pricePreview')}</h3>
         {quoteLoading ? (
-          <div className="text-xs text-text-secondary">Hesaplanıyor...</div>
+          <div className="text-xs text-text-secondary">{t('paymentPage.gRadar.calculating')}</div>
         ) : quoteError ? (
           <div className="text-xs text-red-500">{quoteError}</div>
         ) : quote ? (
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-text-secondary">Plan</span>
+              <span className="text-text-secondary">{t('paymentPage.gRadar.plan')}</span>
               <span className="text-text-main font-medium">{quote.planName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-secondary">Birim Fiyat</span>
-              <span className="text-text-main">${Number(quote.unitPriceUsd).toFixed(2)} / kredi</span>
+              <span className="text-text-secondary">{t('paymentPage.gRadar.unitPrice')}</span>
+              <span className="text-text-main">{t('paymentPage.gRadar.perCredit', { price: `$${Number(quote.unitPriceUsd).toFixed(2)}` })}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-secondary">{credits} kredi × ${Number(quote.unitPriceUsd).toFixed(2)}</span>
+              <span className="text-text-secondary">{t('paymentPage.gRadar.creditsTimesPrice', { count: credits, price: `$${Number(quote.unitPriceUsd).toFixed(2)}` })}</span>
               <span className="text-text-main">${Number(quote.totalUsd).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-secondary">TCMB Kuru</span>
+              <span className="text-text-secondary">{t('paymentPage.gRadar.exchangeRate')}</span>
               <span className="text-text-main">1 USD = ₺{Number(quote.exchangeRateTry).toFixed(4)}</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-2">
-              <span className="text-text-main font-semibold">Toplam</span>
+              <span className="text-text-main font-semibold">{t('paymentPage.gRadar.total')}</span>
               <span className="text-primary font-bold text-lg">
-                ₺{Number(quote.totalTry).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                ₺{fmtAmount(quote.totalTry)}
               </span>
             </div>
           </div>
         ) : (
-          <div className="text-xs text-text-secondary">Kredi miktarını girin</div>
+          <div className="text-xs text-text-secondary">{t('paymentPage.gRadar.enterAmount')}</div>
         )}
       </div>
 
       {/* Notes */}
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-text-secondary">Not (opsiyonel)</span>
+        <span className="text-xs font-medium text-text-secondary">{t('paymentPage.gRadar.note')}</span>
         <textarea
           rows={2}
           value={notes}
           maxLength={500}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Yöneticinize iletmek istediğiniz açıklama"
+          placeholder={t('paymentPage.gRadar.notePlaceholder')}
           className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </label>
@@ -1042,14 +1040,14 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
         <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
           <h4 className="text-sm font-semibold text-text-main flex items-center gap-2">
             <span className="material-symbols-outlined text-base text-green-600">account_balance_wallet</span>
-            Bakiyemden Öde
+            {t('paymentPage.gRadar.payFromBalance')}
           </h4>
           <p className="text-xs text-text-secondary mt-1">
-            Anında işlem. Bakiyeden düşülür, krediler hemen kullanıma açılır.
+            {t('paymentPage.gRadar.payFromBalanceHint')}
           </p>
           {!balanceEnough && quote && (
             <p className="text-xs text-red-500 mt-2">
-              Yetersiz bakiye (eksik: ₺{(Number(quote.totalTry) - Number(currentBalanceTry)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })})
+              {t('paymentPage.gRadar.insufficientBalance', { amount: `₺${fmtAmount(Number(quote.totalTry) - Number(currentBalanceTry))}` })}
             </p>
           )}
           <button
@@ -1057,7 +1055,7 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
             onClick={handlePayFromBalance}
             className="mt-3 w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {submitting ? 'İşleniyor...' : 'Bakiyemden Öde'}
+            {submitting ? t('paymentPage.gRadar.processing') : t('paymentPage.gRadar.payFromBalance')}
           </button>
         </div>
 
@@ -1065,17 +1063,16 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
         <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-background-dark">
           <h4 className="text-sm font-semibold text-text-main flex items-center gap-2">
             <span className="material-symbols-outlined text-base text-primary">payments</span>
-            Havale Bildirimi Gönder
+            {t('paymentPage.gRadar.sendTransfer')}
           </h4>
           <p className="text-xs text-text-secondary mt-1">
-            Banka transferi yaptıktan sonra referans numaranızı bildirin.
-            Yönetici onayında krediler hesabınıza eklenir.
+            {t('paymentPage.gRadar.transferHint')}
           </p>
           <input
             type="text"
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
-            placeholder="Havale referans numarası *"
+            placeholder={t('paymentPage.gRadar.referencePlaceholder')}
             className="mt-3 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
@@ -1083,7 +1080,7 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
             onClick={handleSubmitTransfer}
             className="mt-3 w-full px-4 py-2 bg-primary hover:opacity-90 text-white rounded-lg text-sm font-semibold transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Gönderiliyor...' : 'Havale Bildirimi Gönder'}
+            {submitting ? t('paymentPage.form.sending') : t('paymentPage.gRadar.sendTransfer')}
           </button>
         </div>
       </div>

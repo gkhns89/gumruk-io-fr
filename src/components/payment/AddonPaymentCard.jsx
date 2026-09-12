@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
 import { addonService } from '../../api/addonService';
+import { t, getCurrentLocale } from '../../locales';
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('tr-TR') : '-';
-const fmtMoney = (v) => v != null ? `₺${Number(v).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '-';
+const fmt = (d) => d ? new Date(d).toLocaleDateString(getCurrentLocale()) : '-';
+const fmtMoney = (v) => v != null ? `₺${Number(v).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2 })}` : '-';
 
 const getAddonStatus = (addon) => {
-  if (addon.isPaid) return { label: 'Ödendi', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700', icon: 'check_circle' };
+  if (addon.isPaid) return { label: t('paymentStatus.paid'), color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700', icon: 'check_circle' };
 
   const dueDate = addon.dueDate ? new Date(addon.dueDate) : null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (dueDate && dueDate < today) {
-    return { label: 'Gecikmiş', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700', icon: 'error' };
+    return { label: t('paymentPage.overdue'), color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-700', icon: 'error' };
   }
 
   if (addon.addonType === 'RECURRING') {
-    return { label: 'Dönemsel', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700', icon: 'repeat' };
+    return { label: t('addonPayment.recurring'), color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700', icon: 'repeat' };
   }
 
-  return { label: 'Bekliyor', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700', icon: 'schedule' };
+  return { label: t('addonPayment.pending'), color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700', icon: 'schedule' };
 };
 
 export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollToTransfer }) {
@@ -30,6 +31,7 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
   const [error, setError] = useState(null);
 
   const status = getAddonStatus(addon);
+  const [confirmBefore, confirmAfter] = t('addonPayment.confirmMessage').split('{{amount}}');
 
   const handlePayClick = () => {
     if (addon.isPaid || isLoading) return;
@@ -54,12 +56,12 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
       const result = await onPay(addon.id, true);
 
       if (result?.status === 'INSUFFICIENT_BALANCE') {
-        setError('Bakiyeniz bu ödeme için yetersiz. Lütfen havale bildirimi yapın.');
+        setError(t('addonPayment.insufficientBalance'));
         onScrollToTransfer?.();
       }
       // PAID_WITH_BALANCE → parent load() çağırır, kart kaybolur
     } catch (err) {
-      setError(err.message || 'İşlem başarısız oldu');
+      setError(err.message || t('addonPayment.actionFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +91,7 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
         <div className="text-right flex-shrink-0">
           <p className="text-base font-semibold text-text-main">{fmtMoney(addon.amount)}</p>
           {addon.dueDate && (
-            <p className="text-xs text-text-secondary mt-0.5">Son ödeme: {fmt(addon.dueDate)}</p>
+            <p className="text-xs text-text-secondary mt-0.5">{t('addonPayment.dueDate', { date: fmt(addon.dueDate) })}</p>
           )}
         </div>
       </div>
@@ -105,9 +107,9 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
       {/* Onay Diyaloğu */}
       {showConfirm && (
         <div className="mb-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-4 py-3">
-          <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">Ödemeyi Onayla</p>
+          <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">{t('addonPayment.confirmTitle')}</p>
           <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-            <strong>{fmtMoney(addon.amount)}</strong> bakiyenizden düşülecektir. Onaylıyor musunuz?
+            {confirmBefore}<strong>{fmtMoney(addon.amount)}</strong>{confirmAfter}
           </p>
           <div className="flex gap-2">
             <button
@@ -115,13 +117,13 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
               className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:opacity-90 transition-opacity"
             >
               <span className="material-symbols-outlined text-sm">check</span>
-              Evet, Öde
+              {t('addonPayment.confirmYes')}
             </button>
             <button
               onClick={() => setShowConfirm(false)}
               className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-text-main text-xs font-medium rounded-lg hover:opacity-90 transition-opacity"
             >
-              İptal
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -151,10 +153,10 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
               className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 cursor-pointer disabled:opacity-50"
             />
             <span className="text-sm text-text-secondary">
-              {savingPreference ? 'Kaydediliyor...' : 'Bakiye kullan'}
+              {savingPreference ? t('management.saving') : t('addonPayment.useBalance')}
               {useBalance && !savingPreference && balance > 0 && (
                 <span className="ml-1 text-xs text-green-600 dark:text-green-400">
-                  (Mevcut: {fmtMoney(balance)})
+                  {t('addonPayment.available', { amount: fmtMoney(balance) })}
                 </span>
               )}
             </span>
@@ -172,7 +174,7 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
             <span className="material-symbols-outlined text-base">
               {isLoading ? 'schedule' : useBalance ? 'account_balance_wallet' : 'account_balance'}
             </span>
-            {isLoading ? 'İşlem yapılıyor...' : useBalance ? 'Bakiyeden Öde' : 'Havale ile Öde'}
+            {isLoading ? t('addonPayment.processing') : useBalance ? t('addonPayment.payFromBalance') : t('addonPayment.payByTransfer')}
           </button>
         </div>
       )}
