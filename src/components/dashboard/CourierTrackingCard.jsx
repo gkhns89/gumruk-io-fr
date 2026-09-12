@@ -4,6 +4,13 @@ import { companyService } from '../../api/companyService';
 import { useAuth } from '../../hooks/useAuth';
 import { t } from '../../locales';
 
+// Durak bir gümrük müdürlüğü ya da (COURIER_CLIENT_STOPS bayrağıyla) müşteri firması olabilir.
+// `customsName` eski istemciler için `stopName`'in kopyası.
+const isClientStop = (departure) => departure?.stopType === 'CLIENT';
+const stopIconOf = (departure) => (isClientStop(departure) ? 'business' : 'location_on');
+const stopLabelOf = (departure) => (isClientStop(departure) ? t('courierStops.client') : t('courierStops.customs'));
+const stopNameOf = (departure) => departure?.stopName || departure?.customsName;
+
 /**
  * Kurye Takip Kartı (Dashboard)
  * Compact sol panel (geri sayım) + genişletilebilir sağ panel (detaylar)
@@ -242,8 +249,8 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         <div className="mt-2 space-y-0.5">
           {courierData.nextDepartures.map((d, i) => (
             <div key={i} className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }}>location_on</span>
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{d.customsName}</p>
+              <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }} title={stopLabelOf(d)}>{stopIconOf(d)}</span>
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stopNameOf(d)}</p>
             </div>
           ))}
         </div>
@@ -367,11 +374,13 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
                         <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">two_wheeler</span>
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{courierName}</p>
                       </div>
-                      <div className="flex items-start gap-1.5">
-                        <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5">location_on</span>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                          {departures.map(d => d.customsName).join(' | ')}
-                        </p>
+                      <div className="space-y-0.5">
+                        {departures.map((d, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5" title={stopLabelOf(d)}>{stopIconOf(d)}</span>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{stopNameOf(d)}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -394,9 +403,9 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-sm">location_on</span>
+                  <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-sm" title={stopLabelOf(courierData.upcomingDeparture)}>{stopIconOf(courierData.upcomingDeparture)}</span>
                   <p className="text-xs text-gray-700 dark:text-gray-300">
-                    {courierData.upcomingDeparture.customsName}
+                    {stopNameOf(courierData.upcomingDeparture)}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
