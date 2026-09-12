@@ -12,10 +12,11 @@ import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import AddClientModal from '../common/AddClientModal';
 import TagInput from '../common/TagInput';
-import { t } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 
 export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
+  const locale = getCurrentLocale();
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
   const modalRef = useRef(null);
 
@@ -140,12 +141,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       ? formData.consignmentNumber
       : (formData.billOfLading || formData.containerNumbers[0]);
     const ok = await confirmDialog({
-      title: 'G-Radar bilgileri çekilecek',
-      message: `${identifier} için G-Radar'dan tracking bilgileri çekilecek ve form alanlarına yansıtılacak.`,
-      details: ['Bu işlem 1 G-Radar kredisi kullanır.'],
+      title: t('cargoTracking.gRadarActions.fetchTitle'),
+      message: t('cargoTracking.preview.message', { identifier }),
+      details: [t('cargoTracking.gRadarActions.fetchCreditNote')],
       intent: 'primary',
       icon: 'download',
-      confirmText: 'Çek (1 kredi)',
+      confirmText: t('cargoTracking.gRadarActions.fetchConfirm'),
     });
     if (!ok) return;
 
@@ -159,7 +160,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     setGRadarPreviewing(false);
 
     if (!res.success) {
-      showError(res.error || 'G-Radar önizleme alınamadı');
+      showError(res.error || t('cargoTracking.preview.error'));
       return;
     }
 
@@ -181,8 +182,8 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
     showSuccess(
       res.data?.alreadyExisted
-        ? 'G-Radar: Bu yük zaten takipte (kredi düşülmedi). Form dolduruldu.'
-        : 'G-Radar bilgileri form alanlarına yansıtıldı.'
+        ? t('cargoTracking.preview.alreadyTracked')
+        : t('cargoTracking.preview.applied')
     );
   };
 
@@ -528,36 +529,36 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
     // Broker validation for SUPER_ADMIN
     if (isSuperAdmin && !formData.brokerCompanyId) {
-      errors.brokerCompanyId = "Gümrük firması seçilmelidir";
+      errors.brokerCompanyId = t("cargoTracking.validation.brokerRequired");
     }
 
     if (!formData.vehicleType) {
-      errors.vehicleType = "Araç tipi seçilmelidir";
+      errors.vehicleType = t("cargoTracking.validation.vehicleTypeRequired");
     }
 
     if (!formData.clientCompanyId) {
-      errors.clientCompanyId = "Alıcı firma seçilmelidir";
+      errors.clientCompanyId = t("cargoTracking.validation.clientRequired");
     }
 
     // Vehicle-specific validations
     if (formData.vehicleType === "AIRPLANE") {
       if (!formData.consignmentNumber || formData.consignmentNumber.trim() === "") {
-        errors.consignmentNumber = "Uçak için konşimento gereklidir";
+        errors.consignmentNumber = t("cargoTracking.validation.consignmentRequired");
       }
     }
 
     if (formData.vehicleType === "SHIP") {
       if (!formData.billOfLading || formData.billOfLading.trim() === "") {
-        errors.billOfLading = "Gemi için B/L gereklidir";
+        errors.billOfLading = t("cargoTracking.validation.billOfLadingRequired");
       }
       if (!formData.containerNumbers || formData.containerNumbers.length === 0) {
-        errors.containerNumbers = "Gemi için en az bir konteyner numarası gereklidir";
+        errors.containerNumbers = t("cargoTracking.validation.containerRequired");
       }
     }
 
     if (formData.vehicleType === "TRUCK") {
       if (!formData.licensePlate || formData.licensePlate.trim() === "") {
-        errors.licensePlate = "Kamyon için plaka gereklidir";
+        errors.licensePlate = t("cargoTracking.validation.licensePlateRequired");
       }
     }
 
@@ -565,21 +566,21 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
     // Numeric field validations
     if (formData.containerCount && parseInt(formData.containerCount) < 0) {
-      errors.containerCount = "Kap sayısı negatif olamaz";
+      errors.containerCount = t("cargoTracking.validation.containerCountNegative");
     }
 
     if (formData.weightKg && parseFloat(formData.weightKg) < 0) {
-      errors.weightKg = "Ağırlık negatif olamaz";
+      errors.weightKg = t("cargoTracking.validation.weightNegative");
     }
 
     if (formData.lokalAmount && parseFloat(formData.lokalAmount) < 0) {
-      errors.lokalAmount = "Lokal masraf negatif olamaz";
+      errors.lokalAmount = t("cargoTracking.validation.lokalNegative");
     }
     if (formData.depositoAmount && parseFloat(formData.depositoAmount) < 0) {
-      errors.depositoAmount = "Depozito masrafı negatif olamaz";
+      errors.depositoAmount = t("cargoTracking.validation.depositoNegative");
     }
     if (formData.ordinoAmount && parseFloat(formData.ordinoAmount) < 0) {
-      errors.ordinoAmount = "Ordino masrafı negatif olamaz";
+      errors.ordinoAmount = t("cargoTracking.validation.ordinoNegative");
     }
 
     setFieldErrors(errors);
@@ -590,7 +591,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     e.preventDefault();
 
     if (!validateForm()) {
-      showError('Lütfen tüm zorunlu alanları doldurun');
+      showError(t("transactions.form.fillRequired"));
       return;
     }
 
@@ -629,7 +630,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       const result = await cargoService.createCargo(dataToSend);
 
       if (result.success) {
-        showSuccess('Yük kaydı başarıyla oluşturuldu!');
+        showSuccess(t('cargoTracking.form.createSuccess'));
         // Cargo committed — don't release the upstream shipment on the way out.
         setGRadarTrackingId(null);
         onSuccess();
@@ -637,7 +638,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         handleApiResponse(result, null, setError, 'cargo creation');
       }
     } catch (err) {
-      handleError(err, setError, 'cargo creation', 'Yük kaydı oluşturulurken hata oluştu.');
+      handleError(err, setError, 'cargo creation', t('cargoTracking.form.createError'));
     } finally {
       setLoading(false);
     }
@@ -645,7 +646,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   // Get visible fields based on vehicle type
   const getVisibleFields = () => {
-    const vehicleType = VEHICLE_TYPES.find(t => t.value === formData.vehicleType);
+    const vehicleType = VEHICLE_TYPES.find(vt => vt.value === formData.vehicleType);
     return vehicleType?.fields || [];
   };
 
@@ -693,9 +694,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 transition-colors duration-300">
           <div>
-            <h2 className="text-2xl font-bold text-text-main">Yeni Yük Ekle</h2>
+            <h2 className="text-2xl font-bold text-text-main">{t('cargo.addNew')}</h2>
             <p className="text-text-secondary text-sm mt-1">
-              Lütfen yük detaylarını girin ve kaydedin.
+              {t('cargoTracking.form.addSubtitle')}
             </p>
           </div>
           <button
@@ -720,10 +721,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
               <div className="flex flex-col w-full lg:col-span-3">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    Gümrük Firması <span className="text-red-500">*</span>
+                    {t('cargo.fields.brokerCompany')} <span className="text-red-500">*</span>
                     {loadingBrokers && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                        Yükleniyor...
+                        {t('common.loading')}
                       </span>
                     )}
                   </p>
@@ -824,7 +825,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                         ))
                       ) : (
                         <div className="p-4 text-center text-text-secondary text-sm">
-                          Firma bulunamadı
+                          {t('cargoTracking.form.noCompanies')}
                         </div>
                       )}
                     </div>
@@ -848,10 +849,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="flex flex-col w-full lg:col-span-3">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Alıcı Firma <span className="text-red-500">*</span>
+                  {t('cargo.fields.clientCompany')} <span className="text-red-500">*</span>
                   {loadingClients && (
                     <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                      Yükleniyor...
+                      {t('common.loading')}
                     </span>
                   )}
                 </p>
@@ -862,7 +863,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                     className="text-xs text-primary hover:text-primary/80 dark:text-primary-light dark:hover:text-primary font-medium flex items-center gap-1 transition-colors"
                   >
                     <span className="material-symbols-outlined text-sm">add</span>
-                    Yeni Firma Ekle
+                    {t('company.addNew')}
                   </button>
                 )}
               </div>
@@ -967,7 +968,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                                       check_circle
                                     </span>
                                     <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                                      {client.agreementStatus === 'ACTIVE' ? 'Aktif Vekalet' : 'Vekalet Var'}
+                                      {client.agreementStatus === 'ACTIVE' ? t('cargoTracking.form.activeAgreement') : t('cargoTracking.form.hasAgreement')}
                                     </span>
                                   </div>
                                 )}
@@ -977,7 +978,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                                       warning
                                     </span>
                                     <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
-                                      Vekalet Yok
+                                      {t('transactions.form.noAgreement')}
                                     </span>
                                   </div>
                                 )}
@@ -993,7 +994,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       ))
                     ) : (
                       <div className="p-4 text-center text-text-secondary text-sm">
-                        Müşteri bulunamadı
+                        {t('cargoTracking.form.noClients')}
                       </div>
                     )}
                   </div>
@@ -1008,9 +1009,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="flex flex-col w-full lg:col-span-3">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Araç Tipi <span className="text-red-500">*</span>
+                  {t('cargo.fields.vehicleType')} <span className="text-red-500">*</span>
                 </p>
-                <p className="text-xs text-text-secondary">Lütfen bir araç tipi seçin</p>
+                <p className="text-xs text-text-secondary">{t('cargoTracking.form.selectVehicleType')}</p>
               </div>
               <div className="grid grid-cols-3 gap-3">
               {VEHICLE_TYPES.map((type) => (
@@ -1042,20 +1043,20 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             {formData.vehicleType && (
               <div className="lg:col-span-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
                 <h3 className="text-sm font-medium text-text-main mb-3">
-                  {VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName} Bilgileri
+                  {t('cargoTracking.form.vehicleDetails', { vehicle: VEHICLE_TYPES.find(vt => vt.value === formData.vehicleType)?.displayName })}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {visibleFields.includes("licensePlate") && (
                     <div>
                       <label className="block text-sm font-medium text-text-main pb-2">
-                        Plaka <span className="text-red-500">*</span>
+                        {t('cargo.fields.licensePlate')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="licensePlate"
                         value={formData.licensePlate}
                         onChange={handleChange}
-                        placeholder={toUpperCase(t("placeholders.enterLicensePlate"))}
+                        placeholder={t("placeholders.enterLicensePlate").toLocaleUpperCase(locale)}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
                           fieldErrors.licensePlate ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
                         }`}
@@ -1070,14 +1071,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   {visibleFields.includes("consignmentNumber") && (
                     <div>
                       <label className="block text-sm font-medium text-text-main pb-2">
-                        Konşimento <span className="text-red-500">*</span>
+                        {t('cargo.fields.consignmentNumber')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="consignmentNumber"
                         value={formData.consignmentNumber}
                         onChange={handleChange}
-                        placeholder={toUpperCase(t("placeholders.enterConsignmentNumber"))}
+                        placeholder={t("placeholders.enterConsignmentNumber").toLocaleUpperCase(locale)}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
                           fieldErrors.consignmentNumber ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
                         }`}
@@ -1092,14 +1093,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   {visibleFields.includes("billOfLading") && (
                     <div>
                       <label className="block text-sm font-medium text-text-main pb-2">
-                        B/L <span className="text-red-500">*</span>
+                        {t('cargoTracking.common.billOfLading')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="billOfLading"
                         value={formData.billOfLading}
                         onChange={handleChange}
-                        placeholder={toUpperCase(t("placeholders.enterBillOfLading"))}
+                        placeholder={t("placeholders.enterBillOfLading").toLocaleUpperCase(locale)}
                         className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
                           fieldErrors.billOfLading ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
                         }`}
@@ -1114,8 +1115,8 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   {visibleFields.includes("containerNumbers") && (
                     <div>
                       <label className="block text-sm font-medium text-text-main pb-2">
-                        Konteyner Numaraları <span className="text-red-500">*</span>
-                        <span className="text-xs text-gray-500 ml-2">(Enter ile ekleyin)</span>
+                        {t('cargo.fields.containerNumbers')} <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">{t('cargoTracking.form.pressEnterToAdd')}</span>
                       </label>
                       <TagInput
                         value={formData.containerNumbers}
@@ -1123,7 +1124,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                           ...prev,
                           containerNumbers: newContainers
                         }))}
-                        placeholder={toUpperCase(t("placeholders.enterContainerNumber"))}
+                        placeholder={t("placeholders.enterContainerNumber").toLocaleUpperCase(locale)}
                         uppercase={true}
                         maxLength={50}
                       />
@@ -1138,12 +1139,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                     <div className="md:col-span-2 mt-2 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
                       <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
                         <span className="material-symbols-outlined text-base">lock</span>
-                        G-Radar entegrasyonu firmanıza tanımlanmamış
+                        {t('cargoTracking.preview.optedOutTitle')}
                       </p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                        Yöneticinizle iletişime geçerek bu firmaya G-Radar
-                        entegrasyonunu tanımlatabilirsiniz. Yük kaydını yine
-                        de manuel doldurarak oluşturabilirsiniz.
+                        {t('cargoTracking.preview.optedOutHint')}
                       </p>
                     </div>
                   )}
@@ -1169,13 +1168,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                         <div className="flex-1">
                           <span className="text-sm font-semibold text-text-main flex items-center gap-2">
                             <span className="material-symbols-outlined text-base text-primary">travel_explore</span>
-                            G-Radar ile otomatik takip et
+                            {t('cargoTracking.preview.autoTrack')}
                           </span>
                           {!isBrokerAdmin ? (
                             <div className="mt-2 space-y-2">
                               <p className="text-xs text-text-secondary">
-                                Sadece broker yöneticileri G-Radar entegrasyonunu açabilir.
-                                Aşağıdaki kutuyu işaretlerseniz yöneticinize bir onay talebi gönderilir.
+                                {t('cargoTracking.preview.adminOnlyHint')}
                               </p>
                               <label className="flex items-start gap-2 cursor-pointer">
                                 <input
@@ -1185,7 +1183,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                                   className="mt-0.5 rounded"
                                 />
                                 <span className="text-sm font-medium text-text-main">
-                                  🔔 Yöneticiden G-Radar talep et
+                                  {t('cargoTracking.preview.requestFromAdmin')}
                                 </span>
                               </label>
                               {requestGRadarEnable && (
@@ -1194,15 +1192,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                                   maxLength={500}
                                   value={gRadarRequestNotes}
                                   onChange={(e) => setGRadarRequestNotes(e.target.value)}
-                                  placeholder="Yöneticinize iletmek istediğiniz not (opsiyonel) — örn. müşteri acil takip istiyor"
+                                  placeholder={t('cargoTracking.preview.requestNotePlaceholder')}
                                   className="w-full rounded-lg border border-primary/30 dark:border-primary/40 bg-white dark:bg-gray-700 text-text-main text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                               )}
                             </div>
                           ) : (
                             <p className="text-xs text-text-secondary mt-1">
-                              Açık olduğunda yükün varış bilgileri, gemi/uçak konumu ve
-                              ETA değişiklikleri otomatik olarak güncellenir.
+                              {t('cargoTracking.preview.autoTrackHint')}
                             </p>
                           )}
                         </div>
@@ -1218,19 +1215,19 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                               title={
                                 !identifierReady
                                   ? formData.vehicleType === 'AIRPLANE'
-                                      ? 'Geçerli AWB girin (örn. 618-12345678)'
-                                      : 'Konteyner veya konşimento numarası girin'
-                                  : '1 kredi kullanarak G-Radar\'dan bilgileri çek'
+                                      ? t('cargoTracking.preview.enterValidAwb')
+                                      : t('cargoTracking.preview.enterContainerOrBl')
+                                  : t('cargoTracking.preview.fetchHint')
                               }
                               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <span className="material-symbols-outlined text-base">download</span>
-                              {gRadarPreviewing ? 'Bilgi çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
+                              {gRadarPreviewing ? t('cargoTracking.preview.fetching') : t('cargoTracking.common.fetchWithCredit')}
                             </button>
                           ) : (
                             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
                               <span className="material-symbols-outlined text-sm">check_circle</span>
-                              Bilgiler getirildi {gRadarPopulatedSnapshot?.gRadarStatus
+                              {t('cargoTracking.preview.fetched')} {gRadarPopulatedSnapshot?.gRadarStatus
                                 ? `(${gRadarStatusInfo(gRadarPopulatedSnapshot.gRadarStatus)?.label
                                     ?? gRadarPopulatedSnapshot.gRadarStatus})`
                                 : ''}
@@ -1239,8 +1236,8 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                           {!identifierReady && (
                             <span className="text-xs text-text-secondary">
                               {formData.vehicleType === 'AIRPLANE'
-                                ? 'Geçerli AWB girin (örn. 618-12345678)'
-                                : 'Konteyner veya konşimento numarası girin'}
+                                ? t('cargoTracking.preview.enterValidAwb')
+                                : t('cargoTracking.preview.enterContainerOrBl')}
                             </span>
                           )}
                         </div>
@@ -1258,15 +1255,15 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="flex flex-col w-full">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Gönderici Firma
+                  {t('cargo.fields.senderCompany')}
                   {loadingSenders && (
                     <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                      Yükleniyor...
+                      {t('common.loading')}
                     </span>
                   )}
                   {!loadingSenders && availableSenders.length > 0 && (
                     <span className="text-xs text-gray-500 ml-2">
-                      ({availableSenders.length} kayıtlı)
+                      {t('transactions.form.savedCount', { count: availableSenders.length })}
                     </span>
                   )}
                 </p>
@@ -1288,7 +1285,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       setTimeout(() => setShowSenderDropdown(false), 200);
                     }}
                     onKeyDown={senderKeyboard.handleKeyDown}
-                    placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                    placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1362,7 +1359,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       ))
                     ) : (
                       <div className="p-4 text-center text-text-secondary text-sm">
-                        {senderSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı gönderici yok'}
+                        {senderSearchTerm ? t('cargoTracking.form.notFoundTypeToAdd') : t('cargoTracking.form.noSenders')}
                       </div>
                     )}
                   </div>
@@ -1374,15 +1371,15 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="flex flex-col w-full">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Nakliyeci
+                  {t('cargo.fields.carrierName')}
                   {loadingCarriers && (
                     <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                      Yükleniyor...
+                      {t('common.loading')}
                     </span>
                   )}
                   {!loadingCarriers && availableCarriers.length > 0 && (
                     <span className="text-xs text-gray-500 ml-2">
-                      ({availableCarriers.length} kayıtlı)
+                      {t('transactions.form.savedCount', { count: availableCarriers.length })}
                     </span>
                   )}
                 </p>
@@ -1404,7 +1401,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       setTimeout(() => setShowCarrierDropdown(false), 200);
                     }}
                     onKeyDown={carrierKeyboard.handleKeyDown}
-                    placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                    placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1478,7 +1475,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                       ))
                     ) : (
                       <div className="p-4 text-center text-text-secondary text-sm">
-                        {carrierSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı nakliyeci yok'}
+                        {carrierSearchTerm ? t('cargoTracking.form.notFoundTypeToAdd') : t('cargoTracking.form.noCarriers')}
                       </div>
                     )}
                   </div>
@@ -1490,14 +1487,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             {/* Container Count & Weight */}
             <div className="lg:col-span-3 grid grid-cols-2 gap-4">
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Kap Sayısı</p>
+                <p className="text-text-main text-sm font-medium pb-2">{t('cargo.fields.containerCount')}</p>
                 <input
                   type="number"
                   name="containerCount"
                   value={formData.containerCount}
                   onChange={handleChange}
                   min="0"
-                  placeholder={toUpperCase(t("placeholders.enterContainerCount"))}
+                  placeholder={t("placeholders.enterContainerCount").toLocaleUpperCase(locale)}
                   className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
                     fieldErrors.containerCount ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
                   }`}
@@ -1507,7 +1504,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 )}
               </label>
               <label className="flex flex-col w-full">
-                <p className="text-text-main text-sm font-medium pb-2">Ağırlık (kg)</p>
+                <p className="text-text-main text-sm font-medium pb-2">{t('cargo.fields.weight')}</p>
                 <input
                   type="number"
                   name="weightKg"
@@ -1515,7 +1512,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   onChange={handleChange}
                   step="0.01"
                   min="0"
-                  placeholder={toUpperCase(t("placeholders.enterWeight"))}
+                  placeholder={t("placeholders.enterWeight").toLocaleUpperCase(locale)}
                   className={`form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors ${
                     fieldErrors.weightKg ? 'border-red-500' : 'border-neutral/30 dark:border-gray-600'
                   }`}
@@ -1528,12 +1525,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
             {/* Costs Section - Lokal, Depozito, Ordino */}
             <div className="lg:col-span-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-              <h3 className="text-base font-semibold text-text-main mb-4">Masraflar</h3>
+              <h3 className="text-base font-semibold text-text-main mb-4">{t('cargoTracking.common.costs')}</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Lokal Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Lokal Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.lokalCosts')}</label>
                   <input
                     type="number"
                     name="lokalAmount"
@@ -1565,7 +1562,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
                 {/* Depozito Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Depozito Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.depositoCosts')}</label>
                   <input
                     type="number"
                     name="depositoAmount"
@@ -1597,7 +1594,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
                 {/* Ordino Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Ordino Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.ordinoCosts')}</label>
                   <input
                     type="number"
                     name="ordinoAmount"
@@ -1633,13 +1630,13 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="lg:col-span-3 border border-blue-200 dark:border-blue-800/60 rounded-xl overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800/60">
                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">calendar_month</span>
-                <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Takvim & Takip</h3>
-                <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">ETA ve nakliye notları</span>
+                <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">{t('cargoTracking.form.scheduleTitle')}</h3>
+                <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">{t('cargoTracking.form.scheduleHint')}</span>
               </div>
               <div className="p-4 grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Tahmini Varış Tarihi (ETA)
+                    {t('cargo.fields.estimatedArrivalDate')}
                   </label>
                   <input
                     type="date"
@@ -1651,14 +1648,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Taşıma Bilgileri
+                    {t('cargo.fields.transportInfo')}
                   </label>
                   <textarea
                     name="transportInfo"
                     value={formData.transportInfo}
                     onChange={handleChange}
                     rows="3"
-                    placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
+                    placeholder={t("placeholders.enterTransportInfo").toLocaleUpperCase(locale)}
                     className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                   />
                 </div>
@@ -1669,7 +1666,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="lg:col-span-3 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-lg">payments</span>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ödeme Durumu</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('cargo.fields.paymentStatus')}</h3>
               </div>
               <div className="p-4">
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -1704,12 +1701,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="lg:col-span-3 border border-amber-200 dark:border-amber-700/60 rounded-xl overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/60">
                 <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">directions_boat</span>
-                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Varış İşlemleri</h3>
-                <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Varış tarihi → VARIŞ YAPTI</span>
+                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">{t('cargoTracking.form.arrivalTitle')}</h3>
+                <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">{t('cargoTracking.form.arrivalHint', { status: t('cargo.status.arrived').toLocaleUpperCase(locale) })}</span>
               </div>
               <div className="p-4">
                 <label className="block text-sm font-medium text-text-main pb-2">
-                  Varış Tarihi
+                  {t('cargo.fields.cargoArrivalDate')}
                 </label>
                 <input
                   type="date"
@@ -1721,7 +1718,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 {formData.cargoArrivalDate && (
                   <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
                     <span className="material-symbols-outlined text-sm">info</span>
-                    <span>Kaydedildiğinde yük <strong>VARIŞ YAPTI</strong> olarak işaretlenecek</span>
+                    <span>{t('cargoTracking.form.markedAsBefore')} <strong>{t('cargo.status.arrived').toLocaleUpperCase(locale)}</strong>{t('cargoTracking.form.markedAsAfter')}</span>
                   </div>
                 )}
               </div>
@@ -1731,14 +1728,14 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <div className="lg:col-span-3 border border-emerald-200 dark:border-emerald-700/60 rounded-xl overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700/60">
                 <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">task_alt</span>
-                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Yük İşlemini Tamamlama</h3>
-                <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Evrak tipi + tarih → TAMAMLANDI</span>
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t('cargoTracking.form.completionTitle')}</h3>
+                <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">{t('cargoTracking.form.completionHint', { status: t('cargo.status.completed').toLocaleUpperCase(locale) })}</span>
               </div>
               <div className="p-4 space-y-4">
 
                 {/* Evrak Teslim Tipi Seçimi */}
                 <div>
-                  <label className="block text-sm font-medium text-text-main pb-2">Evrak Teslim Tipi</label>
+                  <label className="block text-sm font-medium text-text-main pb-2">{t('cargoTracking.form.documentDeliveryType')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {DOCUMENT_DELIVERY_TYPES.map(type => (
                       <button
@@ -1767,17 +1764,17 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 </div>
 
                 {/* Şahıs Adı - yalnızca requiresPersonName=true tiplerinde */}
-                {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(t => t.value === formData.documentDeliveryType)?.requiresPersonName && (
+                {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(dt => dt.value === formData.documentDeliveryType)?.requiresPersonName && (
                   <div>
                     <label className="block text-sm font-medium text-text-main pb-2">
-                      Evrakları Teslim Alan
+                      {t('cargoTracking.form.documentsReceivedBy')}
                     </label>
                     <input
                       type="text"
                       name="documentReceiver"
                       value={formData.documentReceiver}
                       onChange={handleChange}
-                      placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
+                      placeholder={t("placeholders.enterDocumentReceiver").toLocaleUpperCase(locale)}
                       className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors"
                       style={{ textTransform: "uppercase" }}
                     />
@@ -1790,7 +1787,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 {/* Dosya Teslim Tarihi */}
                 <div>
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Dosya Teslim Tarihi
+                    {t('cargo.fields.documentDeliveryDate')}
                   </label>
                   <input
                     type="date"
@@ -1807,7 +1804,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 {formData.documentDeliveryType && formData.documentDeliveryDate && (
                   <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg px-3 py-2">
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    <span>Kaydedildiğinde yük <strong>TAMAMLANDI</strong> olarak işaretlenecek</span>
+                    <span>{t('cargoTracking.form.markedAsBefore')} <strong>{t('cargo.status.completed').toLocaleUpperCase(locale)}</strong>{t('cargoTracking.form.markedAsAfter')}</span>
                   </div>
                 )}
               </div>
@@ -1822,7 +1819,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             onClick={onClose}
             className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -1833,12 +1830,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Kaydediliyor...</span>
+                <span>{t('cargoTracking.form.saving')}</span>
               </>
             ) : (
               <>
                 <span className="material-symbols-outlined text-lg">save</span>
-                <span>Kaydet</span>
+                <span>{t('common.save')}</span>
               </>
             )}
           </button>
@@ -1862,9 +1859,9 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                   warning
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-text-main">Araç Tipi Değişikliği</h3>
+                  <h3 className="text-xl font-bold text-text-main">{t('cargoTracking.form.vehicleChangeTitle')}</h3>
                   <p className="text-text-secondary text-sm mt-1">
-                    Girilen veriler silinecektir
+                    {t('cargoTracking.form.vehicleChangeSubtitle')}
                   </p>
                 </div>
               </div>
@@ -1873,26 +1870,26 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             {/* Body */}
             <div className="p-6">
               <p className="text-text-main text-sm">
-                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen aşağıdaki alanlar silinecektir:
+                {t('cargoTracking.form.vehicleChangeBefore')} <strong>{VEHICLE_TYPES.find(vt => vt.value === formData.vehicleType)?.displayName}</strong>{t('cargoTracking.form.vehicleChangeAfter')}
               </p>
               <div className="mt-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
                 <ul className="list-disc list-inside text-sm text-text-main space-y-1">
                   {formData.vehicleType === 'SHIP' && (
                     <>
-                      <li>B/L Numarası{formData.billOfLading && `: ${formData.billOfLading}`}</li>
-                      <li>Konteyner Numaraları{formData.containerNumbers?.length > 0 && ` (${formData.containerNumbers.length} adet)`}</li>
+                      <li>{t('cargo.fields.billOfLading')}{formData.billOfLading && `: ${formData.billOfLading}`}</li>
+                      <li>{t('cargo.fields.containerNumbers')}{formData.containerNumbers?.length > 0 && ` ${t('cargoTracking.form.containerCountSuffix', { count: formData.containerNumbers.length })}`}</li>
                     </>
                   )}
                   {formData.vehicleType === 'TRUCK' && (
-                    <li>Plaka{formData.licensePlate && `: ${formData.licensePlate}`}</li>
+                    <li>{t('cargo.fields.licensePlate')}{formData.licensePlate && `: ${formData.licensePlate}`}</li>
                   )}
                   {formData.vehicleType === 'AIRPLANE' && (
-                    <li>Konşimento Numarası{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
+                    <li>{t('cargoTracking.form.consignmentNumberLong')}{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
                   )}
                 </ul>
               </div>
               <p className="text-text-secondary text-sm mt-3">
-                Devam etmek istediğinize emin misiniz?
+                {t('cargoTracking.form.confirmContinue')}
               </p>
             </div>
 
@@ -1903,7 +1900,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 onClick={cancelVehicleTypeChange}
                 className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                Vazgeç
+                {t('confirmModal.cancel')}
               </button>
               <button
                 type="button"
@@ -1911,7 +1908,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
                 className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow-md"
               >
                 <span className="material-symbols-outlined text-lg">check</span>
-                <span>Devam Et</span>
+                <span>{t('cargoTracking.form.continue')}</span>
               </button>
             </div>
           </div>

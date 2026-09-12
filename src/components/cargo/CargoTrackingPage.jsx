@@ -16,6 +16,7 @@ import CargoDetailModal from '../common/CargoDetailModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
 import GRadarDetailsDrawer from './GRadarDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
+import { t } from '../../locales';
 
 export default function CargoTrackingPage() {
   const { user } = useAuth();
@@ -76,25 +77,25 @@ export default function CargoTrackingPage() {
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'G-Radar entegrasyonunu aç',
-      message: `${identifier || 'Bu yük'} için G-Radar entegrasyonu aktive edilecek.`,
+      title: t('cargoTracking.gRadarActions.enableTitle'),
+      message: t('cargoTracking.gRadarActions.enableMessage', { identifier: identifier || t('cargoTracking.common.thisCargo') }),
       details: [
-        'Bu adımda kredi tüketilmez.',
-        'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
+        t('cargoTracking.gRadarActions.noCreditSpent'),
+        t('cargoTracking.gRadarActions.fetchLaterHint'),
       ],
       intent: 'primary',
       icon: 'travel_explore',
-      confirmText: 'G-Radar\'ı aç',
+      confirmText: t('cargoTracking.gRadarActions.enableConfirm'),
     });
     if (!ok) return;
     setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
     const res = await gRadarService.enable(cargoItem.id);
     setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
-      showSuccess('G-Radar entegrasyonu açıldı');
+      showSuccess(t('cargoTracking.gRadarActions.enabled'));
       loadData();
     } else {
-      showError(res.error || 'G-Radar açılamadı');
+      showError(res.error || t('cargoTracking.gRadarActions.enableError'));
     }
   };
   const handleGRadarRequest = async (cargoItem) => {
@@ -102,25 +103,25 @@ export default function CargoTrackingPage() {
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'G-Radar entegrasyonu talep et',
-      message: `${identifier || 'Bu yük'} için yöneticinizden G-Radar entegrasyonunu açmasını talep edeceksiniz.`,
+      title: t('cargoTracking.gRadarActions.requestTitle'),
+      message: t('cargoTracking.gRadarActions.requestMessage', { identifier: identifier || t('cargoTracking.common.thisCargo') }),
       details: [
-        'Yöneticiniz onayladığında bildirim alacaksınız.',
-        'Talep oluşturulduğunda kredi tüketilmez.',
+        t('cargoTracking.gRadarActions.requestNotifyHint'),
+        t('cargoTracking.gRadarActions.requestNoCredit'),
       ],
       intent: 'primary',
       icon: 'send',
-      confirmText: 'Talep gönder',
+      confirmText: t('cargoTracking.gRadarActions.requestConfirm'),
     });
     if (!ok) return;
     setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
     const res = await gRadarService.requestEnable(cargoItem.id, {});
     setEnablingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
-      showSuccess('Talep gönderildi — yöneticiniz onayladığında bildirim alacaksınız');
+      showSuccess(t('cargoTracking.gRadarActions.requestSent'));
       loadData();
     } else {
-      showError(res.error || 'Talep gönderilemedi');
+      showError(res.error || t('cargoTracking.gRadarActions.requestError'));
     }
   };
   const handleGRadarFetch = async (cargoItem) => {
@@ -128,22 +129,22 @@ export default function CargoTrackingPage() {
       ? cargoItem.consignmentNumber
       : cargoItem.billOfLading || (cargoItem.containerNumbers?.[0]);
     const ok = await confirmDialog({
-      title: 'G-Radar bilgileri çekilecek',
-      message: `${identifier || 'Bu yük'} için G-Radar'dan tracking bilgileri çekilecek.`,
-      details: ['Bu işlem 1 G-Radar kredisi kullanır.'],
+      title: t('cargoTracking.gRadarActions.fetchTitle'),
+      message: t('cargoTracking.gRadarActions.fetchMessage', { identifier: identifier || t('cargoTracking.common.thisCargo') }),
+      details: [t('cargoTracking.gRadarActions.fetchCreditNote')],
       intent: 'primary',
       icon: 'download',
-      confirmText: 'Çek (1 kredi)',
+      confirmText: t('cargoTracking.gRadarActions.fetchConfirm'),
     });
     if (!ok) return;
     setFetchingGRadar(prev => ({ ...prev, [cargoItem.id]: true }));
     const res = await gRadarService.fetch(cargoItem.id);
     setFetchingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
-      showSuccess('G-Radar verileri yüke işlendi');
+      showSuccess(t('cargoTracking.gRadarActions.fetchSuccess'));
       loadData();
     } else {
-      showError(res.error || 'G-Radar verileri çekilemedi');
+      showError(res.error || t('cargoTracking.gRadarActions.fetchError'));
     }
   };
   const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
@@ -173,10 +174,10 @@ export default function CargoTrackingPage() {
       if (result.success) {
         setCargo(result.data);
       } else {
-        setError(result.error || 'Veriler yüklenemedi');
+        setError(result.error || t('cargoTracking.page.loadError'));
       }
     } catch (err) {
-      handleError(err, setError, 'cargo loading', 'Yük verileri yüklenirken hata oluştu.');
+      handleError(err, setError, 'cargo loading', t('cargoTracking.page.loadErrorUnexpected'));
     } finally {
       setLoading(false);
     }
@@ -419,11 +420,11 @@ export default function CargoTrackingPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
               <h1 className={`font-bold text-text-main dark:text-gray-100 transition-all duration-300 ${isScrolled ? "text-base md:text-lg" : "text-2xl md:text-3xl"}`}>
-                Yük Takip
+                {t('nav.cargoTracking')}
               </h1>
               <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
                 <p className="text-text-secondary dark:text-gray-400 text-sm mt-1 overflow-hidden">
-                  {isClientUser ? 'Firmanıza ait yük kayıtlarını görüntüleyin' : 'Yük kayıtlarını görüntüleyin ve yönetin'}
+                  {isClientUser ? t('cargoTracking.page.subtitleClient') : t('cargoTracking.page.subtitleManage')}
                 </p>
               </div>
             </div>
@@ -435,7 +436,7 @@ export default function CargoTrackingPage() {
               {!isScrolled && (
                 <label
                   className="hidden lg:inline-flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-text-main dark:text-gray-300 cursor-pointer transition-colors"
-                  title="Tamamlanmış yükleri de getir — büyük listeler için yavaşlatabilir"
+                  title={t('cargoTracking.page.showCompletedHint')}
                 >
                   <input
                     type="checkbox"
@@ -443,7 +444,7 @@ export default function CargoTrackingPage() {
                     onChange={(e) => setIncludeCompleted(e.target.checked)}
                     className="form-checkbox h-4 w-4 rounded text-primary focus:ring-primary"
                   />
-                  <span className="font-medium">Tamamlananları Göster</span>
+                  <span className="font-medium">{t('cargoTracking.page.showCompleted')}</span>
                 </label>
               )}
 
@@ -454,10 +455,10 @@ export default function CargoTrackingPage() {
                 className={`relative flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${
                   isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"
                 }`}
-                title="Filtrele"
+                title={t('common.filter')}
               >
                 <span className="material-symbols-outlined text-primary text-[20px]">filter_list</span>
-                {!isScrolled && <span className="text-sm text-text-main dark:text-gray-300 hidden md:inline">Filtrele</span>}
+                {!isScrolled && <span className="text-sm text-text-main dark:text-gray-300 hidden md:inline">{t('common.filter')}</span>}
                 {activeFilterCount > 0 && (
                   <span className={`bg-primary text-white font-medium transition-all duration-300 ${
                     isScrolled
@@ -487,10 +488,10 @@ export default function CargoTrackingPage() {
                   className={`flex items-center justify-center bg-primary text-white rounded-lg font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isCreateBlocked ? '' : 'hover:bg-primary/90'
                   } ${isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"}`}
-                  title={isCreateBlocked ? "Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor" : "Yeni Yük Ekle"}
+                  title={isCreateBlocked ? t('payment.restrictionWarning') : t('cargo.addNew')}
                 >
                   <span className="material-symbols-outlined text-[20px]">{isCreateBlocked ? 'lock' : 'add'}</span>
-                  {!isScrolled && <span className="text-sm hidden md:inline">Yeni Yük Ekle</span>}
+                  {!isScrolled && <span className="text-sm hidden md:inline">{t('cargo.addNew')}</span>}
                 </button>
               )}
             </div>
@@ -508,7 +509,7 @@ export default function CargoTrackingPage() {
                       : "bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
                 >
-                  Tümü
+                  {t('cargoTracking.page.all')}
                 </button>
                 {VEHICLE_TYPES.map((type) => (
                   <button
@@ -537,13 +538,13 @@ export default function CargoTrackingPage() {
         {showFilters && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 space-y-4 animate-slide-in-top border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-main dark:text-gray-100">Filtreler</h3>
+              <h3 className="text-lg font-semibold text-text-main dark:text-gray-100">{t('transactions.page.filters')}</h3>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
                   className="text-sm text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary font-medium"
                 >
-                  Filtreleri Temizle
+                  {t('transactions.filters.clear')}
                 </button>
               )}
             </div>
@@ -552,14 +553,14 @@ export default function CargoTrackingPage() {
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                  Durum
+                  {t('cargo.fields.status')}
                 </label>
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 transition-colors"
                 >
-                  <option value="">Tümü</option>
+                  <option value="">{t('cargoTracking.page.all')}</option>
                   {CARGO_STATUS.map(status => (
                     <option key={status.value} value={status.value}>
                       {status.displayName}
@@ -572,13 +573,13 @@ export default function CargoTrackingPage() {
               {!isClientUser && (
                 <div>
                   <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                    Müşteri Ara
+                    {t('cargoTracking.filters.clientSearch')}
                   </label>
                   <input
                     type="text"
                     value={filters.clientSearch}
                     onChange={(e) => handleFilterChange('clientSearch', e.target.value)}
-                    placeholder="Müşteri adı..."
+                    placeholder={t('cargoTracking.filters.clientPlaceholder')}
                     className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                   />
                 </div>
@@ -587,13 +588,13 @@ export default function CargoTrackingPage() {
               {/* General Search */}
               <div>
                 <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-2">
-                  Genel Arama
+                  {t('transactions.filters.generalSearch')}
                 </label>
                 <input
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Plaka, B/L, konşimento..."
+                  placeholder={t('cargoTracking.filters.searchPlaceholder')}
                   className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-700 text-text-main dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                 />
               </div>
@@ -610,9 +611,9 @@ export default function CargoTrackingPage() {
                   onChange={(e) => setIncludeCompleted(e.target.checked)}
                   className="form-checkbox h-4 w-4 rounded text-primary focus:ring-primary"
                 />
-                <span className="font-medium">Tamamlananları Göster</span>
+                <span className="font-medium">{t('cargoTracking.page.showCompleted')}</span>
                 <span className="text-xs text-text-secondary dark:text-gray-500">
-                  (büyük listeler için yavaşlatabilir)
+                  {t('cargoTracking.page.showCompletedNote')}
                 </span>
               </label>
             </div>
@@ -656,7 +657,7 @@ export default function CargoTrackingPage() {
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
                     <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">local_shipping</span>
                     <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                      Toplam: <strong className="font-bold">{cargo.length}</strong>
+                      {t('transactions.common.total')}: <strong className="font-bold">{cargo.length}</strong>
                     </span>
                   </div>
 
@@ -664,7 +665,7 @@ export default function CargoTrackingPage() {
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">
                       <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base">filter_alt</span>
                       <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                        Filtrelenmiş: <strong className="font-bold">{sortedCargo.length}</strong>
+                        {t('transactions.page.filtered')} <strong className="font-bold">{sortedCargo.length}</strong>
                       </span>
                     </div>
                   )}
@@ -672,7 +673,7 @@ export default function CargoTrackingPage() {
                   {isClientUser && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 transition-colors">
                       <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">visibility</span>
-                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Görüntüleme</span>
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">{t('transactions.page.viewOnly')}</span>
                     </div>
                   )}
                 </div>
@@ -681,7 +682,7 @@ export default function CargoTrackingPage() {
                 <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors">
                   <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">description</span>
                   <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                    Gösterilen: <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedCargo.length)}</strong> / <strong className="font-bold">{sortedCargo.length}</strong>
+                    {t('transactions.page.shown')} <strong className="font-bold">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedCargo.length)}</strong> / <strong className="font-bold">{sortedCargo.length}</strong>
                   </span>
                 </div>
 
@@ -693,7 +694,7 @@ export default function CargoTrackingPage() {
                     className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                   >
                     <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_left</span>
-                    <span className="hidden xl:inline">Önceki</span>
+                    <span className="hidden xl:inline">{t('transactions.page.previous')}</span>
                   </button>
 
                   {totalPages > 1 ? (
@@ -722,7 +723,7 @@ export default function CargoTrackingPage() {
                     disabled={currentPage === totalPages || totalPages <= 1}
                     className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                   >
-                    <span className="hidden xl:inline">Sonraki</span>
+                    <span className="hidden xl:inline">{t('transactions.page.next')}</span>
                     <span className="material-symbols-outlined text-base text-text-secondary dark:text-gray-400">chevron_right</span>
                   </button>
                 </div>
@@ -732,7 +733,7 @@ export default function CargoTrackingPage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                   <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-base">local_shipping</span>
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {loading ? "Yükleniyor..." : "Veri yok"}
+                    {loading ? t('common.loading') : t('transactions.page.noData')}
                   </span>
                 </div>
               </div>

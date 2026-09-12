@@ -2,6 +2,14 @@ import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType } 
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
 import { getCostBreakdown, calculateTotalCosts } from '../../utils/costsUtils';
 import { gRadarStatusInfo } from '../../utils/gRadarLabels';
+import { t, getCurrentLocale } from '../../locales';
+
+// getCostBreakdown() masraf tipini Türkçe anahtar olarak döndürüyor; ekranda sözlükten okunur.
+const COST_TYPE_KEYS = {
+  Lokal: 'cargoTracking.common.lokal',
+  Depozito: 'cargoTracking.common.deposito',
+  Ordino: 'cargoTracking.common.ordino',
+};
 
 export default function CargoTrackingTable({
   cargo,
@@ -28,6 +36,7 @@ export default function CargoTrackingTable({
     edgeZoneWidth: 25,
     scrollSpeed: 10,
   });
+  const locale = getCurrentLocale();
 
   // Dynamic column visibility based on vehicle type filter
   const getVisibleColumns = () => {
@@ -89,7 +98,7 @@ export default function CargoTrackingTable({
     return (
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-text-secondary dark:text-gray-400">Yükler yükleniyor...</p>
+        <p className="text-text-secondary dark:text-gray-400">{t("dashboard.recent.cargoLoading")}</p>
       </div>
     );
   }
@@ -100,7 +109,7 @@ export default function CargoTrackingTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-red-500">error</span>
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
+          <p className="text-red-600 font-semibold mb-2">{t("dashboard.recent.errorTitle")}</p>
           <p className="text-text-secondary dark:text-gray-400 text-sm mb-4">{error}</p>
           {onRetry && (
             <button
@@ -109,7 +118,7 @@ export default function CargoTrackingTable({
             >
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg">refresh</span>
-                Tekrar Dene
+                {t("dashboard.recent.retry")}
               </span>
             </button>
           )}
@@ -124,9 +133,9 @@ export default function CargoTrackingTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-text-secondary">inventory_2</span>
         <div className="text-center">
-          <p className="text-text-main dark:text-gray-100 font-semibold mb-2">Yük Bulunamadı</p>
+          <p className="text-text-main dark:text-gray-100 font-semibold mb-2">{t("cargoTracking.table.emptyTitle")}</p>
           <p className="text-text-secondary dark:text-gray-400 text-sm">
-            Henüz yük kaydı oluşturulmamış. Yeni yük eklemek için "Yeni Yük Ekle" butonunu kullanın.
+            {t("cargoTracking.table.emptyHint")}
           </p>
         </div>
       </div>
@@ -175,61 +184,61 @@ export default function CargoTrackingTable({
           <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-20">
             <tr className="border-b border-gray-200 dark:border-gray-700">
               {visibleColumns.includes("status") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Durum</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.status")}</th>
               )}
               {visibleColumns.includes("vehicleType") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Araç Tipi</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.vehicleType")}</th>
               )}
               {visibleColumns.includes("estimatedArrivalDate") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">ETA</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("dashboard.recent.columns.eta")}</th>
               )}
               {visibleColumns.includes("buyerCompany") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Alıcı Firma</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.clientCompany")}</th>
               )}
               {visibleColumns.includes("senderCompany") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Gönderici</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("dashboard.recent.columns.cargoSender")}</th>
               )}
               {visibleColumns.includes("containerCount") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Kap</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("transaction.containerAmount")}</th>
               )}
               {visibleColumns.includes("weight") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Kilo (kg)</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargoTracking.table.columns.weight")}</th>
               )}
               {visibleColumns.includes("costs") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Masraflar</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargoTracking.common.costs")}</th>
               )}
               {visibleColumns.includes("paymentStatus") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Ödeme Durumu</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.paymentStatus")}</th>
               )}
               {visibleColumns.includes("carrier") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Nakliyeci</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.carrierName")}</th>
               )}
               {visibleColumns.includes("billOfLading") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">B/L</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargoTracking.common.billOfLading")}</th>
               )}
               {visibleColumns.includes("containerNumbers") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Konteyner Numaraları</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.containerNumbers")}</th>
               )}
               {visibleColumns.includes("licensePlate") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Plaka</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.licensePlate")}</th>
               )}
               {visibleColumns.includes("consignmentNumber") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Konşimento</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.consignmentNumber")}</th>
               )}
               {visibleColumns.includes("g-radar") && (
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">G-Radar</th>
               )}
               {visibleColumns.includes("documentReceiver") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Evrak Teslim Alan</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.documentReceiver")}</th>
               )}
               {visibleColumns.includes("documentDeliveryDate") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Dosya Teslim</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargoTracking.table.columns.documentDelivery")}</th>
               )}
               {visibleColumns.includes("cargoArrivalDate") && (
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Varış Tarihi</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.cargoArrivalDate")}</th>
               )}
               {visibleColumns.includes("actions") && !isReadOnly && (
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">İşlemler</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{t("transactions.table.columns.actions")}</th>
               )}
             </tr>
           </thead>
@@ -248,7 +257,7 @@ export default function CargoTrackingTable({
                   {visibleColumns.includes("status") && (
                     <td className={`px-6 py-4 whitespace-nowrap ${getFirstCellBorderClass(cargoItem)}`}>
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo?.badgeClass}`}>
-                        {statusInfo?.displayName?.toUpperCase()}
+                        {statusInfo?.displayName?.toLocaleUpperCase(locale)}
                       </span>
                     </td>
                   )}
@@ -264,21 +273,21 @@ export default function CargoTrackingTable({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-text-secondary dark:text-gray-400">
                         {cargoItem.estimatedArrivalDate
-                          ? new Date(cargoItem.estimatedArrivalDate).toLocaleDateString('tr-TR')
+                          ? new Date(cargoItem.estimatedArrivalDate).toLocaleDateString(locale)
                           : "-"}
                       </div>
                       {cargoItem.initialEstimatedArrivalDate &&
                         cargoItem.estimatedArrivalDate &&
                         cargoItem.initialEstimatedArrivalDate !== cargoItem.estimatedArrivalDate && (
                         <div className="text-xs text-text-secondary mt-0.5 opacity-70">
-                          İlk: {new Date(cargoItem.initialEstimatedArrivalDate).toLocaleDateString('tr-TR')}
+                          {t("cargoTracking.table.initialEta", { date: new Date(cargoItem.initialEstimatedArrivalDate).toLocaleDateString(locale) })}
                         </div>
                       )}
                       {(() => {
                         if (cargoItem.status === 'TRACKING') {
                           if (!cargoItem.estimatedArrivalDate) return (
                             <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
-                              <span className="material-symbols-outlined text-xs">info</span>ETA Bilgisi Yok
+                              <span className="material-symbols-outlined text-xs">info</span>{t("cargoTracking.table.noEta")}
                             </span>
                           );
                           const eta = new Date(cargoItem.estimatedArrivalDate);
@@ -288,17 +297,17 @@ export default function CargoTrackingTable({
                           const diffInDays = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
                           if (diffInDays === 0) return (
                             <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">check_circle</span>Varış Günü
+                              <span className="material-symbols-outlined text-xs">check_circle</span>{t("cargoTracking.table.arrivalDay")}
                             </span>
                           );
                           if (diffInDays === 1) return (
                             <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">schedule</span>Yaklaşıyor
+                              <span className="material-symbols-outlined text-xs">schedule</span>{t("cargoTracking.table.approaching")}
                             </span>
                           );
                           if (diffInDays < 0) return (
                             <span className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1 animate-pulse font-semibold">
-                              <span className="material-symbols-outlined text-xs">error</span>{Math.abs(diffInDays)} gün gecikme
+                              <span className="material-symbols-outlined text-xs">error</span>{t("cargoTracking.table.daysOverdue", { count: Math.abs(diffInDays) })}
                             </span>
                           );
                           return null;
@@ -307,7 +316,7 @@ export default function CargoTrackingTable({
                           const baseEtaStr = cargoItem.initialEstimatedArrivalDate || cargoItem.estimatedArrivalDate;
                           if (!baseEtaStr) return (
                             <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
-                              <span className="material-symbols-outlined text-xs">info</span>ETA Bilgisi Yok
+                              <span className="material-symbols-outlined text-xs">info</span>{t("cargoTracking.table.noEta")}
                             </span>
                           );
                           const baseEta = new Date(baseEtaStr);
@@ -317,17 +326,17 @@ export default function CargoTrackingTable({
                           const diffInDays = Math.ceil((arrivalDate - baseEta) / (1000 * 60 * 60 * 24));
                           if (diffInDays === 0) return (
                             <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1 font-semibold">
-                              <span className="material-symbols-outlined text-xs">check_circle</span>Zamanında
+                              <span className="material-symbols-outlined text-xs">check_circle</span>{t("cargoTracking.table.onTime")}
                             </span>
                           );
                           if (diffInDays < 0) return (
                             <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1 font-semibold">
-                              <span className="material-symbols-outlined text-xs">flight_land</span>{Math.abs(diffInDays)} gün erken
+                              <span className="material-symbols-outlined text-xs">flight_land</span>{t("cargoTracking.table.daysEarly", { count: Math.abs(diffInDays) })}
                             </span>
                           );
                           return (
                             <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1 font-semibold">
-                              <span className="material-symbols-outlined text-xs">schedule</span>{diffInDays} gün gecikmeli
+                              <span className="material-symbols-outlined text-xs">schedule</span>{t("cargoTracking.table.daysLate", { count: diffInDays })}
                             </span>
                           );
                         }
@@ -349,12 +358,12 @@ export default function CargoTrackingTable({
                   )}
                   {visibleColumns.includes("containerCount") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">
-                      {cargoItem.containerCount ? Number(cargoItem.containerCount).toLocaleString('tr-TR') : "-"}
+                      {cargoItem.containerCount ? Number(cargoItem.containerCount).toLocaleString(locale) : "-"}
                     </td>
                   )}
                   {visibleColumns.includes("weight") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300">
-                      {cargoItem.weightKg ? cargoItem.weightKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-"}
+                      {cargoItem.weightKg ? cargoItem.weightKg.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-"}
                     </td>
                   )}
                   {visibleColumns.includes("costs") && (
@@ -367,22 +376,22 @@ export default function CargoTrackingTable({
                           <div className="space-y-0.5">
                             {breakdown.map((cost, idx) => (
                               <div key={idx} className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-400 dark:text-gray-500 w-[46px] shrink-0">{cost.type}</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500 w-[46px] shrink-0">{COST_TYPE_KEYS[cost.type] ? t(COST_TYPE_KEYS[cost.type]) : cost.type}</span>
                                 <span className="text-xs font-semibold text-text-main dark:text-gray-300 tabular-nums">
-                                  {Number(cost.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  {Number(cost.amount).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                                 <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">{cost.currency}</span>
                               </div>
                             ))}
                             {breakdown.length > 1 && (
                               <div className="pt-1 mt-1 border-t border-gray-200 dark:border-gray-700 space-y-0.5">
-                                {totals.map((t, idx) => (
+                                {totals.map((total, idx) => (
                                   <div key={idx} className="flex items-center gap-1.5">
-                                    <span className="text-xs text-primary dark:text-primary-light w-[46px] shrink-0 font-medium">{idx === 0 ? 'Toplam' : ''}</span>
+                                    <span className="text-xs text-primary dark:text-primary-light w-[46px] shrink-0 font-medium">{idx === 0 ? t("transactions.common.total") : ''}</span>
                                     <span className="text-xs font-bold text-primary dark:text-primary-light tabular-nums">
-                                      {Number(t.total).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      {Number(total.total).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
-                                    <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light leading-none">{t.currency}</span>
+                                    <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light leading-none">{total.currency}</span>
                                   </div>
                                 ))}
                               </div>
@@ -395,11 +404,11 @@ export default function CargoTrackingTable({
                   {visibleColumns.includes("paymentStatus") && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       {cargoItem.paymentStatus === 'PAID' ? (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">ÖDENDİ</span>
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">{t("cargoTracking.table.payment.PAID")}</span>
                       ) : cargoItem.paymentStatus === 'COMPANY_PAID' ? (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">FİRMA TARAFINDAN</span>
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">{t("cargoTracking.table.payment.COMPANY_PAID")}</span>
                       ) : (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300">ÖDEME YOK</span>
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300">{t("cargoTracking.table.payment.NO_PAYMENT")}</span>
                       )}
                     </td>
                   )}
@@ -417,7 +426,7 @@ export default function CargoTrackingTable({
                             <span key={idx} className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">{container}</span>
                           ))}
                           {cargoItem.containerNumbers.length > 4 && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">+{cargoItem.containerNumbers.length - 4} daha</span>
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">{t("cargoTracking.table.moreContainers", { count: cargoItem.containerNumbers.length - 4 })}</span>
                           )}
                         </div>
                       ) : (
@@ -475,12 +484,12 @@ export default function CargoTrackingTable({
                   )}
                   {visibleColumns.includes("documentDeliveryDate") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
-                      {cargoItem.documentDeliveryDate ? new Date(cargoItem.documentDeliveryDate).toLocaleDateString('tr-TR') : "-"}
+                      {cargoItem.documentDeliveryDate ? new Date(cargoItem.documentDeliveryDate).toLocaleDateString(locale) : "-"}
                     </td>
                   )}
                   {visibleColumns.includes("cargoArrivalDate") && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
-                      {cargoItem.cargoArrivalDate ? new Date(cargoItem.cargoArrivalDate).toLocaleDateString('tr-TR') : "-"}
+                      {cargoItem.cargoArrivalDate ? new Date(cargoItem.cargoArrivalDate).toLocaleDateString(locale) : "-"}
                     </td>
                   )}
                   {visibleColumns.includes("actions") && !isReadOnly && (
@@ -488,7 +497,7 @@ export default function CargoTrackingTable({
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit && onEdit(cargoItem); }}
                         className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary mr-3 transition-colors"
-                        title="Düzenle"
+                        title={t("common.edit")}
                       >
                         <span className="material-symbols-outlined text-lg">edit</span>
                       </button>
@@ -496,7 +505,7 @@ export default function CargoTrackingTable({
                         <button
                           onClick={(e) => { e.stopPropagation(); onDelete && onDelete(cargoItem); }}
                           className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                          title="Sil"
+                          title={t("common.delete")}
                         >
                           <span className="material-symbols-outlined text-lg">delete</span>
                         </button>
@@ -559,10 +568,10 @@ function GRadarStatusCell({
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
-        title="G-Radar sadece gemi ve uçak yüklerini takip eder — bu araç tipi için kullanılamaz"
+        title={t("cargoTracking.table.gRadar.notApplicableHint")}
       >
         <span className="material-symbols-outlined text-sm">block</span>
-        Kullanılamaz
+        {t("cargoTracking.table.gRadar.notApplicable")}
       </span>
     );
   }
@@ -573,20 +582,20 @@ function GRadarStatusCell({
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenDetails?.(); }}
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-colors"
-          title="Yük tamamlandı — G-Radar'ın son senkron ettiği veriyi görüntüleyin"
+          title={t("cargoTracking.table.gRadar.showHistoryHint")}
         >
           <span className="material-symbols-outlined text-sm">history</span>
-          Geçmişi Göster
+          {t("cargoTracking.table.gRadar.showHistory")}
         </button>
       );
     }
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800/60 text-text-secondary text-xs italic"
-        title="Bu yük tamamlandı ve G-Radar'dan hiç senkron edilmedi — geçmiş veri yok"
+        title={t("cargoTracking.table.gRadar.noHistoryHint")}
       >
         <span className="material-symbols-outlined text-sm">block</span>
-        Kullanılamaz
+        {t("cargoTracking.table.gRadar.notApplicable")}
       </span>
     );
   }
@@ -596,7 +605,7 @@ function GRadarStatusCell({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
           <span className="material-symbols-outlined text-sm">toggle_off</span>
-          Kapalı
+          {t("cargoTracking.table.gRadar.off")}
         </span>
       );
     }
@@ -607,11 +616,11 @@ function GRadarStatusCell({
           type="button"
           onClick={(e) => { e.stopPropagation(); onEnable?.(); }}
           disabled={enabling}
-          title="G-Radar entegrasyonunu bu yük için aç — bu adımda kredi tüketilmez"
+          title={t("cargoTracking.table.gRadar.enableHint")}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-primary/10 dark:bg-gray-700 dark:hover:bg-primary/20 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary text-xs font-medium transition-colors disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-sm">toggle_off</span>
-          {enabling ? 'Açılıyor...' : 'G-Radar\'ı Aç'}
+          {enabling ? t("cargoTracking.common.enabling") : t("cargoTracking.common.enableGRadar")}
         </button>
       );
     }
@@ -621,11 +630,11 @@ function GRadarStatusCell({
         type="button"
         onClick={(e) => { e.stopPropagation(); onRequest?.(); }}
         disabled={enabling}
-        title="Yöneticinizden G-Radar entegrasyonunu açmasını talep edin"
+        title={t("cargoTracking.table.gRadar.requestHint")}
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 hover:bg-blue-50 dark:bg-gray-700 dark:hover:bg-blue-900/30 text-gray-600 hover:text-blue-700 dark:text-gray-300 dark:hover:text-blue-300 text-xs font-medium transition-colors disabled:opacity-50"
       >
         <span className="material-symbols-outlined text-sm">send</span>
-        {enabling ? 'Gönderiliyor...' : 'Talep Et'}
+        {enabling ? t("cargoTracking.common.sending") : t("cargoTracking.table.gRadar.request")}
       </button>
     );
   }
@@ -633,7 +642,7 @@ function GRadarStatusCell({
     if (!canManage || isReadOnly) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs">
-          Bilgi bekleniyor
+          {t("cargoTracking.table.gRadar.awaitingData")}
         </span>
       );
     }
@@ -642,24 +651,24 @@ function GRadarStatusCell({
         type="button"
         onClick={(e) => { e.stopPropagation(); onFetch?.(); }}
         disabled={fetching}
-        title="G-Radar'dan bilgileri çek (1 kredi)"
+        title={t("cargoTracking.table.gRadar.fetchHint")}
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors disabled:opacity-50"
       >
         <span className="material-symbols-outlined text-sm">download</span>
-        {fetching ? 'Çekiliyor...' : 'Bilgileri Getir (1 kredi)'}
+        {fetching ? t("cargoTracking.table.gRadar.fetching") : t("cargoTracking.common.fetchWithCredit")}
       </button>
     );
   }
   // gRadarEnabled + trackingId set → live, clickable to open the drawer.
-  // Rozette ham "Aktif" yerine yükün gerçek durumunu Türkçe gösteriyoruz —
+  // Rozette ham "Aktif" yerine yükün gerçek durumunu arayüz dilinde gösteriyoruz —
   // kullanıcı listeden ayrılmadan "nerede" sorusunun cevabını görsün.
   const statusInfo = gRadarStatusInfo(cargoItem.gRadarStatus);
   const syncNote = cargoItem.gRadarLastSyncAt
-    ? `Son sync: ${new Date(cargoItem.gRadarLastSyncAt).toLocaleString('tr-TR')}`
-    : 'G-Radar aktif';
+    ? t("cargoTracking.table.gRadar.lastSync", { date: new Date(cargoItem.gRadarLastSyncAt).toLocaleString(getCurrentLocale()) })
+    : t("cargoTracking.table.gRadar.active");
   const tooltip = statusInfo
-    ? `${statusInfo.label} (${statusInfo.raw}) — ${syncNote} — detay için tıkla`
-    : `${syncNote} — detay için tıkla`;
+    ? t("cargoTracking.table.gRadar.tooltipWithStatus", { label: statusInfo.label, raw: statusInfo.raw, sync: syncNote })
+    : t("cargoTracking.table.gRadar.tooltip", { sync: syncNote });
   return (
     <button
       type="button"
@@ -668,7 +677,7 @@ function GRadarStatusCell({
       className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
     >
       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-      {statusInfo?.short || 'Aktif'}
+      {statusInfo?.short || t("transactions.common.active")}
       <span className="material-symbols-outlined text-sm">open_in_new</span>
     </button>
   );

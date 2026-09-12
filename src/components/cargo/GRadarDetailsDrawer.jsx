@@ -8,6 +8,7 @@ import {
 } from '../../utils/gRadarLabels';
 import { describeLivePosition } from '../../utils/gRadarRoute';
 import CargoMap from './CargoMap';
+import { t, getCurrentLocale } from '../../locales';
 
 /**
  * Slide-in panel that shows the live G-Radar data for a single cargo.
@@ -39,7 +40,7 @@ export default function GRadarDetailsDrawer({
       setDetails(res.data);
     } else {
       setDetails(null);
-      showError(res.error || 'G-Radar bilgileri alınamadı');
+      showError(res.error || t('cargoTracking.drawer.loadError'));
     }
   }, []);
 
@@ -67,10 +68,10 @@ export default function GRadarDetailsDrawer({
     const res = await gRadarService.refresh(cargo.id);
     setRefreshing(false);
     if (res.success) {
-      showSuccess('G-Radar verileri yenilendi');
+      showSuccess(t('cargoTracking.drawer.refreshed'));
       load(cargo.id);
     } else {
-      showError(res.error || 'Yenileme başarısız');
+      showError(res.error || t('cargoTracking.drawer.refreshError'));
     }
   };
 
@@ -102,7 +103,7 @@ export default function GRadarDetailsDrawer({
   // Harita etiketi yalnızca sefer numarası. Gemi adı buradan çıkarıldı: zaten
   // hemen altındaki künye kutusunda ve hareket satırlarında yazıyor, haritada
   // tekrarlayınca etiket uzuyor ve yön okunun üstüne biniyordu.
-  const mapLabel = voyageInfo.voyage ? `Sefer ${voyageInfo.voyage}` : null;
+  const mapLabel = voyageInfo.voyage ? t('cargoTracking.drawer.voyage', { voyage: voyageInfo.voyage }) : null;
 
   // Konum tarifi doğrudan haritadaki canlı koordinattan üretiliyor.
   // details.currentLocation ise sağlayıcının son HAREKET kaydından geliyor ve
@@ -136,7 +137,7 @@ export default function GRadarDetailsDrawer({
           <div className="flex items-center gap-2 min-w-0">
             <span className="material-symbols-outlined text-primary text-2xl">travel_explore</span>
             <div className="min-w-0">
-              <h3 className="text-base font-semibold text-text-main truncate">G-Radar Detayı</h3>
+              <h3 className="text-base font-semibold text-text-main truncate">{t('cargoTracking.drawer.title')}</h3>
               <p className="text-xs text-text-secondary truncate">
                 {details?.identifier || '—'}
               </p>
@@ -145,7 +146,7 @@ export default function GRadarDetailsDrawer({
           <button
             onClick={onClose}
             className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Kapat"
+            aria-label={t('common.close')}
           >
             <span className="material-symbols-outlined text-text-secondary">close</span>
           </button>
@@ -158,17 +159,16 @@ export default function GRadarDetailsDrawer({
             </div>
           ) : !details ? (
             <p className="text-center text-text-secondary text-sm py-10 px-5">
-              G-Radar bilgisi bulunamadı.
+              {t('cargoTracking.drawer.notFound')}
             </p>
           ) : !details.gRadarEnabled ? (
             <p className="text-center text-text-secondary text-sm py-10 px-5">
-              Bu yük için G-Radar entegrasyonu açık değil.
+              {t('cargoTracking.drawer.notEnabled')}
             </p>
           ) : !details.gRadarTrackingId ? (
             <div className="m-5 rounded-xl border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                G-Radar bu yük için açık ancak henüz veri çekilmedi.
-                Liste üzerinde "Bilgileri Getir" butonunu kullanın.
+                {t('cargoTracking.drawer.noData')}
               </p>
             </div>
           ) : (
@@ -192,10 +192,10 @@ export default function GRadarDetailsDrawer({
                   <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-lg flex-shrink-0">history</span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Tamamlanmış yük — geçmiş G-Radar verisi
+                      {t('cargoTracking.drawer.archiveTitle')}
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      G-Radar bu yük için senkronu durdurdu. Aşağıdakiler son senkronlanan kayıttır; yeni güncelleme alınmaz.
+                      {t('cargoTracking.drawer.archiveHint')}
                     </p>
                   </div>
                 </div>
@@ -205,7 +205,7 @@ export default function GRadarDetailsDrawer({
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-xs text-text-secondary uppercase tracking-wide">G-Radar Durumu</p>
+                    <p className="text-xs text-text-secondary uppercase tracking-wide">{t('cargoTracking.drawer.status')}</p>
                     <p className="text-xl font-bold text-text-main flex items-center gap-2">
                       {statusInfo?.icon && (
                         <span className={`material-symbols-outlined text-2xl ${statusToneText(statusInfo.tone)}`}>
@@ -224,9 +224,9 @@ export default function GRadarDetailsDrawer({
                   </div>
                   {details.lastSyncAt && (
                     <div className="text-right">
-                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Son Sync</p>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">{t('cargoTracking.drawer.lastSync')}</p>
                       <p className="text-xs text-text-secondary">
-                        {new Date(details.lastSyncAt).toLocaleString('tr-TR')}
+                        {new Date(details.lastSyncAt).toLocaleString(getCurrentLocale())}
                       </p>
                     </div>
                   )}
@@ -236,37 +236,39 @@ export default function GRadarDetailsDrawer({
               {/* Key facts grid */}
               <div className="grid grid-cols-2 gap-3">
                 <Fact
-                  label="Gemi / Uçuş"
+                  label={t('cargoTracking.drawer.vesselFlight')}
                   value={voyageInfo.vehicle || details.vesselName}
                   icon="directions_boat"
                 />
-                <Fact label="Taşıyıcı" value={details.gRadarCarrier} icon="local_shipping" />
+                <Fact label={t('dashboard.recent.columns.carrier')} value={details.gRadarCarrier} icon="local_shipping" />
                 {/* Sefer numarası künyede değil, haritadaki araç etiketinde
                     duruyor — orada gemiyle birlikte okunuyor ve künyeyi
                     gereksiz uzatmıyor. */}
                 <Fact
-                  label="Mevcut Konum"
+                  label={t('cargoTracking.drawer.currentLocation')}
                   value={livePosition?.summary || details.currentLocation}
                   hint={[
                     livePosition?.remainingText,
                     livePosition?.legText ? livePosition.coordinateText : null,
-                    details.currentLocation ? `Son bildirilen: ${details.currentLocation}` : null,
+                    details.currentLocation
+                      ? t('cargoTracking.drawer.lastReported', { location: details.currentLocation })
+                      : null,
                   ].filter(Boolean).join(' · ')}
                   icon="my_location"
                   full
                 />
                 <Fact
-                  label="ETA"
+                  label={t('dashboard.recent.columns.eta')}
                   value={details.estimatedArrivalDate
-                    ? new Date(details.estimatedArrivalDate).toLocaleDateString('tr-TR')
+                    ? new Date(details.estimatedArrivalDate).toLocaleDateString(getCurrentLocale())
                     : null}
                   icon="event"
                   highlight
                 />
                 <Fact
-                  label="Varış"
+                  label={t('cargoTracking.drawer.arrival')}
                   value={details.cargoArrivalDate
-                    ? new Date(details.cargoArrivalDate).toLocaleDateString('tr-TR')
+                    ? new Date(details.cargoArrivalDate).toLocaleDateString(getCurrentLocale())
                     : null}
                   icon="task_alt"
                 />
@@ -278,7 +280,7 @@ export default function GRadarDetailsDrawer({
                   <p className="text-xs text-yellow-800 dark:text-yellow-300 flex items-center gap-1">
                     <span className="material-symbols-outlined text-base">lock</span>
                     <span>
-                      Manuel girilen alanlar (G-Radar güncellemiyor):
+                      {t('cargoTracking.drawer.manualFields')}
                       {' '}
                       <strong>{details.manuallyOverriddenFields.map(humanFieldName).join(', ')}</strong>
                     </span>
@@ -295,9 +297,9 @@ export default function GRadarDetailsDrawer({
                 <div>
                   <h4 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-primary">timeline</span>
-                    Yük Geçmişi
+                    {t('cargoTracking.drawer.history')}
                     <span className="text-xs font-normal text-text-secondary">
-                      ({movementCount} hareket)
+                      {t('cargoTracking.drawer.movementCount', { count: movementCount })}
                     </span>
                   </h4>
                   {/* Gruplar artık kendi çerçevesi olan katlanır kutular —
@@ -315,9 +317,9 @@ export default function GRadarDetailsDrawer({
               ) : (
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 text-center">
                   <span className="material-symbols-outlined text-2xl text-text-secondary">timeline</span>
-                  <p className="text-sm text-text-secondary mt-1">Henüz hareket kaydı yok.</p>
+                  <p className="text-sm text-text-secondary mt-1">{t('cargoTracking.drawer.noMovements')}</p>
                   <p className="text-xs text-text-secondary mt-0.5">
-                    Taşıyıcı ilk hareketi bildirdiğinde burada listelenir — "Yenile" ile kontrol edebilirsiniz.
+                    {t('cargoTracking.drawer.noMovementsHint')}
                   </p>
                 </div>
               )}
@@ -329,8 +331,8 @@ export default function GRadarDetailsDrawer({
         <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
           <p className="text-[11px] text-text-secondary">
             {details?.status === 'COMPLETED'
-              ? 'Tamamlanmış yüklerde G-Radar senkronu durur.'
-              : 'Yenileme ücretsizdir — kredi tüketmez.'}
+              ? t('cargoTracking.drawer.completedFooter')
+              : t('cargoTracking.drawer.refreshFree')}
           </p>
           <button
             onClick={handleRefresh}
@@ -338,7 +340,7 @@ export default function GRadarDetailsDrawer({
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
           >
             <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
-            {refreshing ? 'Yenileniyor...' : 'Yenile'}
+            {refreshing ? t('cargoTracking.drawer.refreshing') : t('cargoTracking.drawer.refresh')}
           </button>
         </div>
       </aside>
@@ -382,8 +384,8 @@ function statusToneText(tone) {
 function formatMovementDate(movement) {
   if (!movement?.timestamp) return null;
   return movement.hasTime
-    ? movement.timestamp.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })
-    : movement.timestamp.toLocaleDateString('tr-TR');
+    ? movement.timestamp.toLocaleString(getCurrentLocale(), { dateStyle: 'short', timeStyle: 'short' })
+    : movement.timestamp.toLocaleDateString(getCurrentLocale());
 }
 
 /**
@@ -436,10 +438,10 @@ function MovementGroup({ group, showHeader }) {
             </p>
           )}
           <p className={`text-sm font-medium ${current?.actual ? 'text-text-main' : 'text-text-secondary'}`}>
-            {current?.eventLabel ?? 'Hareket'}
+            {current?.eventLabel ?? t('gRadar.movementFallback')}
             {current && !current.actual && (
               <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
-                tahmini
+                {t('cargoTracking.drawer.estimated')}
               </span>
             )}
           </p>
@@ -450,14 +452,16 @@ function MovementGroup({ group, showHeader }) {
             </p>
           )}
           <p className="text-[11px] text-text-secondary mt-1">
-            {expanded ? 'Geçmişi gizle' : `Tüm geçmişi göster (${total} hareket)`}
+            {expanded
+              ? t('cargoTracking.drawer.hideHistory')
+              : t('cargoTracking.drawer.showAllHistory', { count: total })}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {currentDate && (
             <span
               className="text-xs text-text-secondary whitespace-nowrap"
-              title={current?.rawTimestamp ? `G-Radar'dan gelen ham değer: ${current.rawTimestamp}` : undefined}
+              title={current?.rawTimestamp ? t('cargoTracking.drawer.rawValue', { value: current.rawTimestamp }) : undefined}
             >
               {currentDate}
             </span>
@@ -523,12 +527,12 @@ function MovementRow({ movement, isCurrent }) {
             {eventLabel}
             {!actual && (
               <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
-                tahmini
+                {t('cargoTracking.drawer.estimated')}
               </span>
             )}
             {isCurrent && (
               <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                şu an
+                {t('cargoTracking.drawer.current')}
               </span>
             )}
           </p>
@@ -544,7 +548,7 @@ function MovementRow({ movement, isCurrent }) {
               <span className="truncate">
                 {vehicle}
                 {vehicle && voyage ? ' · ' : ''}
-                {voyage ? `Sefer ${voyage}` : ''}
+                {voyage ? t('cargoTracking.drawer.voyage', { voyage }) : ''}
               </span>
             </p>
           )}
@@ -555,7 +559,7 @@ function MovementRow({ movement, isCurrent }) {
           // "bu saat doğru mu" sorusu çıktığında üzerine gelip bakılabilsin.
           <p
             className={`text-xs whitespace-nowrap ${actual ? 'text-text-secondary' : 'text-text-secondary/70'}`}
-            title={rawTimestamp ? `G-Radar'dan gelen ham değer: ${rawTimestamp}` : undefined}
+            title={rawTimestamp ? t('cargoTracking.drawer.rawValue', { value: rawTimestamp }) : undefined}
           >
             {formattedDate}
           </p>
@@ -566,14 +570,14 @@ function MovementRow({ movement, isCurrent }) {
 }
 
 function humanFieldName(field) {
-  const labels = {
-    estimatedArrivalDate: 'Tahmini Varış',
-    cargoArrivalDate: 'Varış Tarihi',
-    vesselName: 'Gemi/Uçuş',
-    currentLocation: 'Mevcut Konum',
-    gRadarStatus: 'Durum',
-    gRadarCarrier: 'Taşıyıcı',
-    gRadarRouteJson: 'Rota',
-  };
-  return labels[field] || field;
+  const known = [
+    'estimatedArrivalDate',
+    'cargoArrivalDate',
+    'vesselName',
+    'currentLocation',
+    'gRadarStatus',
+    'gRadarCarrier',
+    'gRadarRouteJson',
+  ];
+  return known.includes(field) ? t(`cargoTracking.drawer.fields.${field}`) : field;
 }

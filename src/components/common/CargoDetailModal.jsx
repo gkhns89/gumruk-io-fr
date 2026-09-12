@@ -5,17 +5,18 @@ import {
   PAYMENT_STATUS_OPTIONS,
   formatCurrency,
 } from "../../utils/constants";
+import { t, getCurrentLocale } from "../../locales";
 
-const formatDate = (d) => (d ? new Date(d).toLocaleDateString("tr-TR") : "-");
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString(getCurrentLocale()) : "-");
 
 // Araç tipine göre birincil tanımlayıcı (B/L, Konteyner, AWB, Plaka)
 const getIdentifier = (cargo) => {
   switch (cargo.vehicleType) {
     case "AIRPLANE":
-      return { label: "Konşimento (AWB)", value: cargo.consignmentNumber };
+      return { label: t("cargoTracking.detail.identifierAirplane"), value: cargo.consignmentNumber };
     case "SHIP":
       return {
-        label: "B/L / Konteyner",
+        label: t("cargoTracking.detail.identifierShip"),
         value:
           cargo.billOfLading ||
           (Array.isArray(cargo.containerNumbers) && cargo.containerNumbers.length > 0
@@ -23,9 +24,9 @@ const getIdentifier = (cargo) => {
             : null),
       };
     case "TRUCK":
-      return { label: "Plaka", value: cargo.licensePlate };
+      return { label: t("cargo.fields.licensePlate"), value: cargo.licensePlate };
     default:
-      return { label: "Tanımlayıcı", value: null };
+      return { label: t("cargoTracking.detail.identifier"), value: null };
   }
 };
 
@@ -41,6 +42,7 @@ const Cost = ({ label, amount, currency }) => (
 export default function CargoDetailModal({ cargo, onClose, onEdit }) {
   if (!cargo) return null;
 
+  const locale = getCurrentLocale();
   const statusInfo = getCargoStatus(cargo.status);
   const vehicle = getVehicleType(cargo.vehicleType);
   const paymentInfo = PAYMENT_STATUS_OPTIONS.find((p) => p.value === cargo.paymentStatus);
@@ -62,10 +64,10 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
             <div className="flex items-center justify-center h-10 w-10 bg-primary rounded-full text-white">
               <span className="material-symbols-outlined text-xl">inventory_2</span>
             </div>
-            <h2 className="text-text-main text-lg font-bold">Yük Detayları</h2>
+            <h2 className="text-text-main text-lg font-bold">{t("cargoTracking.common.cargoDetails")}</h2>
             {cargo.isDraft && (
               <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                Taslak
+                {t("cargoTracking.detail.draft")}
               </span>
             )}
           </div>
@@ -93,7 +95,7 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
               <div className="flex items-center gap-2">
                 {statusInfo && (
                   <span className={`px-3 py-0.5 text-xs font-semibold rounded-full ${statusInfo.badgeClass}`}>
-                    {statusInfo.displayName?.toUpperCase()}
+                    {statusInfo.displayName?.toLocaleUpperCase(locale)}
                   </span>
                 )}
                 {paymentInfo && (
@@ -104,7 +106,7 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
             {/* Key info */}
             <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700 bg-gray-50 dark:bg-gray-800/40">
               <div className="px-6 py-3">
-                <p className="text-xs text-text-secondary mb-0.5">Alıcı Firma</p>
+                <p className="text-xs text-text-secondary mb-0.5">{t("cargo.fields.clientCompany")}</p>
                 <p className="text-sm font-semibold text-text-main truncate">
                   {(cargo.clientCompany?.shortName || cargo.clientCompany?.name || "-").toUpperCase()}
                 </p>
@@ -114,7 +116,7 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
                 <p className="text-sm font-semibold text-text-main truncate">{identifier.value || "-"}</p>
               </div>
               <div className="px-6 py-3">
-                <p className="text-xs text-text-secondary mb-0.5">Tahmini Varış (ETA)</p>
+                <p className="text-xs text-text-secondary mb-0.5">{t("cargoTracking.detail.eta")}</p>
                 <p className="text-sm font-semibold text-text-main">{formatDate(cargo.estimatedArrivalDate)}</p>
               </div>
             </div>
@@ -123,33 +125,33 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Gönderici Firma</p>
+                <p className="text-text-secondary text-sm mb-1">{t("cargo.fields.senderCompany")}</p>
                 <p className="text-text-main font-semibold">{cargo.senderCompany || "-"}</p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Taşıyıcı</p>
+                <p className="text-text-secondary text-sm mb-1">{t("dashboard.recent.columns.carrier")}</p>
                 <p className="text-text-main font-semibold">{cargo.carrierName || "-"}</p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Kap</p>
+                <p className="text-text-secondary text-sm mb-1">{t("transaction.containerAmount")}</p>
                 <p className="text-text-main font-semibold">{cargo.containerCount ?? "-"}</p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Ağırlık</p>
+                <p className="text-text-secondary text-sm mb-1">{t("transactions.detail.weight")}</p>
                 <p className="text-text-main font-semibold">
-                  {cargo.weightKg != null ? `${Number(cargo.weightKg).toLocaleString("tr-TR")} kg` : "-"}
+                  {cargo.weightKg != null ? `${Number(cargo.weightKg).toLocaleString(locale)} kg` : "-"}
                 </p>
               </div>
 
-              <Cost label="Lokal" amount={cargo.lokalAmount} currency={cargo.lokalCurrency} />
-              <Cost label="Depozito" amount={cargo.depositoAmount} currency={cargo.depositoCurrency} />
-              <Cost label="Ordino" amount={cargo.ordinoAmount} currency={cargo.ordinoCurrency} />
+              <Cost label={t("cargoTracking.common.lokal")} amount={cargo.lokalAmount} currency={cargo.lokalCurrency} />
+              <Cost label={t("cargoTracking.common.deposito")} amount={cargo.depositoAmount} currency={cargo.depositoCurrency} />
+              <Cost label={t("cargoTracking.common.ordino")} amount={cargo.ordinoAmount} currency={cargo.ordinoCurrency} />
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Evrak Teslim</p>
+                <p className="text-text-secondary text-sm mb-1">{t("cargoTracking.detail.documentDelivery")}</p>
                 <p className="text-text-main font-semibold">
                   {docType?.label || "-"}
                   {cargo.documentReceiver ? ` · ${cargo.documentReceiver}` : ""}
@@ -157,13 +159,13 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
-                <p className="text-text-secondary text-sm mb-1">Varış Tarihi</p>
+                <p className="text-text-secondary text-sm mb-1">{t("cargo.fields.cargoArrivalDate")}</p>
                 <p className="text-text-main font-semibold">{formatDate(cargo.cargoArrivalDate)}</p>
               </div>
 
               {cargo.transportInfo && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 col-span-full transition-colors">
-                  <p className="text-text-secondary text-sm mb-1">Taşıma Bilgisi</p>
+                  <p className="text-text-secondary text-sm mb-1">{t("cargoTracking.detail.transportInfo")}</p>
                   <p className="text-text-main whitespace-pre-wrap">{cargo.transportInfo}</p>
                 </div>
               )}
@@ -177,7 +179,7 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
             onClick={onClose}
             className="w-full md:w-auto px-6 py-2 text-text-secondary hover:text-text-main font-medium transition-colors"
           >
-            Kapat
+            {t("common.close")}
           </button>
           {onEdit && (
             <button
@@ -185,7 +187,7 @@ export default function CargoDetailModal({ cargo, onClose, onEdit }) {
               className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              Yükü Düzenle
+              {t("cargoTracking.detail.editCargo")}
             </button>
           )}
         </div>

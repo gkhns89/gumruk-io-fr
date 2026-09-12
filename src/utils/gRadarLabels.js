@@ -15,6 +15,8 @@
  * uydurmuyor — ham değeri okunur hâle getirip aynen gösteriyor.
  */
 
+import { t, getTranslationGroup } from '../locales';
+
 // ---------------------------------------------------------------- durumlar
 
 /**
@@ -22,86 +24,36 @@
  * UNTRACKED. Deniz: NEW, INPROGRESS, BOOKED, LOADED, SAILING, ARRIVED,
  * DISCHARGED, UNTRACKED.
  *
- * `short` liste hücresindeki dar rozet için, `label` detay panelindeki başlık
- * için. `tone` renk ailesini seçer.
+ * Metinler sözlükte (`gRadar.statuses.<KOD>.label` / `.short`): `short` liste
+ * hücresindeki dar rozet için, `label` detay panelindeki başlık için. Burada
+ * yalnızca görünüm kalıyor — `tone` renk ailesini, `icon` ikonu seçer.
  */
-const STATUS_LABELS = {
-  NEW: { label: 'Kayıt oluşturuldu', short: 'Yeni', tone: 'neutral', icon: 'fiber_new' },
-  INPROGRESS: { label: 'Sorgulanıyor', short: 'Sorgulanıyor', tone: 'info', icon: 'hourglass_top' },
-  BOOKED: { label: 'Rezervasyon yapıldı', short: 'Rezerve', tone: 'info', icon: 'event_available' },
+const STATUS_META = {
+  NEW: { tone: 'neutral', icon: 'fiber_new' },
+  INPROGRESS: { tone: 'info', icon: 'hourglass_top' },
+  BOOKED: { tone: 'info', icon: 'event_available' },
 
   // Deniz
-  LOADED: { label: 'Gemiye yüklendi', short: 'Yüklendi', tone: 'info', icon: 'inventory_2' },
-  SAILING: { label: 'Denizde seyir hâlinde', short: 'Denizde', tone: 'active', icon: 'directions_boat' },
-  ARRIVED: { label: 'Varış limanına ulaştı', short: 'Limanda', tone: 'success', icon: 'anchor' },
-  DISCHARGED: { label: 'Gemiden tahliye edildi', short: 'Tahliye edildi', tone: 'success', icon: 'move_down' },
+  LOADED: { tone: 'info', icon: 'inventory_2' },
+  SAILING: { tone: 'active', icon: 'directions_boat' },
+  ARRIVED: { tone: 'success', icon: 'anchor' },
+  DISCHARGED: { tone: 'success', icon: 'move_down' },
 
   // Hava
-  EN_ROUTE: { label: 'Uçuş sürüyor', short: 'Uçuşta', tone: 'active', icon: 'flight_takeoff' },
-  LANDED: { label: 'Uçak iniş yaptı', short: 'İndi', tone: 'success', icon: 'flight_land' },
-  DELIVERED: { label: 'Teslim edildi', short: 'Teslim edildi', tone: 'success', icon: 'task_alt' },
+  EN_ROUTE: { tone: 'active', icon: 'flight_takeoff' },
+  LANDED: { tone: 'success', icon: 'flight_land' },
+  DELIVERED: { tone: 'success', icon: 'task_alt' },
 
-  UNTRACKED: { label: 'Takip edilemiyor', short: 'Takipsiz', tone: 'warn', icon: 'error' },
+  UNTRACKED: { tone: 'warn', icon: 'error' },
 };
 
 /**
- * Hareket olayları. Deniz tarafı serbest metin ("Loaded on vessel"), hava
- * tarafı IATA kısaltması (RCS, DEP, RCF...) gönderiyor; ikisi de aynı
- * sözlükten karşılanıyor çünkü normalize anahtar ikisini de tek biçime indiriyor.
+ * Hareket olayları sözlükte `gRadar.events.<KOD>` altında. Deniz tarafı serbest
+ * metin ("Loaded on vessel"), hava tarafı IATA kısaltması (RCS, DEP, RCF...)
+ * gönderiyor; ikisi de aynı gruptan karşılanıyor çünkü normalize anahtar ikisini
+ * de tek biçime indiriyor.
  */
-const EVENT_LABELS = {
-  // Deniz — sağlayıcının kısa kodları.
-  // LOAD / DEPA / ARRV / DISC canlı veride birebir görüldü (17.08.2026).
-  LOAD: 'Gemiye yüklendi',
-  DEPA: 'Gemi limandan ayrıldı',
-  ARRV: 'Gemi limana vardı',
-  DISC: 'Gemiden indirildi',
-  // Aşağıdakiler aynı 4 harfli aileden çıkarım — henüz canlı veride
-  // görülmedi. Panelde farklı bir karşılığını görürsen düzeltilmeli.
-  PICK: 'Boş konteyner teslim alındı',
-  RETU: 'Boş konteyner iade edildi',
-  GTIN: 'Terminale giriş yapıldı',
-  GTOT: 'Terminalden çıkış yapıldı',
-
-  // Deniz — açık yazılmış konteyner hareketleri
-  EMPTY_TO_SHIPPER: 'Boş konteyner göndericiye verildi',
-  EMPTY_PICKUP: 'Boş konteyner teslim alındı',
-  GATE_IN: 'Terminale giriş yapıldı',
-  GATE_IN_FULL: 'Dolu konteyner terminale girdi',
-  LOADED: 'Gemiye yüklendi',
-  LOADED_ON_VESSEL: 'Gemiye yüklendi',
-  VESSEL_DEPARTURE: 'Gemi limandan ayrıldı',
-  DEPARTURE: 'Limandan ayrıldı',
-  DEPARTED: 'Limandan ayrıldı',
-  VESSEL_ARRIVAL: 'Gemi limana vardı',
-  ARRIVAL: 'Limana varıldı',
-  ARRIVED: 'Limana varıldı',
-  TRANSHIPMENT: 'Aktarma yapıldı',
-  TRANSSHIPMENT: 'Aktarma yapıldı',
-  TRANSHIPMENT_LOADED: 'Aktarma limanında gemiye yüklendi',
-  TRANSHIPMENT_DISCHARGED: 'Aktarma limanında tahliye edildi',
-  DISCHARGED: 'Gemiden indirildi',
-  DISCHARGED_FROM_VESSEL: 'Gemiden indirildi',
-  GATE_OUT: 'Terminalden çıkış yapıldı',
-  GATE_OUT_FULL: 'Dolu konteyner terminalden çıktı',
-  EMPTY_RETURN: 'Boş konteyner iade edildi',
-  EMPTY_RETURNED: 'Boş konteyner iade edildi',
-
-  // Hava — IATA kargo statü kodları
-  BKD: 'Rezervasyon yapıldı',
-  FOH: 'Kargo havayolu deposuna alındı',
-  RCS: 'Kargo göndericiden teslim alındı',
-  MAN: 'Uçuşa manifestolandı',
-  DEP: 'Uçak kalktı',
-  ARR: 'Uçak iniş yaptı',
-  RCF: 'Kargo varış havalimanında teslim alındı',
-  NFD: 'Alıcıya varış bildirimi yapıldı',
-  AWD: 'Belgeler alıcıya iletildi',
-  CLR: 'Gümrük işlemleri tamamlandı',
-  TFD: 'Bağlantı uçuşuna aktarıldı',
-  TRM: 'Aktarma yapıldı',
-  DLV: 'Kargo teslim edildi',
-};
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 /** Sözlük anahtarına indirger: "Loaded on vessel" → LOADED_ON_VESSEL. */
 function normalizeKey(value) {
@@ -123,15 +75,23 @@ function prettifyRaw(value) {
 }
 
 /**
- * Yük durumunun Türkçe karşılığı. Tanınmayan kod gelirse label/short olarak
- * ham değerin okunur hâli döner — ekranda boşluk kalmasın, ama uydurma
+ * Yük durumunun arayüz dilindeki karşılığı. Tanınmayan kod gelirse label/short
+ * olarak ham değerin okunur hâli döner — ekranda boşluk kalmasın, ama uydurma
  * çeviri de yapılmasın.
  */
 export function gRadarStatusInfo(status) {
   const key = normalizeKey(status);
   if (!key) return null;
-  const known = STATUS_LABELS[key];
-  if (known) return { ...known, raw: status, known: true };
+  const meta = STATUS_META[key];
+  if (meta) {
+    return {
+      ...meta,
+      label: t(`gRadar.statuses.${key}.label`),
+      short: t(`gRadar.statuses.${key}.short`),
+      raw: status,
+      known: true,
+    };
+  }
   const fallback = prettifyRaw(status);
   return { label: fallback, short: fallback, tone: 'neutral', icon: 'help', raw: status, known: false };
 }
@@ -141,11 +101,14 @@ export function gRadarStatusLabel(status) {
   return gRadarStatusInfo(status)?.label ?? null;
 }
 
-/** Hareket olayının Türkçe karşılığı. */
+/** Hareket olayının arayüz dilindeki karşılığı. */
 export function gRadarEventLabel(event) {
   const key = normalizeKey(event);
   if (!key) return null;
-  return EVENT_LABELS[key] ?? prettifyRaw(event);
+  // Sözlükte olup olmadığına önce bakıyoruz: t() eksik anahtarda uyarı basıp
+  // anahtarın kendisini döndürür, oysa burada bilinmeyen kod olağan bir durum.
+  const labels = getTranslationGroup('gRadar.events');
+  return hasOwn(labels, key) ? labels[key] : prettifyRaw(event);
 }
 
 // ---------------------------------------------------------- hareket geçmişi
@@ -284,7 +247,7 @@ function normalizeMovement(raw, index) {
   return {
     key: `${index}-${timestamp ? timestamp.getTime() : 'x'}`,
     event: eventSource ?? null,
-    eventLabel: gRadarEventLabel(eventSource) ?? 'Hareket',
+    eventLabel: gRadarEventLabel(eventSource) ?? t('gRadar.movementFallback'),
     location: readLocation(pick(raw, 'location', 'port', 'place', 'city')),
     vehicle: readVehicle(raw),
     voyage: readText(pick(raw, 'voyage', 'voyage_number', 'voyage_no')),
@@ -374,7 +337,7 @@ export function extractMovementGroups(routeJson) {
       if (movements.length === 0) return;
       groups.push({
         containerNumber: pick(container, 'container_number', 'number', 'containerNumber', 'name')
-          ?? `Konteyner ${containerIndex + 1}`,
+          ?? t('gRadar.containerFallback', { index: containerIndex + 1 }),
         movements,
       });
     });

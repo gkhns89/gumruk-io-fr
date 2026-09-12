@@ -8,11 +8,12 @@ import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import TagInput from '../common/TagInput';
-import { t } from '../../locales';
+import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
+  const locale = getCurrentLocale();
   const isAdmin = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(currentUser?.globalRole);
 
   // Admins can edit vehicle type and client company
@@ -44,15 +45,15 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
   const handleCancelMyRequest = async (requestId) => {
     const ok = await confirmDialog({
-      title: 'G-Radar talebini iptal et',
-      message: 'Bekleyen G-Radar entegrasyon talebinizi iptal etmek istiyor musunuz?',
+      title: t('cargoTracking.requests.cancelTitle'),
+      message: t('cargoTracking.requests.cancelMessage'),
       intent: 'warning',
-      confirmText: 'Talebi iptal et',
+      confirmText: t('cargoTracking.requests.cancelConfirm'),
     });
     if (!ok) return;
     const res = await gRadarService.cancelRequest(requestId);
     if (res.success) {
-      showSuccess('Talep iptal edildi');
+      showSuccess(t('cargoTracking.requests.cancelled'));
       loadRequests();
     } else {
       showError(res.error);
@@ -64,7 +65,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     const res = await gRadarService.requestEnable(cargo.id, { notes: reRequestNotes.trim() || null });
     setReRequesting(false);
     if (res.success) {
-      showSuccess('Yeni talep gönderildi');
+      showSuccess(t('cargoTracking.requests.resent'));
       setReRequestNotes('');
       loadRequests();
       onSuccess?.();
@@ -79,55 +80,55 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   const [enablingNow, setEnablingNow] = useState(false);
   const handleEnableNow = async () => {
     const ok = await confirmDialog({
-      title: 'G-Radar entegrasyonunu aç',
-      message: 'Bu yük için G-Radar entegrasyonu aktive edilecek.',
+      title: t('cargoTracking.gRadarActions.enableTitle'),
+      message: t('cargoTracking.gRadarActions.enableMessage', { identifier: t('cargoTracking.common.thisCargo') }),
       details: [
-        'Bu adımda kredi tüketilmez.',
-        'Açıldıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).',
+        t('cargoTracking.gRadarActions.noCreditSpent'),
+        t('cargoTracking.gRadarActions.fetchLaterHint'),
       ],
       intent: 'primary',
       icon: 'travel_explore',
-      confirmText: 'G-Radar\'ı aç',
+      confirmText: t('cargoTracking.gRadarActions.enableConfirm'),
     });
     if (!ok) return;
     setEnablingNow(true);
     const res = await gRadarService.enable(cargo.id);
     setEnablingNow(false);
     if (res.success) {
-      showSuccess('G-Radar entegrasyonu açıldı');
+      showSuccess(t('cargoTracking.gRadarActions.enabled'));
       onSuccess?.();
       onClose?.();
     } else {
-      showError(res.error || 'G-Radar açılamadı');
+      showError(res.error || t('cargoTracking.gRadarActions.enableError'));
     }
   };
 
   const handleResetOverride = async (fieldName) => {
     const labels = {
-      estimatedArrivalDate: 'Tahmini Varış Tarihi',
-      cargoArrivalDate: 'Gerçek Varış Tarihi',
+      estimatedArrivalDate: t('cargoTracking.requests.fieldEta'),
+      cargoArrivalDate: t('cargoTracking.requests.fieldArrival'),
     };
     const label = labels[fieldName] || fieldName;
     const ok = await confirmDialog({
-      title: `${label} alanını G-Radar'a bırak`,
-      message: `${label} alanını yeniden G-Radar kontrolüne vermek istiyor musunuz?`,
+      title: t('cargoTracking.requests.resetTitle', { label }),
+      message: t('cargoTracking.requests.resetMessage', { label }),
       details: [
-        'Bir sonraki güncellemede alan G-Radar değeriyle değişir',
-        'Manuel kilit kaldırılır',
+        t('cargoTracking.requests.resetDetailNextSync'),
+        t('cargoTracking.requests.resetDetailUnlock'),
       ],
       intent: 'primary',
       icon: 'restart_alt',
-      confirmText: 'G-Radar\'a bırak',
+      confirmText: t('cargoTracking.requests.resetConfirm'),
     });
     if (!ok) return;
     const res = await gRadarService.resetOverride(cargo.id, fieldName);
     if (res.success) {
       setOverrideList(prev => prev.filter(f => f !== fieldName));
-      showSuccess(`${labels[fieldName] || fieldName} G-Radar kontrolüne bırakıldı`);
+      showSuccess(t('cargoTracking.requests.resetSuccess', { label }));
       // Tell the parent to re-read so the just-resynced value shows up.
       onSuccess?.();
     } else {
-      showError(res.error || 'İşlem başarısız');
+      showError(res.error || t('cargoTracking.requests.actionFailed'));
     }
   };
 
@@ -447,7 +448,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     e.preventDefault();
 
     if (isReadOnly) {
-      showError('Bu kaydı düzenleme yetkiniz yok');
+      showError(t('cargoTracking.form.noEditPermission'));
       return;
     }
 
@@ -470,13 +471,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       const result = await cargoService.updateCargo(cargo.id, dataToSend);
 
       if (result.success) {
-        showSuccess('Yük kaydı başarıyla güncellendi!');
+        showSuccess(t('cargoTracking.form.updateSuccess'));
         onSuccess();
       } else {
         handleApiResponse(result, null, (err) => showError(err), 'cargo update');
       }
     } catch (err) {
-      handleError(err, (err) => showError(err), 'cargo update', 'Yük kaydı güncellenirken hata oluştu.');
+      handleError(err, (err) => showError(err), 'cargo update', t('cargoTracking.form.updateError'));
     } finally {
       setLoading(false);
     }
@@ -498,7 +499,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {isReadOnly ? 'visibility' : 'edit'}
             </span>
             <h2 className="text-2xl font-bold text-text-main">
-              {isReadOnly ? 'Yük Detayları' : 'Yük Düzenle'}
+              {isReadOnly ? t('cargoTracking.common.cargoDetails') : t('cargo.edit')}
             </h2>
           </div>
           <button
@@ -535,10 +536,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             <div className="mb-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">draft</span>
-                Bu kayıt taslak durumunda
+                {t('cargoTracking.form.draftTitle')}
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                Tüm zorunlu alanları doldurup kaydettiğinizde aktif yük olarak işaretlenecek.
+                {t('cargoTracking.form.draftHint')}
               </p>
             </div>
           )}
@@ -547,7 +548,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           <div className="mb-6">
             <div className="flex items-center justify-between pb-2">
               <p className="text-sm font-medium text-text-main">
-                Araç Tipi {!canEditVehicleType && '(Değiştirilemez)'}
+                {t('cargo.fields.vehicleType')} {!canEditVehicleType && t('cargoTracking.form.notEditable')}
               </p>
             </div>
             {canEditVehicleType ? (
@@ -595,10 +596,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           {/* Buyer Company */}
           <div className="mb-6">
             <p className="text-sm font-medium text-text-main pb-2">
-              Alıcı Firma {!canEditClientCompany && '(Değiştirilemez)'}
+              {t('cargo.fields.clientCompany')} {!canEditClientCompany && t('cargoTracking.form.notEditable')}
               {loadingClients && (
                 <span className="text-xs text-blue-600 ml-2 animate-pulse">
-                  Yükleniyor...
+                  {t('common.loading')}
                 </span>
               )}
             </p>
@@ -688,7 +689,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                                       check_circle
                                     </span>
                                     <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                                      {client.agreementStatus === 'ACTIVE' ? 'Aktif Vekalet' : 'Vekalet Var'}
+                                      {client.agreementStatus === 'ACTIVE' ? t('cargoTracking.form.activeAgreement') : t('cargoTracking.form.hasAgreement')}
                                     </span>
                                   </div>
                                 )}
@@ -698,7 +699,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                                       warning
                                     </span>
                                     <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
-                                      Vekalet Yok
+                                      {t('transactions.form.noAgreement')}
                                     </span>
                                   </div>
                                 )}
@@ -714,7 +715,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                       ))
                     ) : (
                       <div className="p-4 text-center text-text-secondary text-sm">
-                        Müşteri bulunamadı
+                        {t('cargoTracking.form.noClients')}
                       </div>
                     )}
                   </div>
@@ -730,7 +731,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             )}
             {!canEditClientCompany && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Alıcı firma sadece yöneticiler tarafından değiştirilebilir
+                {t('cargoTracking.form.clientAdminOnly')}
               </p>
             )}
           </div>
@@ -741,12 +742,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             <div className="flex flex-col w-full">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Gönderici Firma
+                  {t('cargo.fields.senderCompany')}
                   {loadingSenders && (
-                    <span className="text-xs text-blue-600 ml-2 animate-pulse">Yükleniyor...</span>
+                    <span className="text-xs text-blue-600 ml-2 animate-pulse">{t('common.loading')}</span>
                   )}
                   {!loadingSenders && availableSenders.length > 0 && (
-                    <span className="text-xs text-gray-500 ml-2">({availableSenders.length} kayıtlı)</span>
+                    <span className="text-xs text-gray-500 ml-2">{t('transactions.form.savedCount', { count: availableSenders.length })}</span>
                   )}
                 </p>
               </div>
@@ -772,7 +773,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                       onFocus={() => setShowSenderDropdown(true)}
                       onBlur={() => { setTimeout(() => setShowSenderDropdown(false), 200); }}
                       onKeyDown={senderKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                       className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
                       style={{ textTransform: "uppercase" }}
                     />
@@ -813,7 +814,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                         ))
                       ) : (
                         <div className="p-4 text-center text-text-secondary text-sm">
-                          {senderSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı gönderici yok'}
+                          {senderSearchTerm ? t('cargoTracking.form.notFoundTypeToAdd') : t('cargoTracking.form.noSenders')}
                         </div>
                       )}
                     </div>
@@ -826,12 +827,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             <div className="flex flex-col w-full">
               <div className="flex items-center justify-between pb-2">
                 <p className="text-text-main text-sm font-medium">
-                  Nakliyeci
+                  {t('cargo.fields.carrierName')}
                   {loadingCarriers && (
-                    <span className="text-xs text-blue-600 ml-2 animate-pulse">Yükleniyor...</span>
+                    <span className="text-xs text-blue-600 ml-2 animate-pulse">{t('common.loading')}</span>
                   )}
                   {!loadingCarriers && availableCarriers.length > 0 && (
-                    <span className="text-xs text-gray-500 ml-2">({availableCarriers.length} kayıtlı)</span>
+                    <span className="text-xs text-gray-500 ml-2">{t('transactions.form.savedCount', { count: availableCarriers.length })}</span>
                   )}
                 </p>
               </div>
@@ -857,7 +858,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                       onFocus={() => setShowCarrierDropdown(true)}
                       onBlur={() => { setTimeout(() => setShowCarrierDropdown(false), 200); }}
                       onKeyDown={carrierKeyboard.handleKeyDown}
-                      placeholder={toUpperCase(t("placeholders.selectOrType"))}
+                      placeholder={t("placeholders.selectOrType").toLocaleUpperCase(locale)}
                       className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 border-neutral/30 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 pr-20 text-base font-normal transition-colors"
                       style={{ textTransform: "uppercase" }}
                     />
@@ -898,7 +899,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                         ))
                       ) : (
                         <div className="p-4 text-center text-text-secondary text-sm">
-                          {carrierSearchTerm ? 'Bulunamadı (yazarak yeni ekleyebilirsiniz)' : 'Kayıtlı nakliyeci yok'}
+                          {carrierSearchTerm ? t('cargoTracking.form.notFoundTypeToAdd') : t('cargoTracking.form.noCarriers')}
                         </div>
                       )}
                     </div>
@@ -909,7 +910,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
             <div>
               <label className="block text-sm font-medium text-text-main pb-2">
-                Kap Sayısı
+                {t('cargo.fields.containerCount')}
               </label>
               <input
                 type="number"
@@ -918,14 +919,14 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 onChange={handleChange}
                 disabled={isReadOnly}
                 min="0"
-                placeholder={toUpperCase(t("placeholders.enterContainerCount"))}
+                placeholder={t("placeholders.enterContainerCount").toLocaleUpperCase(locale)}
                 className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-text-main pb-2">
-                Ağırlık (kg)
+                {t('cargo.fields.weight')}
               </label>
               <input
                 type="number"
@@ -935,19 +936,19 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 disabled={isReadOnly}
                 step="0.01"
                 min="0"
-                placeholder={toUpperCase(t("placeholders.enterWeight"))}
+                placeholder={t("placeholders.enterWeight").toLocaleUpperCase(locale)}
                 className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               />
             </div>
 
             {/* Costs Section - Lokal, Depozito, Ordino */}
             <div className="col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-              <h3 className="text-base font-semibold text-text-main mb-4">Masraflar</h3>
+              <h3 className="text-base font-semibold text-text-main mb-4">{t('cargoTracking.common.costs')}</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Lokal Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Lokal Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.lokalCosts')}</label>
                   <input
                     type="number"
                     name="lokalAmount"
@@ -976,7 +977,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
                 {/* Depozito Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Depozito Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.depositoCosts')}</label>
                   <input
                     type="number"
                     name="depositoAmount"
@@ -1005,7 +1006,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
                 {/* Ordino Masrafı */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-main">Ordino Masrafı</label>
+                  <label className="text-sm font-medium text-text-main">{t('cargo.fields.ordinoCosts')}</label>
                   <input
                     type="number"
                     name="ordinoAmount"
@@ -1038,13 +1039,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           {/* Vehicle-specific fields */}
           <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
             <h3 className="text-sm font-medium text-text-main mb-3">
-              {vehicleTypeInfo?.displayName} Bilgileri
+              {t('cargoTracking.form.vehicleDetails', { vehicle: vehicleTypeInfo?.displayName })}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {vehicleTypeInfo?.fields.includes("licensePlate") && (
                 <div>
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Plaka
+                    {t('cargo.fields.licensePlate')}
                   </label>
                   <input
                     type="text"
@@ -1052,7 +1053,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                     value={formData.licensePlate}
                     onChange={handleChange}
                     disabled={isReadOnly}
-                    placeholder={toUpperCase(t("placeholders.enterLicensePlate"))}
+                    placeholder={t("placeholders.enterLicensePlate").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1062,7 +1063,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {vehicleTypeInfo?.fields.includes("consignmentNumber") && (
                 <div>
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Konşimento
+                    {t('cargo.fields.consignmentNumber')}
                   </label>
                   <input
                     type="text"
@@ -1070,7 +1071,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                     value={formData.consignmentNumber}
                     onChange={handleChange}
                     disabled={isReadOnly}
-                    placeholder={toUpperCase(t("placeholders.enterConsignmentNumber"))}
+                    placeholder={t("placeholders.enterConsignmentNumber").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1080,7 +1081,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {vehicleTypeInfo?.fields.includes("billOfLading") && (
                 <div>
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    B/L
+                    {t('cargoTracking.common.billOfLading')}
                   </label>
                   <input
                     type="text"
@@ -1088,7 +1089,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                     value={formData.billOfLading}
                     onChange={handleChange}
                     disabled={isReadOnly}
-                    placeholder={toUpperCase(t("placeholders.enterBillOfLading"))}
+                    placeholder={t("placeholders.enterBillOfLading").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1098,9 +1099,9 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {vehicleTypeInfo?.fields.includes("containerNumbers") && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Konteyner Numaraları <span className="text-red-500">*</span>
+                    {t('cargo.fields.containerNumbers')} <span className="text-red-500">*</span>
                     <span className="text-xs text-gray-500 ml-2">
-                      (Enter ile ekleyin)
+                      {t('cargoTracking.form.pressEnterToAdd')}
                     </span>
                   </label>
                   <TagInput
@@ -1109,7 +1110,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                       ...prev,
                       containerNumbers: newContainers
                     }))}
-                    placeholder={toUpperCase(t("placeholders.enterContainerNumber"))}
+                    placeholder={t("placeholders.enterContainerNumber").toLocaleUpperCase(locale)}
                     uppercase={true}
                     maxLength={50}
                     disabled={isReadOnly}
@@ -1123,13 +1124,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           <div className="mb-5 border border-blue-200 dark:border-blue-800/60 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800/60">
               <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-lg">calendar_month</span>
-              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Takvim & Takip</h3>
-              <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">ETA ve nakliye notları</span>
+              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">{t('cargoTracking.form.scheduleTitle')}</h3>
+              <span className="ml-auto text-xs text-blue-500 dark:text-blue-400">{t('cargoTracking.form.scheduleHint')}</span>
             </div>
             <div className="p-4 grid grid-cols-1 gap-4">
               <div>
                 <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
-                  <span>Tahmini Varış Tarihi (ETA)</span>
+                  <span>{t('cargo.fields.estimatedArrivalDate')}</span>
                   <GRadarFieldBadge
                     gRadarActive={gRadarActive}
                     overridden={isFieldOverridden('estimatedArrivalDate')}
@@ -1148,13 +1149,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 {cargo.initialEstimatedArrivalDate && cargo.initialEstimatedArrivalDate !== formData.estimatedArrivalDate && (
                   <div className="flex items-center gap-1 mt-1.5 text-xs text-blue-600 dark:text-blue-400">
                     <span className="material-symbols-outlined text-sm">info</span>
-                    <span>İlk ETA: {new Date(cargo.initialEstimatedArrivalDate).toLocaleDateString('tr-TR')} — gecikme hesabı bu tarihe göre yapılır</span>
+                    <span>{t('cargoTracking.form.initialEtaNote', { date: new Date(cargo.initialEstimatedArrivalDate).toLocaleDateString(locale) })}</span>
                   </div>
                 )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-main pb-2">
-                  Taşıma Bilgileri
+                  {t('cargo.fields.transportInfo')}
                 </label>
                 <textarea
                   name="transportInfo"
@@ -1162,7 +1163,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                   onChange={handleChange}
                   disabled={isReadOnly}
                   rows="3"
-                  placeholder={toUpperCase(t("placeholders.enterTransportInfo"))}
+                  placeholder={t("placeholders.enterTransportInfo").toLocaleUpperCase(locale)}
                   className="form-textarea w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-neutral/30 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                 />
               </div>
@@ -1173,7 +1174,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           <div className="mb-5 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-lg">payments</span>
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ödeme Durumu</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('cargo.fields.paymentStatus')}</h3>
             </div>
             <div className="p-4">
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1209,12 +1210,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           <div className="mb-5 border border-amber-200 dark:border-amber-700/60 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/60">
               <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg">directions_boat</span>
-              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Varış İşlemleri</h3>
-              <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Varış tarihi → VARIŞ YAPTI</span>
+              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">{t('cargoTracking.form.arrivalTitle')}</h3>
+              <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">{t('cargoTracking.form.arrivalHint', { status: t('cargo.status.arrived').toLocaleUpperCase(locale) })}</span>
             </div>
             <div className="p-4">
               <label className="flex items-center justify-between text-sm font-medium text-text-main pb-2">
-                <span>Varış Tarihi</span>
+                <span>{t('cargo.fields.cargoArrivalDate')}</span>
                 <GRadarFieldBadge
                   gRadarActive={gRadarActive}
                   overridden={isFieldOverridden('cargoArrivalDate')}
@@ -1233,13 +1234,13 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {formData.cargoArrivalDate && !cargo.cargoArrivalDate && cargo.status === 'TRACKING' && (
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
                   <span className="material-symbols-outlined text-sm">info</span>
-                  <span>Kaydedildiğinde yük <strong>VARIŞ YAPTI</strong> olarak işaretlenecek</span>
+                  <span>{t('cargoTracking.form.markedAsBefore')} <strong>{t('cargo.status.arrived').toLocaleUpperCase(locale)}</strong>{t('cargoTracking.form.markedAsAfter')}</span>
                 </div>
               )}
               {cargo.cargoArrivalDate && (
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
                   <span className="material-symbols-outlined text-sm">lock</span>
-                  <span>Varış tarihi kaydedilmiş, değiştirilemez</span>
+                  <span>{t('cargoTracking.form.arrivalLocked')}</span>
                 </div>
               )}
             </div>
@@ -1249,14 +1250,14 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           <div className="mb-5 border border-emerald-200 dark:border-emerald-700/60 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-700/60">
               <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg">task_alt</span>
-              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Yük İşlemini Tamamlama</h3>
-              <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Evrak tipi + tarih → TAMAMLANDI</span>
+              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t('cargoTracking.form.completionTitle')}</h3>
+              <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">{t('cargoTracking.form.completionHint', { status: t('cargo.status.completed').toLocaleUpperCase(locale) })}</span>
             </div>
             <div className="p-4 space-y-4">
 
               {/* Evrak Teslim Tipi Seçimi */}
               <div>
-                <label className="block text-sm font-medium text-text-main pb-2">Evrak Teslim Tipi</label>
+                <label className="block text-sm font-medium text-text-main pb-2">{t('cargoTracking.form.documentDeliveryType')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {DOCUMENT_DELIVERY_TYPES.map(type => (
                     <button
@@ -1286,10 +1287,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               </div>
 
               {/* Şahıs Adı - yalnızca requiresPersonName=true tiplerinde */}
-              {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(t => t.value === formData.documentDeliveryType)?.requiresPersonName && (
+              {formData.documentDeliveryType && DOCUMENT_DELIVERY_TYPES.find(dt => dt.value === formData.documentDeliveryType)?.requiresPersonName && (
                 <div>
                   <label className="block text-sm font-medium text-text-main pb-2">
-                    Evrakları Teslim Alan
+                    {t('cargoTracking.form.documentsReceivedBy')}
                   </label>
                   <input
                     type="text"
@@ -1297,7 +1298,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                     value={formData.documentReceiver}
                     onChange={handleChange}
                     disabled={isReadOnly}
-                    placeholder={toUpperCase(t("placeholders.enterDocumentReceiver"))}
+                    placeholder={t("placeholders.enterDocumentReceiver").toLocaleUpperCase(locale)}
                     className="form-input w-full rounded-lg text-text-main dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-emerald-500 border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 h-12 placeholder:text-neutral p-3 text-base font-normal transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                     style={{ textTransform: "uppercase" }}
                   />
@@ -1307,7 +1308,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {/* Dosya Teslim Tarihi */}
               <div>
                 <label className="block text-sm font-medium text-text-main pb-2">
-                  Dosya Teslim Tarihi
+                  {t('cargo.fields.documentDeliveryDate')}
                 </label>
                 <input
                   type="date"
@@ -1322,7 +1323,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {cargo.status === 'ARRIVED' && formData.documentDeliveryType && formData.documentDeliveryDate && !cargo.documentDeliveryDate && (
                 <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg px-3 py-2">
                   <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span>Kaydedildiğinde yük <strong>TAMAMLANDI</strong> olarak işaretlenecek</span>
+                  <span>{t('cargoTracking.form.markedAsBefore')} <strong>{t('cargo.status.completed').toLocaleUpperCase(locale)}</strong>{t('cargoTracking.form.markedAsAfter')}</span>
                 </div>
               )}
             </div>
@@ -1337,7 +1338,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             disabled={loading}
             className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            {isReadOnly ? 'Kapat' : 'İptal'}
+            {isReadOnly ? t('common.close') : t('common.cancel')}
           </button>
           {!isReadOnly && (
             <button
@@ -1349,12 +1350,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Güncelleniyor...</span>
+                  <span>{t('cargoTracking.form.updating')}</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined text-lg">save</span>
-                  <span>Güncelle</span>
+                  <span>{t('common.update')}</span>
                 </>
               )}
             </button>
@@ -1379,9 +1380,9 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                   warning
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-text-main">Araç Tipi Değişikliği</h3>
+                  <h3 className="text-xl font-bold text-text-main">{t('cargoTracking.form.vehicleChangeTitle')}</h3>
                   <p className="text-text-secondary text-sm mt-1">
-                    Girilen veriler silinecektir
+                    {t('cargoTracking.form.vehicleChangeSubtitle')}
                   </p>
                 </div>
               </div>
@@ -1390,26 +1391,26 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             {/* Body */}
             <div className="p-6">
               <p className="text-text-main text-sm">
-                Araç tipini değiştirdiğinizde <strong>{VEHICLE_TYPES.find(t => t.value === formData.vehicleType)?.displayName}</strong> için girilen aşağıdaki alanlar silinecektir:
+                {t('cargoTracking.form.vehicleChangeBefore')} <strong>{VEHICLE_TYPES.find(vt => vt.value === formData.vehicleType)?.displayName}</strong>{t('cargoTracking.form.vehicleChangeAfter')}
               </p>
               <div className="mt-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
                 <ul className="list-disc list-inside text-sm text-text-main space-y-1">
                   {formData.vehicleType === 'SHIP' && (
                     <>
-                      <li>B/L Numarası{formData.billOfLading && `: ${formData.billOfLading}`}</li>
-                      <li>Konteyner Numaraları{formData.containerNumbers?.length > 0 && ` (${formData.containerNumbers.length} adet)`}</li>
+                      <li>{t('cargo.fields.billOfLading')}{formData.billOfLading && `: ${formData.billOfLading}`}</li>
+                      <li>{t('cargo.fields.containerNumbers')}{formData.containerNumbers?.length > 0 && ` ${t('cargoTracking.form.containerCountSuffix', { count: formData.containerNumbers.length })}`}</li>
                     </>
                   )}
                   {formData.vehicleType === 'TRUCK' && (
-                    <li>Plaka{formData.licensePlate && `: ${formData.licensePlate}`}</li>
+                    <li>{t('cargo.fields.licensePlate')}{formData.licensePlate && `: ${formData.licensePlate}`}</li>
                   )}
                   {formData.vehicleType === 'AIRPLANE' && (
-                    <li>Konşimento Numarası{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
+                    <li>{t('cargoTracking.form.consignmentNumberLong')}{formData.consignmentNumber && `: ${formData.consignmentNumber}`}</li>
                   )}
                 </ul>
               </div>
               <p className="text-text-secondary text-sm mt-3">
-                Devam etmek istediğinize emin misiniz?
+                {t('cargoTracking.form.confirmContinue')}
               </p>
             </div>
 
@@ -1420,7 +1421,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 onClick={cancelVehicleTypeChange}
                 className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                Vazgeç
+                {t('confirmModal.cancel')}
               </button>
               <button
                 type="button"
@@ -1428,7 +1429,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
                 className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow-md"
               >
                 <span className="material-symbols-outlined text-lg">check</span>
-                <span>Devam Et</span>
+                <span>{t('cargoTracking.form.continue')}</span>
               </button>
             </div>
           </div>
@@ -1490,10 +1491,10 @@ function GRadarRequestBanner({
             <div className="flex-1 min-w-[200px]">
               <p className="text-sm font-semibold text-text-main flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
-                G-Radar entegrasyonu bu yük için kapalı
+                {t('cargoTracking.requests.offTitle')}
               </p>
               <p className="text-xs text-text-secondary mt-1">
-                Açtığınızda kredi tüketilmez. Açtıktan sonra tablodan "Bilgileri Getir" ile veriler çekilebilir (1 kredi).
+                {t('cargoTracking.requests.offAdminHint')}
               </p>
             </div>
             <button
@@ -1502,7 +1503,7 @@ function GRadarRequestBanner({
               disabled={enablingNow}
               className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
             >
-              {enablingNow ? 'Açılıyor...' : 'G-Radar\'ı Aç'}
+              {enablingNow ? t('cargoTracking.common.enabling') : t('cargoTracking.common.enableGRadar')}
             </button>
           </div>
         </div>
@@ -1513,10 +1514,10 @@ function GRadarRequestBanner({
       <div className="mb-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 p-4">
         <p className="text-sm font-semibold text-text-main flex items-center gap-2">
           <span className="material-symbols-outlined text-base text-text-secondary">travel_explore</span>
-          G-Radar entegrasyonu bu yük için kapalı
+          {t('cargoTracking.requests.offTitle')}
         </p>
         <p className="text-xs text-text-secondary mt-1">
-          Açma yetkisi yöneticinizde — talep gönderebilirsiniz.
+          {t('cargoTracking.requests.offUserHint')}
         </p>
         <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <input
@@ -1524,7 +1525,7 @@ function GRadarRequestBanner({
             maxLength={500}
             value={reRequestNotes}
             onChange={(e) => setReRequestNotes(e.target.value)}
-            placeholder="Talep notu (opsiyonel)"
+            placeholder={t('cargoTracking.requests.notePlaceholder')}
             className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
@@ -1533,7 +1534,7 @@ function GRadarRequestBanner({
             disabled={reRequesting}
             className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
           >
-            {reRequesting ? 'Gönderiliyor...' : 'Talep Gönder'}
+            {reRequesting ? t('cargoTracking.common.sending') : t('cargoTracking.requests.send')}
           </button>
         </div>
       </div>
@@ -1561,10 +1562,10 @@ function GRadarRequestBanner({
           <div className="flex-1 min-w-[200px]">
             <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
               <span className="material-symbols-outlined text-base">schedule</span>
-              G-Radar entegrasyon talebiniz yöneticinizin onayını bekliyor
+              {t('cargoTracking.requests.pendingTitle')}
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-              Talep tarihi: {new Date(latest.requestedAt).toLocaleString('tr-TR')}
+              {t('cargoTracking.requests.requestedAt', { date: new Date(latest.requestedAt).toLocaleString(getCurrentLocale()) })}
               {latest.notes && <> · "{latest.notes}"</>}
             </p>
           </div>
@@ -1572,7 +1573,7 @@ function GRadarRequestBanner({
             onClick={() => onCancel(latest.id)}
             className="px-3 py-1.5 text-xs border border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
           >
-            Talebi iptal et
+            {t('cargoTracking.requests.cancelConfirm')}
           </button>
         </div>
         {/* unused but kept linked: isOwner is a placeholder if we later want
@@ -1587,20 +1588,23 @@ function GRadarRequestBanner({
       <div className="mb-4 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4">
         <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
           <span className="material-symbols-outlined text-base">cancel</span>
-          G-Radar entegrasyon talebiniz reddedildi
+          {t('cargoTracking.requests.rejectedTitle')}
         </p>
         {latest.rejectionReason && (
           <p className="text-xs text-red-700 dark:text-red-400 mt-1 italic">
-            Gerekçe: "{latest.rejectionReason}"
+            {t('cargoTracking.requests.rejectionReason', { reason: latest.rejectionReason })}
           </p>
         )}
         {latest.reviewedByEmail && (
           <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">
-            {latest.reviewedByEmail} tarafından · {new Date(latest.reviewedAt).toLocaleString('tr-TR')}
+            {t('cargoTracking.requests.reviewedBy', {
+              email: latest.reviewedByEmail,
+              date: new Date(latest.reviewedAt).toLocaleString(getCurrentLocale()),
+            })}
           </p>
         )}
         <p className="text-xs text-red-700 dark:text-red-400 mt-2">
-          Bilgileri elle girmeye devam edebilir veya yeniden talep gönderebilirsiniz.
+          {t('cargoTracking.requests.rejectedHint')}
         </p>
         <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <input
@@ -1608,7 +1612,7 @@ function GRadarRequestBanner({
             maxLength={500}
             value={reRequestNotes}
             onChange={(e) => setReRequestNotes(e.target.value)}
-            placeholder="Yeni talebe iletmek istediğiniz not (opsiyonel)"
+            placeholder={t('cargoTracking.requests.newNotePlaceholder')}
             className="flex-1 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           <button
@@ -1616,7 +1620,7 @@ function GRadarRequestBanner({
             disabled={reRequesting}
             className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
           >
-            {reRequesting ? 'Gönderiliyor...' : 'Tekrar Talep Et'}
+            {reRequesting ? t('cargoTracking.common.sending') : t('cargoTracking.requests.resend')}
           </button>
         </div>
       </div>
@@ -1628,10 +1632,10 @@ function GRadarRequestBanner({
       <div className="mb-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
           <span className="material-symbols-outlined text-base">check_circle</span>
-          G-Radar talebiniz onaylandı ama bu yük için entegrasyon kapalı
+          {t('cargoTracking.requests.approvedOffTitle')}
         </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
-          Yeniden açmak için yeni bir talep gönderebilirsiniz.
+          {t('cargoTracking.requests.approvedOffHint')}
         </p>
         <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <input
@@ -1639,7 +1643,7 @@ function GRadarRequestBanner({
             maxLength={500}
             value={reRequestNotes}
             onChange={(e) => setReRequestNotes(e.target.value)}
-            placeholder="Talep notu (opsiyonel)"
+            placeholder={t('cargoTracking.requests.notePlaceholder')}
             className="flex-1 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button
@@ -1647,7 +1651,7 @@ function GRadarRequestBanner({
             disabled={reRequesting}
             className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
           >
-            {reRequesting ? 'Gönderiliyor...' : 'Tekrar Talep Et'}
+            {reRequesting ? t('cargoTracking.common.sending') : t('cargoTracking.requests.resend')}
           </button>
         </div>
       </div>
@@ -1663,19 +1667,19 @@ function GRadarFieldBadge({ gRadarActive, overridden, canManage, onReset }) {
     return (
       <span
         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[11px] font-medium"
-        title="Manuel olarak girildi — G-Radar bu alanı güncellemiyor"
+        title={t('cargoTracking.requests.manualHint')}
       >
         <span className="material-symbols-outlined text-sm">lock</span>
-        Manuel
+        {t('cargoTracking.requests.manual')}
         {canManage && (
           <button
             type="button"
             onClick={onReset}
             className="ml-1 inline-flex items-center gap-0.5 hover:opacity-80 transition-opacity"
-            title="Alanı tekrar G-Radar kontrolüne bırak"
+            title={t('cargoTracking.requests.resetHint')}
           >
             <span className="material-symbols-outlined text-sm">restart_alt</span>
-            G-Radar'a bırak
+            {t('cargoTracking.requests.resetConfirm')}
           </button>
         )}
       </span>
@@ -1684,10 +1688,10 @@ function GRadarFieldBadge({ gRadarActive, overridden, canManage, onReset }) {
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium"
-      title="Bu alan G-Radar tarafından güncelleniyor — değiştirirseniz manuel kontrole alınır"
+      title={t('cargoTracking.requests.managedHint')}
     >
       <span className="material-symbols-outlined text-sm">travel_explore</span>
-      G-Radar güncelliyor
+      {t('cargoTracking.requests.managed')}
     </span>
   );
 }

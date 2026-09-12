@@ -9,6 +9,7 @@ import {
   computeBounds,
   bearingToDestination,
 } from '../../utils/gRadarRoute';
+import { t } from '../../locales';
 
 /**
  * Compact MapLibre map for the G-Radar drawer. Renders a cargo's route
@@ -84,7 +85,7 @@ export default function CargoMap({
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     } catch (e) {
-      setError(e.message || 'Harita yüklenemedi');
+      setError(e.message || t('cargoTracking.map.loadError'));
       return undefined;
     }
 
@@ -140,7 +141,7 @@ export default function CargoMap({
       // Tile-fetch failures (network, key expired, etc) show through here —
       // we leak just enough to the user so they know it's the map, not the
       // data.
-      const msg = e?.error?.message || 'Harita kaynağı yüklenemedi';
+      const msg = e?.error?.message || t('cargoTracking.map.sourceError');
       setError(msg);
     });
 
@@ -186,10 +187,10 @@ export default function CargoMap({
             map
           </span>
           <p className="text-xs text-text-secondary mt-1">
-            Harita verisi henüz çekilmedi
+            {t('cargoTracking.map.noData')}
           </p>
           <p className="text-[11px] text-text-secondary mt-0.5 opacity-70">
-            G-Radar'dan rota bilgisi geldiğinde burada görünecek.
+            {t('cargoTracking.map.noDataHint')}
           </p>
         </div>
       </div>
@@ -212,7 +213,7 @@ export default function CargoMap({
           <span className="material-symbols-outlined text-sm">
             {view === 'vehicle' ? 'zoom_out_map' : 'my_location'}
           </span>
-          {view === 'vehicle' ? 'Rotanın tamamı' : 'Araca dön'}
+          {view === 'vehicle' ? t('cargoTracking.map.fullRoute') : t('cargoTracking.map.backToVehicle')}
         </button>
       )}
 
@@ -344,7 +345,7 @@ function pinHtml(kind, label) {
     return `
       <div style="display:flex;flex-direction:column;align-items:center;">
         <div style="background:#10b981;color:#fff;font-size:10px;padding:2px 6px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.3);">
-          ${safeLabel || 'Çıkış'}
+          ${safeLabel || t('cargoTracking.map.origin')}
         </div>
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #10b981;"></div>
       </div>`;
@@ -353,7 +354,7 @@ function pinHtml(kind, label) {
     return `
       <div style="display:flex;flex-direction:column;align-items:center;">
         <div style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.3);">
-          ${safeLabel || 'Varış'}
+          ${safeLabel || t('cargoTracking.map.destination')}
         </div>
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #ef4444;"></div>
       </div>`;

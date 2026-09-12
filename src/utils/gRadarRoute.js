@@ -9,6 +9,8 @@
  * yazı birbirini tutmuyor.
  */
 
+import { t, getCurrentLocale } from '../locales';
+
 export function parseGeoJson(raw) {
   if (!raw) return null;
   const fc = (() => {
@@ -94,7 +96,9 @@ function normalizeToInternalShape(fc) {
       geometry: { type: 'Point', coordinates: point.coordinates },
       properties: {
         kind,
-        label: point.label || (kind === 'destination' ? 'Varış' : kind === 'origin' ? 'Çıkış' : ''),
+        label: point.label || (kind === 'destination'
+          ? t('cargoTracking.map.destination')
+          : kind === 'origin' ? t('cargoTracking.map.origin') : ''),
       },
     });
   });
@@ -240,10 +244,11 @@ export function describeLivePosition(rawGeoJson) {
   if (!Array.isArray(here) || here.length < 2) return null;
 
   const [lon, lat] = here;
-  const coordinateText = `${formatCoordinate(lat, 'K', 'G')}, ${formatCoordinate(lon, 'D', 'B')}`;
+  const coordinateText = `${formatCoordinate(lat, t('cargoTracking.map.north'), t('cargoTracking.map.south'))}, `
+    + formatCoordinate(lon, t('cargoTracking.map.east'), t('cargoTracking.map.west'));
 
   const { legFrom, legTo } = current.properties;
-  const legText = legFrom && legTo ? `${legFrom} → ${legTo} arasında` : null;
+  const legText = legFrom && legTo ? t('cargoTracking.map.between', { from: legFrom, to: legTo }) : null;
 
   const destination = fc.features.find((f) => f.properties?.kind === 'destination');
   const target = destination?.geometry?.coordinates;
@@ -253,8 +258,10 @@ export function describeLivePosition(rawGeoJson) {
     // 25 km'nin altında "vardı sayılır" — daha küçük bir sayıyı kuş uçuşu
     // mesafeyle iddia etmek yanıltıcı olur.
     remainingText = km < 25
-      ? 'Varış noktasında'
-      : `Varışa ~${Math.round(km).toLocaleString('tr-TR')} km (kuş uçuşu)`;
+      ? t('cargoTracking.map.atDestination')
+      : t('cargoTracking.map.distanceToDestination', {
+        km: Math.round(km).toLocaleString(getCurrentLocale()),
+      });
   }
 
   return {
