@@ -2,10 +2,19 @@ import axios from "axios";
 
 let bffUrl = "";
 
-// 1. VERCEL / PRODUCTION KONTROLÜ
+// Canlı API'ye yalnızca bu adreslerden sunulan build düşebilir.
+const PROD_HOSTS = ["gumruk.io", "www.gumruk.io"];
+
+// 1. VERCEL / PRODUCTION BUILD KONTROLÜ
 if (import.meta.env.PROD) {
-  // Vercel'deki canlı ortamda VITE_API_BASE_URL değişkenini okur, yoksa fallback olarak senin domaini yazar.
-  bffUrl = import.meta.env.VITE_API_BASE_URL || "https://api.gumruk.io/api";
+  // Adres VITE_API_BASE_URL'den gelir (Vercel'de ortama/dala göre tanımlı).
+  // Değişken unutulursa staging ve preview build'leri sessizce canlı veriye
+  // bağlanmasın diye yalnızca canlı domain prod API'ye düşer, gerisi staging'e gider.
+  bffUrl =
+    import.meta.env.VITE_API_BASE_URL ||
+    (PROD_HOSTS.includes(window.location.hostname)
+      ? "https://api.gumruk.io/api"
+      : "https://api-beta.gumruk.io/api");
 } else {
   // 2. LOKAL GELİŞTİRME / ARKADAŞINLA EV TESTİ ORTAMI
   const currentHost = window.location.hostname;
