@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * TCMB (Türkiye Cumhuriyet Merkez Bankası) exchange rate read endpoints.
@@ -15,7 +16,7 @@ export const tcmbService = {
       logError('TcmbService - getLatestRates', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'TCMB kurları alınamadı',
+        error: error.response?.data?.error || t('api.tcmb.ratesError'),
       };
     }
   },
@@ -30,7 +31,7 @@ export const tcmbService = {
       logError('TcmbService - refreshNow', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'TCMB güncellenemedi',
+        error: error.response?.data?.error || t('api.tcmb.refreshError'),
       };
     }
   },

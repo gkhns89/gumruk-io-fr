@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { t } from '../locales';
 
 export const configService = {
   // Dosya yükleme konfigürasyonunu getir
@@ -12,7 +13,7 @@ export const configService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Konfigürasyon alınamadı',
+        error: error.response?.data?.error || t('api.file.configError'),
         // Fallback default değerler
         data: {
           maxFileSizeMB: 10,
@@ -26,14 +27,14 @@ export const configService = {
 
   // Dosya boyutu kontrolü
   validateFileSize: (file, maxSizeBytes) => {
-    if (!file) return { valid: false, error: 'Dosya seçilmedi' };
+    if (!file) return { valid: false, error: t('api.file.notSelected') };
 
     if (file.size > maxSizeBytes) {
       const maxSizeMB = (maxSizeBytes / (1024 * 1024)).toFixed(2);
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return {
         valid: false,
-        error: `Dosya boyutu çok büyük (${fileSizeMB} MB). Maksimum: ${maxSizeMB} MB`
+        error: t('api.file.tooLarge', { size: fileSizeMB, max: maxSizeMB })
       };
     }
 
@@ -42,7 +43,7 @@ export const configService = {
 
   // Dosya uzantısı kontrolü
   validateFileExtension: (file, allowedExtensions) => {
-    if (!file) return { valid: false, error: 'Dosya seçilmedi' };
+    if (!file) return { valid: false, error: t('api.file.notSelected') };
 
     const fileName = file.name.toLowerCase();
     const isAllowed = allowedExtensions.some(ext => fileName.endsWith(ext.toLowerCase()));
@@ -50,7 +51,7 @@ export const configService = {
     if (!isAllowed) {
       return {
         valid: false,
-        error: `Dosya formatı desteklenmiyor. İzin verilen formatlar: ${allowedExtensions.join(', ')}`
+        error: t('api.file.unsupportedFormat', { formats: allowedExtensions.join(', ') })
       };
     }
 

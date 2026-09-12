@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Safe array conversion utility
@@ -42,7 +43,7 @@ export const cargoService = {
       logError('CargoService - getAllCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Yük verileri alınamadı',
+        error: error.response?.data?.error || t('api.cargo.listError'),
         message: error.message
       };
     }
@@ -57,7 +58,7 @@ export const cargoService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('CargoService - getStatsSummary', error);
-      return { success: false, error: error.response?.data?.error || 'Yük özeti alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.cargo.summaryError') };
     }
   },
 
@@ -73,7 +74,7 @@ export const cargoService = {
       logError('CargoService - getRecentCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Son yük verileri alınamadı',
+        error: error.response?.data?.error || t('api.cargo.recentError'),
         message: error.message
       };
     }
@@ -90,7 +91,7 @@ export const cargoService = {
       logError('CargoService - getCargoById', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Yük bilgisi alınamadı',
+        error: error.response?.data?.error || t('api.cargo.loadError'),
         message: error.message
       };
     }
@@ -108,7 +109,7 @@ export const cargoService = {
       logError('CargoService - getBrokerCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Broker yükleri alınamadı',
+        error: error.response?.data?.error || t('api.cargo.brokerListError'),
         message: error.message
       };
     }
@@ -126,7 +127,7 @@ export const cargoService = {
       logError('CargoService - getClientCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Müşteri yükleri alınamadı',
+        error: error.response?.data?.error || t('api.cargo.clientListError'),
         message: error.message
       };
     }
@@ -141,13 +142,13 @@ export const cargoService = {
       return {
         success: true,
         data: response.data,
-        message: 'Yük kaydı başarıyla oluşturuldu'
+        message: t('api.cargo.created')
       };
     } catch (error) {
       logError('CargoService - createCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Yük kaydı oluşturulamadı',
+        error: error.response?.data?.error || t('api.cargo.createError'),
         message: error.message
       };
     }
@@ -162,13 +163,13 @@ export const cargoService = {
       return {
         success: true,
         data: response.data,
-        message: 'Yük kaydı başarıyla güncellendi'
+        message: t('api.cargo.updated')
       };
     } catch (error) {
       logError('CargoService - updateCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Yük kaydı güncellenemedi',
+        error: error.response?.data?.error || t('api.cargo.updateError'),
         message: error.message
       };
     }
@@ -182,13 +183,13 @@ export const cargoService = {
       const response = await axiosInstance.delete(`/cargo/${id}`);
       return {
         success: true,
-        message: response.data?.message || 'Yük kaydı başarıyla silindi'
+        message: response.data?.message || t('cargoTracking.delete.success')
       };
     } catch (error) {
       logError('CargoService - deleteCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Yük kaydı silinemedi',
+        error: error.response?.data?.error || t('api.cargo.deleteError'),
         message: error.message
       };
     }

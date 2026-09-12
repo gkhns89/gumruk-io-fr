@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const feedbackService = {
   getClickUpStatus: async () => {
@@ -30,7 +31,7 @@ export const feedbackService = {
       logError('feedbackService - saveClickUpSettings', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Ayarlar kaydedilemedi',
+        error: error.response?.data?.message || t('api.feedback.settingsSaveError'),
       };
     }
   },
@@ -51,7 +52,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - registerWebhook', error);
-      return { success: false, error: error.response?.data?.message || 'Webhook kaydı başarısız' };
+      return { success: false, error: error.response?.data?.message || t('api.feedback.webhookRegisterError') };
     }
   },
 
@@ -61,7 +62,7 @@ export const feedbackService = {
       return { success: true };
     } catch (error) {
       logError('feedbackService - deleteWebhook', error);
-      return { success: false, error: 'Webhook silinemedi' };
+      return { success: false, error: t('api.feedback.webhookDeleteError') };
     }
   },
 
@@ -101,7 +102,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - addComment', error);
-      return { success: false, error: error.response?.data?.message || 'Yorum gönderilemedi' };
+      return { success: false, error: error.response?.data?.message || t('api.feedback.commentError') };
     }
   },
 
@@ -121,7 +122,7 @@ export const feedbackService = {
       logError('feedbackService - submitFeedback', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Feedback gönderilemedi',
+        error: error.response?.data?.message || t('api.feedback.submitError'),
       };
     }
   },

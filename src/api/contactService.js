@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const contactService = {
   getContactInfo: async () => {
@@ -28,7 +29,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - createContactInfo', error);
-      return { success: false, error: error.response?.data?.message || 'İletişim bilgisi eklenemedi' };
+      return { success: false, error: error.response?.data?.message || t('api.contact.createError') };
     }
   },
 
@@ -38,7 +39,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - updateContactInfo', error);
-      return { success: false, error: error.response?.data?.message || 'İletişim bilgisi güncellenemedi' };
+      return { success: false, error: error.response?.data?.message || t('api.contact.updateError') };
     }
   },
 
@@ -48,7 +49,7 @@ export const contactService = {
       return { success: true };
     } catch (error) {
       logError('contactService - deleteContactInfo', error);
-      return { success: false, error: 'Silme işlemi başarısız' };
+      return { success: false, error: t('api.contact.deleteError') };
     }
   },
 };

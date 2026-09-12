@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const userService = {
   // Kullanıcı profili
@@ -11,7 +12,7 @@ export const userService = {
       logError('UserService - getProfile', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Profil bilgileri alınamadı',
+        error: error.response?.data?.error || t('api.user.profileLoadError'),
       };
     }
   },
@@ -25,7 +26,7 @@ export const userService = {
       logError('UserService - updateMyProfile', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Profil güncellenemedi',
+        error: error.response?.data?.error || t('api.user.profileUpdateError'),
       };
     }
   },
@@ -43,7 +44,7 @@ export const userService = {
       logError('UserService - uploadMyAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Fotoğraf yüklenemedi',
+        error: error.response?.data?.error || t('api.user.photoUploadError'),
       };
     }
   },
@@ -61,7 +62,7 @@ export const userService = {
       logError('UserService - uploadUserAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Fotoğraf yüklenemedi',
+        error: error.response?.data?.error || t('api.user.photoUploadError'),
       };
     }
   },
@@ -75,7 +76,7 @@ export const userService = {
       logError('UserService - deleteUserAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Fotoğraf kaldırılamadı',
+        error: error.response?.data?.error || t('api.user.photoDeleteError'),
       };
     }
   },
@@ -93,7 +94,7 @@ export const userService = {
       logError('UserService - changeMyPassword', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Şifre değiştirilemedi',
+        error: error.response?.data?.error || t('api.user.passwordChangeError'),
       };
     }
   },

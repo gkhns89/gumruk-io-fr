@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError, getApiErrorMessage } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Kademeli yayın bayrakları.
@@ -13,7 +14,7 @@ export const featureFlagService = {
       const response = await axiosInstance.get('/feature-flags/me', { silentOnError: true });
       return { success: true, data: response.data.features || [] };
     } catch (error) {
-      return { success: false, error: getApiErrorMessage(error, 'Özellik bilgisi alınamadı') };
+      return { success: false, error: getApiErrorMessage(error, t('api.featureFlag.loadMineError')) };
     }
   },
 
@@ -23,7 +24,7 @@ export const featureFlagService = {
       return { success: true, data: response.data.flags || [] };
     } catch (error) {
       logError('FeatureFlagService - list', error);
-      return { success: false, error: getApiErrorMessage(error, 'Bayraklar yüklenemedi') };
+      return { success: false, error: getApiErrorMessage(error, t('featureFlags.loadError')) };
     }
   },
 
@@ -33,7 +34,7 @@ export const featureFlagService = {
       return { success: true, data: response.data.flag };
     } catch (error) {
       logError('FeatureFlagService - update', error);
-      return { success: false, error: getApiErrorMessage(error, 'Bayrak güncellenemedi') };
+      return { success: false, error: getApiErrorMessage(error, t('featureFlags.saveError')) };
     }
   },
 };

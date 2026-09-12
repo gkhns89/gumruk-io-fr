@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * API response'unu güvenli bir şekilde array'e dönüştürür
@@ -86,7 +87,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
       };
     }
   },
@@ -121,7 +122,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
       };
     }
   },
@@ -135,7 +136,7 @@ export const transactionService = {
       logError('TransactionService - getDashboardStats', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem özeti alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.summaryError'),
       };
     }
   },
@@ -157,7 +158,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
       };
     }
   },
@@ -179,7 +180,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlemler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
       };
     }
   },
@@ -200,13 +201,13 @@ export const transactionService = {
       if (error.response?.status === 404) {
         return {
           success: false,
-          error: 'İşlem bulunamadı.',
+          error: t('api.transaction.notFound'),
         };
       }
       
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem bilgisi alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.loadError'),
       };
     }
   },
@@ -227,7 +228,7 @@ export const transactionService = {
       return { 
         success: true, 
         data: response.data,
-        message: response.data.message || 'İşlem başarıyla oluşturuldu'
+        message: response.data.message || t('api.transaction.created')
       };
     } catch (error) {
       logError('TransactionService - createTransaction', error);
@@ -235,13 +236,13 @@ export const transactionService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Bu broker için işlem oluşturma yetkiniz yok.',
+          error: t('api.transaction.createForbidden'),
         };
       }
-      
+
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem oluşturulamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.createError'),
       };
     }
   },
@@ -262,7 +263,7 @@ export const transactionService = {
       return { 
         success: true, 
         data: response.data,
-        message: response.data.message || 'İşlem başarıyla güncellendi'
+        message: response.data.message || t('api.transaction.updated')
       };
     } catch (error) {
       logError('TransactionService - updateTransaction', error);
@@ -270,20 +271,20 @@ export const transactionService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Bu işlemi güncelleme yetkiniz yok.',
+          error: t('api.transaction.updateForbidden'),
         };
       }
-      
+
       if (error.response?.status === 404) {
         return {
           success: false,
-          error: 'İşlem bulunamadı.',
+          error: t('api.transaction.notFound'),
         };
       }
-      
+
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem güncellenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.updateError'),
       };
     }
   },
@@ -306,14 +307,14 @@ export const transactionService = {
       return { 
         success: true, 
         data: response.data,
-        message: response.data.message || 'İşlem durumu başarıyla değiştirildi'
+        message: response.data.message || t('api.transaction.statusChanged')
       };
     } catch (error) {
       logError('TransactionService - updateTransactionStatus', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem durumu değiştirilemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.statusChangeError'),
       };
     }
   },
@@ -330,14 +331,14 @@ export const transactionService = {
       return { 
         success: true, 
         data: response.data,
-        message: response.data.message || 'İşlem başarıyla çekildi olarak güncellendi'
+        message: response.data.message || t('api.transaction.withdrawn')
       };
     } catch (error) {
       logError('TransactionService - withdrawTransaction', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem çekildi olarak güncellenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.withdrawError'),
       };
     }
   },
@@ -356,14 +357,14 @@ export const transactionService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'İşlem başarıyla iptal edildi'
+        message: response.data.message || t('api.transaction.cancelled')
       };
     } catch (error) {
       logError('TransactionService - cancelTransaction', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'İşlem iptal edilemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.cancelError'),
       };
     }
   },
@@ -389,7 +390,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Gecikmiş işlemler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.delayedListError'),
       };
     }
   },

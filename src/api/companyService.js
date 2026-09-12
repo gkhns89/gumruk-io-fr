@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const companyService = {
   // Tüm firmaları getir
@@ -11,7 +12,7 @@ export const companyService = {
       logError('CompanyService - getAllCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Firmalar alınamadı',
+        error: error.response?.data?.error || t('api.company.listError'),
       };
     }
   },
@@ -25,7 +26,7 @@ export const companyService = {
       logError('CompanyService - getAllBrokerCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Gümrük firmaları alınamadı',
+        error: error.response?.data?.error || t('api.company.brokerListError'),
       };
     }
   },
@@ -39,7 +40,7 @@ export const companyService = {
       logError('CompanyService - getAllClientCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Müşteri firmaları alınamadı',
+        error: error.response?.data?.error || t('api.company.clientListError'),
       };
     }
   },
@@ -58,7 +59,7 @@ export const companyService = {
       logError('CompanyService - getClientCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Müşteri firmaları alınamadı',
+        error: error.response?.data?.error || t('api.company.clientListError'),
       };
     }
   },
@@ -72,7 +73,7 @@ export const companyService = {
       logError('CompanyService - getMyCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Firmalar alınamadı',
+        error: error.response?.data?.error || t('api.company.listError'),
       };
     }
   },
@@ -86,7 +87,7 @@ export const companyService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Firma başarıyla oluşturuldu'
+        message: response.data.message || t('api.company.created')
       };
     } catch (error) {
       logError('CompanyService - createClientCompany', error);
@@ -94,13 +95,13 @@ export const companyService = {
       if (error.response?.status === 429) {
         return {
           success: false,
-          error: 'Müşteri firması limiti aşıldı. Lütfen aboneliğinizi yükseltin.',
+          error: t('api.company.clientQuotaExceeded'),
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Firma oluşturulamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.company.createError'),
       };
     }
   },
@@ -118,7 +119,7 @@ export const companyService = {
       logError('CompanyService - uploadCompanyLogo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Logo yüklenemedi',
+        error: error.response?.data?.error || t('api.company.logoUploadError'),
       };
     }
   },
@@ -132,7 +133,7 @@ export const companyService = {
       logError('CompanyService - deleteCompanyLogo', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Logo kaldırılamadı',
+        error: error.response?.data?.error || t('api.company.logoDeleteError'),
       };
     }
   },
@@ -146,13 +147,13 @@ export const companyService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Firma başarıyla güncellendi'
+        message: response.data.message || t('api.company.updated')
       };
     } catch (error) {
       logError('CompanyService - updateClientCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Firma güncellenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.company.updateError'),
       };
     }
   },

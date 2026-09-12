@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 const safeArrayConversion = (data) => {
   if (Array.isArray(data)) return data;
@@ -25,7 +26,7 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getAll', error);
-      return { success: false, error: error.response?.data?.error || 'Antrepo kayıtları alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.listError') };
     }
   },
 
@@ -36,7 +37,7 @@ export const warehouseService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('WarehouseService - getStatsSummary', error);
-      return { success: false, error: error.response?.data?.error || 'Antrepo özeti alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.summaryError') };
     }
   },
 
@@ -47,7 +48,7 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getRecent', error);
-      return { success: false, error: error.response?.data?.error || 'Son antrepo kayıtları alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.recentError') };
     }
   },
 
@@ -57,33 +58,33 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getTransfers', error);
-      return { success: false, error: error.response?.data?.error || 'Aktarım geçmişi alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.transfersError') };
     }
   },
 
   create: async (data) => {
     try {
       const response = await axiosInstance.post('/warehouse', data);
-      return { success: true, data: response.data, message: response.data.message || 'Antrepo kaydı oluşturuldu' };
+      return { success: true, data: response.data, message: response.data.message || t('warehouse.form.createSuccess') };
     } catch (error) {
       logError('WarehouseService - create', error);
       if (error.response?.status === 403) {
-        return { success: false, error: 'Antrepo kaydı oluşturma yetkiniz yok' };
+        return { success: false, error: t('api.warehouse.createForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || 'Antrepo kaydı oluşturulamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.createError') };
     }
   },
 
   update: async (id, data) => {
     try {
       const response = await axiosInstance.put(`/warehouse/${id}`, data);
-      return { success: true, data: response.data, message: response.data.message || 'Antrepo kaydı güncellendi' };
+      return { success: true, data: response.data, message: response.data.message || t('warehouse.form.updateSuccess') };
     } catch (error) {
       logError('WarehouseService - update', error);
       if (error.response?.status === 403) {
-        return { success: false, error: 'Bu kaydı güncelleme yetkiniz yok' };
+        return { success: false, error: t('api.warehouse.updateForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || 'Antrepo kaydı güncellenemedi' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.updateError') };
     }
   },
 
@@ -93,20 +94,20 @@ export const warehouseService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('WarehouseService - toggleProtocol', error);
-      return { success: false, error: error.response?.data?.error || 'Tutanak güncellenemedi' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.protocolError') };
     }
   },
 
   delete: async (id) => {
     try {
       const response = await axiosInstance.delete(`/warehouse/${id}`);
-      return { success: true, message: response.data.message || 'Antrepo kaydı silindi' };
+      return { success: true, message: response.data.message || t('warehouse.delete.success') };
     } catch (error) {
       logError('WarehouseService - delete', error);
       if (error.response?.status === 403) {
-        return { success: false, error: 'Bu kaydı silme yetkiniz yok' };
+        return { success: false, error: t('api.warehouse.deleteForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || 'Antrepo kaydı silinemedi' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.deleteError') };
     }
   },
 
@@ -116,15 +117,15 @@ export const warehouseService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'İşlem Takip\'e aktarıldı',
+        message: response.data.message || t('api.warehouse.transferred'),
         fileNo: response.data.fileNo,
       };
     } catch (error) {
       logError('WarehouseService - transfer', error);
       if (error.response?.status === 403) {
-        return { success: false, error: 'Aktarım yapma yetkiniz yok' };
+        return { success: false, error: t('api.warehouse.transferForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || 'Aktarım yapılamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.warehouse.transferError') };
     }
   },
 };

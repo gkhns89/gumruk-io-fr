@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Notification Center API Service
@@ -39,7 +40,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirimler alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.listError'),
       };
     }
   },
@@ -64,7 +65,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Okunmamış sayı alınamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.unreadCountError'),
       };
     }
   },
@@ -95,14 +96,14 @@ export const notificationService = {
       return {
         success: true,
         data: response.data,
-        message: 'Bildirim başarıyla oluşturuldu'
+        message: t('api.notification.created')
       };
     } catch (error) {
       logError('NotificationService - create', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirim oluşturulamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.createError'),
       };
     }
   },
@@ -128,7 +129,7 @@ export const notificationService = {
       return {
         success: true,
         data: response.data,
-        message: 'Bildirim okundu işaretlendi'
+        message: t('api.notification.markedRead')
       };
     } catch (error) {
       logError('NotificationService - markAsRead', error);
@@ -136,20 +137,20 @@ export const notificationService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Bu bildirimi işaretleme yetkiniz yok.',
+          error: t('api.notification.markForbidden'),
         };
       }
 
       if (error.response?.status === 404) {
         return {
           success: false,
-          error: 'Bildirim bulunamadı.',
+          error: t('api.notification.notFound'),
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirim işaretlenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('notifications.markError'),
       };
     }
   },
@@ -171,14 +172,14 @@ export const notificationService = {
       return {
         success: true,
         data: response.data,
-        message: response.data?.message || 'Tüm bildirimler okundu işaretlendi'
+        message: response.data?.message || t('notifications.markAllSuccess')
       };
     } catch (error) {
       logError('NotificationService - markAllAsRead', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirimler işaretlenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('notifications.markAllError'),
       };
     }
   },
@@ -204,7 +205,7 @@ export const notificationService = {
       return {
         success: true,
         data: response.data,
-        message: response.data?.message || 'Bildirim silindi'
+        message: response.data?.message || t('api.notification.deleted')
       };
     } catch (error) {
       logError('NotificationService - delete', error);
@@ -212,20 +213,20 @@ export const notificationService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Bu bildirimi silme yetkiniz yok.',
+          error: t('api.notification.deleteForbidden'),
         };
       }
 
       if (error.response?.status === 404) {
         return {
           success: false,
-          error: 'Bildirim bulunamadı.',
+          error: t('api.notification.notFound'),
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirim silinemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.deleteError'),
       };
     }
   },
@@ -247,14 +248,14 @@ export const notificationService = {
       return {
         success: true,
         data: response.data,
-        message: response.data?.message || 'Tüm bildirimler silindi'
+        message: response.data?.message || t('api.notification.allDeleted')
       };
     } catch (error) {
       logError('NotificationService - deleteAll', error);
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Bildirimler silinemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.deleteAllError'),
       };
     }
   },

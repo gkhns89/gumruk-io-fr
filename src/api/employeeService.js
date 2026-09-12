@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const employeeService = {
   // Broker firmasının çalışanlarını getir
@@ -13,7 +14,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployees', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Çalışanlar alınamadı',
+        error: error.response?.data?.error || t('api.employee.listError'),
       };
     }
   },
@@ -29,7 +30,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployeeLimits', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Çalışan limitleri alınamadı',
+        error: error.response?.data?.error || t('api.employee.limitsError'),
       };
     }
   },
@@ -45,7 +46,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployeeById', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Çalışan bilgileri alınamadı',
+        error: error.response?.data?.error || t('api.employee.loadError'),
       };
     }
   },
@@ -59,7 +60,7 @@ export const employeeService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Çalışan başarıyla oluşturuldu'
+        message: response.data.message || t('api.employee.created')
       };
     } catch (error) {
       logError('EmployeeService - createEmployee', error);
@@ -68,14 +69,14 @@ export const employeeService = {
       if (error.response?.status === 429) {
         return {
           success: false,
-          error: 'Çalışan limiti aşıldı. Lütfen aboneliğinizi yükseltin.',
+          error: t('api.employee.quotaExceeded'),
           isQuotaExceeded: true
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Çalışan oluşturulamadı',
+        error: error.response?.data?.error || error.response?.data?.message || t('employee.messages.createError'),
       };
     }
   },
@@ -89,13 +90,13 @@ export const employeeService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Çalışan başarıyla güncellendi'
+        message: response.data.message || t('api.employee.updated')
       };
     } catch (error) {
       logError('EmployeeService - updateEmployee', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Çalışan güncellenemedi',
+        error: error.response?.data?.error || error.response?.data?.message || t('employee.messages.updateError'),
       };
     }
   },
@@ -109,7 +110,7 @@ export const employeeService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Çalışan başarıyla silindi'
+        message: response.data.message || t('api.employee.deleted')
       };
     } catch (error) {
       logError('EmployeeService - deleteEmployee', error);
@@ -120,7 +121,7 @@ export const employeeService = {
       if (errorMsg.toLowerCase().includes('kendinizi') || errorMsg.toLowerCase().includes('yourself')) {
         return {
           success: false,
-          error: 'Kendi hesabınızı silemezsiniz',
+          error: t('employee.cannotDeleteSelf'),
         };
       }
 
@@ -128,13 +129,13 @@ export const employeeService = {
       if (errorMsg.toLowerCase().includes('son broker_admin') || errorMsg.toLowerCase().includes('last broker_admin')) {
         return {
           success: false,
-          error: 'Son BROKER_ADMIN kullanıcısı silinemez. Önce başka bir yönetici atayın.',
+          error: t('api.employee.cannotDeleteLastAdmin'),
         };
       }
 
       return {
         success: false,
-        error: errorMsg || 'Çalışan silinemedi',
+        error: errorMsg || t('employee.messages.deleteError'),
       };
     }
   },
@@ -153,7 +154,7 @@ export const employeeService = {
       logError('EmployeeService - getBrokerCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Broker firmaları alınamadı',
+        error: error.response?.data?.error || t('api.employee.brokerListError'),
       };
     }
   },

@@ -1,6 +1,7 @@
 import axiosInstance from './axios';
 import { tokenManager } from '../utils/tokenManager';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const authService = {
   // Login işlemi
@@ -34,34 +35,34 @@ export const authService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Hesabınız onay bekliyor. Lütfen yöneticinizle iletişime geçin.',
+          error: t('api.auth.pendingApproval'),
         };
       }
 
       if (error.response?.status === 401) {
         return {
           success: false,
-          error: 'Email veya şifre hatalı. Lütfen tekrar deneyin.',
+          error: t('api.auth.invalidCredentials'),
         };
       }
 
       if (error.code === 'ECONNABORTED') {
         return {
           success: false,
-          error: 'Bağlantı zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.',
+          error: t('api.auth.timeout'),
         };
       }
 
       if (!error.response) {
         return {
           success: false,
-          error: 'Sunucuya bağlanılamıyor. Lütfen daha sonra tekrar deneyin.',
+          error: t('api.auth.serverUnreachable'),
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || 'Giriş başarısız. Bilgilerinizi kontrol edin.',
+        error: error.response?.data?.error || error.response?.data?.message || t('api.auth.loginFailed'),
       };
     }
   },

@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Kurye Takip API Servisi
@@ -21,7 +22,7 @@ export const courierService = {
       logError('CourierService - getCourierCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye firmaları yüklenemedi',
+        error: error.response?.data?.error || t('api.courier.listError'),
       };
     }
   },
@@ -39,7 +40,7 @@ export const courierService = {
       logError('CourierService - getCourierCompanyById', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye firması bilgileri alınamadı',
+        error: error.response?.data?.error || t('api.courier.loadError'),
       };
     }
   },
@@ -64,7 +65,7 @@ export const courierService = {
       logError('CourierService - createCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye firması oluşturulamadı',
+        error: error.response?.data?.error || t('couriers.add.createError'),
       };
     }
   },
@@ -83,7 +84,7 @@ export const courierService = {
       logError('CourierService - updateCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye firması güncellenemedi',
+        error: error.response?.data?.error || t('couriers.edit.updateError'),
       };
     }
   },
@@ -101,7 +102,7 @@ export const courierService = {
       logError('CourierService - deleteCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye firması silinemedi',
+        error: error.response?.data?.error || t('couriers.delete.error'),
       };
     }
   },
@@ -121,7 +122,7 @@ export const courierService = {
       logError('CourierService - getSchedules', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kalkış saatleri alınamadı',
+        error: error.response?.data?.error || t('api.courier.schedulesLoadError'),
       };
     }
   },
@@ -145,7 +146,7 @@ export const courierService = {
       logError('CourierService - addSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kalkış saati eklenemedi',
+        error: error.response?.data?.error || t('couriers.schedules.addError'),
       };
     }
   },
@@ -164,7 +165,7 @@ export const courierService = {
       logError('CourierService - updateSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kalkış saati güncellenemedi',
+        error: error.response?.data?.error || t('api.courier.scheduleUpdateError'),
       };
     }
   },
@@ -182,7 +183,7 @@ export const courierService = {
       logError('CourierService - deleteSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kalkış saati silinemedi',
+        error: error.response?.data?.error || t('couriers.schedules.deleteError'),
       };
     }
   },
@@ -223,7 +224,7 @@ export const courierService = {
       logError('CourierService - getNextDepartures', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kurye kalkış bilgileri alınamadı',
+        error: error.response?.data?.error || t('api.courier.nextDeparturesError'),
       };
     }
   }

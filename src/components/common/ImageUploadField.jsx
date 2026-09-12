@@ -2,10 +2,12 @@ import React, { useRef, useState } from 'react';
 import AuthedImage from './AuthedImage';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { processImageToWebp, clearImageCache } from '../../utils/imageUtils';
+import { t } from '../../locales';
 
 // Seçilebilir dosya üst sınırı. Görsel yüklemeden önce tarayıcıda WebP'e küçültülür,
 // dolayısıyla sunucuya giden dosya çok daha küçüktür (genelde < 100 KB).
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB (işlenmeden önceki ham dosya)
+const MAX_SIZE_MB = 5;
+const MAX_SIZE = MAX_SIZE_MB * 1024 * 1024; // 5 MB (işlenmeden önceki ham dosya)
 
 /**
  * Avatar/logo yükleme alanı. Mevcut görseli gösterir (yoksa fallback), dosya seçtirir,
@@ -51,11 +53,11 @@ export default function ImageUploadField({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showError('Sadece resim dosyaları yüklenebilir');
+      showError(t('imageUpload.onlyImages'));
       return;
     }
     if (file.size > MAX_SIZE) {
-      showError('Resim boyutu 5 MB’ı aşamaz');
+      showError(t('imageUpload.tooLarge', { size: MAX_SIZE_MB }));
       return;
     }
 
@@ -66,10 +68,10 @@ export default function ImageUploadField({
     setBusy(false);
     if (res?.success) {
       clearImageCache(currentUrl); // önceki 404 işaretini kaldır ki yeni görsel yüklensin
-      showSuccess('Görsel güncellendi');
+      showSuccess(t('imageUpload.updated'));
       onUploaded?.();
     } else {
-      showError(res?.error || 'Görsel yüklenemedi');
+      showError(res?.error || t('imageUpload.uploadError'));
     }
   };
 
@@ -80,10 +82,10 @@ export default function ImageUploadField({
     setBusy(false);
     if (res?.success) {
       clearImageCache(currentUrl);
-      showSuccess('Görsel kaldırıldı');
+      showSuccess(t('imageUpload.removed'));
       onUploaded?.();
     } else {
-      showError(res?.error || 'Görsel kaldırılamadı');
+      showError(res?.error || t('imageUpload.removeError'));
     }
   };
 
@@ -94,7 +96,7 @@ export default function ImageUploadField({
         className={`relative ${radiusClass} overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 ${canEdit ? 'cursor-pointer group' : ''}`}
         style={boxStyle}
         onClick={handlePick}
-        title={canEdit ? 'Logoyu değiştir' : ''}
+        title={canEdit ? t('imageUpload.changeLogo') : ''}
       >
         <AuthedImage
           key={bustKey}
@@ -126,7 +128,7 @@ export default function ImageUploadField({
         className={`relative ${radiusClass} overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 ${canEdit ? 'cursor-pointer group' : ''}`}
         style={boxStyle}
         onClick={handlePick}
-        title={canEdit ? 'Görseli değiştir' : ''}
+        title={canEdit ? t('imageUpload.changeImage') : ''}
       >
         <AuthedImage
           key={bustKey}
@@ -163,7 +165,7 @@ export default function ImageUploadField({
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base">upload</span>
-            Yükle / Değiştir
+            {t('imageUpload.uploadOrChange')}
           </button>
           {deleteFn && currentUrl && (
             <button
@@ -173,10 +175,10 @@ export default function ImageUploadField({
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">delete</span>
-              Kaldır
+              {t('imageUpload.remove')}
             </button>
           )}
-          <p className="text-[11px] text-text-secondary">PNG/JPG/WebP, en fazla 5 MB. Otomatik olarak WebP'e küçültülür; şeffaf logolar beyaz zemine alınır.</p>
+          <p className="text-[11px] text-text-secondary">{t('imageUpload.hint', { size: MAX_SIZE_MB })}</p>
         </div>
       )}
     </div>

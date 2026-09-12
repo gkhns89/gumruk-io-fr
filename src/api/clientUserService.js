@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Müşteri firmasının sisteme giriş hesabı.
@@ -22,7 +23,7 @@ export const clientUserService = {
       logError('ClientUserService - createAccount', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Giriş hesabı oluşturulamadı',
+        error: error.response?.data?.error || t('api.clientUser.createError'),
       };
     }
   },
@@ -45,7 +46,7 @@ export const clientUserService = {
       logError('ClientUserService - updateAccount', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Giriş hesabı güncellenemedi',
+        error: error.response?.data?.error || t('api.clientUser.updateError'),
       };
     }
   },

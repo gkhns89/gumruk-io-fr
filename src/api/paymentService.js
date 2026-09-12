@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { t } from '../locales';
 
 export const paymentService = {
   // ===== ÖDEME YÖNTEMLERİ =====
@@ -101,7 +102,7 @@ export const paymentService = {
 
       return { success: true };
     } catch {
-      return { success: false, error: 'Dekont indirilemedi' };
+      return { success: false, error: t('api.payment.receiptDownloadError') };
     }
   },
 
@@ -116,7 +117,7 @@ export const paymentService = {
       setTimeout(() => window.URL.revokeObjectURL(url), 60000);
       return { success: true };
     } catch {
-      return { success: false, error: 'Dekont açılamadı' };
+      return { success: false, error: t('api.payment.receiptViewError') };
     }
   },
 
@@ -130,7 +131,7 @@ export const paymentService = {
       });
       return { success: true, data: response.data };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || 'Dekont yüklenemedi' };
+      return { success: false, error: error.response?.data?.error || t('api.payment.receiptUploadError') };
     }
   },
 

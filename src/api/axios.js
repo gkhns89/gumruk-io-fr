@@ -1,4 +1,5 @@
 import axios from "axios";
+import { t } from "../locales";
 
 let bffUrl = "";
 
@@ -164,12 +165,12 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("user");
 
       // Kullanıcıya Türkçe bilgi ver
-      let message = "Oturumunuz sonlandı. Lütfen tekrar giriş yapın.";
+      let message = t("api.auth.sessionEnded");
 
       if (authError === "SESSION_INVALIDATED") {
-        message = "Başka bir cihazdan giriş yapıldı. Oturumunuz sonlandırıldı.";
+        message = t("api.auth.sessionInvalidated");
       } else if (authError === "INVALID_TOKEN") {
-        message = "Oturumunuz süresi doldu. Lütfen tekrar giriş yapın.";
+        message = t("api.auth.sessionExpired");
       }
 
       // Toast göster ve HEMEN yönlendir

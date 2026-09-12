@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 export const sectorService = {
   // Seçim listeleri için aktif sektörler
@@ -11,7 +12,7 @@ export const sectorService = {
       logError('SectorService - getSectors', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Sektörler alınamadı',
+        error: error.response?.data?.error || t('api.sector.listError'),
       };
     }
   },
@@ -25,7 +26,7 @@ export const sectorService = {
       logError('SectorService - getAllSectors', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Sektörler alınamadı',
+        error: error.response?.data?.error || t('api.sector.listError'),
       };
     }
   },
@@ -38,7 +39,7 @@ export const sectorService = {
       logError('SectorService - createSector', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Sektör eklenemedi',
+        error: error.response?.data?.error || t('api.sector.createError'),
       };
     }
   },
@@ -51,7 +52,7 @@ export const sectorService = {
       logError('SectorService - updateSector', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Sektör güncellenemedi',
+        error: error.response?.data?.error || t('api.sector.updateError'),
       };
     }
   },
@@ -69,7 +70,7 @@ export const sectorService = {
       return {
         success: false,
         inUse: error.response?.status === 409,
-        error: error.response?.data?.error || 'Sektör silinemedi',
+        error: error.response?.data?.error || t('api.sector.deleteError'),
       };
     }
   },

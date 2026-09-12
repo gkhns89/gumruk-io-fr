@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Gümrük Haberleri API Servisi
@@ -39,7 +40,7 @@ export const customsNewsService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Haberler alınamadı',
+        error: error.response?.data?.error || error.message || t('api.customsNews.loadError'),
         data: [] // Fallback olarak boş array
       };
     }
@@ -60,7 +61,7 @@ export const customsNewsService = {
 
       return {
         success: true,
-        message: response.data?.message || 'Haberler yenilendi'
+        message: response.data?.message || t('api.customsNews.refreshed')
       };
     } catch (error) {
       logError('CustomsNewsService - refreshNews', error);
@@ -69,13 +70,13 @@ export const customsNewsService = {
       if (error.response?.status === 403) {
         return {
           success: false,
-          error: 'Bu işlem için yetkiniz yok'
+          error: t('api.customsNews.refreshForbidden')
         };
       }
 
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Haberler yenilenemedi'
+        error: error.response?.data?.error || error.message || t('api.customsNews.refreshError')
       };
     }
   }

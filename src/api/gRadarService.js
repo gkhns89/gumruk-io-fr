@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Cargo-bound G-Radar endpoints (Phase 7 backend).
@@ -18,7 +19,7 @@ export const gRadarService = {
       logError('GRadarService - getMasterConfig', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Master konfigürasyon alınamadı',
+        error: error.response?.data?.error || t('api.gRadar.configLoadError'),
       };
     }
   },
@@ -33,7 +34,7 @@ export const gRadarService = {
       logError('GRadarService - updateMasterConfig', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Master konfigürasyon güncellenemedi',
+        error: error.response?.data?.error || t('api.gRadar.configUpdateError'),
       };
     }
   },
@@ -46,7 +47,7 @@ export const gRadarService = {
       logError('GRadarService - testMasterConnection', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Bağlantı testi başarısız',
+        error: error.response?.data?.error || t('api.gRadar.connectionTestError'),
       };
     }
   },
@@ -63,7 +64,7 @@ export const gRadarService = {
       logError('GRadarService - refreshMasterBalance', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Bakiye yenilenemedi',
+        error: error.response?.data?.error || t('api.gRadar.balanceRefreshError'),
       };
     }
   },
@@ -74,7 +75,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - getMasterBalance', error);
-      return { success: false, error: error.response?.data?.error || 'Master bakiye alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.gRadar.balanceLoadError') };
     }
   },
 
@@ -89,7 +90,7 @@ export const gRadarService = {
       logError('GRadarService - preview', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Önizleme alınamadı',
+        error: error.response?.data?.error || t('api.gRadar.previewError'),
       };
     }
   },
@@ -174,7 +175,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - requestEnable', error);
-      return { success: false, error: error.response?.data?.error || 'Talep gönderilemedi' };
+      return { success: false, error: error.response?.data?.error || t('cargoTracking.gRadarActions.requestError') };
     }
   },
 
@@ -184,7 +185,7 @@ export const gRadarService = {
       return { success: true };
     } catch (error) {
       logError('GRadarService - cancelRequest', error);
-      return { success: false, error: error.response?.data?.error || 'Talep iptal edilemedi' };
+      return { success: false, error: error.response?.data?.error || t('api.gRadar.cancelRequestError') };
     }
   },
 
@@ -196,7 +197,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - listPendingRequests', error);
-      return { success: false, error: error.response?.data?.error || 'Talep listesi alınamadı' };
+      return { success: false, error: error.response?.data?.error || t('api.gRadar.requestListError') };
     }
   },
 
@@ -209,7 +210,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - approveRequest', error);
-      return { success: false, error: error.response?.data?.error || 'Onay başarısız' };
+      return { success: false, error: error.response?.data?.error || t('api.gRadar.approveError') };
     }
   },
 
@@ -222,7 +223,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - rejectRequest', error);
-      return { success: false, error: error.response?.data?.error || 'Red başarısız' };
+      return { success: false, error: error.response?.data?.error || t('api.gRadar.rejectError') };
     }
   },
 

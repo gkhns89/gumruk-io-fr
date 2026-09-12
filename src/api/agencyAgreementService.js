@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { t } from '../locales';
 
 export const agencyAgreementService = {
   // Aktif anlaşma kontrolü
@@ -15,7 +16,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşma kontrolü yapılamadı',
+        error: error.response?.data?.error || t('api.agreement.checkError'),
         hasActiveAgreement: false
       };
     }
@@ -34,7 +35,7 @@ export const agencyAgreementService = {
       }
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşma bilgisi alınamadı',
+        error: error.response?.data?.error || t('api.agreement.loadError'),
       };
     }
   },
@@ -55,7 +56,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşmalar alınamadı',
+        error: error.response?.data?.error || t('api.agreement.listError'),
         data: []
       };
     }
@@ -73,7 +74,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Belge taraması yapılamadı',
+        error: error.response?.data?.error || t('agreements.page.scanError'),
       };
     }
   },
@@ -85,12 +86,12 @@ export const agencyAgreementService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Anlaşma oluşturuldu'
+        message: response.data.message || t('api.agreement.created')
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşma oluşturulamadı',
+        error: error.response?.data?.error || t('api.agreement.createError'),
       };
     }
   },
@@ -111,12 +112,12 @@ export const agencyAgreementService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Vekalet belgesi yüklendi'
+        message: response.data.message || t('api.agreement.documentUploaded')
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Belge yüklenemedi',
+        error: error.response?.data?.error || t('api.agreement.documentUploadError'),
       };
     }
   },
@@ -131,12 +132,12 @@ export const agencyAgreementService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Anlaşma aktifleştirildi'
+        message: response.data.message || t('api.agreement.activated')
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşma aktifleştirilemedi',
+        error: error.response?.data?.error || t('api.agreement.activateError'),
       };
     }
   },
@@ -154,12 +155,12 @@ export const agencyAgreementService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Anlaşma oluşturuldu ve aktifleştirildi'
+        message: response.data.message || t('api.agreement.createdAndActivated')
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'İşlem başarısız',
+        error: error.response?.data?.error || t('api.agreement.createAndActivateError'),
       };
     }
   },
@@ -199,7 +200,7 @@ export const agencyAgreementService = {
     } catch {
       return {
         success: false,
-        error: 'Belge indirilemedi',
+        error: t('api.agreement.downloadError'),
       };
     }
   },
@@ -211,12 +212,12 @@ export const agencyAgreementService = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || 'Anlaşma başarıyla güncellendi'
+        message: response.data.message || t('api.agreement.updated')
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Anlaşma güncellenemedi',
+        error: error.response?.data?.error || t('api.agreement.updateError'),
       };
     }
   },

@@ -104,8 +104,10 @@ One `*Service.js` module per domain, all built on the shared `axiosInstance` fro
 `src/api/axios.js`.
 
 **The universal convention: services never throw.** Every method returns
-`{ success: true, data }` or `{ success: false, error: '<Turkish user-facing message>' }`,
-logging through `logError()` on the way. Callers branch on `result.success`; helpers
+`{ success: true, data }` or `{ success: false, error: '<user-facing message>' }`,
+logging through `logError()` on the way. The service's own messages (fallbacks, success and
+validation texts) come from `t('api.*')`, so they are Turkish or English by the user's language;
+text the backend sends is passed through as is. Callers branch on `result.success`; helpers
 `handleApiResponse()` / `handleError()` in `src/utils/errorUtils.js` do the toast for you.
 Follow this shape in new services — code all over the app assumes it. (A handful of
 `paymentService` methods break the rule and return raw data / throw; those callers wrap

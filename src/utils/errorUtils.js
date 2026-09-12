@@ -4,6 +4,7 @@
  */
 
 import { showError } from './toastUtils';
+import { t } from '../locales';
 
 // Hassas bilgi içerebilecek anahtar kelimeler
 const SENSITIVE_KEYWORDS = [
@@ -55,7 +56,7 @@ export const getApiErrorMessage = (error, fallback = '') => {
 export const sanitizeError = (error) => {
   // Hata yoksa varsayılan mesaj
   if (!error) {
-    return "Bir hata oluştu.";
+    return t('api.errors.generic');
   }
 
   let errorMessage = '';
@@ -67,7 +68,7 @@ export const sanitizeError = (error) => {
   }
   // Error objesi ise
   else if (error instanceof Error) {
-    errorMessage = error.message || "Beklenmeyen bir hata oluştu.";
+    errorMessage = error.message || t('api.errors.unexpected');
   }
   // String ise
   else if (typeof error === 'string') {
@@ -75,11 +76,11 @@ export const sanitizeError = (error) => {
   }
   // Diğer objeler
   else if (typeof error === 'object') {
-    errorMessage = error.message || error.error || "Beklenmeyen bir hata oluştu.";
+    errorMessage = error.message || error.error || t('api.errors.unexpected');
   }
   // Diğer tipler
   else {
-    errorMessage = "Beklenmeyen bir hata oluştu.";
+    errorMessage = t('api.errors.unexpected');
   }
 
   // Hassas anahtar kelimeleri kontrol et
@@ -90,17 +91,17 @@ export const sanitizeError = (error) => {
 
   // Hassas bilgi içeriyorsa genel bir mesaj döndür
   if (containsSensitiveInfo) {
-    return "İşlem sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+    return t('api.errors.tryLater');
   }
 
   // Stack trace içeriyorsa temizle
   if (errorMessage.includes('at ') || errorMessage.includes('Error:')) {
-    return "İşlem sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+    return t('api.errors.tryLater');
   }
 
   // Çok uzun mesajları kısalt (potansiyel bilgi sızıntısını önle)
   if (errorMessage.length > 150) {
-    return "İşlem sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+    return t('api.errors.tryLater');
   }
 
   return errorMessage;

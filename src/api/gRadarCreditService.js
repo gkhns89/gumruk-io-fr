@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError } from '../utils/errorUtils';
+import { t } from '../locales';
 
 /**
  * Frontend wrapper around the /api/g-radar credit endpoints (Phase 5 backend).
@@ -21,7 +22,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getMyWallet', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'G-Radar kredisi bilgisi alınamadı',
+        error: error.response?.data?.error || t('api.gRadar.walletError'),
       };
     }
   },
@@ -35,7 +36,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getQuote', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Fiyat hesaplanamadı',
+        error: error.response?.data?.error || t('api.gRadar.quoteError'),
       };
     }
   },
@@ -52,7 +53,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - purchaseFromBalance', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Satın alma başarısız',
+        error: error.response?.data?.error || t('api.gRadar.purchaseError'),
         code: error.response?.data?.code,
       };
     }
@@ -70,7 +71,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - purchaseByTransfer', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Havale bildirimi gönderilemedi',
+        error: error.response?.data?.error || t('api.gRadar.transferError'),
       };
     }
   },
@@ -84,7 +85,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - listPendingPurchases', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Bekleyen ödemeler alınamadı',
+        error: error.response?.data?.error || t('api.gRadar.pendingPurchasesError'),
       };
     }
   },
@@ -97,7 +98,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - approvePurchase', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Onay başarısız',
+        error: error.response?.data?.error || t('api.gRadar.approveError'),
         code: error.response?.data?.code,
       };
     }
@@ -111,7 +112,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - rejectPurchase', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Red başarısız',
+        error: error.response?.data?.error || t('api.gRadar.rejectError'),
       };
     }
   },
@@ -127,7 +128,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - adminGrant', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kredi tanımlanamadı',
+        error: error.response?.data?.error || t('api.gRadar.grantError'),
         code: error.response?.data?.code,
       };
     }
@@ -147,7 +148,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - adminDebit', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Kredi eksiltilemedi',
+        error: error.response?.data?.error || t('api.gRadar.debitError'),
         code: error.response?.data?.code,
       };
     }
@@ -169,7 +170,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - setBrokerEnabled', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'G-Radar durumu güncellenemedi',
+        error: error.response?.data?.error || t('api.gRadar.toggleError'),
       };
     }
   },
@@ -182,7 +183,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getBrokerWallet', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Cüzdan bilgisi alınamadı',
+        error: error.response?.data?.error || t('api.gRadar.brokerWalletError'),
       };
     }
   },
