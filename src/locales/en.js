@@ -1,6 +1,7 @@
 /**
  * English Language File
- * All UI texts are defined here
+ * All UI texts are defined here. Every key must also exist in tr.js —
+ * `npm run i18n:check` verifies that both dictionaries carry the same keys.
  */
 
 export const en = {
@@ -93,6 +94,13 @@ export const en = {
     iban: "IBAN",
     copyIban: "Copy IBAN",
     copied: "Copied",
+  },
+
+  // Cargo payment status
+  paymentStatus: {
+    none: "No Payment",
+    paid: "Paid",
+    paidByCompany: "Paid by Company",
   },
 
   // Company Types
@@ -226,7 +234,6 @@ export const en = {
     enterCustomsName: "Enter customs name",
     enterContainerAmount: "Enter container amount",
     enterSender: "Enter sender",
-    enterWeight: "Enter weight",
     enterTax: "Enter tax",
     enterGuaranteeAmount: "Enter guarantee",
     enterImportProcessingTime: "Enter processing time",
@@ -237,15 +244,113 @@ export const en = {
     selectOrType: "Select or type...",
     enterDelayReason: "Specify potential delay reasons...",
     firstSelectClient: "First select client company",
+
     // Cargo placeholders
     enterLicensePlate: "Enter license plate",
-    enterConsignmentNumber: "Enter consignment number",
+    enterConsignmentNumber: "Enter air waybill number",
     enterBillOfLading: "Enter B/L",
     enterContainerNumber: "Enter container number",
-    enterContainerCount: "Enter container count",
+    enterContainerCount: "Enter package count",
+    enterWeight: "Enter weight",
+    enterSenderCompany: "Enter sender company",
+    enterCarrierName: "Enter carrier name",
+    enterLokalAmount: "Enter local charges",
+    enterDepositoAmount: "Enter container deposit",
+    enterOrdinoAmount: "Enter delivery order fee",
     enterCostsAmount: "Enter costs amount",
     enterDocumentReceiver: "Enter document receiver",
     enterTransportInfo: "Enter transport info",
+    selectVehicleType: "Select vehicle type",
+    selectClientCompany: "Select consignee company",
+    selectBrokerCompany: "Select customs broker",
+  },
+
+  // Cargo-specific translations
+  cargo: {
+    title: "Cargo Tracking",
+    addNew: "Add New Cargo",
+    edit: "Edit Cargo",
+    status: {
+      tracking: "Tracking",
+      arrived: "Arrived",
+      completed: "Completed",
+    },
+    vehicleType: {
+      ship: "Ship",
+      truck: "Truck",
+      airplane: "Airplane",
+    },
+    fields: {
+      vehicleType: "Vehicle Type",
+      clientCompany: "Consignee",
+      brokerCompany: "Customs Broker",
+      senderCompany: "Sender",
+      carrierName: "Carrier",
+      containerCount: "Package Count",
+      weight: "Weight (kg)",
+      billOfLading: "B/L Number",
+      licensePlate: "License Plate",
+      consignmentNumber: "Air Waybill",
+      containerNumbers: "Container Numbers",
+      transportInfo: "Transport Details",
+      documentReceiver: "Document Received By",
+      documentDeliveryDate: "Document Delivery Date",
+      estimatedArrivalDate: "Estimated Arrival (ETA)",
+      cargoArrivalDate: "Arrival Date",
+      initialEstimatedArrivalDate: "Initial ETA (Delay Baseline)",
+      lokalCosts: "Local Charges",
+      depositoCosts: "Container Deposit",
+      ordinoCosts: "Delivery Order Fee",
+      paymentStatus: "Payment Status",
+      status: "Status",
+    },
+  },
+
+  // Document delivery types
+  documentDelivery: {
+    person: { label: "Person", description: "Documents handed over to a named person" },
+    eOrdino: { label: "E-Release", description: "Virtual release, no name needed" },
+    eOrdinoPerson: { label: "E-Release + Person", description: "Virtual release plus person details" },
+    sentToCustoms: { label: "Sent to Customs", description: "Documents forwarded to customs" },
+    receivedByUs: { label: "Received by Us", description: "Documents reached our office" },
+    noOriginal: { label: "No Original Document", description: "A date is enough" },
+  },
+
+  // Balance transaction types
+  balanceTransaction: {
+    credit: { label: "Credit", short: "Credit" },
+    addonDebit: { label: "Add-on Charge", short: "Add-on" },
+    periodDebit: { label: "Period Charge", short: "Period" },
+    gRadarCreditPurchase: { label: "G-Radar Credits", short: "G-Radar" },
+  },
+
+  // Currencies
+  currency: {
+    try: "Turkish Lira",
+    usd: "US Dollar",
+    eur: "Euro",
+  },
+
+  // Days (1 = Monday)
+  days: {
+    long: {
+      1: "Monday",
+      2: "Tuesday",
+      3: "Wednesday",
+      4: "Thursday",
+      5: "Friday",
+      6: "Saturday",
+      7: "Sunday",
+    },
+    short: {
+      1: "Mon",
+      2: "Tue",
+      3: "Wed",
+      4: "Thu",
+      5: "Fri",
+      6: "Sat",
+      7: "Sun",
+    },
   },
 
   // Time related
@@ -267,6 +372,51 @@ export const en = {
     reports: "Reports",
     settings: "Settings",
     logout: "Logout",
+    home: "Home",
+    transactionTracking: "Transactions",
+    warehouseTracking: "Bonded Warehouse",
+    cargoTracking: "Cargo Tracking",
+    news: "News",
+    announcements: "Announcements",
+    profile: "My Account",
+    contact: "Contact",
+    help: "Help",
+    agreements: "Powers of Attorney",
+    clients: "Client Companies",
+    employees: "Employees",
+    couriers: "Couriers",
+    companySettings: "Company Settings",
+    subscriptionAndPayment: "Subscription & Payment",
+    sessions: "Sessions",
+    payments: "Payment Management",
+    brokerSubscriptions: "Subscriptions",
+    addonCatalog: "Service Catalog",
+    plans: "Plans",
+    feedbackTasks: "Feedback Tasks",
+  },
+
+  // Sidebar and mobile menu
+  layout: {
+    other: "More",
+    otherMenuItems: "More menu items",
+    otherManagementItems: "More management items",
+    management: "Management",
+    userFallback: "User",
+    company: "Company",
+    pinAndExpand: "Pin and expand",
+    expand: "Expand",
+    collapse: "Collapse",
+    signOut: "Sign Out",
+    pin: "Pin",
+    unpin: "Unpin",
+    reportIssue: "Report an Issue / Suggest",
+  },
+
+  // Language selection
+  language: {
+    title: "Language",
+    description: "Interface language. The page reloads when you change it.",
+    inProgress: "Translation is in progress; some screens may still appear in Turkish.",
   },
 };
 

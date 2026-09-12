@@ -37,10 +37,17 @@ let currentLanguage = DEFAULT_LANGUAGE;
 
 // Tarayıcıda çalışıyorsa localStorage'dan dil tercihini oku
 if (typeof window !== 'undefined') {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage && SUPPORTED_LANGUAGES[savedLanguage]) {
-    currentLanguage = savedLanguage;
+  try {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage && SUPPORTED_LANGUAGES[savedLanguage]) {
+      currentLanguage = savedLanguage;
+    }
+  } catch {
+    // localStorage erişilemiyorsa varsayılan dilde kal
   }
+  // Ekran okuyucular ve tarayıcı yazım denetimi doğru dili kullansın. `translate="no"`
+  // index.html'de kalır: Material Symbols ikon adları otomatik çeviriyle bozuluyor.
+  document.documentElement.lang = currentLanguage;
 }
 
 /**
@@ -69,10 +76,15 @@ export const setLanguage = (langCode) => {
   if (SUPPORTED_LANGUAGES[langCode]) {
     currentLanguage = langCode;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('language', langCode);
+      try {
+        localStorage.setItem('language', langCode);
+      } catch {
+        // kaydedilemese de bu oturumda geçerli olur
+      }
+      // `t()` bir React state'i değil: modül yüklenirken hesaplanan sabitler dahil her metnin
+      // yeni dilde okunması için sayfa yeniden yüklenir. Dil nadiren değiştiği için yeterli.
+      window.location.reload();
     }
-    // Sayfa yeniden yüklenmesi gerekiyorsa:
-    // window.location.reload();
   } else {
     console.warn(`Desteklenmeyen dil: ${langCode}`);
   }

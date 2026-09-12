@@ -20,6 +20,7 @@ npm run dev       # Vite dev server, bound to 0.0.0.0 (--host) for LAN testing
 npm run build     # production build into dist/
 npm run lint      # ESLint flat config over the repo
 npm run preview   # serve the built dist/
+npm run i18n:check  # tr.js and en.js must carry the same keys
 ```
 
 There is **no test framework in this project** — no Vitest/Jest, no test files. Don't
@@ -166,10 +167,23 @@ The product UI and most code comments are **Turkish**; commit messages are Engli
 imperative mood ("Move the G-Radar column next to the consignment number"). Match the
 surrounding file.
 
-`src/locales/` is a small home-grown i18n layer (`t('gates.yellow')`, `setLanguage()`,
-localStorage-backed) with `tr` and `en` dictionaries. It is only partially adopted —
-plenty of strings are still hardcoded Turkish. `constants.js` entries carry `labelKey`
-for the eventual migration.
+**The UI is being translated to English** (decision 12.09.2026), screen by screen.
+`src/locales/` is a small home-grown layer: `t('gates.yellow')` reads `tr.js` / `en.js`,
+the choice lives in `localStorage` under `language`. The rules:
+
+- **New or touched UI text goes through `t()`**, with the key added to **both** `tr.js` and
+  `en.js`. `npm run i18n:check` fails when the dictionaries' keys differ.
+- `t()` is not React state. `setLanguage()` saves the choice and **reloads the page**, so
+  calling `t()` anywhere — render, module scope, constants — always yields the current language.
+- `constants.js` items keep a `labelKey`; their `label` / `displayName` / `description` are
+  getters over `t()`, so callers read `option.label` as before. Don't add literal labels there.
+- Menus come from `menuConfig.js` (`HOME_ITEM`, `getGeneralMenuItems(user)`, `SUPPORT_ITEMS`,
+  `MANAGEMENT_ITEMS`) for both `Sidebar` and `MobileMenu`.
+- Format dates and numbers with `getCurrentLocale()`, not a hard-coded `'tr-TR'` (many old
+  call sites still have it).
+- The language picker (`LanguageSelectCard` on the profile page) is **SUPER_ADMIN-only**
+  until translation is complete, so customers never see a half-English app. Text produced by
+  the backend (error messages, notification titles) is still Turkish.
 
 **Icons are Material Symbols ligatures** (`<span className="material-symbols-outlined">home</span>`),
 which browser translation extensions will happily translate into broken text. The

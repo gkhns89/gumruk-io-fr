@@ -1,85 +1,56 @@
-// Yönetim menüsü öğeleri — Sidebar (masaüstü) ve MobileMenu ortak kullanır.
+// Menü öğeleri — Sidebar (masaüstü) ve MobileMenu ortak kullanır.
 // Tek kaynak: iki menünün zamanla birbirinden ayrışmasını (drift) önler.
+// `label`, `labelKey`'i o anki dilde okuyan bir getter; dil değişince sayfa yeniden yüklenir.
+import { t } from '../../locales';
+
+const menuItem = (icon, labelKey, path, extra = {}) => ({
+  icon,
+  labelKey,
+  path,
+  ...extra,
+  get label() { return t(labelKey); },
+});
+
+// Her zaman en üstte görünen öğe
+export const HOME_ITEM = menuItem("home", "nav.home", "/dashboard");
+
+// Genel menü öğeleri (Sidebar'da "Diğer" çekmecesine taşabilenler).
+// Ayarlar sayfası tamamen SUPER_ADMIN'e ait (ClickUp + G-Radar master config);
+// diğer rollerin orada yetkili oldukları hiçbir alan yok, bu yüzden öğe de gösterilmiyor.
+export const getGeneralMenuItems = (user) => [
+  menuItem("search", "nav.transactionTracking", "/transactions"),
+  menuItem("warehouse", "nav.warehouseTracking", "/warehouse"),
+  menuItem("local_shipping", "nav.cargoTracking", "/cargo"),
+  menuItem("feed", "nav.news", "/news"),
+  menuItem("campaign", "nav.announcements", "/announcements"),
+  menuItem("person", "nav.profile", "/profile"),
+  ...(user?.globalRole === 'SUPER_ADMIN' ? [menuItem("settings", "nav.settings", "/settings")] : []),
+];
+
+// Destek öğeleri (menünün altında)
+export const SUPPORT_ITEMS = [
+  menuItem("headset_mic", "nav.contact", "/contact"),
+  menuItem("help_center", "nav.help", "/help"),
+];
+
+// Yönetim menüsü öğeleri
 export const MANAGEMENT_ITEMS = [
-  {
-    icon: "verified",
-    label: "Vekalet Yönetimi",
-    path: "/management/agreements",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "corporate_fare",
-    label: "Müşteri Firmaları",
-    path: "/management/clients",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "group",
-    label: "Çalışan Yönetimi",
-    path: "/management/employees",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "two_wheeler",
-    label: "Kurye Yönetimi",
-    path: "/management/couriers",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "domain",
-    label: "Firma Ayarları",
-    path: "/company-settings",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "account_balance",
-    label: "Abonelik & Ödeme",
-    path: "/payment/submit",
+  menuItem("verified", "nav.agreements", "/management/agreements", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("corporate_fare", "nav.clients", "/management/clients", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("group", "nav.employees", "/management/employees", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("two_wheeler", "nav.couriers", "/management/couriers", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("domain", "nav.companySettings", "/company-settings", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("account_balance", "nav.subscriptionAndPayment", "/payment/submit", {
     roles: ['BROKER_ADMIN', 'BROKER_USER'],
     condition: (user) => user?.isPaymentResponsible === true,
-  },
-  {
-    icon: "assessment",
-    label: "Raporlar",
-    path: "/management/reports",
-    roles: ['BROKER_ADMIN', 'SUPER_ADMIN'],
-  },
-  {
-    icon: "manage_accounts",
-    label: "Session Yönetimi",
-    path: "/session-management",
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    icon: "payments",
-    label: "Ödeme Yönetimi",
-    path: "/management/payments",
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    icon: "subscriptions",
-    label: "Abonelik Yönetimi",
-    path: "/management/broker-subscriptions",
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    icon: "library_add",
-    label: "Hizmet Kataloğu",
-    path: "/management/addon-catalog",
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    icon: "workspace_premium",
-    label: "Plan Yönetimi",
-    path: "/management/plans",
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    icon: "task_alt",
-    label: "Feedback Taskları",
-    path: "/management/feedback-tasks",
-    roles: ['SUPER_ADMIN'],
-  },
+  }),
+  menuItem("assessment", "nav.reports", "/management/reports", { roles: ['BROKER_ADMIN', 'SUPER_ADMIN'] }),
+  menuItem("manage_accounts", "nav.sessions", "/session-management", { roles: ['SUPER_ADMIN'] }),
+  menuItem("payments", "nav.payments", "/management/payments", { roles: ['SUPER_ADMIN'] }),
+  menuItem("subscriptions", "nav.brokerSubscriptions", "/management/broker-subscriptions", { roles: ['SUPER_ADMIN'] }),
+  menuItem("library_add", "nav.addonCatalog", "/management/addon-catalog", { roles: ['SUPER_ADMIN'] }),
+  menuItem("workspace_premium", "nav.plans", "/management/plans", { roles: ['SUPER_ADMIN'] }),
+  menuItem("task_alt", "nav.feedbackTasks", "/management/feedback-tasks", { roles: ['SUPER_ADMIN'] }),
 ];
 
 // Kullanıcının rol + koşullarına göre görünür yönetim öğeleri.

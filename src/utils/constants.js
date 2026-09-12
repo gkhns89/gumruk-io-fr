@@ -1,7 +1,13 @@
 /**
  * Uygulama Sabitleri
- * Çoklu dil desteği için labelKey kullanılır
+ *
+ * Görünen metinler sözlükten gelir: her öğe bir `labelKey` taşır, `label` / `displayName` gibi
+ * alanlar o anahtarı o anki dilde okuyan getter'lardır. Dil değiştirilince sayfa yeniden
+ * yüklendiği için okunan değer her zaman seçili dildedir; çağıranların bir şey yapması gerekmez.
+ * Yeni bir sabit eklerken metni buraya değil `src/locales/tr.js` + `en.js`'e yazın.
  */
+
+import { t, getCurrentLocale } from '../locales';
 
 /**
  * Hat (Gate) Seçenekleri
@@ -147,7 +153,7 @@ export const CARGO_STATUS = [
   {
     value: "TRACKING",
     labelKey: "cargo.status.tracking",
-    displayName: "Takip",
+    get displayName() { return t(this.labelKey); },
     color: "blue",
     sortOrder: 2,
     bgClass: "bg-blue-50 dark:bg-blue-900/20",
@@ -159,7 +165,7 @@ export const CARGO_STATUS = [
   {
     value: "ARRIVED",
     labelKey: "cargo.status.arrived",
-    displayName: "Varış Yaptı",
+    get displayName() { return t(this.labelKey); },
     color: "green",
     sortOrder: 1,
     bgClass: "bg-green-50 dark:bg-green-900/20",
@@ -171,7 +177,7 @@ export const CARGO_STATUS = [
   {
     value: "COMPLETED",
     labelKey: "cargo.status.completed",
-    displayName: "Tamamlandı",
+    get displayName() { return t(this.labelKey); },
     color: "red",
     sortOrder: 3,
     bgClass: "bg-red-50 dark:bg-red-900/20",
@@ -189,19 +195,22 @@ export const CARGO_STATUS = [
 export const PAYMENT_STATUS_OPTIONS = [
   {
     value: 'NO_PAYMENT',
-    label: 'Ödeme Yok',
+    labelKey: 'paymentStatus.none',
+    get label() { return t(this.labelKey); },
     color: 'gray',
     badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
   },
   {
     value: 'PAID',
-    label: 'Ödendi',
+    labelKey: 'paymentStatus.paid',
+    get label() { return t(this.labelKey); },
     color: 'green',
     badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
   },
   {
     value: 'COMPANY_PAID',
-    label: 'Firma Tarafından Ödendi',
+    labelKey: 'paymentStatus.paidByCompany',
+    get label() { return t(this.labelKey); },
     color: 'blue',
     badgeClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
   }
@@ -210,12 +219,13 @@ export const PAYMENT_STATUS_OPTIONS = [
 /**
  * Araç Tipleri
  * Vehicle types with specific field requirements
+ * displayName büyük harf gösterim içindir (Türkçede "Uçak" → "UÇAK", locale'e duyarlı).
  */
 export const VEHICLE_TYPES = [
   {
     value: "AIRPLANE",
     labelKey: "cargo.vehicleType.airplane",
-    displayName: "UÇAK",
+    get displayName() { return t(this.labelKey).toLocaleUpperCase(getCurrentLocale()); },
     icon: "flight",
     color: "sky",
     fields: ["consignmentNumber"], // Sadece Konşimento
@@ -223,7 +233,7 @@ export const VEHICLE_TYPES = [
   {
     value: "SHIP",
     labelKey: "cargo.vehicleType.ship",
-    displayName: "GEMİ",
+    get displayName() { return t(this.labelKey).toLocaleUpperCase(getCurrentLocale()); },
     icon: "directions_boat",
     color: "blue",
     fields: ["billOfLading", "containerNumbers"], // B/L + Konteyner Numaraları
@@ -231,7 +241,7 @@ export const VEHICLE_TYPES = [
   {
     value: "TRUCK",
     labelKey: "cargo.vehicleType.truck",
-    displayName: "KAMYON",
+    get displayName() { return t(this.labelKey).toLocaleUpperCase(getCurrentLocale()); },
     icon: "local_shipping",
     color: "orange",
     fields: ["licensePlate"], // Sadece Plaka
@@ -245,9 +255,9 @@ export const VEHICLE_TYPES = [
 export const DOCUMENT_DELIVERY_TYPES = [
   {
     value: 'PERSON',
-    label: 'Şahıs',
-    labelEn: 'Person',
-    description: 'Evraklar kişi adına teslim',
+    labelKey: 'documentDelivery.person',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'person',
     requiresPersonName: true,
     badgeClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
@@ -256,9 +266,9 @@ export const DOCUMENT_DELIVERY_TYPES = [
   },
   {
     value: 'E_ORDINO',
-    label: 'E-Ordino',
-    labelEn: 'E-Release',
-    description: 'Sanal teslim, şahıs adı gerekmez',
+    labelKey: 'documentDelivery.eOrdino',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'computer',
     requiresPersonName: false,
     badgeClass: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
@@ -267,9 +277,9 @@ export const DOCUMENT_DELIVERY_TYPES = [
   },
   {
     value: 'E_ORDINO_PERSON',
-    label: 'E-Ordino + Şahıs',
-    labelEn: 'E-Release + Person',
-    description: 'Sanal teslim ve şahıs bilgisi',
+    labelKey: 'documentDelivery.eOrdinoPerson',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'computer',
     requiresPersonName: true,
     badgeClass: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
@@ -278,9 +288,9 @@ export const DOCUMENT_DELIVERY_TYPES = [
   },
   {
     value: 'SENT_TO_CUSTOMS',
-    label: 'Gümrüğe Gönderildi',
-    labelEn: 'Sent to Customs',
-    description: 'Evraklar gümrüğe iletildi',
+    labelKey: 'documentDelivery.sentToCustoms',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'send',
     requiresPersonName: false,
     badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
@@ -289,9 +299,9 @@ export const DOCUMENT_DELIVERY_TYPES = [
   },
   {
     value: 'RECEIVED_BY_US',
-    label: 'Tarafımıza Geldi',
-    labelEn: 'Received by Us',
-    description: 'Evraklar firmamıza ulaştı',
+    labelKey: 'documentDelivery.receivedByUs',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'download',
     requiresPersonName: false,
     badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
@@ -300,9 +310,9 @@ export const DOCUMENT_DELIVERY_TYPES = [
   },
   {
     value: 'NO_ORIGINAL',
-    label: 'Orijinal Evrak Yok',
-    labelEn: 'No Original Doc',
-    description: 'Sadece tarih yeterli',
+    labelKey: 'documentDelivery.noOriginal',
+    get label() { return t(`${this.labelKey}.label`); },
+    get description() { return t(`${this.labelKey}.description`); },
     icon: 'cancel',
     requiresPersonName: false,
     badgeClass: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
@@ -312,7 +322,7 @@ export const DOCUMENT_DELIVERY_TYPES = [
 ];
 
 export const getDocumentDeliveryType = (value) => {
-  return DOCUMENT_DELIVERY_TYPES.find((t) => t.value === value) || null;
+  return DOCUMENT_DELIVERY_TYPES.find((type) => type.value === value) || null;
 };
 
 /**
@@ -325,11 +335,19 @@ export const getDocumentDeliveryType = (value) => {
  * SHIPSGO_CREDIT_PURCHASE; dışarıya @JsonProperty ile GRADAR_CREDIT_PURCHASE
  * adıyla çıkıyor. Buradaki `value` dış addır.
  */
+const balanceType = (value, labelKey, isCredit) => ({
+  value,
+  labelKey,
+  isCredit,
+  get label() { return t(`${labelKey}.label`); },
+  get shortLabel() { return t(`${labelKey}.short`); },
+});
+
 export const BALANCE_TRANSACTION_TYPES = [
-  { value: 'CREDIT', label: 'Kredi', shortLabel: 'Kredi', isCredit: true },
-  { value: 'ADDON_DEBIT', label: 'Ek Ödeme', shortLabel: 'Ek Ödeme', isCredit: false },
-  { value: 'PERIOD_DEBIT', label: 'Dönem Ödemesi', shortLabel: 'Dönem', isCredit: false },
-  { value: 'GRADAR_CREDIT_PURCHASE', label: 'G-Radar Kredisi', shortLabel: 'G-Radar', isCredit: false },
+  balanceType('CREDIT', 'balanceTransaction.credit', true),
+  balanceType('ADDON_DEBIT', 'balanceTransaction.addonDebit', false),
+  balanceType('PERIOD_DEBIT', 'balanceTransaction.periodDebit', false),
+  balanceType('GRADAR_CREDIT_PURCHASE', 'balanceTransaction.gRadarCreditPurchase', false),
 ];
 
 /**
@@ -344,7 +362,7 @@ export const BALANCE_TRANSACTION_TYPES = [
  * @returns {Object|null} Tür objesi
  */
 export const getBalanceTransactionType = (value) => {
-  return BALANCE_TRANSACTION_TYPES.find((t) => t.value === value) || null;
+  return BALANCE_TRANSACTION_TYPES.find((type) => type.value === value) || null;
 };
 
 /**
@@ -352,9 +370,9 @@ export const getBalanceTransactionType = (value) => {
  * Currency options for costs
  */
 export const CURRENCY_OPTIONS = [
-  { value: "TRY", symbol: "₺", label: "Türk Lirası", labelKey: "currency.try" },
-  { value: "USD", symbol: "$", label: "Amerikan Doları", labelKey: "currency.usd" },
-  { value: "EUR", symbol: "€", label: "Euro", labelKey: "currency.eur" },
+  { value: "TRY", symbol: "₺", labelKey: "currency.try", get label() { return t(this.labelKey); } },
+  { value: "USD", symbol: "$", labelKey: "currency.usd", get label() { return t(this.labelKey); } },
+  { value: "EUR", symbol: "€", labelKey: "currency.eur", get label() { return t(this.labelKey); } },
 ];
 
 /**
@@ -440,7 +458,7 @@ export const formatCurrency = (amount, currencyCode = "TRY") => {
   const currency = getCurrency(currencyCode);
   const symbol = currency?.symbol || "";
 
-  const formatted = amount.toLocaleString('tr-TR', {
+  const formatted = amount.toLocaleString(getCurrentLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
@@ -452,15 +470,13 @@ export const formatCurrency = (amount, currencyCode = "TRY") => {
  * Gün Seçenekleri (Kurye Takip için)
  * dayOfWeek: 1=Pazartesi, 7=Pazar
  */
-export const DAY_OPTIONS = [
-  { value: 1, label: 'Pazartesi', shortLabel: 'Pzt' },
-  { value: 2, label: 'Salı', shortLabel: 'Sal' },
-  { value: 3, label: 'Çarşamba', shortLabel: 'Çar' },
-  { value: 4, label: 'Perşembe', shortLabel: 'Per' },
-  { value: 5, label: 'Cuma', shortLabel: 'Cum' },
-  { value: 6, label: 'Cumartesi', shortLabel: 'Cmt' },
-  { value: 7, label: 'Pazar', shortLabel: 'Paz' }
-];
+const dayOption = (value) => ({
+  value,
+  get label() { return t(`days.long.${value}`); },
+  get shortLabel() { return t(`days.short.${value}`); },
+});
+
+export const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7].map(dayOption);
 
 /**
  * Gün adını döndürür

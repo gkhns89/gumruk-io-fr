@@ -1,6 +1,7 @@
 /**
  * Türkçe Dil Dosyası
- * Tüm UI metinleri burada tanımlanır
+ * Tüm UI metinleri burada tanımlanır. Yeni bir anahtar en.js'e de eklenmeli —
+ * `npm run i18n:check` iki sözlüğün aynı anahtarları taşıdığını denetler.
  */
 
 export const tr = {
@@ -93,6 +94,13 @@ export const tr = {
     iban: "IBAN",
     copyIban: "IBAN Kopyala",
     copied: "Kopyalandı",
+  },
+
+  // Yük takibinde ödeme durumu
+  paymentStatus: {
+    none: "Ödeme Yok",
+    paid: "Ödendi",
+    paidByCompany: "Firma Tarafından Ödendi",
   },
 
   // Firma Tipleri
@@ -249,6 +257,7 @@ export const tr = {
     enterLokalAmount: "LOKAL MASRAF GİRİN",
     enterDepositoAmount: "DEPOZİTO MASRAF GİRİN",
     enterOrdinoAmount: "ORDİNO MASRAF GİRİN",
+    enterCostsAmount: "MASRAF TUTARI GİRİN",
     enterDocumentReceiver: "EVRAK TESLİM ALAN GİRİN",
     enterTransportInfo: "TAŞIMA BİLGİLERİ GİRİN",
     selectVehicleType: "ARAÇ TİPİ SEÇİN",
@@ -261,6 +270,11 @@ export const tr = {
     title: "Yük Takip",
     addNew: "Yeni Yük Ekle",
     edit: "Yük Düzenle",
+    status: {
+      tracking: "Takip",
+      arrived: "Varış Yaptı",
+      completed: "Tamamlandı",
+    },
     vehicleType: {
       ship: "Gemi",
       truck: "Kamyon",
@@ -292,6 +306,53 @@ export const tr = {
     },
   },
 
+  // Evrak teslim tipleri
+  documentDelivery: {
+    person: { label: "Şahıs", description: "Evraklar kişi adına teslim" },
+    eOrdino: { label: "E-Ordino", description: "Sanal teslim, şahıs adı gerekmez" },
+    eOrdinoPerson: { label: "E-Ordino + Şahıs", description: "Sanal teslim ve şahıs bilgisi" },
+    sentToCustoms: { label: "Gümrüğe Gönderildi", description: "Evraklar gümrüğe iletildi" },
+    receivedByUs: { label: "Tarafımıza Geldi", description: "Evraklar firmamıza ulaştı" },
+    noOriginal: { label: "Orijinal Evrak Yok", description: "Sadece tarih yeterli" },
+  },
+
+  // Bakiye hareketi türleri
+  balanceTransaction: {
+    credit: { label: "Kredi", short: "Kredi" },
+    addonDebit: { label: "Ek Ödeme", short: "Ek Ödeme" },
+    periodDebit: { label: "Dönem Ödemesi", short: "Dönem" },
+    gRadarCreditPurchase: { label: "G-Radar Kredisi", short: "G-Radar" },
+  },
+
+  // Para birimleri
+  currency: {
+    try: "Türk Lirası",
+    usd: "Amerikan Doları",
+    eur: "Euro",
+  },
+
+  // Günler (1 = Pazartesi)
+  days: {
+    long: {
+      1: "Pazartesi",
+      2: "Salı",
+      3: "Çarşamba",
+      4: "Perşembe",
+      5: "Cuma",
+      6: "Cumartesi",
+      7: "Pazar",
+    },
+    short: {
+      1: "Pzt",
+      2: "Sal",
+      3: "Çar",
+      4: "Per",
+      5: "Cum",
+      6: "Cmt",
+      7: "Paz",
+    },
+  },
+
   // Zaman ile ilgili
   time: {
     today: "Bugün",
@@ -311,6 +372,51 @@ export const tr = {
     reports: "Raporlar",
     settings: "Ayarlar",
     logout: "Çıkış",
+    home: "Ana Sayfa",
+    transactionTracking: "İşlem Takip",
+    warehouseTracking: "Antrepo Takip",
+    cargoTracking: "Yük Takip",
+    news: "Haberler",
+    announcements: "Duyurular",
+    profile: "Hesabım",
+    contact: "İletişim",
+    help: "Yardım",
+    agreements: "Vekalet Yönetimi",
+    clients: "Müşteri Firmaları",
+    employees: "Çalışan Yönetimi",
+    couriers: "Kurye Yönetimi",
+    companySettings: "Firma Ayarları",
+    subscriptionAndPayment: "Abonelik & Ödeme",
+    sessions: "Session Yönetimi",
+    payments: "Ödeme Yönetimi",
+    brokerSubscriptions: "Abonelik Yönetimi",
+    addonCatalog: "Hizmet Kataloğu",
+    plans: "Plan Yönetimi",
+    feedbackTasks: "Feedback Taskları",
+  },
+
+  // Kenar çubuğu ve mobil menü
+  layout: {
+    other: "Diğer",
+    otherMenuItems: "Diğer Menü Öğeleri",
+    otherManagementItems: "Diğer Yönetim Öğeleri",
+    management: "Yönetim",
+    userFallback: "Kullanıcı",
+    company: "Firma",
+    pinAndExpand: "Sabitle ve Genişlet",
+    expand: "Genişlet",
+    collapse: "Daralt",
+    signOut: "Oturumu Kapat",
+    pin: "Sabitle",
+    unpin: "Sabitlemeyi Kaldır",
+    reportIssue: "Sorun Bildir / Öneri",
+  },
+
+  // Dil seçimi
+  language: {
+    title: "Dil",
+    description: "Arayüz dili. Değiştirdiğinizde sayfa yeniden yüklenir.",
+    inProgress: "Çeviri sürüyor; bazı ekranlar henüz Türkçe görünebilir.",
   },
 };
 

@@ -2,7 +2,6 @@ import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType } 
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
 import { getCostBreakdown, calculateTotalCosts } from '../../utils/costsUtils';
 import { gRadarStatusInfo } from '../../utils/gRadarLabels';
-import { getCurrentLanguage } from '../../locales';
 
 export default function CargoTrackingTable({
   cargo,
@@ -452,7 +451,7 @@ export default function CargoTrackingTable({
                       {(() => {
                         const dt = getDocumentDeliveryType(cargoItem.documentDeliveryType);
                         if (!dt) return cargoItem.documentReceiver || "-";
-                        const label = getCurrentLanguage() === 'tr' ? dt.label : dt.labelEn;
+                        const label = dt.label;
                         if (dt.requiresPersonName && cargoItem.documentReceiver) {
                           return (
                             <div className="flex flex-col gap-0.5">
