@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { usePaymentRestriction } from "../../context/PaymentRestrictionProvider";
+import { usePaymentRestriction } from "../../hooks/usePaymentRestriction";
 import { warehouseService } from "../../api/warehouseService";
 import { handleError, handleApiResponse } from "../../utils/errorUtils";
 import MainLayout from "../layout/MainLayout";
@@ -124,7 +124,7 @@ export default function WarehousePage() {
     calculate();
     window.addEventListener("resize", calculate);
     return () => { ro.disconnect(); window.removeEventListener("resize", calculate); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadData = async () => {
     setLoading(true);

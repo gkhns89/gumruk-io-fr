@@ -1,21 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { paymentService } from '../api/paymentService';
 import { AuthContext } from './authContext';
-
-export const PaymentRestrictionContext = createContext({
-  restrictionLevel: 'NONE',
-  daysOverdue: 0,
-  nextPaymentDue: null,
-  billingCycle: null,
-  isWarning: false,
-  isWriteBlocked: false,
-  isFullReadOnly: false,
-  refreshStatus: () => {},
-});
-
-export function usePaymentRestriction() {
-  return useContext(PaymentRestrictionContext);
-}
+import { PaymentRestrictionContext } from './paymentRestrictionContext';
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 dakika
 

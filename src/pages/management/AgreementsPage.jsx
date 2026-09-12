@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
+import { usePaymentRestriction } from '../../hooks/usePaymentRestriction';
 import { agencyAgreementService } from '../../api/agencyAgreementService';
 import { companyService } from '../../api/companyService';
 import CreateAgreementModal from '../../components/common/CreateAgreementModal';

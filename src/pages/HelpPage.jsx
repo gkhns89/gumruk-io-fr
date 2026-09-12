@@ -103,7 +103,6 @@ const HelpPage = () => {
   // History state
   const [feedbacks, setFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
-  const [expandedFeedback, setExpandedFeedback] = useState(highlightedId);
   const [detailFeedback, setDetailFeedback] = useState(null);
 
   // Okunmamış takibi
@@ -402,7 +401,6 @@ const HelpPage = () => {
                 {feedbacks.map(fb => {
                   const catCfg = CATEGORY_CONFIG[fb.category] || CATEGORY_CONFIG.OTHER;
                   const statusCfg = getStatusConfig(fb);
-                  const isExpanded = expandedFeedback === fb.id;
 
                   return (
                     <div

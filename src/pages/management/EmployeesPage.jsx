@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
+import { usePaymentRestriction } from '../../hooks/usePaymentRestriction';
 import { employeeService } from '../../api/employeeService';
 import { companyService } from '../../api/companyService';
 import MainLayout from '../../components/layout/MainLayout';

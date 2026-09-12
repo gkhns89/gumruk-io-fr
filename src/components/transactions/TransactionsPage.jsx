@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { usePaymentRestriction } from "../../context/PaymentRestrictionProvider";
+import { usePaymentRestriction } from "../../hooks/usePaymentRestriction";
 import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
@@ -464,7 +464,6 @@ export default function TransactionsPage() {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const pageHeaderRef = useRef(null);
-  const [pageHeaderHeight, setPageHeaderHeight] = useState(80);
   const [tableScrollHeight, setTableScrollHeight] = useState(() => window.innerHeight - 200);
   const FOOTER_H = 56; // fixed pagination footer height
 
@@ -473,7 +472,6 @@ export default function TransactionsPage() {
       const el = document.getElementById("main-scroll-area");
       if (!el || !pageHeaderRef.current) return;
       const ph = pageHeaderRef.current.offsetHeight;
-      setPageHeaderHeight(ph);
       // 88 = p-6 top (24) + p-6 bottom (24) + pb-24 excess over footer (96-56=40)
       setTableScrollHeight(Math.max(200, el.clientHeight - ph - FOOTER_H - 88));
     };
@@ -483,7 +481,7 @@ export default function TransactionsPage() {
     calculate();
     window.addEventListener("resize", calculate);
     return () => { ro.disconnect(); window.removeEventListener("resize", calculate); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // isScrolled artık tablo container'ının scroll'una göre güncellenir
   const handleTableScroll = (scrollTop) => setIsScrolled(scrollTop > 10);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { usePaymentRestriction } from '../../context/PaymentRestrictionProvider';
+import { usePaymentRestriction } from '../../hooks/usePaymentRestriction';
 import { cargoService } from '../../api/cargoService';
 import { gRadarService } from '../../api/gRadarService';
 import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';

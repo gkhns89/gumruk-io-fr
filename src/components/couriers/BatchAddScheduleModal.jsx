@@ -160,7 +160,6 @@ export default function BatchAddScheduleModal({ courier, onClose, onSuccess }) {
 
     try {
       // Create all combinations
-      const totalCombinations = selectedDays.length * selectedCustoms.length * selectedTimes.length;
       let successCount = 0;
       let failCount = 0;
       const errors = [];

@@ -3,7 +3,7 @@ import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { DAY_OPTIONS, getDayName } from '../../utils/constants';
+import { DAY_OPTIONS } from '../../utils/constants';
 import BatchAddScheduleModal from './BatchAddScheduleModal';
 
 export default function EditCourierModal({ onClose, courier, onSuccess }) {
@@ -53,7 +53,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
       } else {
         showError('Kalkış saatleri yüklenemedi');
       }
-    } catch (err) {
+    } catch {
       showError('Kalkış saatleri yüklenirken hata oluştu');
     } finally {
       setLoadingSchedules(false);
@@ -73,7 +73,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
       } else {
         showError('Gümrük listesi yüklenemedi');
       }
-    } catch (err) {
+    } catch {
       showError('Gümrük listesi yüklenirken hata oluştu');
     } finally {
       setLoadingCustoms(false);
