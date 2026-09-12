@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../locales';
 
 /**
  * Basit, tema-uyumlu client-side pagination bileşeni.
@@ -44,7 +45,7 @@ const Pagination = ({ currentPage, pageSize, totalItems, onPageChange }) => {
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`${btnBase} flex-shrink-0 text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
-          aria-label="Önceki sayfa"
+          aria-label={t('pagination.previous')}
         >
           <span className="material-symbols-outlined text-lg">chevron_left</span>
         </button>
@@ -75,7 +76,7 @@ const Pagination = ({ currentPage, pageSize, totalItems, onPageChange }) => {
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`${btnBase} flex-shrink-0 text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700`}
-          aria-label="Sonraki sayfa"
+          aria-label={t('pagination.next')}
         >
           <span className="material-symbols-outlined text-lg">chevron_right</span>
         </button>

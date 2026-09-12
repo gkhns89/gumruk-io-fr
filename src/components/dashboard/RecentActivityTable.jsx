@@ -6,25 +6,26 @@ import CargoDetailModal from "../common/CargoDetailModal";
 import ViewWarehouseModal from "../warehouse/ViewWarehouseModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { getCargoStatus, VEHICLE_TYPES } from "../../utils/constants";
+import { t, getCurrentLocale } from "../../locales";
 
 // Birleşik tablo: satır türü ikonu (İşlem → ithalat, Antrepo → depo) + tooltip
 const getTypeInfo = (kind) =>
   kind === "warehouse"
-    ? { icon: "warehouse", label: "Antrepo", className: "text-amber-500 dark:text-amber-400" }
-    : { icon: "input", label: "İşlem (İthalat)", className: "text-blue-600 dark:text-blue-400" };
+    ? { icon: "warehouse", label: t("dashboard.recent.typeWarehouse"), className: "text-amber-500 dark:text-amber-400" }
+    : { icon: "input", label: t("dashboard.recent.typeTransaction"), className: "text-blue-600 dark:text-blue-400" };
 
 // Hat göstergesi: renkli yuvarlak (Sarı / Kırmızı) + tooltip
 const getGateDot = (gate) => {
-  if (gate === "SARI") return { color: "bg-yellow-400", label: "Sarı Hat" };
-  if (gate === "KIRMIZI") return { color: "bg-red-500", label: "Kırmızı Hat" };
+  if (gate === "SARI") return { color: "bg-yellow-400", label: t("dashboard.recent.gateYellow") };
+  if (gate === "KIRMIZI") return { color: "bg-red-500", label: t("dashboard.recent.gateRed") };
   return null;
 };
 
 // Antrepo durum badge (TESCIL_EDILDI / KAPANDI)
 const getWarehouseStatusBadge = (status) => {
   const map = {
-    TESCIL_EDILDI: { label: "TESCİL EDİLDİ", className: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700" },
-    KAPANDI:       { label: "KAPANDI",       className: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700" },
+    TESCIL_EDILDI: { label: t("dashboard.recent.warehouseStatus.TESCIL_EDILDI"), className: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700" },
+    KAPANDI:       { label: t("dashboard.recent.warehouseStatus.KAPANDI"),       className: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700" },
   };
   return map[status] || { label: status, className: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600" };
 };
@@ -44,15 +45,17 @@ const getStatusRowStyle = (status) => {
 
 // İşlem durumu badge
 const getStatusBadgeClass = (status) => {
-  const statusMap = {
-    PENDING:      { color: "pending",    label: "BEKLİYOR" },
-    REGISTERED:   { color: "registered", label: "TESCİL EDİLDİ" },
-    INSPECTION:   { color: "inspection", label: "MUAYENEDE" },
-    CP_COMPLETED: { color: "completed",  label: "TAMAMLANDI" },
-    WITHDRAWN:    { color: "withdrawn",  label: "ÇEKİLDİ" },
-    CANCELLED:    { color: "cancelled",  label: "İPTAL" },
+  const statusColors = {
+    PENDING:      "pending",
+    REGISTERED:   "registered",
+    INSPECTION:   "inspection",
+    CP_COMPLETED: "completed",
+    WITHDRAWN:    "withdrawn",
+    CANCELLED:    "cancelled",
   };
-  const statusInfo = statusMap[status] || { color: "default", label: status };
+  const statusInfo = statusColors[status]
+    ? { color: statusColors[status], label: t(`dashboard.recent.transactionStatus.${status}`) }
+    : { color: "default", label: status };
   const colors = {
     pending:    "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700",
     registered: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700",
@@ -122,15 +125,15 @@ export default function RecentActivityTable({
     <>
     {/* Mobil: başlık taşmasın diye sekme seçimi combobox */}
     <div className="sm:hidden mb-3">
-      <label className="sr-only" htmlFor="dashboard-tab-select">Sekme seç</label>
+      <label className="sr-only" htmlFor="dashboard-tab-select">{t("dashboard.recent.selectTab")}</label>
       <select
         id="dashboard-tab-select"
         value={activeTab}
         onChange={(e) => setActiveTab(e.target.value)}
         className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-dark text-text-main dark:text-gray-200 px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
       >
-        <option value="transactions">Son İşlemler ({!loading && transactions ? transactions.length : 0})</option>
-        <option value="cargo">Son Yükler ({!cargoLoading && recentCargo ? recentCargo.length : 0})</option>
+        <option value="transactions">{t("dashboard.recent.transactions")} ({!loading && transactions ? transactions.length : 0})</option>
+        <option value="cargo">{t("dashboard.recent.cargo")} ({!cargoLoading && recentCargo ? recentCargo.length : 0})</option>
       </select>
     </div>
 
@@ -149,7 +152,7 @@ export default function RecentActivityTable({
         `}
       >
         <span className="material-symbols-outlined text-[18px]">description</span>
-        Son İşlemler
+        {t("dashboard.recent.transactions")}
         {!loading && transactions && (
           <span className={`
             px-1.5 py-0.5 rounded-full text-[11px] font-bold
@@ -176,7 +179,7 @@ export default function RecentActivityTable({
         `}
       >
         <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-        Son Yükler
+        {t("dashboard.recent.cargo")}
         {!cargoLoading && recentCargo && (
           <span className={`
             px-1.5 py-0.5 rounded-full text-[11px] font-bold
@@ -194,12 +197,12 @@ export default function RecentActivityTable({
       <div className="flex-1 flex items-center justify-end pb-3 pt-2 pr-1">
         {activeTab === "transactions" && !loading && transactions && (
           <span className="text-text-secondary dark:text-gray-500 text-xs">
-            {transactions.length} işlem gösteriliyor
+            {t("dashboard.recent.transactionsShown", { count: transactions.length })}
           </span>
         )}
         {activeTab === "cargo" && !cargoLoading && recentCargo && (
           <span className="text-text-secondary dark:text-gray-500 text-xs">
-            {recentCargo.length} yük gösteriliyor
+            {t("dashboard.recent.cargoShown", { count: recentCargo.length })}
           </span>
         )}
       </div>
@@ -213,7 +216,7 @@ export default function RecentActivityTable({
       return (
         <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-          <p className="text-text-secondary dark:text-gray-400">Yükler yükleniyor...</p>
+          <p className="text-text-secondary dark:text-gray-400">{t("dashboard.recent.cargoLoading")}</p>
         </div>
       );
     }
@@ -223,9 +226,9 @@ export default function RecentActivityTable({
         <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <span className="material-symbols-outlined text-6xl text-text-secondary dark:text-gray-600">inventory_2</span>
           <div className="text-center">
-            <p className="text-text-main dark:text-gray-200 font-semibold mb-2">Henüz Yük Yok</p>
+            <p className="text-text-main dark:text-gray-200 font-semibold mb-2">{t("dashboard.recent.noCargo")}</p>
             <p className="text-text-secondary dark:text-gray-400 text-sm">
-              Yük takip kayıtlarınız burada görüntülenecektir.
+              {t("dashboard.recent.noCargoHint")}
             </p>
           </div>
         </div>
@@ -256,13 +259,13 @@ export default function RecentActivityTable({
           <table className="w-full text-left relative">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <tr>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Durum</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Araç Tipi</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">ETA</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Alıcı Firma</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Gönderici</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Taşıyıcı</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Detaylar</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.status")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.vehicleType")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.eta")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.recipient")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.cargoSender")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.carrier")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.details")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -281,7 +284,7 @@ export default function RecentActivityTable({
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo?.badgeClass || "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
-                        {statusInfo?.displayName?.toUpperCase() || cargoItem.status}
+                        {statusInfo?.displayName?.toLocaleUpperCase(getCurrentLocale()) || cargoItem.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -296,7 +299,7 @@ export default function RecentActivityTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary dark:text-gray-400">
                       {cargoItem.estimatedArrivalDate
-                        ? new Date(cargoItem.estimatedArrivalDate).toLocaleDateString("tr-TR")
+                        ? new Date(cargoItem.estimatedArrivalDate).toLocaleDateString(getCurrentLocale())
                         : "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-main dark:text-gray-300 font-medium">
@@ -314,7 +317,7 @@ export default function RecentActivityTable({
                         className="flex items-center gap-1 text-primary hover:text-primary/80 dark:text-primary-light dark:hover:text-primary-light/80 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-lg">visibility</span>
-                        Görüntüle
+                        {t("dashboard.recent.view")}
                       </button>
                     </td>
                   </tr>
@@ -333,7 +336,7 @@ export default function RecentActivityTable({
       return (
         <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-          <p className="text-text-secondary dark:text-gray-400">İşlemler yükleniyor...</p>
+          <p className="text-text-secondary dark:text-gray-400">{t("dashboard.recent.transactionsLoading")}</p>
         </div>
       );
     }
@@ -343,7 +346,7 @@ export default function RecentActivityTable({
         <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <span className="material-symbols-outlined text-6xl text-red-500">error</span>
           <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 font-semibold mb-2">Bir Hata Oluştu</p>
+            <p className="text-red-600 dark:text-red-400 font-semibold mb-2">{t("dashboard.recent.errorTitle")}</p>
             <p className="text-text-secondary dark:text-gray-400 text-sm mb-4">{error}</p>
             {onRetry && (
               <button
@@ -352,7 +355,7 @@ export default function RecentActivityTable({
               >
                 <span className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">refresh</span>
-                  Tekrar Dene
+                  {t("dashboard.recent.retry")}
                 </span>
               </button>
             )}
@@ -366,9 +369,9 @@ export default function RecentActivityTable({
         <div className="bg-white dark:bg-background-dark rounded-xl shadow-sm p-8 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
           <span className="material-symbols-outlined text-6xl text-text-secondary dark:text-gray-600">inbox</span>
           <div className="text-center">
-            <p className="text-text-main dark:text-gray-200 font-semibold mb-2">Henüz İşlem Yok</p>
+            <p className="text-text-main dark:text-gray-200 font-semibold mb-2">{t("dashboard.recent.noTransactions")}</p>
             <p className="text-text-secondary dark:text-gray-400 text-sm">
-              Gümrük işlemleriniz burada görüntülenecektir.
+              {t("dashboard.recent.noTransactionsHint")}
             </p>
           </div>
         </div>
@@ -399,14 +402,14 @@ export default function RecentActivityTable({
           <table className="w-full text-left relative">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
               <tr>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Tür</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Dosya No</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Beyanname No</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Alıcı Firma</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Gönderici Firma</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Hat</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Durum</th>
-                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">Detaylar</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.type")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.fileNo")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.declarationNo")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.recipient")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.sender")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.gate")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.status")}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-text-main dark:text-gray-400 uppercase tracking-wider">{t("dashboard.recent.columns.details")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -468,7 +471,7 @@ export default function RecentActivityTable({
                         className="flex items-center gap-1 text-primary hover:text-primary/80 dark:text-primary-light dark:hover:text-primary-light/80 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-lg">visibility</span>
-                        Görüntüle
+                        {t("dashboard.recent.view")}
                       </button>
                     </td>
                   </tr>

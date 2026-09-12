@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TRANSACTION_STATUS, SPECIAL_STATUS_COLORS } from "../../utils/constants";
+import { t } from "../../locales";
 
 // Custom hook for counting animation with delay
 const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
@@ -116,42 +117,42 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
 
   const statsData = [
     {
-      label: "İşlemler",
+      label: t("dashboard.stats.transactions"),
       value: counts.total,
       color: "gray",
       icon: "description",
       to: "/transactions",
     },
     {
-      label: "Bekleyenler",
+      label: t("dashboard.stats.pending"),
       value: counts.pending,
       color: "pending",
       icon: "schedule",
       to: "/transactions?status=PENDING",
     },
     {
-      label: "Tescil Edilenler",
+      label: t("dashboard.stats.registered"),
       value: counts.registered,
       color: "registered",
       icon: "assignment_turned_in",
       to: "/transactions?status=REGISTERED",
     },
     {
-      label: "Muayenedekiler",
+      label: t("dashboard.stats.inspection"),
       value: counts.inspection,
       color: "inspection",
       icon: "fact_check",
       to: "/transactions?status=INSPECTION",
     },
     {
-      label: "Tamamlananlar",
+      label: t("dashboard.stats.completed"),
       value: counts.completed,
       color: "completed",
       icon: "verified",
       to: "/transactions?status=CP_COMPLETED",
     },
     {
-      label: "Çekilenler",
+      label: t("dashboard.stats.withdrawn"),
       value: counts.withdrawn,
       color: "withdrawn",
       icon: "check_circle",
@@ -160,14 +161,14 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
       to: "/transactions?status=WITHDRAWN",
     },
     {
-      label: "Gecikenler",
+      label: t("dashboard.stats.delayed"),
       value: counts.delayed,
       color: "delayed",
       icon: "warning",
       to: "/transactions?delay=TG",
     },
     {
-      label: "İptal Edilenler",
+      label: t("dashboard.stats.cancelled"),
       value: counts.cancelled,
       color: "cancelled",
       icon: "cancel",
@@ -178,7 +179,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
   // Antrepo (WarehouseDeclaration) kartları — işlem kartlarından ayrı grup
   const warehouseData = [
     {
-      label: "Tescil Edilenler",
+      label: t("dashboard.stats.warehouseRegistered"),
       value: warehouseCounts.tescil,
       icon: "inventory_2",
       to: "/warehouse?status=TESCIL_EDILDI",
@@ -189,7 +190,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
       },
     },
     {
-      label: "Kapananlar",
+      label: t("dashboard.stats.warehouseClosed"),
       value: warehouseCounts.kapandi,
       icon: "inventory",
       to: "/warehouse?status=KAPANDI",
@@ -204,9 +205,9 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
   // Yoldaki Yükler (cargo TRACKING) — araç tipi kırılımı; yalnızca sayısı > 0 olanlar gösterilir
   const trackingByVehicle = cargoStats?.byStatusAndVehicle?.TRACKING || {};
   const cargoVehicleOrder = [
-    { key: "AIRPLANE", icon: "flight", label: "Uçak" },
-    { key: "SHIP", icon: "directions_boat", label: "Gemi" },
-    { key: "TRUCK", icon: "local_shipping", label: "Kamyon" },
+    { key: "AIRPLANE", icon: "flight", label: t("cargo.vehicleType.airplane") },
+    { key: "SHIP", icon: "directions_boat", label: t("cargo.vehicleType.ship") },
+    { key: "TRUCK", icon: "local_shipping", label: t("cargo.vehicleType.truck") },
   ];
   const trackingVehicles = cargoVehicleOrder
     .map((v) => ({ ...v, value: trackingByVehicle[v.key] || 0 }))
@@ -278,7 +279,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
         onMouseLeave={() => setIsHovered(false)}
         onClick={() => stat.to && navigate(stat.to)}
         role={stat.to ? 'button' : undefined}
-        title={stat.to ? `${stat.label} — listede gör` : undefined}
+        title={stat.to ? t("dashboard.stats.viewInList", { label: stat.label }) : undefined}
       >
         {/* Animated background gradient overlay */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
@@ -418,7 +419,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
         <div className="flex items-center gap-2 mb-3">
           <span className="material-symbols-outlined text-primary text-xl">description</span>
           <h3 className="text-sm font-bold uppercase tracking-wide text-text-secondary dark:text-gray-400">
-            İşlem Durumları
+            {t("dashboard.stats.transactionStatuses")}
           </h3>
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
@@ -448,7 +449,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
           <div className="flex items-center gap-2 mb-3">
             <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400 text-xl">warehouse</span>
             <h3 className="text-sm font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-              Antrepo
+              {t("dashboard.stats.warehouse")}
             </h3>
             <div className="flex-1 h-px bg-indigo-200 dark:bg-indigo-800/50" />
           </div>
@@ -473,7 +474,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
           <div className="flex items-center gap-2 mb-3">
             <span className="material-symbols-outlined text-teal-500 dark:text-teal-400 text-xl">local_shipping</span>
             <h3 className="text-sm font-bold uppercase tracking-wide text-teal-600 dark:text-teal-300">
-              Yoldaki Yükler
+              {t("dashboard.stats.cargoOnTheWay")}
             </h3>
             <div className="flex-1 h-px bg-teal-200 dark:bg-teal-800/50" />
           </div>
@@ -481,12 +482,12 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
           <div
             onClick={() => navigate("/cargo?status=TRACKING")}
             role="button"
-            title="Yoldaki yükleri listede gör"
+            title={t("dashboard.stats.viewCargoOnTheWay")}
             className="relative overflow-hidden flex flex-col flex-1 rounded-2xl bg-teal-50 dark:bg-teal-900/20 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md cursor-pointer transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-xl"
           >
             <div className="p-4 md:p-5 flex-1">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium opacity-90 text-text-main">Yolda</p>
+                <p className="text-xs font-medium opacity-90 text-text-main">{t("dashboard.stats.onTheWay")}</p>
                 <span className="material-symbols-outlined text-lg md:text-xl text-teal-600 dark:text-teal-400">route</span>
               </div>
               {loading ? (
@@ -507,7 +508,7 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
                   <button
                     key={v.key}
                     onClick={(e) => { e.stopPropagation(); navigate(`/cargo?status=TRACKING&vehicleType=${v.key}`); }}
-                    title={`${v.label} (yolda) — listede gör`}
+                    title={t("dashboard.stats.vehicleOnTheWay", { label: v.label })}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 bg-teal-100/70 dark:bg-teal-900/30 hover:bg-teal-200/70 dark:hover:bg-teal-800/40 transition-colors ${i > 0 ? "border-l border-gray-300/60 dark:border-gray-600/60" : ""}`}
                   >
                     <span className="material-symbols-outlined text-base text-teal-700 dark:text-teal-300">{v.icon}</span>

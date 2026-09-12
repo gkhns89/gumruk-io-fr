@@ -18,6 +18,7 @@ import lockupLight from "../../assets/brand/lockup-light.png";
 import lockupDark from "../../assets/brand/lockup-dark.png";
 import FeedbackModal from "../common/FeedbackModal";
 import { feedbackService } from "../../api/feedbackService";
+import { t } from "../../locales";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -206,7 +207,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-sm lg:text-base font-normal leading-normal transition-colors"
-                placeholder="Dosya No, Beyanname No Ara..."
+                placeholder={t('header.searchPlaceholder')}
               />
               {searchQuery && (
                 <button
@@ -227,15 +228,15 @@ export default function Header() {
                 {searchLoading ? (
                   <div className="p-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-sm text-text-secondary mt-2">Aranıyor...</p>
+                    <p className="text-sm text-text-secondary mt-2">{t('header.searching')}</p>
                   </div>
                 ) : searchResults.items.length > 0 ? (
                   <>
                     <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
                       <p className="text-xs font-semibold text-text-secondary uppercase">
                         {searchResults.total > 5
-                          ? `İlk 5 Sonuç (Toplam ${searchResults.total})`
-                          : `${searchResults.total} Sonuç Bulundu`
+                          ? t('header.firstResults', { total: searchResults.total })
+                          : t('header.resultsFound', { total: searchResults.total })
                         }
                       </p>
                     </div>
@@ -248,13 +249,13 @@ export default function Header() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm text-text-main truncate">
-                              Dosya No: {transaction.fileNo}
+                              {t('header.fileNoLabel', { value: transaction.fileNo })}
                             </p>
                             <p className="text-xs text-text-secondary truncate">
-                              Beyanname: {transaction.declarationNumber || '-'}
+                              {t('header.declarationLabel', { value: transaction.declarationNumber || '-' })}
                             </p>
                             <p className="text-xs text-text-secondary truncate">
-                              Alıcı: {transaction.clientCompany?.name || transaction.recipientName || '-'}
+                              {t('header.recipientLabel', { value: transaction.clientCompany?.name || transaction.recipientName || '-' })}
                             </p>
                           </div>
                           <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
@@ -270,10 +271,10 @@ export default function Header() {
                       search_off
                     </span>
                     <p className="text-sm text-text-secondary">
-                      "{searchQuery}" için sonuç bulunamadı
+                      {t('header.noResultsFor', { query: searchQuery })}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      Dosya No veya Beyanname No ile arayın
+                      {t('header.searchHint')}
                     </p>
                   </div>
                 )}
@@ -318,7 +319,7 @@ export default function Header() {
               onClick={() => setFeedbackModalOpen(true)}
               className="hidden sm:flex items-center justify-center h-10 w-10 rounded-lg
                          hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-text-main"
-              title="Sorun Bildir / Öneri"
+              title={t('layout.reportIssue')}
             >
               <span className="material-symbols-outlined text-xl">feedback</span>
             </button>
@@ -329,7 +330,7 @@ export default function Header() {
             onClick={logout}
             className="hidden lg:flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
           >
-            <span className="truncate">Oturumu Kapat</span>
+            <span className="truncate">{t('layout.signOut')}</span>
           </button>
         </div>
         </div>
@@ -362,7 +363,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-main focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:border-primary focus:bg-white dark:focus:bg-gray-700 h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal transition-colors"
-                placeholder="Dosya No, Beyanname No Ara..."
+                placeholder={t('header.searchPlaceholder')}
               />
               {searchQuery && (
                 <button
@@ -383,15 +384,15 @@ export default function Header() {
                 {searchLoading ? (
                   <div className="p-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-sm text-text-secondary mt-2">Aranıyor...</p>
+                    <p className="text-sm text-text-secondary mt-2">{t('header.searching')}</p>
                   </div>
                 ) : searchResults.items.length > 0 ? (
                   <>
                     <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
                       <p className="text-xs font-semibold text-text-secondary uppercase">
                         {searchResults.total > 5
-                          ? `İlk 5 (Toplam ${searchResults.total})`
-                          : `${searchResults.total} Sonuç`
+                          ? t('header.firstResultsShort', { total: searchResults.total })
+                          : t('header.resultsShort', { total: searchResults.total })
                         }
                       </p>
                     </div>
@@ -419,7 +420,7 @@ export default function Header() {
                   </>
                 ) : (
                   <div className="p-4 text-center">
-                    <p className="text-sm text-text-secondary">Sonuç bulunamadı</p>
+                    <p className="text-sm text-text-secondary">{t('header.noResults')}</p>
                   </div>
                 )}
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../locales';
 
 /**
  * Reusable confirmation modal. Use the {@link confirmDialog} helper from
@@ -18,8 +19,8 @@ export default function ConfirmModal({
   title,
   message,
   details,
-  confirmText = 'Onayla',
-  cancelText = 'Vazgeç',
+  confirmText = t('common.confirm'),
+  cancelText = t('confirmModal.cancel'),
   intent = 'primary',
   icon,
   loading = false,
@@ -69,7 +70,7 @@ export default function ConfirmModal({
             type="button"
             onClick={() => !loading && onCancel?.()}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            aria-label="Kapat"
+            aria-label={t('common.close')}
           >
             <span className="material-symbols-outlined text-2xl">close</span>
           </button>

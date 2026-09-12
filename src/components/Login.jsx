@@ -6,6 +6,7 @@ import LoginScene from "./LoginScene";
 import { getLoginProfile } from "../utils/imageUtils";
 import lockupLight from "../assets/brand/lockup-light.png";
 import lockupDark from "../assets/brand/lockup-dark.png";
+import { t } from "../locales";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,10 +23,10 @@ export default function Login() {
 
   // Mail değişince (kısa debounce) bu makinedeki localStorage'dan profil ara
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setPrefill(email.includes("@") ? getLoginProfile(email) : null);
     }, 200);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [email]);
 
   const handleSubmit = async (e) => {
@@ -54,7 +55,7 @@ export default function Login() {
           <Link
             to="/"
             className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Tanıtım sayfasına dön"
+            title={t("login.backToLanding")}
           >
             <img
               src={lockupLight}
@@ -83,10 +84,10 @@ export default function Login() {
             <LoginScene />
             <div>
               <p className="text-text-main text-3xl font-bold leading-tight tracking-tight">
-                Sisteme Giriş
+                {t("login.title")}
               </p>
               <p className="text-text-secondary text-base font-normal leading-normal mt-2">
-                Gümrük işlemlerinizi takip etmek için giriş yapın.
+                {t("login.subtitle")}
               </p>
             </div>
           </div>
@@ -97,7 +98,7 @@ export default function Login() {
               {prefill.logoDataUrl ? (
                 <img
                   src={prefill.logoDataUrl}
-                  alt={prefill.companyName || "Firma"}
+                  alt={prefill.companyName || t("login.companyLogoAlt")}
                   className="h-10 w-auto max-w-[80px] object-contain rounded"
                 />
               ) : null}
@@ -111,7 +112,9 @@ export default function Login() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-text-main truncate">
-                    Tekrar hoş geldin{prefill.username ? `, ${prefill.username}` : ""}
+                    {prefill.username
+                      ? t("login.welcomeBackName", { name: prefill.username })
+                      : t("login.welcomeBack")}
                   </p>
                   {prefill.companyName && (
                     <p className="text-xs text-text-secondary truncate">{prefill.companyName}</p>
@@ -131,10 +134,10 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">E-Posta</p>
+              <p className="text-text-main text-sm font-medium pb-2">{t("login.email")}</p>
               <input
                 type="email"
-                placeholder="ornek@firma.com"
+                placeholder={t("login.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -143,11 +146,11 @@ export default function Login() {
             </label>
 
             <label className="flex flex-col w-full">
-              <p className="text-text-main text-sm font-medium pb-2">Şifre</p>
+              <p className="text-text-main text-sm font-medium pb-2">{t("login.password")}</p>
               <div className="relative w-full">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Şifrenizi girin"
+                  placeholder={t("login.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -173,10 +176,10 @@ export default function Login() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="form-checkbox h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary dark:bg-gray-800 transition-colors"
                 />
-                <p className="text-text-main text-sm font-normal">Beni Hatırla</p>
+                <p className="text-text-main text-sm font-normal">{t("login.rememberMe")}</p>
               </label>
               <a className="text-sm font-medium text-primary hover:underline" href="#">
-                Şifremi Unuttum?
+                {t("login.forgotPassword")}
               </a>
             </div>
 
@@ -186,16 +189,16 @@ export default function Login() {
               disabled={loading}
               className="flex items-center justify-center w-full bg-primary text-white font-bold h-12 rounded-lg text-base leading-normal transition-colors hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+              {loading ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
 
           {/* Signup */}
           <div className="text-center">
             <p className="text-text-secondary text-sm">
-              Hesabınız yok mu?{" "}
+              {t("login.noAccount")}{" "}
               <a className="font-medium text-primary hover:underline" href="#">
-                Kayıt Ol
+                {t("login.signUp")}
               </a>
             </p>
           </div>
@@ -203,7 +206,7 @@ export default function Login() {
           {/* Help */}
           <div className="text-center mt-6">
             <a className="text-text-secondary text-sm font-medium hover:text-primary transition-colors" href="#">
-              Yardım mı lazım?
+              {t("login.needHelp")}
             </a>
           </div>
         </div>
@@ -213,7 +216,7 @@ export default function Login() {
       <footer className="w-full bg-white dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 px-6 py-4 transition-colors">
         <div className="max-w-7xl mx-auto">
           <p className="text-center text-xs text-text-secondary">
-            © {new Date().getFullYear()} Gümrük.io. Tüm hakları saklıdır.
+            {t("login.copyright", { year: new Date().getFullYear() })}
           </p>
         </div>
       </footer>

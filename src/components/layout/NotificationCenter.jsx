@@ -5,6 +5,7 @@ import { handleError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { t, getCurrentLocale } from '../../locales';
 
 export default function NotificationCenter() {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export default function NotificationCenter() {
         setUnreadCount(result.data.filter(n => !n.isRead).length);
       }
     } catch (error) {
-      handleError(error, null, 'Bildirim yükleme', 'Bildirimler yüklenemedi');
+      handleError(error, null, 'Bildirim yükleme', t('notifications.loadError'));
     }
   };
 
@@ -76,8 +77,8 @@ export default function NotificationCenter() {
           if (newCount > 0 && sessionStorage.getItem('justLoggedIn') === '1') {
             showBubble(
               'INFO',
-              `${newCount} Okunmamış Bildiriminiz Var`,
-              'Bildirimleri görüntülemek için zile tıklayın',
+              t('notifications.unreadBubbleTitle', { count: newCount }),
+              t('notifications.unreadBubbleMessage'),
               8000
             );
           }
@@ -95,7 +96,7 @@ export default function NotificationCenter() {
                 const unread = notifResult.data.filter(n => !n.isRead);
                 const diff = newCount - prev;
                 unread.slice(0, Math.min(diff, 3)).forEach(n => {
-                  showBubble(n.type, n.title || 'Yeni Bildirim', n.message);
+                  showBubble(n.type, n.title || t('notifications.newNotification'), n.message);
                 });
               }
             } catch { /* ignore */ }
@@ -111,8 +112,8 @@ export default function NotificationCenter() {
             if (elapsedSinceOpen > 120000 && elapsedSinceReminder > 300000) {
               showBubble(
                 'WARNING',
-                'Okunmamış Bildirimler',
-                `${newCount} okunmamış bildiriminiz var`,
+                t('notifications.reminderTitle'),
+                t('notifications.reminderMessage', { count: newCount }),
                 7000
               );
               lastReminderRef.current = Date.now();
@@ -194,7 +195,7 @@ export default function NotificationCenter() {
         if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
       }
     } catch (error) {
-      handleError(error, null, 'Bildirim işaretleme', 'Bildirim işaretlenemedi');
+      handleError(error, null, 'Bildirim işaretleme', t('notifications.markError'));
     }
   };
 
@@ -203,12 +204,12 @@ export default function NotificationCenter() {
     try {
       const result = await notificationService.markAllAsRead();
       if (result.success) {
-        showSuccess('Tüm bildirimler okundu işaretlendi');
+        showSuccess(t('notifications.markAllSuccess'));
         setNotifications(notifications.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
         setUnreadCount(0);
       }
     } catch (error) {
-      handleError(error, null, 'Tümünü işaretleme', 'Bildirimler işaretlenemedi');
+      handleError(error, null, 'Tümünü işaretleme', t('notifications.markAllError'));
     } finally {
       setLoading(false);
     }
@@ -216,22 +217,22 @@ export default function NotificationCenter() {
 
   const handleClearAll = async () => {
     const ok = await confirmDialog({
-      title: 'Tüm bildirimleri temizle',
-      message: 'Tüm bildirimleriniz silinecek. Bu işlem geri alınamaz.',
+      title: t('notifications.clearAllTitle'),
+      message: t('notifications.clearAllMessage'),
       intent: 'danger',
-      confirmText: 'Hepsini sil',
+      confirmText: t('notifications.clearAllConfirm'),
     });
     if (!ok) return;
     setLoading(true);
     try {
       const result = await notificationService.deleteAll();
       if (result.success) {
-        showSuccess('Tüm bildirimler temizlendi');
+        showSuccess(t('notifications.clearAllSuccess'));
         setNotifications([]);
         setUnreadCount(0);
       }
     } catch (error) {
-      handleError(error, null, 'Tümünü temizleme', 'Bildirimler temizlenemedi');
+      handleError(error, null, 'Tümünü temizleme', t('notifications.clearAllError'));
     } finally {
       setLoading(false);
     }
@@ -246,7 +247,7 @@ export default function NotificationCenter() {
         if (wasUnread) setUnreadCount(c => Math.max(0, c - 1));
       }
     } catch (error) {
-      handleError(error, null, 'Bildirim silme', 'Bildirim silinemedi');
+      handleError(error, null, 'Bildirim silme', t('notifications.deleteError'));
     }
   };
 
@@ -300,11 +301,11 @@ export default function NotificationCenter() {
     const diffMins  = Math.floor((Date.now() - date) / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays  = Math.floor(diffHours / 24);
-    if (diffMins < 1)   return 'Şimdi';
-    if (diffMins < 60)  return `${diffMins} dakika önce`;
-    if (diffHours < 24) return `${diffHours} saat önce`;
-    if (diffDays < 7)   return `${diffDays} gün önce`;
-    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    if (diffMins < 1)   return t('notifications.justNow');
+    if (diffMins < 60)  return t('notifications.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('notifications.hoursAgo', { count: diffHours });
+    if (diffDays < 7)   return t('notifications.daysAgo', { count: diffDays });
+    return date.toLocaleDateString(getCurrentLocale(), { day: 'numeric', month: 'short' });
   };
 
   // ── Render ──────────────────────────────────────────────────
@@ -386,7 +387,7 @@ export default function NotificationCenter() {
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-xl transition-colors">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">notifications_active</span>
-              <h3 className="text-base font-bold text-text-main">Bildirimler</h3>
+              <h3 className="text-base font-bold text-text-main">{t('notifications.title')}</h3>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 text-xs font-semibold text-white bg-red-500 rounded-full">
                   {unreadCount}
@@ -410,7 +411,7 @@ export default function NotificationCenter() {
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-sm">done_all</span>
-                Tümünü Okundu İşaretle
+                {t('notifications.markAllRead')}
               </button>
               <button
                 onClick={handleClearAll}
@@ -418,7 +419,7 @@ export default function NotificationCenter() {
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-sm">delete_sweep</span>
-                Tümünü Temizle
+                {t('notifications.clearAll')}
               </button>
             </div>
           )}
@@ -428,15 +429,15 @@ export default function NotificationCenter() {
             {loading && notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3" />
-                <p className="text-sm text-text-secondary">Bildirimler yükleniyor...</p>
+                <p className="text-sm text-text-secondary">{t('notifications.loading')}</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
                 <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3 transition-colors">
                   <span className="material-symbols-outlined text-gray-400 text-3xl">notifications_off</span>
                 </div>
-                <p className="text-sm font-semibold text-text-main mb-1">Bildirim Yok</p>
-                <p className="text-xs text-text-secondary text-center">Henüz hiç bildiriminiz bulunmuyor</p>
+                <p className="text-sm font-semibold text-text-main mb-1">{t('notifications.empty')}</p>
+                <p className="text-xs text-text-secondary text-center">{t('notifications.emptyHint')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -484,7 +485,7 @@ export default function NotificationCenter() {
           {notifications.length > 0 && (
             <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl transition-colors">
               <p className="text-xs text-center text-gray-500">
-                Bildirimler 30 gün sonra otomatik olarak silinir
+                {t('notifications.retention')}
               </p>
             </div>
           )}

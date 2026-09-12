@@ -131,7 +131,8 @@ export const t = (key, params = {}) => {
   // Parametreleri yerleştir ({{param}} formatında)
   if (Object.keys(params).length > 0) {
     Object.entries(params).forEach(([paramKey, paramValue]) => {
-      value = value.replace(new RegExp(`{{${paramKey}}}`, 'g'), paramValue);
+      // Fonksiyonla değiştir: kullanıcı verisindeki `$&`, `$1` gibi diziler özel desen sayılmasın
+      value = value.replace(new RegExp(`{{${paramKey}}}`, 'g'), () => String(paramValue ?? ''));
     });
   }
 

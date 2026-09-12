@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { t } from "../../locales";
 
 const announcements = [
   {
@@ -54,7 +55,7 @@ export default function AnnouncementsDrawer() {
       {/* ── Header Butonu ─────────────────────────────────── */}
       <button
         onClick={() => setIsOpen(true)}
-        aria-label="Duyuruları Göster"
+        aria-label={t("announcements.show")}
         className="relative flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <span className="material-symbols-outlined text-text-main">campaign</span>
@@ -96,7 +97,7 @@ export default function AnnouncementsDrawer() {
               campaign
             </span>
             <h2 className="text-lg font-bold text-text-main dark:text-gray-100 tracking-tight">
-              Duyurular
+              {t("announcements.title")}
             </h2>
             <span className="px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-xs font-semibold">
               {announcements.length}
@@ -105,7 +106,7 @@ export default function AnnouncementsDrawer() {
           <button
             onClick={() => setIsOpen(false)}
             className="p-1.5 rounded-lg text-text-secondary dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-text-main dark:hover:text-gray-100 transition-colors"
-            aria-label="Kapat"
+            aria-label={t("common.close")}
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
@@ -154,7 +155,7 @@ export default function AnnouncementsDrawer() {
             href="/announcements"
             className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-lg text-sm font-medium text-primary dark:text-primary-light hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
           >
-            <span>Tüm Duyuruları Görüntüle</span>
+            <span>{t("announcements.viewAll")}</span>
             <span className="material-symbols-outlined text-base">arrow_forward</span>
           </a>
         </div>

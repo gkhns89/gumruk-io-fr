@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { courierService } from '../../api/courierService';
 import { companyService } from '../../api/companyService';
 import { useAuth } from '../../hooks/useAuth';
+import { t } from '../../locales';
 
 /**
  * Kurye Takip Kartı (Dashboard)
@@ -116,9 +117,9 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       const seconds = remainingTotalSeconds % 60;
 
       const mainParts = [];
-      if (days > 0) mainParts.push(`${days} gün`);
-      if (hours > 0) mainParts.push(`${hours} saat`);
-      if (minutes > 0) mainParts.push(`${minutes} dk`);
+      if (days > 0) mainParts.push(t('dashboard.courier.days', { count: days }));
+      if (hours > 0) mainParts.push(t('dashboard.courier.hours', { count: hours }));
+      if (minutes > 0) mainParts.push(t('dashboard.courier.minutes', { count: minutes }));
 
       setCountdownDisplay({ main: mainParts.join(' '), seconds, refreshing: false });
     };
@@ -144,16 +145,16 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       now.getDate() === targetDate.getDate() &&
       now.getMonth() === targetDate.getMonth() &&
       now.getFullYear() === targetDate.getFullYear();
-    if (isSameDay) return 'Bugün';
+    if (isSameDay) return t('dashboard.courier.today');
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const isTomorrow =
       tomorrow.getDate() === targetDate.getDate() &&
       tomorrow.getMonth() === targetDate.getMonth() &&
       tomorrow.getFullYear() === targetDate.getFullYear();
-    if (isTomorrow) return 'Yarın';
-    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-    return dayNames[targetDate.getDay()];
+    if (isTomorrow) return t('dashboard.courier.tomorrow');
+    // Sözlükte 1 = Pazartesi … 7 = Pazar; getDay() pazarı 0 döndürür
+    return t(`days.long.${targetDate.getDay() || 7}`);
   };
 
   const formatDepartureTime = (departure) => {
@@ -195,7 +196,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       return (
         <div className="flex items-center gap-2 text-blue-500 dark:text-blue-400">
           <span className="material-symbols-outlined text-base">info</span>
-          <p className="text-xs">Detaylar bölümünden firma seçin</p>
+          <p className="text-xs">{t('dashboard.courier.selectBrokerHint')}</p>
         </div>
       );
     }
@@ -204,7 +205,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       return (
         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
           <span className="material-symbols-outlined text-base">two_wheeler</span>
-          <p className="text-xs">Planlanmış kurye bulunmuyor</p>
+          <p className="text-xs">{t('dashboard.courier.noDepartures')}</p>
         </div>
       );
     }
@@ -213,7 +214,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
       <>
         {/* Geri sayım */}
         {countdownDisplay.refreshing ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400">Güncelleniyor...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.courier.refreshing')}</p>
         ) : countdownDisplay.seconds !== null ? (
           <>
             {countdownDisplay.main && (
@@ -222,11 +223,11 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
               </p>
             )}
             <p className={`font-bold text-blue-500 dark:text-blue-400/80 leading-tight mb-3 ${countdownDisplay.main ? 'text-base mt-0.5' : 'text-3xl'}`}>
-              {countdownDisplay.seconds} saniye
+              {t('dashboard.courier.seconds', { count: countdownDisplay.seconds })}
             </p>
           </>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400">Hesaplanıyor...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.courier.calculating')}</p>
         )}
 
         {/* Kalkış zamanı */}
@@ -259,12 +260,12 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
         <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">two_wheeler</span>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Kurye Takip</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('dashboard.courier.title')}</h3>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {hasMultipleCouriers && (
               <span
-                title={`Aynı saatte ${courierData.nextDepartures.length} kurye kalkıyor`}
+                title={t('dashboard.courier.sameTimeCouriers', { count: courierData.nextDepartures.length })}
                 className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500 text-orange-700 dark:text-orange-300 text-xs font-semibold cursor-help select-none flex-shrink-0"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>warning</span>
@@ -273,7 +274,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             )}
             {hasDepartures && courierData.totalActiveCouriers > 0 && (
               <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
-                {courierData.totalActiveCouriers} Kayıtlı
+                {t('dashboard.courier.registered', { count: courierData.totalActiveCouriers })}
               </span>
             )}
           </div>
@@ -291,7 +292,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             className="mt-3 self-start flex items-center gap-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors flex-shrink-0"
           >
             <span className="material-symbols-outlined text-sm">{expandIcon}</span>
-            {expanded ? 'Kapat' : 'Detaylar'}
+            {expanded ? t('dashboard.courier.close') : t('dashboard.courier.details')}
           </button>
         )}
       </div>
@@ -311,7 +312,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
           {isSuperAdmin && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                Gümrük Firması
+                {t('dashboard.courier.brokerCompany')}
               </p>
               <select
                 value={selectedBrokerId}
@@ -319,7 +320,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
                 className="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={brokersLoading}
               >
-                <option value="">-- Firma seçin --</option>
+                <option value="">{t('dashboard.courier.selectBroker')}</option>
                 {brokers.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
@@ -335,7 +336,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             return (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Firmalar</p>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('dashboard.courier.companies')}</p>
                   {totalPages > 1 && (
                     <div className="flex items-center gap-0.5">
                       <button
@@ -383,7 +384,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
           {hasDepartures && courierData.upcomingDeparture && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                Sonraki Kurye
+                {t('dashboard.courier.nextCourier')}
               </p>
               <div className="bg-white dark:bg-gray-800/30 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30">
                 <div className="flex items-center gap-1.5 mb-1">

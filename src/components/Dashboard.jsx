@@ -9,6 +9,7 @@ import { transactionService } from "../api/transactionService";
 import { cargoService } from "../api/cargoService";
 import { warehouseService } from "../api/warehouseService";
 import { handleError, handleApiResponse } from "../utils/errorUtils";
+import { t } from "../locales";
 
 // Birleşik liste sıralama anahtarı: her satırın duruma göre referans tarihi.
 // İşlem: PENDING→antrepo varış, REGISTERED/INSPECTION→tescil, CP_COMPLETED→kapanma,
@@ -33,8 +34,8 @@ const getReferenceDate = (item) => {
         raw = item.lineClosureDate || item.registrationDate || item.warehouseArrivalDate || item.createdAt;
     }
   }
-  const t = raw ? new Date(raw).getTime() : NaN;
-  return Number.isNaN(t) ? null : t;
+  const time = raw ? new Date(raw).getTime() : NaN;
+  return Number.isNaN(time) ? null : time;
 };
 
 // Animated Section Component
@@ -146,7 +147,7 @@ export default function Dashboard() {
 
       setRecentItems(merged.slice(0, 10));
     } catch (err) {
-      handleError(err, setError, "Dashboard - İşlemler yüklenirken", "İşlemler yüklenirken bir hata oluştu.");
+      handleError(err, setError, "Dashboard - İşlemler yüklenirken", t("dashboard.loadError"));
       setStats(null);
       setWarehouseStats(null);
       setCargoStats(null);
@@ -176,17 +177,17 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <p className="text-text-main text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-[-0.033em]">
-                Hoş Geldiniz, {user?.username || "Kullanıcı"}
+                {t("dashboard.welcome", { name: user?.username || t("layout.userFallback") })}
               </p>
               <p className="text-text-secondary text-sm md:text-base mt-1 md:mt-2">
-                {user?.company?.name || "Şirket bilgisi yok"}
+                {user?.company?.name || t("dashboard.noCompany")}
               </p>
             </div>
 
             {/* Firma logosu — yalnızca logo ekliyse görünür */}
             <AuthedImage
               url={user?.companyDetails?.logoUrl}
-              alt={user?.company?.name || "Firma logosu"}
+              alt={user?.company?.name || t("dashboard.companyLogoAlt")}
               className="flex-shrink-0 self-start sm:self-auto"
               imgClassName="h-16 md:h-20 w-auto max-w-[200px] object-contain rounded-lg"
             />
