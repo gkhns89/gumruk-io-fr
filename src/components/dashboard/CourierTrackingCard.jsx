@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { courierService } from '../../api/courierService';
 import { companyService } from '../../api/companyService';
 import { useAuth } from '../../hooks/useAuth';
+import { getCourierType, getCourierVehicleType, isInHouseCourier } from '../../utils/constants';
 import { t } from '../../locales';
 
 // Durak bir gümrük müdürlüğü ya da (COURIER_CLIENT_STOPS bayrağıyla) müşteri firması olabilir.
@@ -10,6 +11,21 @@ const isClientStop = (departure) => departure?.stopType === 'CLIENT';
 const stopIconOf = (departure) => (isClientStop(departure) ? 'business' : 'location_on');
 const stopLabelOf = (departure) => (isClientStop(departure) ? t('courierStops.client') : t('courierStops.customs'));
 const stopNameOf = (departure) => departure?.stopName || departure?.customsName;
+
+// Kalkış bir kurye firmasına ya da firma içi sevkiyata (courierType IN_HOUSE) ait olabilir.
+// Firma içi: araç tipi ikonu + "Firma içi" etiketi, detayda plaka · sürücü.
+const courierIconOf = (departure) => (isInHouseCourier(departure)
+  ? (getCourierVehicleType(departure.vehicleType)?.icon || 'local_shipping')
+  : 'two_wheeler');
+const vehicleDetailsOf = (departure) => [departure?.vehiclePlate, departure?.driverName].filter(Boolean).join(' · ');
+
+function InHouseLabel() {
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${getCourierType('IN_HOUSE').badgeClass}`}>
+      {t('couriers.types.inHouse')}
+    </span>
+  );
+}
 
 /**
  * Kurye Takip Kartı (Dashboard)
@@ -174,9 +190,10 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
   const primaryDeparture = hasDepartures ? courierData.nextDepartures[0] : null;
   const hasMultipleCouriers = hasDepartures && courierData.nextDepartures.length > 1;
 
+  // Kimliğe göre gruplanır: aynı adlı kurye firması ve firma içi sevkiyat birbirine karışmasın
   const groupedByCourier = hasDepartures
     ? courierData.nextDepartures.reduce((acc, departure) => {
-        const key = departure.courierCompanyName;
+        const key = departure.courierCompanyId ?? departure.courierCompanyName;
         if (!acc[key]) acc[key] = [];
         acc[key].push(departure);
         return acc;
@@ -251,6 +268,15 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
             <div key={i} className="flex items-center gap-1">
               <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 flex-shrink-0" style={{ fontSize: '13px' }} title={stopLabelOf(d)}>{stopIconOf(d)}</span>
               <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{stopNameOf(d)}</p>
+              {isInHouseCourier(d) && (
+                <span
+                  className="material-symbols-outlined text-violet-500 dark:text-violet-400 flex-shrink-0"
+                  style={{ fontSize: '13px' }}
+                  title={[t('couriers.types.inHouse'), d.courierCompanyName, vehicleDetailsOf(d)].filter(Boolean).join(' · ')}
+                >
+                  {courierIconOf(d)}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -365,25 +391,38 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {visibleEntries.map(([courierName, departures], idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">two_wheeler</span>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{courierName}</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        {departures.map((d, i) => (
-                          <div key={i} className="flex items-start gap-1.5">
-                            <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5" title={stopLabelOf(d)}>{stopIconOf(d)}</span>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{stopNameOf(d)}</p>
+                  {visibleEntries.map(([courierKey, departures]) => {
+                    const courier = departures[0];
+                    const inHouse = isInHouseCourier(courier);
+                    const vehicleDetails = inHouse ? vehicleDetailsOf(courier) : '';
+                    return (
+                      <div
+                        key={courierKey}
+                        className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-blue-200 dark:border-blue-600/30"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">{courierIconOf(courier)}</span>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{courier.courierCompanyName}</p>
+                        </div>
+                        {inHouse && (
+                          <div className="mb-1.5 min-w-0">
+                            <InHouseLabel />
+                            {vehicleDetails && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{vehicleDetails}</p>
+                            )}
                           </div>
-                        ))}
+                        )}
+                        <div className="space-y-0.5">
+                          {departures.map((d, i) => (
+                            <div key={i} className="flex items-start gap-1.5">
+                              <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-base mt-0.5" title={stopLabelOf(d)}>{stopIconOf(d)}</span>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{stopNameOf(d)}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -408,12 +447,18 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
                     {stopNameOf(courierData.upcomingDeparture)}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">two_wheeler</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">{courierIconOf(courierData.upcomingDeparture)}</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {courierData.upcomingDeparture.courierCompanyName}
                   </p>
+                  {isInHouseCourier(courierData.upcomingDeparture) && <InHouseLabel />}
                 </div>
+                {isInHouseCourier(courierData.upcomingDeparture) && vehicleDetailsOf(courierData.upcomingDeparture) && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 pl-5">
+                    {vehicleDetailsOf(courierData.upcomingDeparture)}
+                  </p>
+                )}
               </div>
             </div>
           )}

@@ -3,15 +3,27 @@ import { courierService } from '../../api/courierService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { t } from '../../locales';
+import InHouseDispatchFields from './InHouseDispatchFields';
 
-export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = null }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    shortName: '',
-    contactPhone: '',
-    contactEmail: '',
-    notes: ''
-  });
+const EMPTY_FORM = {
+  name: '',
+  shortName: '',
+  contactPhone: '',
+  contactEmail: '',
+  notes: '',
+  // Yalnızca firma içi sevkiyat (IN_HOUSE)
+  vehicleType: '',
+  vehiclePlate: '',
+  driverName: '',
+};
+
+/**
+ * courierType: 'EXTERNAL' (kurye firması, varsayılan) | 'IN_HOUSE' (firma içi sevkiyat —
+ * COURIER_CLIENT_STOPS bayrağı arkasında; backend de bayrağı kontrol eder).
+ */
+export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = null, courierType = 'EXTERNAL' }) {
+  const isInHouse = courierType === 'IN_HOUSE';
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -19,10 +31,10 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // UPPERCASE conversion for specific fields
-    const newValue = COURIER_UPPERCASE_FIELDS.includes(name)
-      ? toUpperCase(value)
-      : value;
+    // UPPERCASE conversion for specific fields; plaka veridir, dilden bağımsız Türkçe kuralla
+    let newValue = value;
+    if (COURIER_UPPERCASE_FIELDS.includes(name)) newValue = toUpperCase(value);
+    else if (name === 'vehiclePlate') newValue = value.toLocaleUpperCase('tr-TR');
 
     setFormData(prev => ({
       ...prev,
@@ -43,12 +55,12 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
 
     // Validate required fields
     if (!formData.name.trim()) {
-      showError(t('couriers.form.nameRequired'));
+      showError(isInHouse ? t('couriers.inHouse.nameRequired') : t('couriers.form.nameRequired'));
       return;
     }
 
     // Validate email format if provided
-    if (formData.contactEmail && formData.contactEmail.trim()) {
+    if (!isInHouse && formData.contactEmail && formData.contactEmail.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.contactEmail)) {
         setEmailError(t('management.invalidEmail'));
@@ -60,12 +72,21 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
 
     try {
       const result = await courierService.createCourierCompany({
+        courierType,
         name: formData.name.trim(),
-        shortName: formData.shortName.trim() || null,
         contactPhone: formData.contactPhone.trim() || null,
-        contactEmail: formData.contactEmail.trim() || null,
         notes: formData.notes.trim() || null,
-        active: true
+        active: true,
+        ...(isInHouse
+          ? {
+              vehicleType: formData.vehicleType || null,
+              vehiclePlate: formData.vehiclePlate.trim() || null,
+              driverName: formData.driverName.trim() || null,
+            }
+          : {
+              shortName: formData.shortName.trim() || null,
+              contactEmail: formData.contactEmail.trim() || null,
+            }),
       }, brokerCompanyId);
 
       if (result.success) {
@@ -73,13 +94,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         onSuccess(result.data);
 
         // Reset form and close
-        setFormData({
-          name: '',
-          shortName: '',
-          contactPhone: '',
-          contactEmail: '',
-          notes: ''
-        });
+        setFormData(EMPTY_FORM);
         onClose();
       } else {
         showError(result.error || t('couriers.add.createError'));
@@ -92,13 +107,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
   };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      shortName: '',
-      contactPhone: '',
-      contactEmail: '',
-      notes: ''
-    });
+    setFormData(EMPTY_FORM);
     setEmailError('');
     onClose();
   };
@@ -116,10 +125,10 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 transition-colors duration-300">
           <div>
             <h2 className="text-2xl font-bold text-text-main">
-              {t('couriers.add.title')}
+              {isInHouse ? t('couriers.inHouse.add') : t('couriers.add.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              {t('couriers.add.subtitle')}
+              {isInHouse ? t('couriers.inHouse.addSubtitle') : t('couriers.add.subtitle')}
             </p>
           </div>
           <button
@@ -133,10 +142,10 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Company Name */}
+            {/* Company Name / Dispatch Name */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                {t('couriers.form.name')} <span className="text-red-500">*</span>
+                {isInHouse ? t('couriers.inHouse.name') : t('couriers.form.name')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -144,68 +153,74 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
                 value={formData.name}
                 onChange={handleChange}
                 required
-                placeholder={t('couriers.form.namePlaceholder')}
+                placeholder={isInHouse ? t('couriers.inHouse.namePlaceholder') : t('couriers.form.namePlaceholder')}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
               />
             </div>
 
-            {/* Short Name */}
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2">
-                {t('company.shortName')}
-              </label>
-              <input
-                type="text"
-                name="shortName"
-                value={formData.shortName}
-                onChange={handleChange}
-                placeholder={t('couriers.form.shortNamePlaceholder')}
-                maxLength={100}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-              />
-              <p className="text-xs text-text-secondary mt-1">
-                {t('couriers.form.shortNameHint')}
-              </p>
-            </div>
+            {isInHouse ? (
+              <InHouseDispatchFields formData={formData} onChange={handleChange} />
+            ) : (
+              <>
+                {/* Short Name */}
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">
+                    {t('company.shortName')}
+                  </label>
+                  <input
+                    type="text"
+                    name="shortName"
+                    value={formData.shortName}
+                    onChange={handleChange}
+                    placeholder={t('couriers.form.shortNamePlaceholder')}
+                    maxLength={100}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  />
+                  <p className="text-xs text-text-secondary mt-1">
+                    {t('couriers.form.shortNameHint')}
+                  </p>
+                </div>
 
-            {/* Contact Phone */}
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2">
-                {t('couriers.form.phone')}
-              </label>
-              <input
-                type="tel"
-                name="contactPhone"
-                value={formData.contactPhone}
-                onChange={handleChange}
-                placeholder={t('couriers.form.phonePlaceholder')}
-                maxLength={100}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-              />
-            </div>
+                {/* Contact Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">
+                    {t('couriers.form.phone')}
+                  </label>
+                  <input
+                    type="tel"
+                    name="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={handleChange}
+                    placeholder={t('couriers.form.phonePlaceholder')}
+                    maxLength={100}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  />
+                </div>
 
-            {/* Contact Email */}
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2">
-                {t('couriers.form.email')}
-              </label>
-              <input
-                type="email"
-                name="contactEmail"
-                value={formData.contactEmail}
-                onChange={handleChange}
-                placeholder={t('couriers.form.emailPlaceholder')}
-                maxLength={255}
-                className={`w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
-                  emailError
-                    ? 'border-red-500 dark:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {emailError && (
-                <p className="text-xs text-red-500 mt-1">{emailError}</p>
-              )}
-            </div>
+                {/* Contact Email */}
+                <div>
+                  <label className="block text-sm font-medium text-text-main mb-2">
+                    {t('couriers.form.email')}
+                  </label>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    value={formData.contactEmail}
+                    onChange={handleChange}
+                    placeholder={t('couriers.form.emailPlaceholder')}
+                    maxLength={255}
+                    className={`w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                      emailError
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                  />
+                  {emailError && (
+                    <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Notes */}
             <div>
@@ -216,7 +231,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                placeholder={t('couriers.form.notesPlaceholder')}
+                placeholder={isInHouse ? t('couriers.inHouse.notesPlaceholder') : t('couriers.form.notesPlaceholder')}
                 rows={3}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none"
               />

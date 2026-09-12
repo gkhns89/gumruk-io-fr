@@ -48,12 +48,16 @@ export const courierService = {
   /**
    * Yeni kurye firması oluştur
    * @param {Object} data - Kurye firması bilgileri
-   * @param {string} data.name - Firma adı
+   * @param {string} data.courierType - 'EXTERNAL' | 'IN_HOUSE' (boşsa EXTERNAL; güncellemede değiştirilemez)
+   * @param {string} data.name - Firma adı / firma içi sevkiyat adı
    * @param {string} data.shortName - Kısa ad (opsiyonel)
    * @param {boolean} data.active - Aktif/pasif durum
-   * @param {string} data.contactPhone - İletişim telefonu (opsiyonel)
+   * @param {string} data.contactPhone - İletişim telefonu; firma içi kayıtta sürücü telefonu (opsiyonel)
    * @param {string} data.contactEmail - İletişim email (opsiyonel)
    * @param {string} data.notes - Notlar (opsiyonel)
+   * @param {string} data.vehicleType - Firma içi: 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK' (opsiyonel)
+   * @param {string} data.vehiclePlate - Firma içi: plaka (opsiyonel)
+   * @param {string} data.driverName - Firma içi: sürücü adı (opsiyonel)
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
   createCourierCompany: async (data, brokerCompanyId = null) => {
@@ -197,6 +201,9 @@ export const courierService = {
    *   nextDepartures: [{
    *     courierCompanyId: number,
    *     courierCompanyName: string,
+   *     courierType: 'EXTERNAL' | 'IN_HOUSE',
+   *     vehicleType, vehiclePlate, driverName: yalnızca IN_HOUSE için dolu,
+   *     stopType: 'CUSTOMS' | 'CLIENT', stopId: number, stopName: string,
    *     customsId: number,
    *     customsName: string,
    *     departureTime: string (HH:mm),

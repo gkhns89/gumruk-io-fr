@@ -1687,15 +1687,57 @@ export const tr = {
     common: {
       departureCount: "{{count}} kalkış saati",
     },
+    // Kayıt tipi rozetleri (COURIER_TYPES)
+    types: {
+      label: "Kayıt Tipi",
+      external: "Kurye firması",
+      inHouse: "Firma içi",
+    },
+    // Firma içi sevkiyat araç tipleri (COURIER_VEHICLE_TYPES)
+    vehicleTypes: {
+      motorcycle: "Motosiklet",
+      car: "Otomobil",
+      van: "Panelvan",
+      truck: "Kamyonet",
+    },
     page: {
       subtitle: "Kurye firmalarını ve kalkış saatlerini yönetin",
+      subtitleWithInHouse: "Kurye firmalarını, firma içi sevkiyatları ve kalkış saatlerini yönetin",
       subtitleBroker: "{{name}} — kurye firmaları",
       subtitleSelectBroker: "Kurye firmalarını görüntülemek için bir gümrük firması seçin",
       selectBrokerHint: "Kurye firmalarını görüntülemek için yukarıdan bir gümrük firması seçin",
       add: "Yeni Kurye Firması",
       empty: "Henüz kurye firması eklenmemiş",
+      emptyWithInHouse: "Henüz kurye firması veya firma içi sevkiyat eklenmemiş",
       addFirst: "İlk Kurye Firmasını Ekle",
       found: "{{count}} kurye firması bulundu",
+      foundRecords: "{{count}} kayıt bulundu",
+      filterExternal: "Kurye firmaları",
+      filterEmpty: "Bu filtreye uyan kayıt yok",
+    },
+    // Firma içi sevkiyat (kendi araç ve kuryesi) — COURIER_CLIENT_STOPS bayrağıyla
+    inHouse: {
+      add: "Firma İçi Sevkiyat Ekle",
+      addSubtitle: "Kendi aracınız ve kuryeniz için bir sevkiyat kaydı oluşturun",
+      addFirst: "İlk Firma İçi Sevkiyatı Ekle",
+      editTitle: "Firma İçi Sevkiyatı Düzenle",
+      infoTab: "Sevkiyat Bilgileri",
+      name: "Sevkiyat Adı",
+      nameRequired: "Sevkiyat adı zorunludur",
+      namePlaceholder: "Örn: MOTOR KURYE 1",
+      vehicleType: "Araç Tipi",
+      selectVehicleType: "Araç tipi seçin",
+      plate: "Plaka",
+      platePlaceholder: "Örn: 34 ABC 123",
+      driverName: "Sürücü Adı",
+      driverNamePlaceholder: "Örn: Ahmet Yılmaz",
+      driverPhone: "Sürücü Telefonu",
+      notesPlaceholder: "Araç veya kurye hakkında notlar...",
+      inactiveHint: "Pasif sevkiyatlar dashboard'da gösterilmez",
+      deleteTitle: "Firma İçi Sevkiyatı Sil",
+      // {{name}} ve {{schedules}} kalın yazılır; metin yer tutucunun iki yanından bölünür
+      deleteConfirmMessage: "{{name}} adlı firma içi sevkiyatı silmek üzeresiniz. Bu işlem kaydı ve tüm kalkış saatlerini sistemden kalıcı olarak kaldıracaktır.",
+      deleteSchedulesWarning: "Bu sevkiyata ait {{schedules}} bulunmaktadır. Silme işlemi tüm kalkış saatlerini de kaldıracaktır.",
     },
     form: {
       name: "Kurye Firması Adı",

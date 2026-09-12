@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { courierService } from '../../api/courierService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getCourierVehicleType, isInHouseCourier } from '../../utils/constants';
 import { t } from '../../locales';
 
 export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
   const [loading, setLoading] = useState(false);
 
+  const isInHouse = isInHouseCourier(courier);
   const courierName = courier.shortName || courier.name;
+  // Firma içi kayıtta ikinci satır plaka · sürücü; kurye firmasında kısa ad varsa tam ad
+  const subtitle = isInHouse
+    ? [courier.vehiclePlate, courier.driverName].filter(Boolean).join(' · ')
+    : (courier.shortName ? courier.name : '');
+  const icon = isInHouse
+    ? (getCourierVehicleType(courier.vehicleType)?.icon || 'local_shipping')
+    : 'two_wheeler';
   // Kalın yazılan parçalar için metin yer tutucunun iki yanından bölünüyor
-  const [confirmBefore, confirmAfter] = t('couriers.delete.confirmMessage').split('{{name}}');
-  const [schedulesBefore, schedulesAfter] = t('couriers.delete.schedulesWarning').split('{{schedules}}');
+  const [confirmBefore, confirmAfter] = t(isInHouse ? 'couriers.inHouse.deleteConfirmMessage' : 'couriers.delete.confirmMessage').split('{{name}}');
+  const [schedulesBefore, schedulesAfter] = t(isInHouse ? 'couriers.inHouse.deleteSchedulesWarning' : 'couriers.delete.schedulesWarning').split('{{schedules}}');
 
   const handleDelete = async () => {
     setLoading(true);
@@ -52,7 +61,7 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-text-main">
-                {t('couriers.delete.title')}
+                {isInHouse ? t('couriers.inHouse.deleteTitle') : t('couriers.delete.title')}
               </h2>
               <p className="text-sm text-text-secondary mt-1">
                 {t('management.irreversible')}
@@ -68,15 +77,15 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             <div className="flex items-center gap-3 mb-3">
               <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center transition-colors">
                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
-                  two_wheeler
+                  {icon}
                 </span>
               </div>
               <div>
                 <p className="text-sm font-semibold text-text-main">
                   {courierName}
                 </p>
-                {courier.shortName && (
-                  <p className="text-xs text-text-secondary">{courier.name}</p>
+                {subtitle && (
+                  <p className="text-xs text-text-secondary">{subtitle}</p>
                 )}
               </div>
             </div>
@@ -96,7 +105,9 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
             </div>
             {courier.contactPhone && (
               <div className="mt-2 text-xs">
-                <p className="text-text-secondary">{t('couriers.delete.contact')}</p>
+                <p className="text-text-secondary">
+                  {isInHouse ? t('couriers.inHouse.driverPhone') : t('couriers.delete.contact')}
+                </p>
                 <p className="text-text-main font-medium">{courier.contactPhone}</p>
               </div>
             )}

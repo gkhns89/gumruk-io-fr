@@ -1684,15 +1684,57 @@ export const en = {
     common: {
       departureCount: "{{count}} departure times",
     },
+    // Record type badges (COURIER_TYPES)
+    types: {
+      label: "Record Type",
+      external: "Courier company",
+      inHouse: "In-house dispatch",
+    },
+    // In-house dispatch vehicle types (COURIER_VEHICLE_TYPES)
+    vehicleTypes: {
+      motorcycle: "Motorcycle",
+      car: "Car",
+      van: "Van",
+      truck: "Light truck",
+    },
     page: {
       subtitle: "Manage courier companies and their departure times",
+      subtitleWithInHouse: "Manage courier companies, in-house dispatch and their departure times",
       subtitleBroker: "{{name}} — courier companies",
       subtitleSelectBroker: "Select a customs broker to view its courier companies",
       selectBrokerHint: "Select a customs broker above to view its courier companies",
       add: "New Courier Company",
       empty: "No courier companies added yet",
+      emptyWithInHouse: "No courier companies or in-house dispatch added yet",
       addFirst: "Add the First Courier Company",
       found: "{{count}} courier companies found",
+      foundRecords: "{{count}} records found",
+      filterExternal: "Courier companies",
+      filterEmpty: "No records match this filter",
+    },
+    // In-house dispatch (the broker's own vehicles and couriers) — behind COURIER_CLIENT_STOPS
+    inHouse: {
+      add: "Add In-House Dispatch",
+      addSubtitle: "Create a dispatch record for your own vehicle and courier",
+      addFirst: "Add the First In-House Dispatch",
+      editTitle: "Edit In-House Dispatch",
+      infoTab: "Dispatch Details",
+      name: "Dispatch Name",
+      nameRequired: "Dispatch name is required",
+      namePlaceholder: "e.g. MOTOR COURIER 1",
+      vehicleType: "Vehicle Type",
+      selectVehicleType: "Select a vehicle type",
+      plate: "Plate",
+      platePlaceholder: "e.g. 34 ABC 123",
+      driverName: "Driver Name",
+      driverNamePlaceholder: "e.g. John Smith",
+      driverPhone: "Driver Phone",
+      notesPlaceholder: "Notes about the vehicle or courier...",
+      inactiveHint: "Inactive dispatch records are not shown on the dashboard",
+      deleteTitle: "Delete In-House Dispatch",
+      // {{name}} and {{schedules}} are rendered in bold; the text is split around the placeholder
+      deleteConfirmMessage: "You are about to delete the in-house dispatch {{name}}. This permanently removes the record and all of its departure times from the system.",
+      deleteSchedulesWarning: "This dispatch has {{schedules}}. Deleting it removes all of its departure times as well.",
     },
     form: {
       name: "Courier Company Name",

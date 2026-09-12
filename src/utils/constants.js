@@ -496,6 +496,64 @@ export const getShortDayName = (dayOfWeek) => {
   return DAY_OPTIONS.find(d => d.value === dayOfWeek)?.shortLabel || '';
 };
 
+/**
+ * Kurye Kayıt Tipleri (Kurye Takip)
+ * - EXTERNAL: dışarıdan çalışılan kurye firması (eski kayıtların hepsi)
+ * - IN_HOUSE: gümrük firmasının kendi aracı/kuryesi — araç başına bir kayıt
+ * Tip oluşturulduktan sonra değişmez; backend güncellemede farklı tipi reddeder.
+ */
+export const COURIER_TYPES = [
+  {
+    value: 'EXTERNAL',
+    labelKey: 'couriers.types.external',
+    get label() { return t(this.labelKey); },
+    icon: 'business',
+    badgeClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+  },
+  {
+    value: 'IN_HOUSE',
+    labelKey: 'couriers.types.inHouse',
+    get label() { return t(this.labelKey); },
+    icon: 'home_work',
+    badgeClass: 'bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300',
+  },
+];
+
+/**
+ * Firma içi sevkiyat araç tipleri
+ * (yük takibindeki VEHICLE_TYPES'tan ayrı: orası uçak/gemi/tır)
+ */
+export const COURIER_VEHICLE_TYPES = [
+  { value: 'MOTORCYCLE', labelKey: 'couriers.vehicleTypes.motorcycle', get label() { return t(this.labelKey); }, icon: 'two_wheeler' },
+  { value: 'CAR', labelKey: 'couriers.vehicleTypes.car', get label() { return t(this.labelKey); }, icon: 'directions_car' },
+  { value: 'VAN', labelKey: 'couriers.vehicleTypes.van', get label() { return t(this.labelKey); }, icon: 'airport_shuttle' },
+  { value: 'TRUCK', labelKey: 'couriers.vehicleTypes.truck', get label() { return t(this.labelKey); }, icon: 'local_shipping' },
+];
+
+/**
+ * Kurye kayıt tipini değere göre bul
+ * @param {string} value - EXTERNAL | IN_HOUSE
+ * @returns {Object|null}
+ */
+export const getCourierType = (value) => {
+  return COURIER_TYPES.find((type) => type.value === value) || null;
+};
+
+/**
+ * Firma içi sevkiyat araç tipini değere göre bul
+ * @param {string} value - MOTORCYCLE | CAR | VAN | TRUCK
+ * @returns {Object|null}
+ */
+export const getCourierVehicleType = (value) => {
+  return COURIER_VEHICLE_TYPES.find((type) => type.value === value) || null;
+};
+
+/**
+ * Kayıt (veya next-departures öğesi) firma içi sevkiyat mı?
+ * courierType taşımayan eski yanıtlar kurye firması sayılır.
+ */
+export const isInHouseCourier = (courier) => courier?.courierType === 'IN_HOUSE';
+
 export default {
   GATE_OPTIONS,
   TRANSACTION_STATUS,
@@ -508,6 +566,8 @@ export default {
   DOCUMENT_DELIVERY_TYPES,
   CURRENCY_OPTIONS,
   DAY_OPTIONS,
+  COURIER_TYPES,
+  COURIER_VEHICLE_TYPES,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
@@ -519,4 +579,7 @@ export default {
   formatCurrency,
   getDayName,
   getShortDayName,
+  getCourierType,
+  getCourierVehicleType,
+  isInHouseCourier,
 };
