@@ -196,6 +196,14 @@ the choice lives in `localStorage` under `language`. The rules:
   `en.js`. `npm run i18n:check` fails when the dictionaries' keys differ.
 - `t()` is not React state. `setLanguage()` saves the choice and **reloads the page**, so
   calling `t()` anywhere — render, module scope, constants — always yields the current language.
+- **Modules in the entry chunk import `t` from `src/locales/runtime.js`, never from `src/locales`.**
+  That covers `axios.js`, `errorUtils.js` and anything the providers in `main.jsx` pull in
+  (`authService`, `userService`, `paymentService`, `featureFlagService`). A static import of
+  `src/locales` there puts both dictionaries into the bundle every landing-page visitor downloads
+  (+40 KB gzip). `runtime.js` is a bridge the dictionary module registers with when it loads —
+  lazy pages import `src/locales` themselves, and `main.jsx` loads it before the first render when
+  a session token exists. After a build, check that no dictionary text is in `dist/assets/index-*.js`
+  referenced by `dist/index.html`.
 - `constants.js` items keep a `labelKey`; their `label` / `displayName` / `description` are
   getters over `t()`, so callers read `option.label` as before. Don't add literal labels there.
 - Menus come from `menuConfig.js` (`HOME_ITEM`, `getGeneralMenuItems(user)`, `SUPPORT_ITEMS`,
