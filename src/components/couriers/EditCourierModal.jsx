@@ -3,6 +3,7 @@ import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { confirmDialog } from '../../utils/confirmDialog';
 import { DAY_OPTIONS } from '../../utils/constants';
 import { FEATURE_FLAGS } from '../../utils/featureFlags';
 import { useFeatureFlags } from '../../hooks/useFeatureFlags';
@@ -207,9 +208,13 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
   };
 
   const handleDeleteSchedule = async (scheduleId) => {
-    if (!confirm(t('couriers.schedules.deleteConfirm'))) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: t('common.delete'),
+      message: t('couriers.schedules.deleteConfirm'),
+      intent: 'danger',
+      confirmText: t('common.delete'),
+    });
+    if (!ok) return;
 
     try {
       const result = await courierService.deleteSchedule(scheduleId);
