@@ -22,6 +22,31 @@ const SENSITIVE_KEYWORDS = [
   'jwt'
 ];
 
+// Sunucunun `error` alanına koyduğu makine kodları (örn. PAYMENT_RESTRICTION) — kullanıcı metni değil.
+const ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9_]+$/;
+
+/**
+ * Sunucu hata yanıtından kullanıcıya gösterilecek metni çıkarır.
+ * Zarf: `{ error, message, code, details? }` — `message` öncelikli; henüz taşınmamış uçlar
+ * yalnızca `error` döndürüyor. `error` bir kodsa metin sayılmaz.
+ * @param {object} error - Axios hatası
+ * @param {string} fallback - Metin bulunamazsa dönecek değer
+ * @returns {string}
+ */
+export const getApiErrorMessage = (error, fallback = '') => {
+  const data = error?.response?.data;
+  if (!data || typeof data !== 'object') {
+    return fallback;
+  }
+  if (typeof data.message === 'string' && data.message) {
+    return data.message;
+  }
+  if (typeof data.error === 'string' && data.error && !ERROR_CODE_PATTERN.test(data.error)) {
+    return data.error;
+  }
+  return fallback;
+};
+
 /**
  * Hata mesajını sanitize eder - hassas bilgileri kaldırır
  * @param {Error|string|object} error - Hata objesi veya mesajı
@@ -35,17 +60,18 @@ export const sanitizeError = (error) => {
 
   let errorMessage = '';
 
+  // API response hatası ise — AxiosError da bir Error olduğu için bu kontrol önce gelmeli,
+  // yoksa sunucu mesajı yerine "Request failed with status code 400" gösteriliyor.
+  if (getApiErrorMessage(error)) {
+    errorMessage = getApiErrorMessage(error);
+  }
   // Error objesi ise
-  if (error instanceof Error) {
+  else if (error instanceof Error) {
     errorMessage = error.message || "Beklenmeyen bir hata oluştu.";
   }
   // String ise
   else if (typeof error === 'string') {
     errorMessage = error;
-  }
-  // API response hatası ise
-  else if (error.response?.data?.message) {
-    errorMessage = error.response.data.message;
   }
   // Diğer objeler
   else if (typeof error === 'object') {

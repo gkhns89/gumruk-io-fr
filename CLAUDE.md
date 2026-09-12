@@ -99,6 +99,14 @@ Follow this shape in new services — code all over the app assumes it. (A handf
 `paymentService` methods break the rule and return raw data / throw; those callers wrap
 them in `try/catch` themselves.)
 
+Server error bodies are `{ error, message, code, details? }`: `message` is the user-facing
+text, `error` repeats it for older callers (except `PAYMENT_RESTRICTION`, where `error` is
+the code), `code` is a stable constant (`VALIDATION_FAILED`, `FORBIDDEN`, `INTERNAL_ERROR`, ...)
+and `details` maps field → message on validation errors. Controllers that still build their
+own `Map.of("error", ...)` send only `error`. Read the text with `getApiErrorMessage()` from
+`errorUtils.js`, which handles both shapes. Some services branch on status: 429 = quota,
+409 = conflict (e.g. sector in use), 403 = no permission.
+
 `axios.js` resolves the base URL itself: in `PROD` from `VITE_API_BASE_URL` (falling back
 to `https://api.gumruk.io/api`); in dev, `localhost:8080` for local access but
 `http://<current-host>:9090` when reached over LAN.
