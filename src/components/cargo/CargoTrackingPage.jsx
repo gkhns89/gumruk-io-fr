@@ -190,11 +190,6 @@ export default function CargoTrackingPage() {
 
   // Apply filters
   useEffect(() => {
-    applyFilters();
-    setCurrentPage(1);
-  }, [filters, cargo, selectedVehicleType]);
-
-  const applyFilters = () => {
     let filtered = [...cargo];
 
     // Vehicle type filter
@@ -228,7 +223,8 @@ export default function CargoTrackingPage() {
     }
 
     setFilteredCargo(filtered);
-  };
+    setCurrentPage(1);
+  }, [filters, cargo, selectedVehicleType]);
 
   // Custom sorting: Status priority (TRACKING → ARRIVED → COMPLETED), then by ETA ASC
   const sortedCargo = useMemo(() => {

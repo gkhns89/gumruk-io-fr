@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
 
@@ -20,10 +20,15 @@ export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSu
     }
   };
 
+  // Klavye dinleyicisi yalnızca loading/onClose değişince yeniden bağlanıyor; güncel
+  // handleDelete'i ref'ten çağırır ki bağlandığı render'ın kapanışında kalmasın.
+  const handleDeleteRef = useRef(handleDelete);
+  useEffect(() => { handleDeleteRef.current = handleDelete; });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") { onClose(); return; }
-      if (e.key === "Enter" && !loading) handleDelete();
+      if (e.key === "Enter" && !loading) handleDeleteRef.current();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);

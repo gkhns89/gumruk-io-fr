@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
@@ -38,13 +38,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
   const [emailError, setEmailError] = useState('');
   const [schedulesModified, setSchedulesModified] = useState(false); // Track schedule changes
 
-  // Load schedules and customs on mount
-  useEffect(() => {
-    loadSchedules();
-    loadCustoms();
-  }, []);
-
-  const loadSchedules = async () => {
+  const loadSchedules = useCallback(async () => {
     setLoadingSchedules(true);
     try {
       const result = await courierService.getSchedules(courier.id);
@@ -58,7 +52,13 @@ export default function EditCourierModal({ onClose, courier, onSuccess }) {
     } finally {
       setLoadingSchedules(false);
     }
-  };
+  }, [courier.id]);
+
+  // Load schedules and customs on mount (and if the edited courier changes)
+  useEffect(() => {
+    loadSchedules();
+    loadCustoms();
+  }, [loadSchedules]);
 
   const loadCustoms = async () => {
     setLoadingCustoms(true);

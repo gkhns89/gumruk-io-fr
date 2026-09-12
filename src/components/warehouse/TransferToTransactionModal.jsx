@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import WarehouseTransferHistory from "./WarehouseTransferHistory";
@@ -67,12 +67,17 @@ export default function TransferToTransactionModal({ declaration, onClose, onSuc
     }
   };
 
+  // Ctrl+S dinleyicisi yalnızca loading/onClose değişince yeniden bağlanıyor; ref olmadan
+  // bağlandığı andaki handleTransfer'i, yani formun eski halini gönderirdi.
+  const handleTransferRef = useRef(handleTransfer);
+  useEffect(() => { handleTransferRef.current = handleTransfer; });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") { onClose(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        if (!loading) handleTransfer();
+        if (!loading) handleTransferRef.current();
       }
     };
     document.addEventListener("keydown", handleKeyDown);

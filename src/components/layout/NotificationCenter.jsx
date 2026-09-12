@@ -136,8 +136,13 @@ export default function NotificationCenter() {
 
   // ── Effects ─────────────────────────────────────────────────
 
+  // İlk yükleme ve 30 sn'lik yoklama loadUnreadCount'un en güncel halini çağırsın (isOpen'ı
+  // okuyor); ref, zamanlayıcıyı her render'da yeniden kurmadan bunu sağlıyor.
+  const loadUnreadCountRef = useRef(loadUnreadCount);
+  useEffect(() => { loadUnreadCountRef.current = loadUnreadCount; });
+
   useEffect(() => {
-    loadUnreadCount();
+    loadUnreadCountRef.current();
   }, []);
 
   useEffect(() => {
@@ -146,7 +151,7 @@ export default function NotificationCenter() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      loadUnreadCount();
+      loadUnreadCountRef.current();
       if (isOpen) loadNotifications();
     }, 30000);
     return () => clearInterval(interval);

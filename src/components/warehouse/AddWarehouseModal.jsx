@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { warehouseService } from "../../api/warehouseService";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
@@ -518,12 +518,17 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
     }
   };
 
+  // Ctrl+S dinleyicisi yalnızca loading/onClose değişince yeniden bağlanıyor; ref olmadan
+  // bağlandığı andaki handleSubmit'i, yani formun eski halini doğrulayıp gönderirdi.
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => { handleSubmitRef.current = handleSubmit; });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") { onClose(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        if (!loading) handleSubmit();
+        if (!loading) handleSubmitRef.current();
       }
     };
     document.addEventListener("keydown", handleKeyDown);

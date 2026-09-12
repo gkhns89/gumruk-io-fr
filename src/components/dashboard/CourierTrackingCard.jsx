@@ -126,7 +126,7 @@ export default function CourierTrackingCard({ expanded = false, onToggleExpand, 
     updateCountdown();
     const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
-  }, [courierData]);
+  }, [courierData, isSuperAdmin, selectedBrokerId]);
 
   if (!canViewCourier) return null;
 

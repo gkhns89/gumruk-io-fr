@@ -42,9 +42,27 @@ const CreateAgreementModal = ({
 
   // Firma listesini yükle (sadece showClientSelector true ise)
   useEffect(() => {
-    if (showClientSelector && isOpen && brokerCompanyId) {
-      loadAvailableClients();
-    }
+    if (!(showClientSelector && isOpen && brokerCompanyId)) return;
+
+    const loadAvailableClients = async () => {
+      setLoadingClients(true);
+      try {
+        const result = await companyService.getClientCompanies(brokerCompanyId);
+        if (result.success) {
+          // Sadece aktif vekaleti OLMAYAN firmaları göster
+          const clientsWithoutAgreement = result.data.filter(
+            client => !client.agreementId || client.agreementStatus !== 'ACTIVE'
+          );
+          setAvailableClients(clientsWithoutAgreement);
+        }
+      } catch (err) {
+        logError('Müşteri firmaları yükleme', err);
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+
+    loadAvailableClients();
   }, [showClientSelector, isOpen, brokerCompanyId]);
 
   // Dosya yükleme konfigürasyonunu yükle
@@ -53,24 +71,6 @@ const CreateAgreementModal = ({
       loadUploadConfig();
     }
   }, [isOpen]);
-
-  const loadAvailableClients = async () => {
-    setLoadingClients(true);
-    try {
-      const result = await companyService.getClientCompanies(brokerCompanyId);
-      if (result.success) {
-        // Sadece aktif vekaleti OLMAYAN firmaları göster
-        const clientsWithoutAgreement = result.data.filter(
-          client => !client.agreementId || client.agreementStatus !== 'ACTIVE'
-        );
-        setAvailableClients(clientsWithoutAgreement);
-      }
-    } catch (err) {
-      logError('Müşteri firmaları yükleme', err);
-    } finally {
-      setLoadingClients(false);
-    }
-  };
 
   const loadUploadConfig = async () => {
     const result = await configService.getFileUploadConfig();
