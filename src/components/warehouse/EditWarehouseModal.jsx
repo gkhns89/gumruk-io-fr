@@ -10,6 +10,7 @@ import { toUpperCase } from "../../utils/textUtils";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { useDropdownKeyboard } from "../../hooks/useDropdownKeyboard";
 import AgreementInfoPanel from "../agreements/AgreementInfoPanel";
+import { t } from "../../locales";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -70,7 +71,7 @@ function DdList({ items, onSelect, highlightIdx, emptyText, ddId, renderItem }) 
   );
 }
 
-function AutoField({ containerId, ddId, label, required, note, value, onChange, onFocus, showDd, filtered, kbHook, onSelect, error }) {
+function AutoField({ containerId, ddId, label, placeholder, emptyText, required, note, value, onChange, onFocus, showDd, filtered, kbHook, onSelect, error }) {
   const notExact = value.trim() && !filtered.some((s) => s.toLowerCase() === value.toLowerCase());
   return (
     <div>
@@ -81,7 +82,7 @@ function AutoField({ containerId, ddId, label, required, note, value, onChange, 
           onChange={onChange}
           onFocus={onFocus}
           onKeyDown={kbHook.handleKeyDown}
-          placeholder={`${label} girin veya seçin`}
+          placeholder={placeholder}
           autoComplete="off"
           className={getIc(!!error)}
         />
@@ -102,11 +103,11 @@ function AutoField({ containerId, ddId, label, required, note, value, onChange, 
                 className="w-full text-left px-4 py-2.5 text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">add_circle</span>
-                <span>Yeni ekle: <strong>{toUpperCase(value.trim())}</strong></span>
+                <span>{t("warehouse.form.addNew")} <strong>{toUpperCase(value.trim())}</strong></span>
               </button>
             )}
             {filtered.length === 0 && !notExact ? (
-              <div className="p-4 text-center text-text-secondary text-sm">Kayıtlı {label.toLowerCase()} bulunamadı</div>
+              <div className="p-4 text-center text-text-secondary text-sm">{emptyText}</div>
             ) : (
               filtered.map((s, idx) => (
                 <button
@@ -340,9 +341,9 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
       const whs = new Set();
       const carriers = new Set();
       if (txRes?.success) {
-        txRes.data.forEach((t) => {
-          if (t.senderName) senders.add(t.senderName);
-          if (t.customsWarehouse) whs.add(t.customsWarehouse);
+        txRes.data.forEach((tx) => {
+          if (tx.senderName) senders.add(tx.senderName);
+          if (tx.customsWarehouse) whs.add(tx.customsWarehouse);
         });
       }
       if (whRes?.success) {
@@ -441,25 +442,25 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
   /* ── Validation & Submit ── */
   const validate = () => {
     const e = {};
-    if (isSuperAdmin && !formData.brokerCompanyId) e.brokerCompanyId = "Gümrük firması seçimi zorunludur";
-    if (!formData.clientCompanyId) e.clientCompanyId = "Alıcı firma seçimi zorunludur";
-    if (!formData.fileNo.trim()) e.fileNo = "Dosya No zorunludur";
-    if (!formData.declarationNo.trim()) e.declarationNo = "Beyanname No zorunludur";
-    if (!senderSearch.trim()) e.senderName = "Gönderici zorunludur";
-    if (!whSearch.trim()) e.warehouse = "Antrepo zorunludur";
-    if (!formData.customsId) e.customsId = "Gümrük zorunludur";
-    if (!carrierSearch.trim()) e.carrierName = "Nakliyeci zorunludur";
-    if (!formData.containerAmount || Number(formData.containerAmount) <= 0) e.containerAmount = "Kap miktarı zorunludur";
-    if (!formData.weight || Number(formData.weight) <= 0) e.weight = "Kilo zorunludur";
-    if (!formData.gate) e.gate = "Hat seçimi zorunludur";
-    if (!formData.representativeId) e.representativeId = "Temsilci zorunludur";
-    if (!formData.declarationDate) e.declarationDate = "Beyanname tarihi zorunludur";
+    if (isSuperAdmin && !formData.brokerCompanyId) e.brokerCompanyId = t("warehouse.validation.brokerRequired");
+    if (!formData.clientCompanyId) e.clientCompanyId = t("warehouse.validation.clientRequired");
+    if (!formData.fileNo.trim()) e.fileNo = t("warehouse.validation.fileNoRequired");
+    if (!formData.declarationNo.trim()) e.declarationNo = t("warehouse.validation.declarationNoRequired");
+    if (!senderSearch.trim()) e.senderName = t("warehouse.validation.senderRequired");
+    if (!whSearch.trim()) e.warehouse = t("transactions.validation.warehouseRequired");
+    if (!formData.customsId) e.customsId = t("warehouse.validation.customsRequired");
+    if (!carrierSearch.trim()) e.carrierName = t("warehouse.validation.carrierRequired");
+    if (!formData.containerAmount || Number(formData.containerAmount) <= 0) e.containerAmount = t("warehouse.validation.containerAmountRequired");
+    if (!formData.weight || Number(formData.weight) <= 0) e.weight = t("transactions.validation.weightRequired");
+    if (!formData.gate) e.gate = t("transactions.validation.gateRequired");
+    if (!formData.representativeId) e.representativeId = t("warehouse.validation.representativeRequired");
+    if (!formData.declarationDate) e.declarationDate = t("warehouse.validation.declarationDateRequired");
     setFieldErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) { showError("Lütfen tüm zorunlu alanları doldurun"); return; }
+    if (!validate()) { showError(t("transactions.form.fillRequired")); return; }
     setLoading(true);
     try {
       const payload = {
@@ -482,7 +483,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
       };
       const result = await warehouseService.update(declaration.id, payload);
       if (result.success) {
-        showSuccess(result.message || "Antrepo kaydı güncellendi");
+        showSuccess(result.message || t("warehouse.form.updateSuccess"));
         onSuccess();
       } else {
         showError(result.error);
@@ -525,7 +526,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               <span className="material-symbols-outlined text-amber-500">edit</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-main">Antrepo Kaydı Düzenle</h2>
+              <h2 className="text-xl font-bold text-text-main">{t("warehouse.form.editTitle")}</h2>
               <p className="text-text-secondary text-sm font-mono">{declaration.fileNo}</p>
             </div>
           </div>
@@ -535,7 +536,9 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                 ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
                 : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
             }`}>
-              {statusIsKapandi ? "KAPANDI" : "TESCİL EDİLDİ"}
+              {statusIsKapandi
+                ? t("dashboard.recent.warehouseStatus.KAPANDI")
+                : t("dashboard.recent.warehouseStatus.TESCIL_EDILDI")}
             </span>
             <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors">
               <span className="material-symbols-outlined text-text-secondary">close</span>
@@ -548,18 +551,18 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
           {/* Firma & Alıcı */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-            <SectionHeader icon="business" title="FİRMA & ALICI" />
+            <SectionHeader icon="business" title={t("warehouse.form.sectionCompany")} />
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {isSuperAdmin && (
                 <div>
-                  <FieldLabel text="Gümrük Firması (Broker)" required />
+                  <FieldLabel text={t("warehouse.form.brokerLabel")} required />
                   <div className="relative" id="edit-wh-broker-c">
                     <input
                       value={brokerSearch}
                       onChange={(e) => { setBrokerSearch(e.target.value); setShowBrokerDd(true); clearErr("brokerCompanyId"); if (!e.target.value) setFormData((p) => ({ ...p, brokerCompanyId: "" })); }}
                       onFocus={() => setShowBrokerDd(true)}
                       onKeyDown={brokerKb.handleKeyDown}
-                      placeholder={loadingBrokers ? "Yükleniyor..." : "Gümrük firması ara veya seçin"}
+                      placeholder={loadingBrokers ? t("common.loading") : t("warehouse.form.brokerPlaceholder")}
                       disabled={loadingBrokers}
                       autoComplete="off"
                       className={getIc(!!fieldErrors.brokerCompanyId) + " disabled:bg-gray-50 dark:disabled:bg-gray-700"}
@@ -571,7 +574,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                     {showBrokerDd && !loadingBrokers && (
                       <DdList
                         items={filteredBrokers} highlightIdx={brokerKb.highlightedIndex} ddId="edit-wh-broker-dd"
-                        emptyText="Kayıtlı gümrük firması bulunamadı"
+                        emptyText={t("warehouse.form.noBrokers")}
                         onSelect={selectBroker}
                         renderItem={(b) => (
                           <div className="flex items-center justify-between">
@@ -590,14 +593,14 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               )}
 
               <div className={!isSuperAdmin ? "sm:col-span-2" : ""}>
-                <FieldLabel text="Alıcı (Müşteri Firma)" required />
+                <FieldLabel text={t("warehouse.form.clientLabel")} required />
                 <div className="relative" id="edit-wh-client-c">
                   <input
                     value={clientSearch}
                     onChange={(e) => { setClientSearch(e.target.value); setShowClientDd(true); clearErr("clientCompanyId"); if (!e.target.value) { setFormData((p) => ({ ...p, clientCompanyId: "", recipientName: "" })); setSelectedClientAgreement(null); } }}
                     onFocus={() => setShowClientDd(true)}
                     onKeyDown={clientKb.handleKeyDown}
-                    placeholder={loadingClients ? "Yükleniyor..." : "Müşteri firma ara veya seçin"}
+                    placeholder={loadingClients ? t("common.loading") : t("warehouse.form.clientPlaceholder")}
                     disabled={loadingClients}
                     autoComplete="off"
                     className={getIc(!!fieldErrors.clientCompanyId) + " disabled:bg-gray-50 dark:disabled:bg-gray-700"}
@@ -609,7 +612,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                   {showClientDd && !loadingClients && (
                     <DdList
                       items={filteredClients} highlightIdx={clientKb.highlightedIndex} ddId="edit-wh-client-dd"
-                      emptyText="Kayıtlı müşteri bulunamadı"
+                      emptyText={t("warehouse.form.noClients")}
                       onSelect={(c) => selectClient(c)}
                       renderItem={(c) => (
                         <div className="flex items-center justify-between">
@@ -627,7 +630,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                 {formData.clientCompanyId && formData.recipientName && (
                   <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
                     <span className="material-symbols-outlined text-xs">person</span>
-                    Alıcı adı: <span className="font-medium text-text-main">{formData.recipientName}</span>
+                    {t("warehouse.form.recipientName")} <span className="font-medium text-text-main">{formData.recipientName}</span>
                   </p>
                 )}
               </div>
@@ -646,24 +649,24 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
           {/* Kayıt Numaraları */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-            <SectionHeader icon="badge" title="KAYIT NUMARALARI" />
+            <SectionHeader icon="badge" title={t("warehouse.form.sectionNumbers")} />
             <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <FieldLabel text="Antrepo Dosya No" required />
+                <FieldLabel text={t("transactions.detail.warehouseFileNo")} required />
                 <input value={formData.fileNo}
                   onChange={(e) => { setFormData((p) => ({ ...p, fileNo: toUpperCase(e.target.value) })); clearErr("fileNo"); }}
                   className={getIc(!!fieldErrors.fileNo)} />
                 <FieldError msg={fieldErrors.fileNo} />
               </div>
               <div>
-                <FieldLabel text="Ant. Beyanname No" required />
+                <FieldLabel text={t("transactions.detail.warehouseDeclarationNo")} required />
                 <input value={formData.declarationNo}
                   onChange={(e) => { setFormData((p) => ({ ...p, declarationNo: toUpperCase(e.target.value) })); clearErr("declarationNo"); }}
                   className={getIc(!!fieldErrors.declarationNo)} />
                 <FieldError msg={fieldErrors.declarationNo} />
               </div>
               <div>
-                <FieldLabel text="Hat" required />
+                <FieldLabel text={t("transaction.gate")} required />
                 <div className="flex gap-2 h-11">
                   {GATE_OPTIONS.map((opt) => (
                     <button key={opt.value} type="button"
@@ -675,7 +678,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                             : "bg-red-100 dark:bg-red-900/40 border-red-400 text-red-800 dark:text-red-300 shadow-sm"
                           : "border-gray-300 dark:border-gray-600 text-text-secondary hover:bg-gray-50 dark:hover:bg-gray-700"
                       }`}>
-                      {opt.emoji} {opt.value}
+                      {opt.emoji} {t(opt.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -686,23 +689,26 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
           {/* Lojistik */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-            <SectionHeader icon="local_shipping" title="LOJİSTİK BİLGİLERİ" />
+            <SectionHeader icon="local_shipping" title={t("warehouse.form.sectionLogistics")} />
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AutoField containerId="edit-wh-sender-c" ddId="edit-wh-sender-dd" label="Gönderici" required
+              <AutoField containerId="edit-wh-sender-c" ddId="edit-wh-sender-dd" label={t("transaction.sender")} required
+                placeholder={t("warehouse.form.senderPlaceholder")} emptyText={t("warehouse.form.noSenders")}
                 value={senderSearch}
                 onChange={(e) => { setSenderSearch(e.target.value); setFormData((p) => ({ ...p, senderName: e.target.value })); setShowSenderDd(true); clearErr("senderName"); }}
                 onFocus={() => setShowSenderDd(true)}
                 showDd={showSenderDd} filtered={filteredSenders} kbHook={senderKb} onSelect={selectSender}
                 error={fieldErrors.senderName}
               />
-              <AutoField containerId="edit-wh-carrier-c" ddId="edit-wh-carrier-dd" label="Nakliyeci" required
+              <AutoField containerId="edit-wh-carrier-c" ddId="edit-wh-carrier-dd" label={t("cargo.fields.carrierName")} required
+                placeholder={t("warehouse.form.carrierPlaceholder")} emptyText={t("warehouse.form.noCarriers")}
                 value={carrierSearch}
                 onChange={(e) => { setCarrierSearch(e.target.value); setFormData((p) => ({ ...p, carrierName: e.target.value })); setShowCarrierDd(true); clearErr("carrierName"); }}
                 onFocus={() => setShowCarrierDd(true)}
                 showDd={showCarrierDd} filtered={filteredCarriers} kbHook={carrierKb} onSelect={selectCarrier}
                 error={fieldErrors.carrierName}
               />
-              <AutoField containerId="edit-wh-wh-c" ddId="edit-wh-wh-dd" label="Antrepo" required
+              <AutoField containerId="edit-wh-wh-c" ddId="edit-wh-wh-dd" label={t("transaction.customsWarehouse")} required
+                placeholder={t("warehouse.form.warehousePlaceholder")} emptyText={t("warehouse.form.noWarehouses")}
                 value={whSearch}
                 onChange={(e) => { setWhSearch(e.target.value); setFormData((p) => ({ ...p, warehouse: e.target.value })); setShowWhDd(true); clearErr("warehouse"); }}
                 onFocus={() => setShowWhDd(true)}
@@ -710,14 +716,14 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                 error={fieldErrors.warehouse}
               />
               <div>
-                <FieldLabel text="Gümrük" required />
+                <FieldLabel text={t("transaction.customsName")} required />
                 <div className="relative" id="edit-wh-customs-c">
                   <input
                     value={customsSearch}
                     onChange={(e) => { setCustomsSearch(e.target.value); setShowCustomsDd(true); clearErr("customsId"); }}
                     onFocus={() => setShowCustomsDd(true)}
                     onKeyDown={customsKb.handleKeyDown}
-                    placeholder="Gümrük ara veya seçin"
+                    placeholder={t("warehouse.form.customsPlaceholder")}
                     autoComplete="off"
                     className={getIc(!!fieldErrors.customsId)}
                   />
@@ -728,7 +734,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                   {showCustomsDd && (
                     <DdList
                       items={filteredCustoms} highlightIdx={customsKb.highlightedIndex} ddId="edit-wh-customs-dd"
-                      emptyText="Kayıtlı gümrük bulunamadı"
+                      emptyText={t("warehouse.form.noCustoms")}
                       onSelect={(c) => selectCustoms(c)}
                       renderItem={(c) => (
                         <div>
@@ -746,17 +752,17 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
           {/* Yük Bilgileri */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-            <SectionHeader icon="inventory_2" title="YÜK BİLGİLERİ" />
+            <SectionHeader icon="inventory_2" title={t("warehouse.form.sectionCargo")} />
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <FieldLabel text="Kap" required />
+                <FieldLabel text={t("transaction.containerAmount")} required />
                 <input type="number" min="1" value={formData.containerAmount}
                   onChange={(e) => { setFormData((p) => ({ ...p, containerAmount: e.target.value })); clearErr("containerAmount"); }}
                   placeholder="0" className={getIc(!!fieldErrors.containerAmount)} />
                 <FieldError msg={fieldErrors.containerAmount} />
               </div>
               <div>
-                <FieldLabel text="Kilo (Kg)" required />
+                <FieldLabel text={t("transaction.weight")} required />
                 <input type="number" min="0" step="0.001" value={formData.weight}
                   onChange={(e) => { setFormData((p) => ({ ...p, weight: e.target.value })); clearErr("weight"); }}
                   placeholder="0.000" className={getIc(!!fieldErrors.weight)} />
@@ -767,17 +773,17 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
           {/* Temsilci & Tarihler */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-            <SectionHeader icon="event" title="TEMSİLCİ & TARİHLER" />
+            <SectionHeader icon="event" title={t("warehouse.form.sectionRepresentativeDates")} />
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <FieldLabel text="Temsilci" required />
+                <FieldLabel text={t("warehouse.common.representative")} required />
                 <div className="relative" id="edit-wh-rep-c">
                   <input
                     value={repSearch}
                     onChange={(e) => { setRepSearch(e.target.value); setShowRepDd(true); clearErr("representativeId"); }}
                     onFocus={() => setShowRepDd(true)}
                     onKeyDown={repKb.handleKeyDown}
-                    placeholder="Temsilci ara veya seçin"
+                    placeholder={t("warehouse.form.representativePlaceholder")}
                     autoComplete="off"
                     className={getIc(!!fieldErrors.representativeId)}
                   />
@@ -788,7 +794,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
                   {showRepDd && (
                     <DdList
                       items={filteredReps} highlightIdx={repKb.highlightedIndex} ddId="edit-wh-rep-dd"
-                      emptyText="Çalışan bulunamadı"
+                      emptyText={t("warehouse.form.noEmployees")}
                       onSelect={(r) => { setFormData((p) => ({ ...p, representativeId: r.id })); setRepSearch(getRepName(r)); setShowRepDd(false); clearErr("representativeId"); }}
                       renderItem={(r) => (
                         <div className="flex items-center justify-between">
@@ -806,7 +812,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               </div>
 
               <div>
-                <FieldLabel text="Beyanname Tarihi" required />
+                <FieldLabel text={t("warehouse.common.declarationDate")} required />
                 <input type="date" value={formData.declarationDate} max={today}
                   onChange={(e) => { setFormData((p) => ({ ...p, declarationDate: e.target.value })); clearErr("declarationDate"); }}
                   className={getIc(!!fieldErrors.declarationDate)} />
@@ -814,21 +820,21 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               </div>
 
               <div>
-                <FieldLabel text="Pul Ödeme Tarihi" />
+                <FieldLabel text={t("warehouse.common.stampPaymentDate")} />
                 <input type="date" value={formData.stampPaymentDate} max={today}
                   onChange={(e) => setFormData((p) => ({ ...p, stampPaymentDate: e.target.value }))}
                   className={getIc(false)} />
               </div>
 
               <div>
-                <FieldLabel text="Tutanak" />
+                <FieldLabel text={t("warehouse.common.protocol")} />
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-full h-11">
                   <div className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.protocol ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`}>
                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.protocol ? "translate-x-6" : "translate-x-1"}`} />
                     <input type="checkbox" checked={formData.protocol} onChange={(e) => setFormData((p) => ({ ...p, protocol: e.target.checked }))} className="sr-only" />
                   </div>
                   <p className={`text-sm font-semibold ${formData.protocol ? "text-emerald-600 dark:text-emerald-400" : "text-text-main"}`}>
-                    {formData.protocol ? "Tutanak Geldi" : "Tutanak Bekliyor"}
+                    {formData.protocol ? t("warehouse.common.protocolArrived") : t("warehouse.common.protocolPending")}
                   </p>
                 </label>
               </div>
@@ -838,17 +844,17 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0 rounded-b-2xl">
-          <p className="text-xs text-text-secondary"><span className="text-red-500">*</span> Zorunlu alanlar</p>
+          <p className="text-xs text-text-secondary"><span className="text-red-500">*</span> {t("warehouse.form.requiredFields")}</p>
           <div className="flex items-center gap-3">
             <button type="button" onClick={onClose} disabled={loading}
               className="px-5 py-2.5 text-text-secondary hover:text-text-main font-medium transition-colors disabled:opacity-50 text-sm">
-              İptal
+              {t("common.cancel")}
             </button>
             <button type="button" onClick={handleSubmit} disabled={loading}
               className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm">
               {loading
-                ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /><span>Güncelleniyor...</span></>
-                : <><span className="material-symbols-outlined text-lg">save</span><span>Güncelle</span></>}
+                ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /><span>{t("cargoTracking.form.updating")}</span></>
+                : <><span className="material-symbols-outlined text-lg">save</span><span>{t("common.update")}</span></>}
             </button>
           </div>
         </div>

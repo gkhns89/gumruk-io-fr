@@ -1,26 +1,25 @@
 import { useEffect, useState } from "react";
 import { warehouseService } from "../../api/warehouseService";
+import { t, getCurrentLocale } from "../../locales";
 
 const formatNum = (n, dec = 3) => {
   if (n == null) return "-";
-  return Number(n).toLocaleString("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: dec });
+  return Number(n).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 0, maximumFractionDigits: dec });
 };
 
-const formatDate = (d) => (d ? new Date(d).toLocaleDateString("tr-TR") : "-");
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString(getCurrentLocale()) : "-");
 
-const TRANSFER_TYPE_LABEL = {
-  FULL: "Tam",
-  PARTIAL: "Düşümlü",
+const transferTypeShortLabel = (type) => {
+  if (type === "FULL") return t("warehouse.history.full");
+  if (type === "PARTIAL") return t("warehouse.common.partial");
+  return type;
 };
 
-const STATUS_LABEL = {
-  PENDING: "BEKLİYOR",
-  REGISTERED: "TESCİL EDİLDİ",
-  INSPECTION: "MUAYENEDE",
-  CP_COMPLETED: "TAMAMLANDI",
-  WITHDRAWN: "ÇEKİLDİ",
-  CANCELLED: "İPTAL",
-};
+// İşlem Takip durumları; etiketleri panelin son işlemler tablosuyla ortak
+const TRANSACTION_STATUSES = ["PENDING", "REGISTERED", "INSPECTION", "CP_COMPLETED", "WITHDRAWN", "CANCELLED"];
+
+const transactionStatusLabel = (status) =>
+  TRANSACTION_STATUSES.includes(status) ? t(`dashboard.recent.transactionStatus.${status}`) : status;
 
 /**
  * Bir antrepo kaydından İşlem Takip'e yapılmış aktarımların listesi.
@@ -33,7 +32,7 @@ const STATUS_LABEL = {
 export default function WarehouseTransferHistory({
   declarationId,
   excludeTransactionId,
-  emptyText = "Bu kayıttan henüz aktarım yapılmamış.",
+  emptyText = t("warehouse.history.empty"),
 }) {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,14 +59,14 @@ export default function WarehouseTransferHistory({
   }, [declarationId]);
 
   const visible = excludeTransactionId
-    ? transfers.filter((t) => t.transaction?.id !== excludeTransactionId)
+    ? transfers.filter((transfer) => transfer.transaction?.id !== excludeTransactionId)
     : transfers;
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-4 py-3 text-sm text-text-secondary">
         <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
-        Aktarım geçmişi yükleniyor…
+        {t("warehouse.history.loading")}
       </div>
     );
   }
@@ -90,12 +89,12 @@ export default function WarehouseTransferHistory({
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs text-text-secondary border-b border-gray-200 dark:border-gray-700">
-            <th className="px-4 py-2 font-semibold whitespace-nowrap">Tarih</th>
-            <th className="px-4 py-2 font-semibold whitespace-nowrap">Tip</th>
-            <th className="px-4 py-2 font-semibold whitespace-nowrap text-right">Kap</th>
-            <th className="px-4 py-2 font-semibold whitespace-nowrap text-right">Kilo (Kg)</th>
-            <th className="px-4 py-2 font-semibold whitespace-nowrap">İşlem Dosya No</th>
-            <th className="px-4 py-2 font-semibold whitespace-nowrap">Durum</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap">{t("transactions.detail.date")}</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap">{t("warehouse.history.type")}</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap text-right">{t("transaction.containerAmount")}</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap text-right">{t("transaction.weight")}</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap">{t("warehouse.history.transactionFileNo")}</th>
+            <th className="px-4 py-2 font-semibold whitespace-nowrap">{t("dashboard.recent.columns.status")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -110,7 +109,7 @@ export default function WarehouseTransferHistory({
                     ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
                     : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
                 }`}>
-                  {TRANSFER_TYPE_LABEL[transfer.transferType] || transfer.transferType}
+                  {transferTypeShortLabel(transfer.transferType)}
                 </span>
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-right text-text-main">
@@ -123,7 +122,7 @@ export default function WarehouseTransferHistory({
                 {transfer.transaction?.fileNo || "-"}
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-xs text-text-secondary">
-                {STATUS_LABEL[transfer.transaction?.status] || transfer.transaction?.status || "-"}
+                {transactionStatusLabel(transfer.transaction?.status) || "-"}
               </td>
             </tr>
           ))}

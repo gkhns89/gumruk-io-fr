@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
+import { t } from "../../locales";
 
 export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -10,7 +11,7 @@ export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSu
     try {
       const result = await warehouseService.delete(declaration.id);
       if (result.success) {
-        showSuccess("Antrepo kaydı silindi");
+        showSuccess(t("warehouse.delete.success"));
         onSuccess();
       } else {
         showError(result.error);
@@ -46,8 +47,8 @@ export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSu
             <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-2xl">warning</span>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-main">Kaydı Sil</h2>
-            <p className="text-text-secondary text-sm mt-1">Bu işlem geri alınamaz</p>
+            <h2 className="text-xl font-bold text-text-main">{t("warehouse.delete.title")}</h2>
+            <p className="text-text-secondary text-sm mt-1">{t("transactions.delete.irreversible")}</p>
           </div>
         </div>
 
@@ -55,34 +56,36 @@ export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSu
         <div className="p-6">
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-text-secondary text-sm">Dosya No:</span>
+              <span className="text-text-secondary text-sm">{t("transaction.fileNo")}:</span>
               <span className="text-text-main font-semibold">{declaration.fileNo}</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-text-secondary text-sm">Alıcı:</span>
+              <span className="text-text-secondary text-sm">{t("transaction.recipient")}:</span>
               <span className="text-text-main font-semibold">{declaration.recipientName || "-"}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-sm">Durum:</span>
+              <span className="text-text-secondary text-sm">{t("dashboard.recent.columns.status")}:</span>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                 declaration.status === "KAPANDI"
                   ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
                   : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
               }`}>
-                {declaration.status === "KAPANDI" ? "KAPANDI" : "TESCİL EDİLDİ"}
+                {declaration.status === "KAPANDI"
+                  ? t("dashboard.recent.warehouseStatus.KAPANDI")
+                  : t("dashboard.recent.warehouseStatus.TESCIL_EDILDI")}
               </span>
             </div>
           </div>
 
           <p className="text-text-secondary text-sm">
-            Bu antrepo kaydını silmek istediğinizden emin misiniz? Kayda bağlı aktarım geçmişi de silinecektir.
+            {t("warehouse.delete.confirmMessage")}
           </p>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <button type="button" onClick={onClose} disabled={loading} className="px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors disabled:opacity-50">
-            Vazgeç
+            {t("confirmModal.cancel")}
           </button>
           <button
             onClick={handleDelete}
@@ -90,7 +93,7 @@ export default function DeleteWarehouseConfirmModal({ declaration, onClose, onSu
             className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined">delete</span>
-            {loading ? "Siliniyor..." : "Sil"}
+            {loading ? t("cargoTracking.delete.deleting") : t("common.delete")}
           </button>
         </div>
       </div>

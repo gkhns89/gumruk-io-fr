@@ -1,13 +1,21 @@
 import { useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import WarehouseTransferHistory from "./WarehouseTransferHistory";
+import { getGateOption } from "../../utils/constants";
+import { t, getCurrentLocale } from "../../locales";
 
 const formatNum = (n, dec = 3) => {
   if (n == null) return "-";
-  return Number(n).toLocaleString("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: dec });
+  return Number(n).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 0, maximumFractionDigits: dec });
 };
 
-const formatDate = (d) => (d ? new Date(d).toLocaleDateString("tr-TR") : "-");
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString(getCurrentLocale()) : "-");
+
+// Hat değeri (SARI / KIRMIZI) veridir; ekranda sözlükteki karşılığı gösterilir
+const getGateLabel = (gate) => {
+  const option = getGateOption(gate);
+  return option ? t(option.labelKey) : gate;
+};
 
 const getRepName = (r) =>
   r ? (r.firstName && r.lastName ? `${r.firstName} ${r.lastName}` : r.username || r.email || "-") : "-";
@@ -104,7 +112,9 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                     ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
                     : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
                 }`}>
-                  {statusIsKapandi ? "KAPANDI" : "TESCİL EDİLDİ"}
+                  {statusIsKapandi
+                    ? t("dashboard.recent.warehouseStatus.KAPANDI")
+                    : t("dashboard.recent.warehouseStatus.TESCIL_EDILDI")}
                 </span>
                 {declaration.gate && (
                   <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
@@ -112,7 +122,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                       ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700"
                       : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700"
                   }`}>
-                    {declaration.gate}
+                    {getGateLabel(declaration.gate)}
                   </span>
                 )}
                 <span className={`flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border ${
@@ -121,7 +131,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                     : "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600"
                 }`}>
                   <span className="material-symbols-outlined text-xs">{declaration.protocol ? "check_circle" : "hourglass_empty"}</span>
-                  {declaration.protocol ? "Tutanak Geldi" : "Tutanak Bekliyor"}
+                  {declaration.protocol ? t("warehouse.common.protocolArrived") : t("warehouse.common.protocolPending")}
                 </span>
               </div>
             </div>
@@ -133,7 +143,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-500/20 dark:hover:bg-emerald-500/30 transition-colors text-sm font-medium"
               >
                 <span className="material-symbols-outlined text-lg">swap_horiz</span>
-                <span className="hidden sm:inline">Aktar</span>
+                <span className="hidden sm:inline">{t("warehouse.common.transfer")}</span>
               </button>
             )}
             {canEdit && (
@@ -142,7 +152,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                 className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 dark:bg-primary/20 text-primary rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors text-sm font-medium"
               >
                 <span className="material-symbols-outlined text-lg">edit</span>
-                <span className="hidden sm:inline">Düzenle</span>
+                <span className="hidden sm:inline">{t("common.edit")}</span>
               </button>
             )}
             <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors">
@@ -155,25 +165,25 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
           {/* Firma & Alıcı — broker sadece SUPER_ADMIN ve CLIENT_USER için */}
-          <Section icon="business" title="FİRMA & ALICI" cols={2}>
+          <Section icon="business" title={t("warehouse.form.sectionCompany")} cols={2}>
             {showBroker && (
-              <InfoRow label="Gümrük Firması" value={brokerName} />
+              <InfoRow label={t("cargo.fields.brokerCompany")} value={brokerName} />
             )}
-            <InfoRow label="Alıcı Firma" value={clientName} />
-            <InfoRow label="Gönderici" value={declaration.senderName} />
+            <InfoRow label={t("cargo.fields.clientCompany")} value={clientName} />
+            <InfoRow label={t("transaction.sender")} value={declaration.senderName} />
           </Section>
 
           {/* Kayıt Numaraları */}
-          <Section icon="badge" title="KAYIT NUMARALARI" cols={2}>
-            <InfoRow label="Dosya No" value={declaration.fileNo} mono />
-            <InfoRow label="Ant. Beyanname No" value={declaration.declarationNo} mono />
+          <Section icon="badge" title={t("warehouse.form.sectionNumbers")} cols={2}>
+            <InfoRow label={t("transaction.fileNo")} value={declaration.fileNo} mono />
+            <InfoRow label={t("transactions.detail.warehouseDeclarationNo")} value={declaration.declarationNo} mono />
           </Section>
 
           {/* Lojistik */}
-          <Section icon="local_shipping" title="LOJİSTİK BİLGİLERİ" cols={2}>
-            <InfoRow label="Antrepo" value={declaration.warehouse} />
+          <Section icon="local_shipping" title={t("warehouse.form.sectionLogistics")} cols={2}>
+            <InfoRow label={t("transaction.customsWarehouse")} value={declaration.warehouse} />
             <InfoRow
-              label="Gümrük"
+              label={t("transaction.customsName")}
               value={resolveName(
                 declaration.customs?.customsShortName,
                 declaration.customs?.name,
@@ -181,9 +191,9 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
                 declaration.customsShortName,
               )}
             />
-            <InfoRow label="Nakliyeci" value={declaration.carrierName} />
+            <InfoRow label={t("cargo.fields.carrierName")} value={declaration.carrierName} />
             <InfoRow
-              label="Temsilci"
+              label={t("warehouse.common.representative")}
               value={resolveName(
                 getRepName(declaration.representative),
                 declaration.representativeName,
@@ -192,18 +202,18 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
           </Section>
 
           {/* Yük Bilgileri */}
-          <Section icon="inventory_2" title="YÜK BİLGİLERİ" cols={hasRemaining ? 4 : 2}>
-            <InfoRow label="Kap" value={declaration.containerAmount != null ? String(declaration.containerAmount) : "-"} />
-            <InfoRow label="Kilo (Kg)" value={formatNum(declaration.weight)} />
+          <Section icon="inventory_2" title={t("warehouse.form.sectionCargo")} cols={hasRemaining ? 4 : 2}>
+            <InfoRow label={t("transaction.containerAmount")} value={declaration.containerAmount != null ? String(declaration.containerAmount) : "-"} />
+            <InfoRow label={t("transaction.weight")} value={formatNum(declaration.weight)} />
             {hasRemaining && (
               <>
                 <InfoRow
-                  label="Kalan Kap"
+                  label={t("warehouse.view.remainingContainers")}
                   value={declaration.remainingContainerAmount != null ? String(declaration.remainingContainerAmount) : "-"}
                   accent="text-amber-600 dark:text-amber-400"
                 />
                 <InfoRow
-                  label="Kalan Kilo (Kg)"
+                  label={t("warehouse.view.remainingWeight")}
                   value={formatNum(declaration.remainingWeight)}
                   accent="text-amber-600 dark:text-amber-400"
                 />
@@ -212,9 +222,9 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
           </Section>
 
           {/* Tarihler */}
-          <Section icon="event" title="TARİHLER" cols={2}>
-            <InfoRow label="Beyanname Tarihi" value={formatDate(declaration.declarationDate)} />
-            <InfoRow label="Pul Ödeme Tarihi" value={formatDate(declaration.stampPaymentDate)} />
+          <Section icon="event" title={t("warehouse.view.sectionDates")} cols={2}>
+            <InfoRow label={t("warehouse.common.declarationDate")} value={formatDate(declaration.declarationDate)} />
+            <InfoRow label={t("warehouse.common.stampPaymentDate")} value={formatDate(declaration.stampPaymentDate)} />
           </Section>
 
           {/* Aktarım Geçmişi — hangi düşümden hangi İşlem Takip dosyası doğmuş */}
@@ -222,10 +232,10 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
             <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <span className="material-symbols-outlined text-primary text-base">swap_horiz</span>
-                <span className="text-xs font-semibold text-text-secondary tracking-wider">AKTARIM GEÇMİŞİ</span>
+                <span className="text-xs font-semibold text-text-secondary tracking-wider">{t("warehouse.view.transferHistory")}</span>
                 {transferCount > 0 && (
                   <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
-                    {transferCount} aktarım
+                    {t("warehouse.common.transferCount", { count: transferCount })}
                   </span>
                 )}
               </div>
@@ -238,7 +248,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
             <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
               <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">info</span>
               <p className="text-sm text-amber-700 dark:text-amber-300">
-                Bu kayıtta düşümlü aktarım yapılmış, kalan stok yukarıda gösterilmektedir.
+                {t("warehouse.view.partialNote")}
               </p>
             </div>
           )}
@@ -247,7 +257,7 @@ export default function ViewWarehouseModal({ declaration, onClose, onEdit, onTra
         {/* Footer */}
         <div className="flex items-center justify-end p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0 rounded-b-2xl">
           <button onClick={onClose} className="px-6 py-2.5 text-text-secondary hover:text-text-main font-medium transition-colors text-sm">
-            Kapat
+            {t("common.close")}
           </button>
         </div>
       </div>

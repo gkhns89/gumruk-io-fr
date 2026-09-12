@@ -1,6 +1,14 @@
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
+import { getGateOption } from "../../utils/constants";
+import { t, getCurrentLocale } from "../../locales";
+
+// Hat değeri (SARI / KIRMIZI) veridir; ekranda sözlükteki karşılığı gösterilir
+const getGateLabel = (gate) => {
+  const option = getGateOption(gate);
+  return option ? t(option.labelKey) : gate;
+};
 
 const getGateBadge = (gate) => {
   const styles = {
@@ -13,12 +21,12 @@ const getGateBadge = (gate) => {
 const getStatusInfo = (status) => {
   const map = {
     TESCIL_EDILDI: {
-      label: "TESCİL EDİLDİ",
+      label: t("dashboard.recent.warehouseStatus.TESCIL_EDILDI"),
       className: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700",
       borderClass: "border-l-4 border-l-amber-400",
     },
     KAPANDI: {
-      label: "KAPANDI",
+      label: t("dashboard.recent.warehouseStatus.KAPANDI"),
       className: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700",
       borderClass: "border-l-4 border-l-emerald-500",
     },
@@ -32,12 +40,12 @@ const getStatusInfo = (status) => {
 
 const formatDate = (d) => {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("tr-TR");
+  return new Date(d).toLocaleDateString(getCurrentLocale());
 };
 
 const formatNumber = (n, decimals = 3) => {
   if (n == null) return "-";
-  return Number(n).toLocaleString("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+  return Number(n).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 0, maximumFractionDigits: decimals });
 };
 
 export default function WarehouseTable({
@@ -76,7 +84,7 @@ export default function WarehouseTable({
     e.stopPropagation();
     const result = await warehouseService.toggleProtocol(decl.id);
     if (result.success) {
-      showSuccess(result.data.message || "Tutanak güncellendi");
+      showSuccess(result.data.message || t("warehouse.table.protocolUpdated"));
       onRefresh();
     } else {
       showError(result.error);
@@ -87,7 +95,7 @@ export default function WarehouseTable({
     return (
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-text-secondary">Antrepo kayıtları yükleniyor...</p>
+        <p className="text-text-secondary">{t("warehouse.table.loading")}</p>
       </div>
     );
   }
@@ -97,7 +105,7 @@ export default function WarehouseTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-red-500">error</span>
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-2">Bir Hata Oluştu</p>
+          <p className="text-red-600 font-semibold mb-2">{t("dashboard.recent.errorTitle")}</p>
           <p className="text-text-secondary text-sm mb-4">{error}</p>
           {onRetry && (
             <button
@@ -106,7 +114,7 @@ export default function WarehouseTable({
             >
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg">refresh</span>
-                Tekrar Dene
+                {t("dashboard.recent.retry")}
               </span>
             </button>
           )}
@@ -120,8 +128,8 @@ export default function WarehouseTable({
       <div className="bg-white dark:bg-background-dark p-8 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <span className="material-symbols-outlined text-6xl text-text-secondary">warehouse</span>
         <div className="text-center">
-          <p className="text-text-main font-semibold mb-2">Antrepo Kaydı Bulunamadı</p>
-          <p className="text-text-secondary text-sm">Filtreleri değiştirerek tekrar deneyin veya yeni kayıt ekleyin.</p>
+          <p className="text-text-main font-semibold mb-2">{t("warehouse.table.emptyTitle")}</p>
+          <p className="text-text-secondary text-sm">{t("warehouse.table.emptyHint")}</p>
         </div>
       </div>
     );
@@ -155,23 +163,23 @@ export default function WarehouseTable({
           <table className="w-full text-left min-w-max border-spacing-0 border-separate">
             <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-20">
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Durum</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Dosya No</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Ant. Beyan No</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Alıcı</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Gönderici</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Antrepo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Gümrük</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">Kap</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-right">Kilo (Kg)</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Nakliyeci</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Temsilci</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Hat</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Beyan Tarihi</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">Pul Tarihi</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">Tutanak</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">Düşümlü</th>
-                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-right">İşlemler</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("dashboard.recent.columns.status")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.fileNo")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("warehouse.table.declarationNoShort")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.recipient")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.sender")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.customsWarehouse")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.customsName")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">{t("transaction.containerAmount")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-right">{t("transaction.weight")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("cargo.fields.carrierName")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("warehouse.common.representative")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("transaction.gate")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("warehouse.common.declarationDateShort")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap">{t("warehouse.common.stampDateShort")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">{t("warehouse.common.protocol")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-center">{t("warehouse.common.partial")}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-main uppercase tracking-wider whitespace-nowrap text-right">{t("transactions.table.columns.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -206,7 +214,7 @@ export default function WarehouseTable({
                         {decl.fileNo}
                         {decl.transferredFileNos?.length > 0 && (
                           <span
-                            title={`İşlem Takip'e aktarıldı: ${decl.transferredFileNos.join(", ")}`}
+                            title={t("warehouse.table.transferredTo", { fileNos: decl.transferredFileNos.join(", ") })}
                             className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-help"
                           >
                             <span className="material-symbols-outlined text-sm">swap_horiz</span>
@@ -245,7 +253,7 @@ export default function WarehouseTable({
                     <td className="px-4 py-3 whitespace-nowrap">
                       {decl.gate ? (
                         <span className={`px-3 py-1 inline-flex justify-center text-xs leading-5 font-semibold rounded-full w-20 ${gateBadgeClass}`}>
-                          {decl.gate}
+                          {getGateLabel(decl.gate)}
                         </span>
                       ) : (
                         <span className="text-sm text-text-secondary">-</span>
@@ -262,7 +270,7 @@ export default function WarehouseTable({
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <button
                         onClick={(e) => canWrite && !isReadOnly ? handleProtocolToggle(e, decl) : e.stopPropagation()}
-                        title={decl.protocol ? "Tutanak Geldi — tıkla değiştir" : "Bekliyor — tıkla değiştir"}
+                        title={decl.protocol ? t("warehouse.table.protocolArrivedHint") : t("warehouse.table.protocolPendingHint")}
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
                           canWrite && !isReadOnly ? "cursor-pointer hover:opacity-80" : "cursor-default"
                         } ${
@@ -274,7 +282,7 @@ export default function WarehouseTable({
                         <span className="material-symbols-outlined text-sm">
                           {decl.protocol ? "check_circle" : "hourglass_empty"}
                         </span>
-                        {decl.protocol ? "Geldi" : "Bekliyor"}
+                        {decl.protocol ? t("warehouse.table.arrived") : t("transactions.filters.statusPending")}
                       </button>
                     </td>
 
@@ -282,7 +290,7 @@ export default function WarehouseTable({
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       {hasRemaining ? (
                         <span className="text-text-secondary opacity-70">
-                          {decl.remainingContainerAmount ?? 0} kap / {formatNumber(decl.remainingWeight)} kg
+                          {t("warehouse.table.remaining", { containers: decl.remainingContainerAmount ?? 0, weight: formatNumber(decl.remainingWeight) })}
                         </span>
                       ) : (
                         <span className="text-text-secondary opacity-40">-</span>
@@ -296,7 +304,7 @@ export default function WarehouseTable({
                           <button
                             onClick={(e) => { e.stopPropagation(); onEdit?.(decl); }}
                             className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
-                            title="Düzenle"
+                            title={t("common.edit")}
                           >
                             <span className="material-symbols-outlined text-lg">edit</span>
                           </button>
@@ -305,7 +313,7 @@ export default function WarehouseTable({
                           <button
                             onClick={(e) => { e.stopPropagation(); onDelete?.(decl); }}
                             className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
-                            title="Sil"
+                            title={t("common.delete")}
                           >
                             <span className="material-symbols-outlined text-lg">delete</span>
                           </button>
@@ -314,7 +322,7 @@ export default function WarehouseTable({
                           <button
                             onClick={(e) => { e.stopPropagation(); onTransfer?.(decl); }}
                             className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors cursor-pointer"
-                            title="İşlem Takip'e Aktar"
+                            title={t("warehouse.common.transferToTransaction")}
                           >
                             <span className="material-symbols-outlined text-lg">output</span>
                           </button>

@@ -12,6 +12,7 @@ import DeleteWarehouseConfirmModal from "./DeleteWarehouseConfirmModal";
 import TransferToTransactionModal from "./TransferToTransactionModal";
 import AutoRefreshControl from "../transactions/AutoRefreshControl";
 import ViewWarehouseModal from "./ViewWarehouseModal";
+import { t } from "../../locales";
 
 export default function WarehousePage() {
   const { user } = useAuth();
@@ -137,7 +138,7 @@ export default function WarehousePage() {
         handleApiResponse(result, null, setError, "loading warehouse declarations");
       }
     } catch (err) {
-      handleError(err, setError, "loading warehouse declarations", "Veriler yüklenirken bir hata oluştu.");
+      handleError(err, setError, "loading warehouse declarations", t("transactions.page.loadError"));
     } finally {
       setLoading(false);
     }
@@ -321,11 +322,11 @@ export default function WarehousePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
               <h1 className={`font-bold text-text-main transition-all duration-300 ${isScrolled ? "text-base md:text-lg" : "text-2xl md:text-3xl"}`}>
-                Antrepo Takip
+                {t("nav.warehouseTracking")}
               </h1>
               <div className={`grid transition-[grid-template-rows,opacity] duration-300 ${isScrolled ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
                 <p className="text-text-secondary text-sm mt-1 overflow-hidden">
-                  {isClientUser ? "Antrepo kayıtlarınızı görüntüleyin" : "Antrepo beyanname süreçlerini yönetin"}
+                  {isClientUser ? t("warehouse.page.subtitleView") : t("warehouse.page.subtitleManage")}
                 </p>
               </div>
             </div>
@@ -337,10 +338,10 @@ export default function WarehousePage() {
                   ref={filterButtonRef}
                   onClick={() => setShowFilters(!showFilters)}
                   className={`flex items-center justify-center bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all duration-300 ${isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"}`}
-                  title="Filtreler"
+                  title={t("transactions.page.filters")}
                 >
                   <span className="material-symbols-outlined text-primary text-[20px]">tune</span>
-                  {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">Filtreler</span>}
+                  {!isScrolled && <span className="whitespace-nowrap text-text-main text-sm hidden md:inline">{t("transactions.page.filters")}</span>}
                   {hasActiveFilters && (
                     <span className={`bg-primary text-white font-medium transition-all duration-300 ${isScrolled ? "absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] rounded-full" : "px-2 py-0.5 text-xs rounded-full"}`}>
                       {getActiveFiltersCount()}
@@ -365,10 +366,10 @@ export default function WarehousePage() {
                   onClick={() => !isCreateBlocked && setShowAddModal(true)}
                   disabled={isCreateBlocked}
                   className={`flex items-center justify-center bg-primary text-white rounded-lg font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${isCreateBlocked ? "" : "hover:bg-primary/90"} ${isScrolled ? "p-2 gap-0" : "gap-2 px-3 sm:px-4 py-2.5"}`}
-                  title={isCreateBlocked ? "Ödeme gecikmesi nedeniyle yeni kayıt eklenemiyor" : "Yeni Antrepo Kaydı"}
+                  title={isCreateBlocked ? t("payment.restrictionWarning") : t("warehouse.common.newRecord")}
                 >
                   <span className="material-symbols-outlined text-[20px]">{isCreateBlocked ? "lock" : "add"}</span>
-                  {!isScrolled && <span className="whitespace-nowrap text-sm hidden md:inline">Yeni Kayıt</span>}
+                  {!isScrolled && <span className="whitespace-nowrap text-sm hidden md:inline">{t("warehouse.page.newRecordShort")}</span>}
                 </button>
               )}
             </div>
@@ -381,7 +382,7 @@ export default function WarehousePage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">filter_alt</span>
-                    <h3 className="text-sm font-semibold text-text-main">Filtreler</h3>
+                    <h3 className="text-sm font-semibold text-text-main">{t("transactions.page.filters")}</h3>
                     {hasActiveFilters && (
                       <span className="px-2 py-0.5 bg-primary text-white text-xs rounded-full font-medium">{getActiveFiltersCount()}</span>
                     )}
@@ -392,7 +393,7 @@ export default function WarehousePage() {
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800"
                     >
                       <span className="material-symbols-outlined text-sm">close</span>
-                      Filtreleri Temizle
+                      {t("transactions.filters.clear")}
                     </button>
                   )}
                 </div>
@@ -401,12 +402,12 @@ export default function WarehousePage() {
               <div className="p-4 space-y-4">
                 {/* General Search */}
                 <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">Genel Arama</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.generalSearch")}</label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">search</span>
                     <input
                       type="text"
-                      placeholder="Dosya No, Beyanname No, Alıcı, Gönderici, Nakliyeci..."
+                      placeholder={t("warehouse.filters.searchPlaceholder")}
                       value={filters.search}
                       onChange={(e) => handleFilterChange("search", e.target.value)}
                       className={inputFilterClass}
@@ -423,7 +424,7 @@ export default function WarehousePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Status */}
                   <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Durum</label>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("dashboard.recent.columns.status")}</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">flag</span>
                       <select
@@ -432,9 +433,9 @@ export default function WarehousePage() {
                         style={{ backgroundImage: "none", WebkitAppearance: "none", MozAppearance: "none", appearance: "none" }}
                         className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 cursor-pointer transition-all"
                       >
-                        <option value="">Tüm Durumlar</option>
-                        <option value="TESCIL_EDILDI">Tescil Edildi</option>
-                        <option value="KAPANDI">Kapandı</option>
+                        <option value="">{t("transactions.filters.allStatuses")}</option>
+                        <option value="TESCIL_EDILDI">{t("transactions.filters.statusRegistered")}</option>
+                        <option value="KAPANDI">{t("warehouse.filters.statusClosed")}</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">expand_more</span>
                     </div>
@@ -442,12 +443,12 @@ export default function WarehousePage() {
 
                   {/* Customs */}
                   <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Gümrük</label>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transaction.customsName")}</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">location_city</span>
                       <input
                         type="text"
-                        placeholder="Gümrük ara..."
+                        placeholder={t("transactions.filters.searchCustoms")}
                         value={filters.customs}
                         onChange={(e) => handleFilterChange("customs", e.target.value)}
                         className={inputFilterClass}
@@ -462,12 +463,12 @@ export default function WarehousePage() {
 
                   {/* Warehouse Name */}
                   <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Antrepo</label>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transaction.customsWarehouse")}</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">warehouse</span>
                       <input
                         type="text"
-                        placeholder="Antrepo ara..."
+                        placeholder={t("transactions.filters.searchWarehouse")}
                         value={filters.warehouse}
                         onChange={(e) => handleFilterChange("warehouse", e.target.value)}
                         className={inputFilterClass}
@@ -489,9 +490,9 @@ export default function WarehousePage() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-base">calendar_month</span>
-                      <h4 className="text-xs font-semibold text-text-main">Tarih Filtreleri</h4>
+                      <h4 className="text-xs font-semibold text-text-main">{t("transactions.filters.dateFilters")}</h4>
                       {(filters.declarationDateFrom || filters.declarationDateTo || filters.stampDateFrom || filters.stampDateTo) && (
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">Aktif</span>
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">{t("transactions.common.active")}</span>
                       )}
                     </div>
                     <span className="material-symbols-outlined text-text-secondary text-lg">{showDateFilters ? "expand_less" : "expand_more"}</span>
@@ -505,15 +506,15 @@ export default function WarehousePage() {
                           <div className="flex items-center justify-center h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                             <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">assignment</span>
                           </div>
-                          <h3 className="text-sm font-semibold text-text-main">Beyan Tarihi</h3>
+                          <h3 className="text-sm font-semibold text-text-main">{t("warehouse.common.declarationDateShort")}</h3>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                            <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                             <input type="date" value={filters.declarationDateFrom} onChange={(e) => handleFilterChange("declarationDateFrom", e.target.value)} className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                            <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                             <input type="date" value={filters.declarationDateTo} onChange={(e) => handleFilterChange("declarationDateTo", e.target.value)} className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors" />
                           </div>
                         </div>
@@ -525,15 +526,15 @@ export default function WarehousePage() {
                           <div className="flex items-center justify-center h-8 w-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                             <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">local_post_office</span>
                           </div>
-                          <h3 className="text-sm font-semibold text-text-main">Pul Tarihi</h3>
+                          <h3 className="text-sm font-semibold text-text-main">{t("warehouse.common.stampDateShort")}</h3>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs font-medium text-text-secondary mb-1.5">Başlangıç</label>
+                            <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.from")}</label>
                             <input type="date" value={filters.stampDateFrom} onChange={(e) => handleFilterChange("stampDateFrom", e.target.value)} className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-text-secondary mb-1.5">Bitiş</label>
+                            <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("transactions.filters.to")}</label>
                             <input type="date" value={filters.stampDateTo} onChange={(e) => handleFilterChange("stampDateTo", e.target.value)} className="w-full px-2.5 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors" />
                           </div>
                         </div>
@@ -629,21 +630,21 @@ export default function WarehousePage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
                   <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-base">warehouse</span>
                   <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                    Toplam: <strong className="font-bold">{declarations.length}</strong>
+                    {t("transactions.common.total")}: <strong className="font-bold">{declarations.length}</strong>
                   </span>
                 </div>
                 {hasActiveFilters && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg transition-colors">
                     <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-base">filter_alt</span>
                     <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                      Filtrelenmiş: <strong className="font-bold">{filteredDeclarations.length}</strong>
+                      {t("transactions.page.filtered")} <strong className="font-bold">{filteredDeclarations.length}</strong>
                     </span>
                   </div>
                 )}
                 {isClientUser && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 transition-colors">
                     <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">visibility</span>
-                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Görüntüleme</span>
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">{t("transactions.page.viewOnly")}</span>
                   </div>
                 )}
               </div>
@@ -652,7 +653,7 @@ export default function WarehousePage() {
               <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors">
                 <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-base">description</span>
                 <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                  Gösterilen: <strong className="font-bold">{indexOfFirst + 1}-{Math.min(indexOfLast, filteredDeclarations.length)}</strong> / <strong className="font-bold">{filteredDeclarations.length}</strong>
+                  {t("transactions.page.shown")} <strong className="font-bold">{indexOfFirst + 1}-{Math.min(indexOfLast, filteredDeclarations.length)}</strong> / <strong className="font-bold">{filteredDeclarations.length}</strong>
                 </span>
               </div>
 
@@ -664,7 +665,7 @@ export default function WarehousePage() {
                   className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
                   <span className="material-symbols-outlined text-base text-text-secondary">chevron_left</span>
-                  <span className="hidden xl:inline">Önceki</span>
+                  <span className="hidden xl:inline">{t("transactions.page.previous")}</span>
                 </button>
 
                 {totalPages > 1 ? (
@@ -685,7 +686,7 @@ export default function WarehousePage() {
                   disabled={currentPage === totalPages || totalPages <= 1}
                   className="px-2.5 md:px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs text-text-main"
                 >
-                  <span className="hidden xl:inline">Sonraki</span>
+                  <span className="hidden xl:inline">{t("transactions.page.next")}</span>
                   <span className="material-symbols-outlined text-base text-text-secondary">chevron_right</span>
                 </button>
               </div>
@@ -695,7 +696,7 @@ export default function WarehousePage() {
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                 <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-base">warehouse</span>
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {loading ? "Yükleniyor..." : "Veri yok"}
+                  {loading ? t("common.loading") : t("transactions.page.noData")}
                 </span>
               </div>
             </div>
