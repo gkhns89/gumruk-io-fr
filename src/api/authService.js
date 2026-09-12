@@ -14,9 +14,10 @@ export const authService = {
         rememberMe,
       });
 
-      console.log("✅ Login başarılı:", response.data);
-
       const { token, user, selectedBroker, status } = response.data;
+
+      // Yanıtın tamamı token'ı da taşıyor; loga yalnızca kimliği belirleyen alanlar girer.
+      console.log("✅ Login başarılı:", { email: user?.email, role: user?.globalRole });
 
       // Token ve kullanıcı bilgilerini kaydet
       tokenManager.setToken(token);
@@ -104,9 +105,7 @@ export const authService = {
 
   // Mevcut kullanıcı bilgisi
   getCurrentUser: () => {
-    const user = tokenManager.getUser();
-    console.log("👤 Mevcut kullanıcı:", user);
-    return user;
+    return tokenManager.getUser();
   },
 
   // ✅ YENİ: Token bilgilerini getir

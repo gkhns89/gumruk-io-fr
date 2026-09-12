@@ -41,7 +41,6 @@ if (import.meta.env.DEV) {
     VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     MODE: import.meta.env.MODE,
   });
-  console.log("🔐 Token in localStorage:", localStorage.getItem("token"));
   console.log(
     "🔐 API is using token from localStorage:",
     !!localStorage.getItem("token"),
