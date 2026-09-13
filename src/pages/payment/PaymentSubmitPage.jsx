@@ -37,6 +37,11 @@ const RESTRICTION_CONFIG = {
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString(getCurrentLocale()) : '-';
 const fmtAmount = (v) => Number(v).toLocaleString(getCurrentLocale(), { minimumFractionDigits: 2 });
+// "2026-09-12" gibi saatsiz tarih: new Date() onu UTC gece yarısı sayar, UTC'nin batısında bir gün önceyi gösterirdi
+const fmtLocalDate = (value) => {
+  const [year, month, day] = String(value).split('-').map(Number);
+  return year && month && day ? new Date(year, month - 1, day).toLocaleDateString(getCurrentLocale()) : fmt(value);
+};
 const fmtMoney = (v) => v != null ? `₺${fmtAmount(v)}` : '-';
 
 export default function PaymentSubmitPage() {
@@ -1035,7 +1040,9 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
             {(quote.rateSourceDate || quote.tcmbFetchedAt) && (
               <div className="flex justify-between">
                 <span className="text-text-secondary">{t('paymentPage.gRadar.rateDate')}</span>
-                <span className="text-text-main">{fmt(quote.rateSourceDate || quote.tcmbFetchedAt)}</span>
+                <span className="text-text-main">
+                  {quote.rateSourceDate ? fmtLocalDate(quote.rateSourceDate) : fmt(quote.tcmbFetchedAt)}
+                </span>
               </div>
             )}
             {quote.rateStale && (
