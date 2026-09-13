@@ -247,8 +247,9 @@ separate elements.
 
 - **Analytics is intentionally constrained**: `analytics.js` loads GA4 *only* on marketing
   and legal pages (never in the app) and *only* after explicit cookie consent — no
-  load-then-ask. `GA_MEASUREMENT_ID` is still the placeholder `G-XXXXXXXXXX`, and
-  `isConfigured()` blocks requests until it's replaced.
+  load-then-ask. The measurement ID comes from `VITE_GA_MEASUREMENT_ID`, which is set in
+  Vercel for Production only; local and Preview (staging) builds fall back to the
+  placeholder `G-XXXXXXXXXX`, and `isConfigured()` keeps GA4 from loading there.
 - **OG/Twitter tags stay static in `index.html`** because share crawlers don't run JS.
   `src/utils/seo.js` sets title/description/canonical and injects JSON-LD at runtime for
   routes that need their own; pricing and FAQ structured data is generated from
