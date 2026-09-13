@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const sectorService = {
@@ -12,7 +12,7 @@ export const sectorService = {
       logError('SectorService - getSectors', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.sector.listError'),
+        error: getApiErrorMessage(error, t('api.sector.listError')),
       };
     }
   },
@@ -26,7 +26,7 @@ export const sectorService = {
       logError('SectorService - getAllSectors', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.sector.listError'),
+        error: getApiErrorMessage(error, t('api.sector.listError')),
       };
     }
   },
@@ -39,7 +39,7 @@ export const sectorService = {
       logError('SectorService - createSector', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.sector.createError'),
+        error: getApiErrorMessage(error, t('api.sector.createError')),
       };
     }
   },
@@ -52,7 +52,7 @@ export const sectorService = {
       logError('SectorService - updateSector', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.sector.updateError'),
+        error: getApiErrorMessage(error, t('api.sector.updateError')),
       };
     }
   },
@@ -70,7 +70,7 @@ export const sectorService = {
       return {
         success: false,
         inUse: error.response?.status === 409,
-        error: error.response?.data?.error || t('api.sector.deleteError'),
+        error: getApiErrorMessage(error, t('api.sector.deleteError')),
       };
     }
   },

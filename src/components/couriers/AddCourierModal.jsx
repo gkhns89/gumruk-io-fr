@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { courierService } from '../../api/courierService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t } from '../../locales';
 import InHouseDispatchFields from './InHouseDispatchFields';
 
@@ -100,7 +101,7 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
         showError(result.error || t('couriers.add.createError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

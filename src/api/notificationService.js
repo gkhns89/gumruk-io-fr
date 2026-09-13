@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -40,7 +40,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.listError'),
+        error: getApiErrorMessage(error, t('api.notification.listError')),
       };
     }
   },
@@ -65,7 +65,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.unreadCountError'),
+        error: getApiErrorMessage(error, t('api.notification.unreadCountError')),
       };
     }
   },
@@ -103,7 +103,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.createError'),
+        error: getApiErrorMessage(error, t('api.notification.createError')),
       };
     }
   },
@@ -150,7 +150,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('notifications.markError'),
+        error: getApiErrorMessage(error, t('notifications.markError')),
       };
     }
   },
@@ -179,7 +179,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('notifications.markAllError'),
+        error: getApiErrorMessage(error, t('notifications.markAllError')),
       };
     }
   },
@@ -226,7 +226,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.deleteError'),
+        error: getApiErrorMessage(error, t('api.notification.deleteError')),
       };
     }
   },
@@ -255,7 +255,7 @@ export const notificationService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.notification.deleteAllError'),
+        error: getApiErrorMessage(error, t('api.notification.deleteAllError')),
       };
     }
   },

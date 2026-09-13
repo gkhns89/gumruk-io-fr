@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -16,7 +16,7 @@ export const tcmbService = {
       logError('TcmbService - getLatestRates', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.tcmb.ratesError'),
+        error: getApiErrorMessage(error, t('api.tcmb.ratesError')),
       };
     }
   },
@@ -31,7 +31,7 @@ export const tcmbService = {
       logError('TcmbService - refreshNow', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.tcmb.refreshError'),
+        error: getApiErrorMessage(error, t('api.tcmb.refreshError')),
       };
     }
   },

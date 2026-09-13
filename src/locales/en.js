@@ -2142,7 +2142,6 @@ export const en = {
       quotaExceeded: "Employee limit exceeded. Please upgrade your subscription.",
       updated: "Employee updated successfully",
       deleted: "Employee deleted successfully",
-      cannotDeleteLastAdmin: "The last BROKER_ADMIN user cannot be deleted. Assign another administrator first.",
       brokerListError: "Could not load broker companies",
     },
     featureFlag: {

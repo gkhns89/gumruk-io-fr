@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const companyService = {
@@ -12,7 +12,7 @@ export const companyService = {
       logError('CompanyService - getAllCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.listError'),
+        error: getApiErrorMessage(error, t('api.company.listError')),
       };
     }
   },
@@ -26,7 +26,7 @@ export const companyService = {
       logError('CompanyService - getAllBrokerCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.brokerListError'),
+        error: getApiErrorMessage(error, t('api.company.brokerListError')),
       };
     }
   },
@@ -40,7 +40,7 @@ export const companyService = {
       logError('CompanyService - getAllClientCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.clientListError'),
+        error: getApiErrorMessage(error, t('api.company.clientListError')),
       };
     }
   },
@@ -59,7 +59,7 @@ export const companyService = {
       logError('CompanyService - getClientCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.clientListError'),
+        error: getApiErrorMessage(error, t('api.company.clientListError')),
       };
     }
   },
@@ -73,7 +73,7 @@ export const companyService = {
       logError('CompanyService - getMyCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.listError'),
+        error: getApiErrorMessage(error, t('api.company.listError')),
       };
     }
   },
@@ -101,7 +101,7 @@ export const companyService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.company.createError'),
+        error: getApiErrorMessage(error, t('api.company.createError')),
       };
     }
   },
@@ -119,7 +119,7 @@ export const companyService = {
       logError('CompanyService - uploadCompanyLogo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.logoUploadError'),
+        error: getApiErrorMessage(error, t('api.company.logoUploadError')),
       };
     }
   },
@@ -133,7 +133,7 @@ export const companyService = {
       logError('CompanyService - deleteCompanyLogo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.company.logoDeleteError'),
+        error: getApiErrorMessage(error, t('api.company.logoDeleteError')),
       };
     }
   },
@@ -153,7 +153,7 @@ export const companyService = {
       logError('CompanyService - updateClientCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.company.updateError'),
+        error: getApiErrorMessage(error, t('api.company.updateError')),
       };
     }
   },

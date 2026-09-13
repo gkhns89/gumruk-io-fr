@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -40,7 +40,7 @@ export const customsNewsService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.message || t('api.customsNews.loadError'),
+        error: getApiErrorMessage(error, error.message || t('api.customsNews.loadError')),
         data: [] // Fallback olarak boş array
       };
     }
@@ -76,7 +76,7 @@ export const customsNewsService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.message || t('api.customsNews.refreshError')
+        error: getApiErrorMessage(error, error.message || t('api.customsNews.refreshError'))
       };
     }
   }

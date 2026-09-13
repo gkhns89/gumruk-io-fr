@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const agencyAgreementService = {
@@ -16,7 +17,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.checkError'),
+        error: getApiErrorMessage(error, t('api.agreement.checkError')),
         hasActiveAgreement: false
       };
     }
@@ -35,7 +36,7 @@ export const agencyAgreementService = {
       }
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.loadError'),
+        error: getApiErrorMessage(error, t('api.agreement.loadError')),
       };
     }
   },
@@ -56,7 +57,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.listError'),
+        error: getApiErrorMessage(error, t('api.agreement.listError')),
         data: []
       };
     }
@@ -74,7 +75,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('agreements.page.scanError'),
+        error: getApiErrorMessage(error, t('agreements.page.scanError')),
       };
     }
   },
@@ -91,7 +92,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.createError'),
+        error: getApiErrorMessage(error, t('api.agreement.createError')),
       };
     }
   },
@@ -117,7 +118,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.documentUploadError'),
+        error: getApiErrorMessage(error, t('api.agreement.documentUploadError')),
       };
     }
   },
@@ -137,7 +138,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.activateError'),
+        error: getApiErrorMessage(error, t('api.agreement.activateError')),
       };
     }
   },
@@ -160,7 +161,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.createAndActivateError'),
+        error: getApiErrorMessage(error, t('api.agreement.createAndActivateError')),
       };
     }
   },
@@ -217,7 +218,7 @@ export const agencyAgreementService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.agreement.updateError'),
+        error: getApiErrorMessage(error, t('api.agreement.updateError')),
       };
     }
   },

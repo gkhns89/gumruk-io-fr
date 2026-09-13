@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t } from '../../locales';
 
 export default function DeleteEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
@@ -42,7 +43,7 @@ export default function DeleteEmployeeModal({ onClose, employee, currentUser, on
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

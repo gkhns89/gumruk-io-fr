@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const sessionService = {
@@ -14,7 +15,7 @@ export const sessionService = {
       console.error('❌ Get session policy failed:', error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.policyLoadError')
+        error: getApiErrorMessage(error, t('api.session.policyLoadError'))
       };
     }
   },
@@ -30,7 +31,7 @@ export const sessionService = {
       console.error('❌ Get all sessions failed:', error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.listError')
+        error: getApiErrorMessage(error, t('api.session.listError'))
       };
     }
   },
@@ -46,7 +47,7 @@ export const sessionService = {
       console.error(`❌ Get user sessions failed (userId: ${userId}):`, error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.userListError')
+        error: getApiErrorMessage(error, t('api.session.userListError'))
       };
     }
   },
@@ -62,7 +63,7 @@ export const sessionService = {
       console.error(`❌ Invalidate session failed (sessionId: ${sessionId}):`, error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.invalidateError')
+        error: getApiErrorMessage(error, t('api.session.invalidateError'))
       };
     }
   },
@@ -78,7 +79,7 @@ export const sessionService = {
       console.error(`❌ Invalidate all user sessions failed (userId: ${userId}):`, error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.invalidateAllError')
+        error: getApiErrorMessage(error, t('api.session.invalidateAllError'))
       };
     }
   },
@@ -96,7 +97,7 @@ export const sessionService = {
       console.error('❌ Bulk invalidate sessions failed:', error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.session.bulkInvalidateError')
+        error: getApiErrorMessage(error, t('api.session.bulkInvalidateError'))
       };
     }
   }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, currentLimits }) {
@@ -71,7 +72,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

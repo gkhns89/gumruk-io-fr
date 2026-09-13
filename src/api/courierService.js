@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -22,7 +22,7 @@ export const courierService = {
       logError('CourierService - getCourierCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.courier.listError'),
+        error: getApiErrorMessage(error, t('api.courier.listError')),
       };
     }
   },
@@ -40,7 +40,7 @@ export const courierService = {
       logError('CourierService - getCourierCompanyById', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.courier.loadError'),
+        error: getApiErrorMessage(error, t('api.courier.loadError')),
       };
     }
   },
@@ -69,7 +69,7 @@ export const courierService = {
       logError('CourierService - createCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('couriers.add.createError'),
+        error: getApiErrorMessage(error, t('couriers.add.createError')),
       };
     }
   },
@@ -88,7 +88,7 @@ export const courierService = {
       logError('CourierService - updateCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('couriers.edit.updateError'),
+        error: getApiErrorMessage(error, t('couriers.edit.updateError')),
       };
     }
   },
@@ -106,7 +106,7 @@ export const courierService = {
       logError('CourierService - deleteCourierCompany', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('couriers.delete.error'),
+        error: getApiErrorMessage(error, t('couriers.delete.error')),
       };
     }
   },
@@ -126,7 +126,7 @@ export const courierService = {
       logError('CourierService - getSchedules', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.courier.schedulesLoadError'),
+        error: getApiErrorMessage(error, t('api.courier.schedulesLoadError')),
       };
     }
   },
@@ -150,7 +150,7 @@ export const courierService = {
       logError('CourierService - addSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('couriers.schedules.addError'),
+        error: getApiErrorMessage(error, t('couriers.schedules.addError')),
       };
     }
   },
@@ -169,7 +169,7 @@ export const courierService = {
       logError('CourierService - updateSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.courier.scheduleUpdateError'),
+        error: getApiErrorMessage(error, t('api.courier.scheduleUpdateError')),
       };
     }
   },
@@ -187,7 +187,7 @@ export const courierService = {
       logError('CourierService - deleteSchedule', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('couriers.schedules.deleteError'),
+        error: getApiErrorMessage(error, t('couriers.schedules.deleteError')),
       };
     }
   },
@@ -231,7 +231,7 @@ export const courierService = {
       logError('CourierService - getNextDepartures', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.courier.nextDeparturesError'),
+        error: getApiErrorMessage(error, t('api.courier.nextDeparturesError')),
       };
     }
   }

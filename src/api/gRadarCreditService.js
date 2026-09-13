@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -22,7 +22,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getMyWallet', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.walletError'),
+        error: getApiErrorMessage(error, t('api.gRadar.walletError')),
       };
     }
   },
@@ -36,7 +36,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getQuote', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.quoteError'),
+        error: getApiErrorMessage(error, t('api.gRadar.quoteError')),
       };
     }
   },
@@ -53,7 +53,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - purchaseFromBalance', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.purchaseError'),
+        error: getApiErrorMessage(error, t('api.gRadar.purchaseError')),
         code: error.response?.data?.code,
       };
     }
@@ -71,7 +71,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - purchaseByTransfer', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.transferError'),
+        error: getApiErrorMessage(error, t('api.gRadar.transferError')),
       };
     }
   },
@@ -85,7 +85,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - listPendingPurchases', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.pendingPurchasesError'),
+        error: getApiErrorMessage(error, t('api.gRadar.pendingPurchasesError')),
       };
     }
   },
@@ -98,7 +98,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - approvePurchase', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.approveError'),
+        error: getApiErrorMessage(error, t('api.gRadar.approveError')),
         code: error.response?.data?.code,
       };
     }
@@ -112,7 +112,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - rejectPurchase', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.rejectError'),
+        error: getApiErrorMessage(error, t('api.gRadar.rejectError')),
       };
     }
   },
@@ -128,7 +128,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - adminGrant', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.grantError'),
+        error: getApiErrorMessage(error, t('api.gRadar.grantError')),
         code: error.response?.data?.code,
       };
     }
@@ -148,7 +148,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - adminDebit', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.debitError'),
+        error: getApiErrorMessage(error, t('api.gRadar.debitError')),
         code: error.response?.data?.code,
       };
     }
@@ -170,7 +170,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - setBrokerEnabled', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.toggleError'),
+        error: getApiErrorMessage(error, t('api.gRadar.toggleError')),
       };
     }
   },
@@ -183,7 +183,7 @@ export const gRadarCreditService = {
       logError('GRadarCreditService - getBrokerWallet', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.brokerWalletError'),
+        error: getApiErrorMessage(error, t('api.gRadar.brokerWalletError')),
       };
     }
   },

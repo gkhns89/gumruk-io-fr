@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 const safeArrayConversion = (data) => {
@@ -26,7 +26,7 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getAll', error);
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.listError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.listError')) };
     }
   },
 
@@ -37,7 +37,7 @@ export const warehouseService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('WarehouseService - getStatsSummary', error);
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.summaryError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.summaryError')) };
     }
   },
 
@@ -48,7 +48,7 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getRecent', error);
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.recentError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.recentError')) };
     }
   },
 
@@ -58,7 +58,7 @@ export const warehouseService = {
       return { success: true, data: safeArrayConversion(response.data) };
     } catch (error) {
       logError('WarehouseService - getTransfers', error);
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.transfersError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.transfersError')) };
     }
   },
 
@@ -71,7 +71,7 @@ export const warehouseService = {
       if (error.response?.status === 403) {
         return { success: false, error: t('api.warehouse.createForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.createError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.createError')) };
     }
   },
 
@@ -84,7 +84,7 @@ export const warehouseService = {
       if (error.response?.status === 403) {
         return { success: false, error: t('api.warehouse.updateForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.updateError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.updateError')) };
     }
   },
 
@@ -94,7 +94,7 @@ export const warehouseService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('WarehouseService - toggleProtocol', error);
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.protocolError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.protocolError')) };
     }
   },
 
@@ -107,7 +107,7 @@ export const warehouseService = {
       if (error.response?.status === 403) {
         return { success: false, error: t('api.warehouse.deleteForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.deleteError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.deleteError')) };
     }
   },
 
@@ -125,7 +125,7 @@ export const warehouseService = {
       if (error.response?.status === 403) {
         return { success: false, error: t('api.warehouse.transferForbidden') };
       }
-      return { success: false, error: error.response?.data?.error || t('api.warehouse.transferError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.transferError')) };
     }
   },
 };

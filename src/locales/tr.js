@@ -2143,7 +2143,6 @@ export const tr = {
       quotaExceeded: "Çalışan limiti aşıldı. Lütfen aboneliğinizi yükseltin.",
       updated: "Çalışan başarıyla güncellendi",
       deleted: "Çalışan başarıyla silindi",
-      cannotDeleteLastAdmin: "Son BROKER_ADMIN kullanıcısı silinemez. Önce başka bir yönetici atayın.",
       brokerListError: "Broker firmaları alınamadı",
     },
     featureFlag: {

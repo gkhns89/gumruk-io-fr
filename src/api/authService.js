@@ -1,6 +1,6 @@
 import axiosInstance from './axios';
 import { tokenManager } from '../utils/tokenManager';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales/runtime';
 
 export const authService = {
@@ -62,7 +62,7 @@ export const authService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.auth.loginFailed'),
+        error: getApiErrorMessage(error, t('api.auth.loginFailed')),
       };
     }
   },

@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const employeeService = {
@@ -14,7 +14,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployees', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.employee.listError'),
+        error: getApiErrorMessage(error, t('api.employee.listError')),
       };
     }
   },
@@ -30,7 +30,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployeeLimits', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.employee.limitsError'),
+        error: getApiErrorMessage(error, t('api.employee.limitsError')),
       };
     }
   },
@@ -46,7 +46,7 @@ export const employeeService = {
       logError('EmployeeService - getEmployeeById', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.employee.loadError'),
+        error: getApiErrorMessage(error, t('api.employee.loadError')),
       };
     }
   },
@@ -76,7 +76,7 @@ export const employeeService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('employee.messages.createError'),
+        error: getApiErrorMessage(error, t('employee.messages.createError')),
       };
     }
   },
@@ -96,7 +96,7 @@ export const employeeService = {
       logError('EmployeeService - updateEmployee', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('employee.messages.updateError'),
+        error: getApiErrorMessage(error, t('employee.messages.updateError')),
       };
     }
   },
@@ -115,27 +115,10 @@ export const employeeService = {
     } catch (error) {
       logError('EmployeeService - deleteEmployee', error);
 
-      const errorMsg = error.response?.data?.error || error.response?.data?.message || '';
-
-      // Cannot delete self
-      if (errorMsg.toLowerCase().includes('kendinizi') || errorMsg.toLowerCase().includes('yourself')) {
-        return {
-          success: false,
-          error: t('employee.cannotDeleteSelf'),
-        };
-      }
-
-      // Cannot delete last BROKER_ADMIN
-      if (errorMsg.toLowerCase().includes('son broker_admin') || errorMsg.toLowerCase().includes('last broker_admin')) {
-        return {
-          success: false,
-          error: t('api.employee.cannotDeleteLastAdmin'),
-        };
-      }
-
+      // "Kendinizi silemezsiniz" / "son BROKER_ADMIN silinemez" gibi kurallar sunucu metninde zaten kullanıcıya uygun
       return {
         success: false,
-        error: errorMsg || t('employee.messages.deleteError'),
+        error: getApiErrorMessage(error, t('employee.messages.deleteError')),
       };
     }
   },
@@ -154,7 +137,7 @@ export const employeeService = {
       logError('EmployeeService - getBrokerCompanies', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.employee.brokerListError'),
+        error: getApiErrorMessage(error, t('api.employee.brokerListError')),
       };
     }
   },

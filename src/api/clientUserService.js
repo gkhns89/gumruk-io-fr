@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -23,7 +23,7 @@ export const clientUserService = {
       logError('ClientUserService - createAccount', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.clientUser.createError'),
+        error: getApiErrorMessage(error, t('api.clientUser.createError')),
       };
     }
   },
@@ -46,7 +46,7 @@ export const clientUserService = {
       logError('ClientUserService - updateAccount', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.clientUser.updateError'),
+        error: getApiErrorMessage(error, t('api.clientUser.updateError')),
       };
     }
   },

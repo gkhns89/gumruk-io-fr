@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -19,7 +19,7 @@ export const gRadarService = {
       logError('GRadarService - getMasterConfig', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.configLoadError'),
+        error: getApiErrorMessage(error, t('api.gRadar.configLoadError')),
       };
     }
   },
@@ -34,7 +34,7 @@ export const gRadarService = {
       logError('GRadarService - updateMasterConfig', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.configUpdateError'),
+        error: getApiErrorMessage(error, t('api.gRadar.configUpdateError')),
       };
     }
   },
@@ -47,7 +47,7 @@ export const gRadarService = {
       logError('GRadarService - testMasterConnection', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.connectionTestError'),
+        error: getApiErrorMessage(error, t('api.gRadar.connectionTestError')),
       };
     }
   },
@@ -64,7 +64,7 @@ export const gRadarService = {
       logError('GRadarService - refreshMasterBalance', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.balanceRefreshError'),
+        error: getApiErrorMessage(error, t('api.gRadar.balanceRefreshError')),
       };
     }
   },
@@ -75,7 +75,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - getMasterBalance', error);
-      return { success: false, error: error.response?.data?.error || t('api.gRadar.balanceLoadError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.gRadar.balanceLoadError')) };
     }
   },
 
@@ -90,7 +90,7 @@ export const gRadarService = {
       logError('GRadarService - preview', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.gRadar.previewError'),
+        error: getApiErrorMessage(error, t('api.gRadar.previewError')),
       };
     }
   },
@@ -103,7 +103,7 @@ export const gRadarService = {
       return { success: true };
     } catch (error) {
       logError('GRadarService - abandonPreview', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -114,7 +114,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - enable', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -124,7 +124,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - fetch', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -134,7 +134,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - disable', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -144,7 +144,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - refresh', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -154,7 +154,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - resetOverride', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -164,7 +164,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - getCargoDetails', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 
@@ -175,7 +175,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - requestEnable', error);
-      return { success: false, error: error.response?.data?.error || t('cargoTracking.gRadarActions.requestError') };
+      return { success: false, error: getApiErrorMessage(error, t('cargoTracking.gRadarActions.requestError')) };
     }
   },
 
@@ -185,7 +185,7 @@ export const gRadarService = {
       return { success: true };
     } catch (error) {
       logError('GRadarService - cancelRequest', error);
-      return { success: false, error: error.response?.data?.error || t('api.gRadar.cancelRequestError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.gRadar.cancelRequestError')) };
     }
   },
 
@@ -197,7 +197,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - listPendingRequests', error);
-      return { success: false, error: error.response?.data?.error || t('api.gRadar.requestListError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.gRadar.requestListError')) };
     }
   },
 
@@ -210,7 +210,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - approveRequest', error);
-      return { success: false, error: error.response?.data?.error || t('api.gRadar.approveError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.gRadar.approveError')) };
     }
   },
 
@@ -223,7 +223,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - rejectRequest', error);
-      return { success: false, error: error.response?.data?.error || t('api.gRadar.rejectError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.gRadar.rejectError')) };
     }
   },
 
@@ -233,7 +233,7 @@ export const gRadarService = {
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - listCargoRequests', error);
-      return { success: false, error: error.response?.data?.error };
+      return { success: false, error: getApiErrorMessage(error) };
     }
   },
 };

@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const configService = {
@@ -13,7 +14,7 @@ export const configService = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || t('api.file.configError'),
+        error: getApiErrorMessage(error, t('api.file.configError')),
         // Fallback default değerler
         data: {
           maxFileSizeMB: 10,

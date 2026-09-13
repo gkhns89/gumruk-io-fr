@@ -3,6 +3,7 @@ import MainLayout from '../../components/layout/MainLayout';
 import { planService } from '../../api/planService';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 const EMPTY_FORM = {
@@ -560,7 +561,7 @@ export default function PlanManagementPage() {
       setDeactivateSubscribers([]);
       load();
     } catch (err) {
-      showError(err?.response?.data?.error || t('adminCommon.actionFailed'));
+      showError(getApiErrorMessage(err, t('adminCommon.actionFailed')));
     }
   };
 

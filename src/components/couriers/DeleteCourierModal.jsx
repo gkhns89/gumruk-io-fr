@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { courierService } from '../../api/courierService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { getCourierVehicleType, isInHouseCourier } from '../../utils/constants';
 import { t } from '../../locales';
 
@@ -34,7 +35,7 @@ export default function DeleteCourierModal({ onClose, courier, onSuccess }) {
         showError(result.error || t('couriers.delete.error'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

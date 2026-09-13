@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -87,7 +87,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
+        error: getApiErrorMessage(error, t('api.transaction.listError')),
       };
     }
   },
@@ -122,7 +122,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
+        error: getApiErrorMessage(error, t('api.transaction.listError')),
       };
     }
   },
@@ -136,7 +136,7 @@ export const transactionService = {
       logError('TransactionService - getDashboardStats', error);
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.summaryError'),
+        error: getApiErrorMessage(error, t('api.transaction.summaryError')),
       };
     }
   },
@@ -158,7 +158,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
+        error: getApiErrorMessage(error, t('api.transaction.listError')),
       };
     }
   },
@@ -180,7 +180,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.listError'),
+        error: getApiErrorMessage(error, t('api.transaction.listError')),
       };
     }
   },
@@ -207,7 +207,7 @@ export const transactionService = {
       
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.loadError'),
+        error: getApiErrorMessage(error, t('api.transaction.loadError')),
       };
     }
   },
@@ -242,7 +242,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.createError'),
+        error: getApiErrorMessage(error, t('api.transaction.createError')),
       };
     }
   },
@@ -284,7 +284,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.updateError'),
+        error: getApiErrorMessage(error, t('api.transaction.updateError')),
       };
     }
   },
@@ -314,7 +314,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.statusChangeError'),
+        error: getApiErrorMessage(error, t('api.transaction.statusChangeError')),
       };
     }
   },
@@ -338,7 +338,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.withdrawError'),
+        error: getApiErrorMessage(error, t('api.transaction.withdrawError')),
       };
     }
   },
@@ -364,7 +364,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.cancelError'),
+        error: getApiErrorMessage(error, t('api.transaction.cancelError')),
       };
     }
   },
@@ -390,7 +390,7 @@ export const transactionService = {
 
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.message || t('api.transaction.delayedListError'),
+        error: getApiErrorMessage(error, t('api.transaction.delayedListError')),
       };
     }
   },

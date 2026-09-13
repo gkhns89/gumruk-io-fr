@@ -3,6 +3,7 @@ import { employeeService } from '../../api/employeeService';
 import { paymentService } from '../../api/paymentService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 export default function EditEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
@@ -78,7 +79,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

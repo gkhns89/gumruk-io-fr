@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales/runtime';
 
 export const userService = {
@@ -12,7 +12,7 @@ export const userService = {
       logError('UserService - getProfile', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.profileLoadError'),
+        error: getApiErrorMessage(error, t('api.user.profileLoadError')),
       };
     }
   },
@@ -26,7 +26,7 @@ export const userService = {
       logError('UserService - updateMyProfile', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.profileUpdateError'),
+        error: getApiErrorMessage(error, t('api.user.profileUpdateError')),
       };
     }
   },
@@ -44,7 +44,7 @@ export const userService = {
       logError('UserService - uploadMyAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.photoUploadError'),
+        error: getApiErrorMessage(error, t('api.user.photoUploadError')),
       };
     }
   },
@@ -62,7 +62,7 @@ export const userService = {
       logError('UserService - uploadUserAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.photoUploadError'),
+        error: getApiErrorMessage(error, t('api.user.photoUploadError')),
       };
     }
   },
@@ -76,7 +76,7 @@ export const userService = {
       logError('UserService - deleteUserAvatar', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.photoDeleteError'),
+        error: getApiErrorMessage(error, t('api.user.photoDeleteError')),
       };
     }
   },
@@ -94,7 +94,7 @@ export const userService = {
       logError('UserService - changeMyPassword', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.user.passwordChangeError'),
+        error: getApiErrorMessage(error, t('api.user.passwordChangeError')),
       };
     }
   },

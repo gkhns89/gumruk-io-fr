@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const contactService = {
@@ -29,7 +29,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - createContactInfo', error);
-      return { success: false, error: error.response?.data?.message || t('api.contact.createError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.contact.createError')) };
     }
   },
 
@@ -39,7 +39,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - updateContactInfo', error);
-      return { success: false, error: error.response?.data?.message || t('api.contact.updateError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.contact.updateError')) };
     }
   },
 

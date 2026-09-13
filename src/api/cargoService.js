@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 /**
@@ -43,7 +43,7 @@ export const cargoService = {
       logError('CargoService - getAllCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.listError'),
+        error: getApiErrorMessage(error, t('api.cargo.listError')),
         message: error.message
       };
     }
@@ -58,7 +58,7 @@ export const cargoService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('CargoService - getStatsSummary', error);
-      return { success: false, error: error.response?.data?.error || t('api.cargo.summaryError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.cargo.summaryError')) };
     }
   },
 
@@ -74,7 +74,7 @@ export const cargoService = {
       logError('CargoService - getRecentCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.recentError'),
+        error: getApiErrorMessage(error, t('api.cargo.recentError')),
         message: error.message
       };
     }
@@ -91,7 +91,7 @@ export const cargoService = {
       logError('CargoService - getCargoById', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.loadError'),
+        error: getApiErrorMessage(error, t('api.cargo.loadError')),
         message: error.message
       };
     }
@@ -109,7 +109,7 @@ export const cargoService = {
       logError('CargoService - getBrokerCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.brokerListError'),
+        error: getApiErrorMessage(error, t('api.cargo.brokerListError')),
         message: error.message
       };
     }
@@ -127,7 +127,7 @@ export const cargoService = {
       logError('CargoService - getClientCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.clientListError'),
+        error: getApiErrorMessage(error, t('api.cargo.clientListError')),
         message: error.message
       };
     }
@@ -148,7 +148,7 @@ export const cargoService = {
       logError('CargoService - createCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.createError'),
+        error: getApiErrorMessage(error, t('api.cargo.createError')),
         message: error.message
       };
     }
@@ -169,7 +169,7 @@ export const cargoService = {
       logError('CargoService - updateCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.updateError'),
+        error: getApiErrorMessage(error, t('api.cargo.updateError')),
         message: error.message
       };
     }
@@ -189,7 +189,7 @@ export const cargoService = {
       logError('CargoService - deleteCargo', error);
       return {
         success: false,
-        error: error.response?.data?.error || t('api.cargo.deleteError'),
+        error: getApiErrorMessage(error, t('api.cargo.deleteError')),
         message: error.message
       };
     }

@@ -1,4 +1,5 @@
 import axiosInstance from './axios';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales/runtime';
 
 export const paymentService = {
@@ -131,7 +132,7 @@ export const paymentService = {
       });
       return { success: true, data: response.data };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || t('api.payment.receiptUploadError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.payment.receiptUploadError')) };
     }
   },
 

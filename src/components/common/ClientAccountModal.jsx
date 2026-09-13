@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { clientUserService } from '../../api/clientUserService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 // Backend UserCreateRequest en az 8 karakter istiyor; formda da aynı eşik.
@@ -105,7 +106,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
         showError(result.error);
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }
@@ -131,7 +132,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
         showError(result.error);
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

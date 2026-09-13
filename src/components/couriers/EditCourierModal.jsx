@@ -3,6 +3,7 @@ import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { DAY_OPTIONS, getCourierType, isInHouseCourier } from '../../utils/constants';
 import { FEATURE_FLAGS } from '../../utils/featureFlags';
@@ -176,7 +177,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
         showError(result.error || t('couriers.edit.updateError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }
@@ -221,7 +222,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
         showError(result.error || t('couriers.schedules.addError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     }
   };
 
@@ -245,7 +246,7 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
         showError(result.error || t('couriers.schedules.deleteError'));
       }
     } catch (err) {
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     }
   };
 

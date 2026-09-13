@@ -3,6 +3,7 @@ import { companyService } from '../../api/companyService';
 import SectorSelect from './SectorSelect';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 /**
@@ -60,7 +61,7 @@ export default function AddClientModal({ isOpen, onClose, onSuccess, brokerCompa
       }
     } catch (err) {
       // Network/unexpected error - show as toast
-      showError(err.response?.data?.error || t('management.unexpectedError'));
+      showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
       setLoading(false);
     }

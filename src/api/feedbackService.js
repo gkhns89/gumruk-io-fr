@@ -1,5 +1,5 @@
 import axiosInstance from './axios';
-import { logError } from '../utils/errorUtils';
+import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
 export const feedbackService = {
@@ -31,7 +31,7 @@ export const feedbackService = {
       logError('feedbackService - saveClickUpSettings', error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.feedback.settingsSaveError'),
+        error: getApiErrorMessage(error, t('api.feedback.settingsSaveError')),
       };
     }
   },
@@ -52,7 +52,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - registerWebhook', error);
-      return { success: false, error: error.response?.data?.message || t('api.feedback.webhookRegisterError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.webhookRegisterError')) };
     }
   },
 
@@ -102,7 +102,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - addComment', error);
-      return { success: false, error: error.response?.data?.message || t('api.feedback.commentError') };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.commentError')) };
     }
   },
 
@@ -122,7 +122,7 @@ export const feedbackService = {
       logError('feedbackService - submitFeedback', error);
       return {
         success: false,
-        error: error.response?.data?.message || t('api.feedback.submitError'),
+        error: getApiErrorMessage(error, t('api.feedback.submitError')),
       };
     }
   },
