@@ -394,6 +394,8 @@ export const en = {
     plans: "Plans",
     feedbackTasks: "Feedback Tasks",
     featureFlags: "Feature Flags",
+    courierShipments: "Shipments",
+    myShipments: "My shipments",
   },
 
   // Sidebar and mobile menu
@@ -1818,6 +1820,181 @@ export const en = {
     },
   },
 
+  // One-off courier shipments — customs broker side (behind COURIER_CLIENT_STOPS)
+  courierShipments: {
+    title: "Shipments",
+    subtitle: "Plan one-off document and package runs for your clients and mark when they set off and arrive",
+    subtitleBroker: "{{name}} — shipments",
+    subtitleSelectBroker: "Select a customs broker to view its shipments",
+    selectBrokerHint: "Select a customs broker above to view its shipments",
+    newShipment: "New Shipment",
+    retry: "Try again",
+    overdue: "Overdue",
+    noCourier: "No courier assigned",
+    emptyHint: "Use \"New Shipment\" to plan one",
+    // SHIPMENT_STATUSES — PICKED_UP is how DELIVERED reads for a pickup
+    status: {
+      PLANNED: "Planned",
+      IN_TRANSIT: "On the way",
+      DELIVERED: "Delivered",
+      PICKED_UP: "Picked up",
+      CANCELLED: "Cancelled",
+    },
+    // SHIPMENT_DIRECTIONS
+    direction: {
+      DELIVERY: "Delivery to client",
+      PICKUP: "Pickup from client",
+    },
+    // SHIPMENT_ITEM_TYPES
+    itemType: {
+      DOCUMENT: "Documents",
+      PACKAGE: "Package",
+      OTHER: "Other",
+    },
+    // SHIPMENT_EVENT_TYPES
+    events: {
+      CREATED: "Created",
+      RESCHEDULED: "Rescheduled",
+      UPDATED: "Updated",
+      IN_TRANSIT: "On the way",
+      COMPLETED: "Delivered",
+      COMPLETED_PICKUP: "Picked up",
+      CANCELLED: "Cancelled",
+    },
+    tabs: {
+      today: "Today",
+      upcoming: "Upcoming",
+      inTransit: "On the way",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
+    empty: {
+      today: "No shipments today",
+      upcoming: "No upcoming shipments",
+      inTransit: "No shipments on the way",
+      completed: "No completed shipments",
+      cancelled: "No cancelled shipments",
+    },
+    // Relative time ({{date}} e.g. "Tue, 09/15")
+    time: {
+      today: "Today {{time}}",
+      tomorrow: "Tomorrow {{time}}",
+      yesterday: "Yesterday {{time}}",
+      other: "{{date}} {{time}}",
+    },
+    filters: {
+      client: "Client",
+      allClients: "All clients",
+      courier: "Courier",
+      allCouriers: "All couriers",
+    },
+    actions: {
+      markInTransit: "Mark on the way",
+      markDelivered: "Mark delivered",
+      markPickedUp: "Mark picked up",
+      cancel: "Cancel shipment",
+    },
+    complete: {
+      title: "Mark as delivered",
+      titlePickup: "Mark as picked up",
+      message: "The shipment to {{client}} will be marked as delivered and the client will be notified.",
+      messagePickup: "The pickup from {{client}} will be marked as done and the client will be notified.",
+    },
+    cancel: {
+      title: "Cancel shipment",
+      message: "The shipment planned for {{client}} will be cancelled and the client will be notified.",
+    },
+    messages: {
+      inTransit: "Shipment marked as on the way",
+      delivered: "Shipment marked as delivered",
+      pickedUp: "Shipment marked as picked up",
+      cancelled: "Shipment cancelled",
+    },
+    fields: {
+      receivedBy: "Received by",
+      handedOverBy: "Handed over by",
+      receivedByPlaceholder: "e.g. Jane Smith",
+      note: "Note",
+      notePlaceholder: "The client sees this note in the shipment history",
+    },
+    form: {
+      createTitle: "New Shipment",
+      editTitle: "Edit Shipment",
+      createSubtitle: "Plan a one-off document or package run for a client",
+      editSubtitle: "Only planned shipments can be edited",
+      direction: "Direction",
+      itemType: "Item type",
+      client: "Client company",
+      clientLocked: "The client can't be changed once the shipment is created",
+      courier: "Courier",
+      selectCourier: "Select a courier",
+      externalGroup: "Courier companies",
+      inHouseGroup: "In-house dispatch",
+      noCouriers: "No active courier records. Add one under Couriers first.",
+      couriersLoadError: "Could not load courier records",
+      date: "Date",
+      time: "Time",
+      pastWarning: "The selected time is in the past",
+      description: "Description",
+      descriptionPlaceholder: "e.g. 3 original declarations",
+      internalNotes: "Internal notes",
+      internalNotesPlaceholder: "Notes for your team...",
+      internalNotesHint: "The client doesn't see this note",
+      notifyHint: "The client is notified when the shipment is created and at every status change.",
+      clientRequired: "Select a client company",
+      courierRequired: "Select a courier",
+      dateTimeRequired: "Enter a date and time",
+      create: "Create Shipment",
+      createdSuccess: "Shipment created",
+      updatedSuccess: "Shipment updated",
+    },
+    detail: {
+      title: "Shipment Details",
+      plannedAt: "Planned for",
+      client: "Client company",
+      broker: "Customs broker",
+      courier: "Courier",
+      departedAt: "Set off",
+      completedAt: "Delivered at",
+      completedAtPickup: "Picked up at",
+      cancelledAt: "Cancelled at",
+      // {{user}} is the creating user, {{date}} the date and time
+      created: "Created by {{user}} · {{date}}",
+      history: "Shipment history",
+      noHistory: "No entries yet",
+    },
+  },
+
+  // The client's courier shipments (CLIENT_USER) — page and dashboard card
+  myShipments: {
+    title: "My shipments",
+    subtitle: "Documents and packages your customs broker is bringing to you or collecting from you",
+    // Direction from the client's point of view
+    direction: {
+      DELIVERY: "Delivery to you",
+      PICKUP: "Pickup from you",
+    },
+    empty: {
+      upcoming: "No upcoming shipments",
+      inTransit: "No shipments on the way",
+      completed: "No completed shipments",
+      cancelled: "No cancelled shipments",
+    },
+    // Dashboard card; upcoming rows read "Today 14:00 · Courier delivers"
+    card: {
+      title: "My shipments",
+      inTransitDelivery: "Your shipment is on the way",
+      inTransitPickupDocument: "The courier is on the way to collect documents",
+      inTransitPickup: "The courier is on the way to collect the shipment",
+      upcomingDelivery: "Courier delivers",
+      upcomingPickup: "Courier picks up",
+      recentTitle: "Recently completed",
+      empty: "No planned shipments",
+      loadError: "Could not load shipments",
+      viewAll: "View all",
+    },
+  },
+
   // Company settings (logo)
   companySettings: {
     subtitle: "Manage your company logo here. The logo appears in the header, on the dashboard and on the sign-in screen.",
@@ -1932,6 +2109,14 @@ export const en = {
       schedulesLoadError: "Could not load departure times",
       scheduleUpdateError: "Could not update the departure time",
       nextDeparturesError: "Could not load courier departure information",
+    },
+    courierShipments: {
+      listError: "Could not load shipments",
+      loadError: "Could not load the shipment details",
+      createError: "Could not create the shipment",
+      updateError: "Could not update the shipment",
+      statusError: "Could not update the shipment status",
+      summaryError: "Could not load the shipment summary",
     },
     customsNews: {
       loadError: "Could not load news",

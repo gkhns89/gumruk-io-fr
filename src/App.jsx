@@ -25,6 +25,8 @@ const AgreementsPage = lazy(() => import("./pages/management/AgreementsPage"));
 const ClientsPage = lazy(() => import("./pages/management/ClientsPage"));
 const EmployeesPage = lazy(() => import("./pages/management/EmployeesPage"));
 const CouriersManagementPage = lazy(() => import("./pages/management/CouriersManagementPage"));
+const CourierShipmentsPage = lazy(() => import("./pages/management/CourierShipmentsPage"));
+const MyShipmentsPage = lazy(() => import("./pages/MyShipmentsPage"));
 const NewsPage = lazy(() => import("./pages/NewsPage"));
 const WarehousePage = lazy(() => import("./pages/WarehousePage"));
 const ShippingPage = lazy(() => import("./pages/ShippingPage"));
@@ -201,6 +203,26 @@ export default function App() {
         element={
           <ProtectedRoute>
             <CouriersManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* YÖNETİM: Tek seferlik kurye gönderileri (COURIER_CLIENT_STOPS; menü bayrakla açılır, backend de kontrol eder) */}
+      <Route
+        path="/management/courier-shipments"
+        element={
+          <ProtectedRoute requiredRole={["SUPER_ADMIN", "BROKER_ADMIN", "BROKER_USER"]}>
+            <CourierShipmentsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Müşteri: Gönderilerim (COURIER_CLIENT_STOPS) */}
+      <Route
+        path="/my-shipments"
+        element={
+          <ProtectedRoute requiredRole="CLIENT_USER">
+            <MyShipmentsPage />
           </ProtectedRoute>
         }
       />

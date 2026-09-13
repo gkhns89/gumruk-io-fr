@@ -19,6 +19,7 @@ export default function ConfirmModal({
   title,
   message,
   details,
+  content,
   confirmText = t('common.confirm'),
   cancelText = t('confirmModal.cancel'),
   intent = 'primary',
@@ -85,6 +86,7 @@ export default function ConfirmModal({
               {details.map((line, i) => <li key={i}>{line}</li>)}
             </ul>
           )}
+          {content}
         </div>
 
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 rounded-b-2xl">

@@ -264,6 +264,10 @@ export default function NotificationCenter() {
       navigate('/cargo');
     } else if (notification.entityType === 'WAREHOUSE') {
       navigate('/warehouse');
+    } else if (notification.entityType === 'COURIER_SHIPMENT') {
+      // Kurye gönderisi: sayfa state'teki gönderinin detayını açar
+      const path = user?.globalRole === 'CLIENT_USER' ? '/my-shipments' : '/management/courier-shipments';
+      navigate(path, { state: { shipmentId: notification.entityId } });
     } else if (notification.entityType === 'FEEDBACK') {
       if (isSuperAdmin) {
         navigate('/management/feedback-tasks');

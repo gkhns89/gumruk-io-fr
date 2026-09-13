@@ -25,6 +25,8 @@ import ConfirmModal from '../components/common/ConfirmModal';
  * @param {string}   options.title           Header text (required).
  * @param {string}   [options.message]       Body paragraph. Newlines respected.
  * @param {string[]} [options.details]       Bullet list rendered under the message.
+ * @param {React.ReactNode} [options.content] Extra body content (e.g. an optional note input).
+ *   It renders in a separate React root, so report values out through callbacks, not state.
  * @param {string}   [options.confirmText='Onayla']
  * @param {string}   [options.cancelText='Vazgeç']
  * @param {'primary'|'danger'|'warning'} [options.intent='primary']
@@ -55,6 +57,7 @@ export function confirmDialog(options) {
         title: options.title,
         message: options.message,
         details: options.details,
+        content: options.content,
         confirmText: options.confirmText,
         cancelText: options.cancelText,
         intent: options.intent,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import { Link, useLocation } from "react-router-dom";
 import AuthedImage from "../common/AuthedImage";
 import { HOME_ITEM, SUPPORT_ITEMS, getGeneralMenuItems, getVisibleManagementItems } from "./menuConfig";
@@ -8,6 +9,7 @@ import "./Sidebar.css";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { hasFeature } = useFeatureFlags();
   const location = useLocation();
   const navRef = useRef(null);
 
@@ -43,17 +45,15 @@ export default function Sidebar() {
   const mainMenuItems = [HOME_ITEM];
 
   // Diğer menü öğeleri - "Diğer..." altında toplanabilecekler (liste menuConfig'te, MobileMenu ile ortak)
-  const otherMenuItems = getGeneralMenuItems(user);
+  const otherMenuItems = getGeneralMenuItems(user, { hasFeature });
 
   // Yönetim menüsü öğeleri ortak config'ten gelir (MobileMenu ile aynı kaynak)
-  // Kullanıcının yönetim menüsüne erişimi var mı?
-  // Not: isPaymentResponsible BROKER_USER da yönetim altındaki "Abonelik & Ödeme"ye erişebilir
-  const hasManagementAccess = user?.globalRole === 'BROKER_ADMIN'
-    || user?.globalRole === 'SUPER_ADMIN'
-    || (user?.globalRole === 'BROKER_USER' && user?.isPaymentResponsible === true);
+  // Aktif yönetim menü öğelerini filtrele (rol + koşul + bayrak)
+  const visibleManagementItems = getVisibleManagementItems(user, { hasFeature });
 
-  // Aktif yönetim menü öğelerini filtrele (rol + koşul)
-  const visibleManagementItems = getVisibleManagementItems(user);
+  // Kullanıcının yönetim menüsüne erişimi var mı? Görünür öğe varsa evet —
+  // örn. BROKER_USER "Abonelik & Ödeme" (isPaymentResponsible) ya da bayrak açıksa "Gönderiler" görür.
+  const hasManagementAccess = visibleManagementItems.length > 0;
 
   // Dinamik buton görünürlüğü hesaplama
   useEffect(() => {

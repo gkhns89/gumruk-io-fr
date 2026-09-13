@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import { feedbackService } from "../../api/feedbackService";
 import FeedbackModal from "../common/FeedbackModal";
 import AuthedImage from "../common/AuthedImage";
@@ -9,6 +10,7 @@ import { t } from "../../locales";
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { user, logout } = useAuth();
+  const { hasFeature } = useFeatureFlags();
   const location = useLocation();
   const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [clickUpActive, setClickUpActive] = useState(false);
@@ -44,12 +46,12 @@ export default function MobileMenu({ isOpen, onClose }) {
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Liste menuConfig'te, Sidebar ile ortak (Ayarlar yalnızca SUPER_ADMIN için)
-  const menuItems = [HOME_ITEM, ...getGeneralMenuItems(user)];
+  const menuItems = [HOME_ITEM, ...getGeneralMenuItems(user, { hasFeature })];
 
   const bottomMenuItems = SUPPORT_ITEMS;
 
-  // Yönetim menüsü öğeleri ortak config'ten (Sidebar ile birebir aynı, rol + koşula göre)
-  const visibleManagementItems = getVisibleManagementItems(user);
+  // Yönetim menüsü öğeleri ortak config'ten (Sidebar ile birebir aynı, rol + koşul + bayrağa göre)
+  const visibleManagementItems = getVisibleManagementItems(user, { hasFeature });
 
   // isPaymentResponsible BROKER_USER da yönetim bölümüne erişebilir
   const hasManagementAccess = visibleManagementItems.length > 0;

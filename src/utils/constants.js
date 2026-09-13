@@ -554,6 +554,139 @@ export const getCourierVehicleType = (value) => {
  */
 export const isInHouseCourier = (courier) => courier?.courierType === 'IN_HOUSE';
 
+/**
+ * Tek seferlik kurye gönderisi durumları (backend: CourierShipmentStatus)
+ * DELIVERED, müşteriden alım (PICKUP) gönderilerinde "Teslim alındı" diye okunur — `getShipmentStatusLabel`.
+ */
+export const SHIPMENT_STATUSES = [
+  {
+    value: 'PLANNED',
+    labelKey: 'courierShipments.status.PLANNED',
+    get label() { return t(this.labelKey); },
+    icon: 'event',
+    badgeClass: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300',
+  },
+  {
+    value: 'IN_TRANSIT',
+    labelKey: 'courierShipments.status.IN_TRANSIT',
+    get label() { return t(this.labelKey); },
+    icon: 'local_shipping',
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300',
+  },
+  {
+    value: 'DELIVERED',
+    labelKey: 'courierShipments.status.DELIVERED',
+    pickupLabelKey: 'courierShipments.status.PICKED_UP',
+    get label() { return t(this.labelKey); },
+    get pickupLabel() { return t(this.pickupLabelKey); },
+    icon: 'task_alt',
+    badgeClass: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+  },
+  {
+    value: 'CANCELLED',
+    labelKey: 'courierShipments.status.CANCELLED',
+    get label() { return t(this.labelKey); },
+    icon: 'cancel',
+    badgeClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+];
+
+/**
+ * Gönderi yönü — `icon` gümrük firmasının, `clientIcon` müşterinin bakışından
+ */
+export const SHIPMENT_DIRECTIONS = [
+  {
+    value: 'DELIVERY',
+    labelKey: 'courierShipments.direction.DELIVERY',
+    get label() { return t(this.labelKey); },
+    icon: 'outbox',
+    clientIcon: 'move_to_inbox',
+  },
+  {
+    value: 'PICKUP',
+    labelKey: 'courierShipments.direction.PICKUP',
+    get label() { return t(this.labelKey); },
+    icon: 'move_to_inbox',
+    clientIcon: 'outbox',
+  },
+];
+
+/**
+ * Gönderilen şeyin türü
+ */
+export const SHIPMENT_ITEM_TYPES = [
+  { value: 'DOCUMENT', labelKey: 'courierShipments.itemType.DOCUMENT', get label() { return t(this.labelKey); }, icon: 'description' },
+  { value: 'PACKAGE', labelKey: 'courierShipments.itemType.PACKAGE', get label() { return t(this.labelKey); }, icon: 'package_2' },
+  { value: 'OTHER', labelKey: 'courierShipments.itemType.OTHER', get label() { return t(this.labelKey); }, icon: 'category' },
+];
+
+/**
+ * Gönderi olay geçmişi türleri (backend: CourierShipmentEventType)
+ */
+export const SHIPMENT_EVENT_TYPES = [
+  { value: 'CREATED', labelKey: 'courierShipments.events.CREATED', get label() { return t(this.labelKey); }, icon: 'add_circle' },
+  { value: 'RESCHEDULED', labelKey: 'courierShipments.events.RESCHEDULED', get label() { return t(this.labelKey); }, icon: 'event_repeat' },
+  { value: 'UPDATED', labelKey: 'courierShipments.events.UPDATED', get label() { return t(this.labelKey); }, icon: 'edit' },
+  { value: 'IN_TRANSIT', labelKey: 'courierShipments.events.IN_TRANSIT', get label() { return t(this.labelKey); }, icon: 'local_shipping' },
+  {
+    value: 'COMPLETED',
+    labelKey: 'courierShipments.events.COMPLETED',
+    pickupLabelKey: 'courierShipments.events.COMPLETED_PICKUP',
+    get label() { return t(this.labelKey); },
+    get pickupLabel() { return t(this.pickupLabelKey); },
+    icon: 'task_alt',
+  },
+  { value: 'CANCELLED', labelKey: 'courierShipments.events.CANCELLED', get label() { return t(this.labelKey); }, icon: 'cancel' },
+];
+
+/**
+ * Gönderi durumunu değere göre bul
+ * @param {string} value - PLANNED | IN_TRANSIT | DELIVERED | CANCELLED
+ * @returns {Object|null}
+ */
+export const getShipmentStatus = (value) => {
+  return SHIPMENT_STATUSES.find((status) => status.value === value) || null;
+};
+
+/**
+ * Durum etiketi, yöne göre: PICKUP + DELIVERED → "Teslim alındı". Bilinmeyen durum ham değeriyle döner.
+ * @param {string} status
+ * @param {string} direction - DELIVERY | PICKUP
+ * @returns {string}
+ */
+export const getShipmentStatusLabel = (status, direction) => {
+  const option = getShipmentStatus(status);
+  if (!option) return status || '';
+  return direction === 'PICKUP' && option.pickupLabelKey ? option.pickupLabel : option.label;
+};
+
+/**
+ * Gönderi yönünü değere göre bul
+ * @param {string} value - DELIVERY | PICKUP
+ * @returns {Object|null}
+ */
+export const getShipmentDirection = (value) => {
+  return SHIPMENT_DIRECTIONS.find((direction) => direction.value === value) || null;
+};
+
+/**
+ * Gönderi türünü değere göre bul
+ * @param {string} value - DOCUMENT | PACKAGE | OTHER
+ * @returns {Object|null}
+ */
+export const getShipmentItemType = (value) => {
+  return SHIPMENT_ITEM_TYPES.find((type) => type.value === value) || null;
+};
+
+/**
+ * Olay türünü değere göre bul
+ * @param {string} value - CREATED | RESCHEDULED | UPDATED | IN_TRANSIT | COMPLETED | CANCELLED
+ * @returns {Object|null}
+ */
+export const getShipmentEventType = (value) => {
+  return SHIPMENT_EVENT_TYPES.find((type) => type.value === value) || null;
+};
+
 export default {
   GATE_OPTIONS,
   TRANSACTION_STATUS,
@@ -568,6 +701,10 @@ export default {
   DAY_OPTIONS,
   COURIER_TYPES,
   COURIER_VEHICLE_TYPES,
+  SHIPMENT_STATUSES,
+  SHIPMENT_DIRECTIONS,
+  SHIPMENT_ITEM_TYPES,
+  SHIPMENT_EVENT_TYPES,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
@@ -582,4 +719,9 @@ export default {
   getCourierType,
   getCourierVehicleType,
   isInHouseCourier,
+  getShipmentStatus,
+  getShipmentStatusLabel,
+  getShipmentDirection,
+  getShipmentItemType,
+  getShipmentEventType,
 };

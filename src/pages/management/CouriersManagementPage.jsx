@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import { courierService } from '../../api/courierService';
@@ -119,24 +120,39 @@ export default function CouriersManagementPage() {
                 : inHouseEnabled ? t('couriers.page.subtitleWithInHouse') : t('couriers.page.subtitle')}
             </p>
           </div>
-          {(!isSuperAdmin || selectedBroker) && (
+          {(inHouseEnabled || !isSuperAdmin || selectedBroker) && (
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-                onClick={() => setAddCourierType('EXTERNAL')}
-              >
-                <span className="material-symbols-outlined text-xl">add</span>
-                <span>{t('couriers.page.add')}</span>
-              </button>
+              {/* Tek seferlik gönderiler — aynı bayrak */}
               {inHouseEnabled && (
-                <button
-                  className="flex items-center gap-2 px-4 py-2 border border-primary text-primary bg-white dark:bg-background-dark rounded-lg hover:bg-primary/10 transition-colors"
-                  onClick={() => setAddCourierType('IN_HOUSE')}
+                <Link
+                  to="/management/courier-shipments"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-text-main bg-white dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-xl">local_shipping</span>
-                  <span>{t('couriers.inHouse.add')}</span>
+                  <span className="material-symbols-outlined text-xl">package_2</span>
+                  <span>{t('nav.courierShipments')}</span>
                   {inHousePilot && <NewFeatureBadge />}
-                </button>
+                </Link>
+              )}
+              {(!isSuperAdmin || selectedBroker) && (
+                <>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                    onClick={() => setAddCourierType('EXTERNAL')}
+                  >
+                    <span className="material-symbols-outlined text-xl">add</span>
+                    <span>{t('couriers.page.add')}</span>
+                  </button>
+                  {inHouseEnabled && (
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 border border-primary text-primary bg-white dark:bg-background-dark rounded-lg hover:bg-primary/10 transition-colors"
+                      onClick={() => setAddCourierType('IN_HOUSE')}
+                    >
+                      <span className="material-symbols-outlined text-xl">local_shipping</span>
+                      <span>{t('couriers.inHouse.add')}</span>
+                      {inHousePilot && <NewFeatureBadge />}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

@@ -394,6 +394,8 @@ export const tr = {
     plans: "Plan Yönetimi",
     feedbackTasks: "Feedback Taskları",
     featureFlags: "Özellik Bayrakları",
+    courierShipments: "Gönderiler",
+    myShipments: "Gönderilerim",
   },
 
   // Kenar çubuğu ve mobil menü
@@ -1821,6 +1823,181 @@ export const tr = {
     },
   },
 
+  // Tek seferlik kurye gönderileri — gümrük firması tarafı (COURIER_CLIENT_STOPS bayrağıyla)
+  courierShipments: {
+    title: "Gönderiler",
+    subtitle: "Müşterilerinize tek seferlik evrak ve paket gönderilerini planlayın, yola çıkışı ve teslimi işaretleyin",
+    subtitleBroker: "{{name}} — gönderiler",
+    subtitleSelectBroker: "Gönderileri görüntülemek için bir gümrük firması seçin",
+    selectBrokerHint: "Gönderileri görüntülemek için yukarıdan bir gümrük firması seçin",
+    newShipment: "Yeni Gönderi",
+    retry: "Tekrar dene",
+    overdue: "Gecikti",
+    noCourier: "Kurye atanmamış",
+    emptyHint: "Yeni bir gönderi planlamak için \"Yeni Gönderi\" düğmesini kullanın",
+    // SHIPMENT_STATUSES — PICKED_UP, müşteriden alımda DELIVERED'ın okunuşu
+    status: {
+      PLANNED: "Planlandı",
+      IN_TRANSIT: "Yolda",
+      DELIVERED: "Teslim edildi",
+      PICKED_UP: "Teslim alındı",
+      CANCELLED: "İptal edildi",
+    },
+    // SHIPMENT_DIRECTIONS
+    direction: {
+      DELIVERY: "Müşteriye teslim",
+      PICKUP: "Müşteriden alım",
+    },
+    // SHIPMENT_ITEM_TYPES
+    itemType: {
+      DOCUMENT: "Evrak",
+      PACKAGE: "Paket",
+      OTHER: "Diğer",
+    },
+    // SHIPMENT_EVENT_TYPES
+    events: {
+      CREATED: "Oluşturuldu",
+      RESCHEDULED: "Yeniden planlandı",
+      UPDATED: "Güncellendi",
+      IN_TRANSIT: "Yola çıktı",
+      COMPLETED: "Teslim edildi",
+      COMPLETED_PICKUP: "Teslim alındı",
+      CANCELLED: "İptal edildi",
+    },
+    tabs: {
+      today: "Bugün",
+      upcoming: "Yaklaşan",
+      inTransit: "Yolda",
+      completed: "Tamamlanan",
+      cancelled: "İptal",
+    },
+    empty: {
+      today: "Bugün için gönderi yok",
+      upcoming: "Yaklaşan gönderi yok",
+      inTransit: "Yolda olan gönderi yok",
+      completed: "Tamamlanan gönderi yok",
+      cancelled: "İptal edilen gönderi yok",
+    },
+    // Göreli zaman; ek almayan kalıplar ({{date}} örn. "15.09 Sal")
+    time: {
+      today: "Bugün {{time}}",
+      tomorrow: "Yarın {{time}}",
+      yesterday: "Dün {{time}}",
+      other: "{{date}} {{time}}",
+    },
+    filters: {
+      client: "Müşteri",
+      allClients: "Tüm müşteriler",
+      courier: "Kurye",
+      allCouriers: "Tüm kuryeler",
+    },
+    actions: {
+      markInTransit: "Yola çıktı",
+      markDelivered: "Teslim edildi",
+      markPickedUp: "Teslim alındı",
+      cancel: "İptal et",
+    },
+    complete: {
+      title: "Teslim edildi olarak işaretle",
+      titlePickup: "Teslim alındı olarak işaretle",
+      message: "Gönderi {{client}} firmasına teslim edildi olarak işaretlenecek ve müşteriye bildirim gidecek.",
+      messagePickup: "{{client}} firmasından alım tamamlandı olarak işaretlenecek ve müşteriye bildirim gidecek.",
+    },
+    cancel: {
+      title: "Gönderiyi iptal et",
+      message: "{{client}} firması için planlanan gönderi iptal edilecek ve müşteriye bildirim gidecek.",
+    },
+    messages: {
+      inTransit: "Gönderi yolda olarak işaretlendi",
+      delivered: "Gönderi teslim edildi olarak işaretlendi",
+      pickedUp: "Gönderi teslim alındı olarak işaretlendi",
+      cancelled: "Gönderi iptal edildi",
+    },
+    fields: {
+      receivedBy: "Teslim alan",
+      handedOverBy: "Teslim eden",
+      receivedByPlaceholder: "Örn: Ayşe Yılmaz",
+      note: "Not",
+      notePlaceholder: "Müşteri bu notu gönderi geçmişinde görür",
+    },
+    form: {
+      createTitle: "Yeni Gönderi",
+      editTitle: "Gönderiyi Düzenle",
+      createSubtitle: "Bir müşteriye tek seferlik evrak veya paket gönderisi planlayın",
+      editSubtitle: "Yalnızca planlanan gönderiler düzenlenebilir",
+      direction: "Yön",
+      itemType: "Gönderi türü",
+      client: "Müşteri firması",
+      clientLocked: "Müşteri, gönderi oluşturulduktan sonra değiştirilemez",
+      courier: "Kurye",
+      selectCourier: "Kurye seçin",
+      externalGroup: "Kurye firmaları",
+      inHouseGroup: "Firma içi",
+      noCouriers: "Aktif kurye kaydı yok. Önce Kurye Yönetimi'nden ekleyin.",
+      couriersLoadError: "Kurye kayıtları yüklenemedi",
+      date: "Tarih",
+      time: "Saat",
+      pastWarning: "Seçilen zaman geçmişte kalıyor",
+      description: "Açıklama",
+      descriptionPlaceholder: "Örn: 3 adet beyanname aslı",
+      internalNotes: "İç notlar",
+      internalNotesPlaceholder: "Ekibiniz için notlar...",
+      internalNotesHint: "Müşteri bu notu görmez",
+      notifyHint: "Müşteri, gönderi oluşturulduğunda ve her durum değişikliğinde bildirim alır.",
+      clientRequired: "Müşteri firması seçin",
+      courierRequired: "Kurye seçin",
+      dateTimeRequired: "Tarih ve saat girin",
+      create: "Gönderiyi Oluştur",
+      createdSuccess: "Gönderi oluşturuldu",
+      updatedSuccess: "Gönderi güncellendi",
+    },
+    detail: {
+      title: "Gönderi Detayı",
+      plannedAt: "Planlanan zaman",
+      client: "Müşteri firması",
+      broker: "Gümrük firması",
+      courier: "Kurye",
+      departedAt: "Yola çıkış",
+      completedAt: "Teslim zamanı",
+      completedAtPickup: "Teslim alma zamanı",
+      cancelledAt: "İptal zamanı",
+      // {{user}} oluşturan kullanıcı, {{date}} tarih-saat
+      created: "Oluşturan: {{user}} · {{date}}",
+      history: "Gönderi geçmişi",
+      noHistory: "Henüz kayıt yok",
+    },
+  },
+
+  // Müşterinin kurye gönderileri (CLIENT_USER) — sayfa ve dashboard kartı
+  myShipments: {
+    title: "Gönderilerim",
+    subtitle: "Gümrük müşavirinizin size getireceği ve sizden alacağı evrak ve paketler",
+    // Müşterinin bakışından yön
+    direction: {
+      DELIVERY: "Size teslimat",
+      PICKUP: "Sizden alım",
+    },
+    empty: {
+      upcoming: "Yaklaşan gönderiniz yok",
+      inTransit: "Yolda olan gönderiniz yok",
+      completed: "Tamamlanan gönderiniz yok",
+      cancelled: "İptal edilen gönderiniz yok",
+    },
+    // Dashboard kartı; yaklaşanlar "Bugün 14:00 · Kurye teslim edecek" diye birleşir
+    card: {
+      title: "Gönderilerim",
+      inTransitDelivery: "Gönderiniz yolda",
+      inTransitPickupDocument: "Kurye evrak almak için yolda",
+      inTransitPickup: "Kurye gönderiyi almak için yolda",
+      upcomingDelivery: "Kurye teslim edecek",
+      upcomingPickup: "Kurye teslim alacak",
+      recentTitle: "Son tamamlanan",
+      empty: "Planlanmış gönderiniz yok",
+      loadError: "Gönderiler yüklenemedi",
+      viewAll: "Tümünü gör",
+    },
+  },
+
   // Firma ayarları (logo)
   companySettings: {
     subtitle: "Firma logosunu buradan yönetin. Logo; header, kontrol paneli ve giriş ekranında görünür.",
@@ -1933,6 +2110,14 @@ export const tr = {
       schedulesLoadError: "Kalkış saatleri alınamadı",
       scheduleUpdateError: "Kalkış saati güncellenemedi",
       nextDeparturesError: "Kurye kalkış bilgileri alınamadı",
+    },
+    courierShipments: {
+      listError: "Gönderiler yüklenemedi",
+      loadError: "Gönderi bilgileri alınamadı",
+      createError: "Gönderi oluşturulamadı",
+      updateError: "Gönderi güncellenemedi",
+      statusError: "Gönderi durumu güncellenemedi",
+      summaryError: "Gönderi özeti alınamadı",
     },
     customsNews: {
       loadError: "Haberler alınamadı",

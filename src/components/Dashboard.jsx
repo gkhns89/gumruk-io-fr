@@ -3,7 +3,10 @@ import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
 import RecentActivityTable from "./dashboard/RecentActivityTable";
 import CourierTrackingCard from "./dashboard/CourierTrackingCard";
+import ClientShipmentsCard from "./dashboard/ClientShipmentsCard";
 import { useAuth } from "../hooks/useAuth";
+import { useFeatureFlags } from "../hooks/useFeatureFlags";
+import { FEATURE_FLAGS } from "../utils/featureFlags";
 import AuthedImage from "./common/AuthedImage";
 import { transactionService } from "../api/transactionService";
 import { cargoService } from "../api/cargoService";
@@ -52,6 +55,9 @@ const AnimatedSection = ({ children, delay = 0, shouldAnimate = false, className
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { hasFeature } = useFeatureFlags();
+  // Müşteri kullanıcısı kurye kartı yerine kendi gönderilerini görür (COURIER_CLIENT_STOPS)
+  const showClientShipments = user?.globalRole === "CLIENT_USER" && hasFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
   const [stats, setStats] = useState(null);
   const [warehouseStats, setWarehouseStats] = useState(null);
   const [cargoStats, setCargoStats] = useState(null);
@@ -204,11 +210,15 @@ export default function Dashboard() {
         >
           <Stats stats={stats} warehouseStats={warehouseStats} cargoStats={cargoStats} loading={loading} courierExpanded={courierExpanded} />
           <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
-            <CourierTrackingCard
-              expanded={courierExpanded}
-              onToggleExpand={() => setCourierExpanded(v => !v)}
-              isLargeScreen={isLargeScreen}
-            />
+            {showClientShipments ? (
+              <ClientShipmentsCard />
+            ) : (
+              <CourierTrackingCard
+                expanded={courierExpanded}
+                onToggleExpand={() => setCourierExpanded(v => !v)}
+                isLargeScreen={isLargeScreen}
+              />
+            )}
           </AnimatedSection>
         </div>
 
