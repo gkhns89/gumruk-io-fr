@@ -1803,7 +1803,6 @@ export const en = {
       selectDay: "Select at least one day",
       selectCustoms: "Select at least one customs office",
       selectTime: "Select at least one departure time",
-      unexpectedError: "Unexpected error: {{message}}",
       success: "{{count}} departure times added successfully",
       partialFailure: "{{count}} records could not be added. {{error}}",
       error: "An error occurred during the bulk add",
@@ -2106,6 +2105,7 @@ export const en = {
       updateError: "Could not update the company",
     },
     contact: {
+      loadError: "Could not load the contact information",
       createError: "Could not add the contact information",
       updateError: "Could not update the contact information",
       deleteError: "Delete failed",
@@ -2154,7 +2154,12 @@ export const en = {
       loadMineError: "Could not load feature information",
     },
     feedback: {
+      statusError: "Could not load the ClickUp status",
+      settingsLoadError: "Could not load the ClickUp settings",
       settingsSaveError: "Could not save the settings",
+      testError: "Could not test the ClickUp connection",
+      listError: "Could not load feedback",
+      commentsLoadError: "Could not load the comments",
       webhookRegisterError: "Webhook registration failed",
       webhookDeleteError: "Could not delete the webhook",
       commentError: "Could not send the comment",

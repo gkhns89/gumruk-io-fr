@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { courierService } from '../../api/courierService';
 import { customsService } from '../../api/customsService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { DAY_OPTIONS } from '../../utils/constants';
 import { FEATURE_FLAGS } from '../../utils/featureFlags';
 import { useFeatureFlags } from '../../hooks/useFeatureFlags';
@@ -216,7 +217,7 @@ export default function BatchAddScheduleModal({ courier, brokerCompanyId, onClos
               }
             } catch (err) {
               failCount++;
-              errors.push(t('couriers.batch.unexpectedError', { message: err.message }));
+              errors.push(getApiErrorMessage(err, t('api.errors.unexpected')));
             }
           }
         }

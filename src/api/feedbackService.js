@@ -9,7 +9,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - getClickUpStatus', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.statusError')) };
     }
   },
 
@@ -19,7 +19,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - getClickUpSettings', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.settingsLoadError')) };
     }
   },
 
@@ -42,7 +42,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - testClickUpConnection', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.testError')) };
     }
   },
 
@@ -72,7 +72,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - getFeedbackTasks', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.listError')) };
     }
   },
 
@@ -82,7 +82,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - getMyFeedback', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.listError')) };
     }
   },
 
@@ -92,7 +92,7 @@ export const feedbackService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('feedbackService - getComments', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.feedback.commentsLoadError')) };
     }
   },
 

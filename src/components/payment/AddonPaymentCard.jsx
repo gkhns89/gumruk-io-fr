@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { addonService } from '../../api/addonService';
+import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t, getCurrentLocale } from '../../locales';
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString(getCurrentLocale()) : '-';
@@ -61,7 +62,8 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
       }
       // PAID_WITH_BALANCE → parent load() çağırır, kart kaybolur
     } catch (err) {
-      setError(err.message || t('addonPayment.actionFailed'));
+      // markAddonAsPaid ham axios hatası fırlatır; err.message İngilizce ("Request failed with status code 400")
+      setError(getApiErrorMessage(err, t('addonPayment.actionFailed')));
     } finally {
       setIsLoading(false);
     }

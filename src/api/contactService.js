@@ -9,7 +9,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - getContactInfo', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.contact.loadError')) };
     }
   },
 
@@ -19,7 +19,7 @@ export const contactService = {
       return { success: true, data: response.data };
     } catch (error) {
       logError('contactService - getAllContactInfo', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getApiErrorMessage(error, t('api.contact.loadError')) };
     }
   },
 

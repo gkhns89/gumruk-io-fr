@@ -44,7 +44,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.listError')),
-        message: error.message
       };
     }
   },
@@ -75,7 +74,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.recentError')),
-        message: error.message
       };
     }
   },
@@ -92,7 +90,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.loadError')),
-        message: error.message
       };
     }
   },
@@ -110,7 +107,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.brokerListError')),
-        message: error.message
       };
     }
   },
@@ -128,7 +124,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.clientListError')),
-        message: error.message
       };
     }
   },
@@ -149,7 +144,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.createError')),
-        message: error.message
       };
     }
   },
@@ -170,7 +164,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.updateError')),
-        message: error.message
       };
     }
   },
@@ -190,7 +183,6 @@ export const cargoService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.deleteError')),
-        message: error.message
       };
     }
   },

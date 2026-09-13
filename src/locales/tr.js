@@ -1806,7 +1806,6 @@ export const tr = {
       selectDay: "En az bir gün seçmelisiniz",
       selectCustoms: "En az bir gümrük müdürlüğü seçmelisiniz",
       selectTime: "En az bir kalkış saati seçmelisiniz",
-      unexpectedError: "Beklenmeyen hata: {{message}}",
       success: "{{count}} kalkış saati başarıyla eklendi",
       partialFailure: "{{count}} kayıt eklenemedi. {{error}}",
       error: "Toplu ekleme sırasında hata oluştu",
@@ -2107,6 +2106,7 @@ export const tr = {
       updateError: "Firma güncellenemedi",
     },
     contact: {
+      loadError: "İletişim bilgileri alınamadı",
       createError: "İletişim bilgisi eklenemedi",
       updateError: "İletişim bilgisi güncellenemedi",
       deleteError: "Silme işlemi başarısız",
@@ -2155,7 +2155,12 @@ export const tr = {
       loadMineError: "Özellik bilgisi alınamadı",
     },
     feedback: {
+      statusError: "ClickUp durumu alınamadı",
+      settingsLoadError: "ClickUp ayarları alınamadı",
       settingsSaveError: "Ayarlar kaydedilemedi",
+      testError: "ClickUp bağlantısı test edilemedi",
+      listError: "Geri bildirimler alınamadı",
+      commentsLoadError: "Yorumlar alınamadı",
       webhookRegisterError: "Webhook kaydı başarısız",
       webhookDeleteError: "Webhook silinemedi",
       commentError: "Yorum gönderilemedi",

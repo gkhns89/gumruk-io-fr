@@ -40,7 +40,7 @@ export const customsNewsService = {
 
       return {
         success: false,
-        error: getApiErrorMessage(error, error.message || t('api.customsNews.loadError')),
+        error: getApiErrorMessage(error, t('api.customsNews.loadError')),
         data: [] // Fallback olarak boş array
       };
     }
@@ -76,7 +76,7 @@ export const customsNewsService = {
 
       return {
         success: false,
-        error: getApiErrorMessage(error, error.message || t('api.customsNews.refreshError'))
+        error: getApiErrorMessage(error, t('api.customsNews.refreshError'))
       };
     }
   }

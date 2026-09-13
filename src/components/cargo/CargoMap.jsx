@@ -85,7 +85,9 @@ export default function CargoMap({
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     } catch (e) {
-      setError(e.message || t('cargoTracking.map.loadError'));
+      // MapLibre'nin hata metni İngilizce ve teknik (WebGL vb.); kullanıcıya çevrili metin, ayrıntı konsola
+      console.warn('[CargoMap] map init failed:', e?.message);
+      setError(t('cargoTracking.map.loadError'));
       return undefined;
     }
 
@@ -139,10 +141,10 @@ export default function CargoMap({
 
     map.on('error', (e) => {
       // Tile-fetch failures (network, key expired, etc) show through here —
-      // we leak just enough to the user so they know it's the map, not the
-      // data.
-      const msg = e?.error?.message || t('cargoTracking.map.sourceError');
-      setError(msg);
+      // the translated text tells the user it's the map, not the data; the
+      // raw provider message goes to the console only.
+      console.warn('[CargoMap] map error:', e?.error?.message);
+      setError(t('cargoTracking.map.sourceError'));
     });
 
     return () => {
