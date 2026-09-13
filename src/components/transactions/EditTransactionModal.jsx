@@ -7,6 +7,7 @@ import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "..
 import { handleError, handleApiResponse, logError } from "../../utils/errorUtils";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { t, getCurrentLocale } from "../../locales";
+import { formatLocaleNumber, parseLocaleNumber, toEditableNumber } from "../../utils/numberInput";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
@@ -552,24 +553,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   };
 
-  // Number formatlama yardımcı fonksiyonları
-  const formatNumber = (value, decimals = 2) => {
-    if (!value || value === "") return "";
-    const num = typeof value === "string" ? parseFloat(value) : value;
-    if (isNaN(num)) return "";
-    return num.toLocaleString(locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
-  };
-
-  const parseFormattedNumber = (formattedValue) => {
-    if (!formattedValue || formattedValue === "") return "";
-    // Türkçe formatı parse et: . binlik ayraç, , ondalık ayraç
-    const cleaned = formattedValue.replace(/\./g, "").replace(",", ".");
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? "" : num;
-  };
+  // Number formatlama yardımcı fonksiyonları — ayraçlar seçili dilden gelir (bkz. utils/numberInput.js)
+  const formatNumber = (value, decimals = 2) => formatLocaleNumber(value, decimals, locale);
+  const parseFormattedNumber = (formattedValue) => parseLocaleNumber(formattedValue, locale);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -618,7 +604,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const handleWeightFocus = () => {
     // onFocus'ta ham değeri göster
     if (formData.weight) {
-      setDisplayWeight(formData.weight.toString());
+      setDisplayWeight(toEditableNumber(formData.weight, locale));
     }
   };
 
@@ -667,7 +653,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const handleTaxFocus = () => {
     // onFocus'ta ham değeri göster
     if (formData.tax) {
-      setDisplayTax(formData.tax.toString());
+      setDisplayTax(toEditableNumber(formData.tax, locale));
     }
   };
 
@@ -716,7 +702,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const handleGuaranteeAmountFocus = () => {
     // onFocus'ta ham değeri göster
     if (formData.guaranteeAmount) {
-      setDisplayGuaranteeAmount(formData.guaranteeAmount.toString());
+      setDisplayGuaranteeAmount(toEditableNumber(formData.guaranteeAmount, locale));
     }
   };
 
