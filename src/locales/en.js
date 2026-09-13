@@ -2641,6 +2641,8 @@ export const en = {
       perCredit: "{{price}} / credit",
       creditsTimesPrice: "{{count}} credit(s) × {{price}}",
       exchangeRate: "TCMB Exchange Rate",
+      rateDate: "Rate date",
+      rateStale: "The TCMB rate hasn't been updated for a while; the price uses the last available rate.",
       total: "Total",
       enterAmount: "Enter the number of credits",
       note: "Note (optional)",

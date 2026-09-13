@@ -1031,6 +1031,19 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
               <span className="text-text-secondary">{t('paymentPage.gRadar.exchangeRate')}</span>
               <span className="text-text-main">1 USD = ₺{Number(quote.exchangeRateTry).toFixed(4)}</span>
             </div>
+            {/* Kurun tarihi: TCMB yayın tarihi, yoksa kurun çekildiği an. Eski kur uyarısı sunucunun eşiğiyle gelir (rateStale). */}
+            {(quote.rateSourceDate || quote.tcmbFetchedAt) && (
+              <div className="flex justify-between">
+                <span className="text-text-secondary">{t('paymentPage.gRadar.rateDate')}</span>
+                <span className="text-text-main">{fmt(quote.rateSourceDate || quote.tcmbFetchedAt)}</span>
+              </div>
+            )}
+            {quote.rateStale && (
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 p-2 text-xs text-amber-700 dark:text-amber-300">
+                <span className="material-symbols-outlined text-base">warning</span>
+                <span>{t('paymentPage.gRadar.rateStale')}</span>
+              </div>
+            )}
             <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-2">
               <span className="text-text-main font-semibold">{t('paymentPage.gRadar.total')}</span>
               <span className="text-primary font-bold text-lg">

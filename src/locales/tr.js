@@ -2642,6 +2642,8 @@ export const tr = {
       perCredit: "{{price}} / kredi",
       creditsTimesPrice: "{{count}} kredi × {{price}}",
       exchangeRate: "TCMB Kuru",
+      rateDate: "Kur tarihi",
+      rateStale: "TCMB kuru bir süredir güncellenemedi; fiyat son alınan kurla hesaplanıyor.",
       total: "Toplam",
       enterAmount: "Kredi miktarını girin",
       note: "Not (opsiyonel)",
