@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from 'react-router-dom';
 import { paymentService } from '../../api/paymentService';
 import { gRadarCreditService } from '../../api/gRadarCreditService';
+import { configService } from '../../api/configService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -184,6 +185,12 @@ export default function PaymentSubmitPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !reuploadTargetId) return;
+    const sizeCheck = configService.validateFileSize(file);
+    if (!sizeCheck.valid) {
+      showError(sizeCheck.error);
+      setReuploadTargetId(null);
+      return;
+    }
     const result = await paymentService.replaceReceipt(reuploadTargetId, file);
     if (result.success) {
       showSuccess(t('paymentPage.history.receiptReuploaded'));
@@ -192,6 +199,21 @@ export default function PaymentSubmitPage() {
       showError(result.error || t('api.payment.receiptUploadError'));
     }
     setReuploadTargetId(null);
+  };
+
+  // Dekont seçimi: backend sınırını aşan dosya gönderilmeden reddedilir
+  const handleReceiptChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      const sizeCheck = configService.validateFileSize(file);
+      if (!sizeCheck.valid) {
+        showError(sizeCheck.error);
+        e.target.value = '';
+        setReceipt(null);
+        return;
+      }
+    }
+    setReceipt(file);
   };
 
   const handleSubmit = async (e) => {
@@ -532,7 +554,7 @@ export default function PaymentSubmitPage() {
                             <span className="text-sm font-medium text-text-main">{t('payment.receipt')} <span className="text-text-secondary font-normal">{t('paymentPage.form.receiptHint')}</span></span>
                             <input
                               type="file" accept=".pdf,.png,.jpg,.jpeg"
-                              onChange={e => setReceipt(e.target.files[0])}
+                              onChange={handleReceiptChange}
                               className="text-sm text-text-secondary file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:opacity-80 transition-colors"
                             />
                           </label>

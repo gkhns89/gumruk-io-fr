@@ -125,16 +125,16 @@ export default function EditAgreementModal({
       return;
     }
 
-    // Dosya validasyonu
-    if (uploadConfig) {
-      const validation = configService.validateFile(file, uploadConfig);
-      if (!validation.valid) {
-        // Dosya sessizce temizleniyordu; kullanıcı nedenini görmeli
-        showError(validation.error);
-        e.target.value = ''; // ÖNEMLİ: Input'u temizle
-        setSelectedFile(null);
-        return;
-      }
+    // Dosya validasyonu; ayar henüz gelmediyse en azından backend boyut sınırı denetlenir
+    const validation = uploadConfig
+      ? configService.validateFile(file, uploadConfig)
+      : configService.validateFileSize(file);
+    if (!validation.valid) {
+      // Dosya sessizce temizleniyordu; kullanıcı nedenini görmeli
+      showError(validation.error);
+      e.target.value = ''; // ÖNEMLİ: Input'u temizle
+      setSelectedFile(null);
+      return;
     }
 
     setSelectedFile(file);

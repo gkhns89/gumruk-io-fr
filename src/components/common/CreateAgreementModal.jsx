@@ -93,14 +93,15 @@ const CreateAgreementModal = ({
       return;
     }
 
-    // Dosya validasyonu (uploadConfig yüklenmişse)
-    if (uploadConfig) {
-      const validation = configService.validateFile(file, uploadConfig);
-      if (!validation.valid) {
-        showError(validation.error);
-        e.target.value = ''; // Input'u temizle
-        return;
-      }
+    // Dosya validasyonu; ayar henüz gelmediyse en azından backend boyut sınırı denetlenir
+    const validation = uploadConfig
+      ? configService.validateFile(file, uploadConfig)
+      : configService.validateFileSize(file);
+    if (!validation.valid) {
+      showError(validation.error);
+      e.target.value = ''; // Input'u temizle
+      setFormData(prev => ({ ...prev, document: null }));
+      return;
     }
 
     setFormData(prev => ({ ...prev, document: file }));

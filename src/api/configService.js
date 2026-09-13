@@ -2,6 +2,18 @@ import axiosInstance from './axios';
 import { getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
+// Backend multipart üst sınırı (10 MB). Aşan istek gövdesi tarayıcıda 413 yerine bağlantı sıfırlanması
+// olarak dönebiliyor; bu yüzden her yükleme yolu dosyayı göndermeden önce bu sınırla denetler.
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+// /config/file-upload alınamazsa kullanılan varsayılanlar
+const DEFAULT_UPLOAD_CONFIG = {
+  maxFileSizeMB: 10,
+  maxFileSizeBytes: MAX_UPLOAD_BYTES,
+  allowedExtensions: ['.pdf', '.jpg', '.jpeg', '.png', '.docx'],
+  allowedFormats: '.pdf, .jpg, .jpeg, .png, .docx'
+};
+
 export const configService = {
   // Dosya yükleme konfigürasyonunu getir
   getFileUploadConfig: async () => {
@@ -16,22 +28,18 @@ export const configService = {
         success: false,
         error: getApiErrorMessage(error, t('api.file.configError')),
         // Fallback default değerler
-        data: {
-          maxFileSizeMB: 10,
-          maxFileSizeBytes: 10485760,
-          allowedExtensions: ['.pdf', '.jpg', '.jpeg', '.png', '.docx'],
-          allowedFormats: '.pdf, .jpg, .jpeg, .png, .docx'
-        }
+        data: DEFAULT_UPLOAD_CONFIG
       };
     }
   },
 
-  // Dosya boyutu kontrolü
-  validateFileSize: (file, maxSizeBytes) => {
+  // Dosya boyutu kontrolü — sınır verilmezse ya da backend limitinden büyükse MAX_UPLOAD_BYTES geçerli
+  validateFileSize: (file, maxSizeBytes = MAX_UPLOAD_BYTES) => {
     if (!file) return { valid: false, error: t('api.file.notSelected') };
 
-    if (file.size > maxSizeBytes) {
-      const maxSizeMB = (maxSizeBytes / (1024 * 1024)).toFixed(2);
+    const limitBytes = Math.min(maxSizeBytes || MAX_UPLOAD_BYTES, MAX_UPLOAD_BYTES);
+    if (file.size > limitBytes) {
+      const maxSizeMB = (limitBytes / (1024 * 1024)).toFixed(2);
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return {
         valid: false,
