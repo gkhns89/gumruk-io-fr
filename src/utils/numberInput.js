@@ -24,11 +24,21 @@ export const getNumberSeparators = (locale = getCurrentLocale()) => {
 /**
  * Kullanıcının yazdığı metni sayıya çevirir; boş ya da sayı olmayan girdide `""` döner.
  * Binlik ayraçlar atılır, ilk ondalık ayraç "." olur, kalanını `parseFloat` okur ("12abc" → 12).
+ *
+ * Metinde hem "." hem "," varsa dilden bağımsız olarak EN SAĞDAKİ ondalık, diğeri binlik sayılır;
+ * böylece öteki biçimde yapıştırılan tutar da doğru okunur. Tek tür ayraç varsa dilin kuralı geçerli.
+ *   tr: "1.234,56" → 1234.56   "1,234.56" → 1234.56   "1234,56" → 1234.56   "1234.56" → 123456
+ *   en: "1,234.56" → 1234.56   "1.234,56" → 1234.56   "1234.56" → 1234.56   "1234,56" → 123456
  */
 export const parseLocaleNumber = (text, locale = getCurrentLocale()) => {
   if (!text || text === '') return '';
-  const { group, decimal } = getNumberSeparators(locale);
-  const withoutGroups = group ? String(text).split(group).join('') : String(text);
+  const value = String(text);
+  const lastDot = value.lastIndexOf('.');
+  const lastComma = value.lastIndexOf(',');
+  const { group, decimal } = lastDot !== -1 && lastComma !== -1
+    ? (lastDot > lastComma ? { group: ',', decimal: '.' } : { group: '.', decimal: ',' })
+    : getNumberSeparators(locale);
+  const withoutGroups = group ? value.split(group).join('') : value;
   const num = parseFloat(withoutGroups.replace(decimal, '.'));
   return Number.isNaN(num) ? '' : num;
 };
