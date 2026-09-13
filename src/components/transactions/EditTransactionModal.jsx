@@ -1650,7 +1650,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    {t('transaction.customsName')}
+                    {t('transaction.customsName')} *
                     {!isReadOnly && loadingCustoms && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
                         {t('common.loading')}
@@ -1821,7 +1821,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between pb-2">
                   <p className="text-text-main text-sm font-medium">
-                    {t('transaction.customsWarehouse')}
+                    {t('transaction.customsWarehouse')} *
                     {!isFieldLocked && loadingWarehouses && (
                       <span className="text-xs text-blue-600 ml-2 animate-pulse">
                         {t('common.loading')}
@@ -2023,7 +2023,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               {/* Kap */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.containerAmount')}
+                  {t('transaction.containerAmount')} *
                 </p>
                 <input
                   type="number"
@@ -2056,7 +2056,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               {/* Kilo */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.weight')}
+                  {t('transaction.weight')} *
                 </p>
                 <input
                   type="text"
@@ -2398,7 +2398,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               {/* Hat - Combobox (constants'dan alınıyor) */}
               <label className="flex flex-col w-full">
                 <p className="text-text-main text-sm font-medium pb-2">
-                  {t('transaction.gate')}
+                  {t('transaction.gate')} *
                 </p>
                 <select
                   name="gate"
@@ -2446,7 +2446,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   {/* Antrepo Varış Tarihi */}
                   <label className="flex flex-col w-full">
                     <p className="text-text-main text-sm font-medium pb-2">
-                      {t('transaction.warehouseArrivalDate')}
+                      {t('transaction.warehouseArrivalDate')} *
                     </p>
                     <input
                       type="date"
