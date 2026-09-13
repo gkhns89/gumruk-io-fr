@@ -100,6 +100,16 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Sunucu hata/doğrulama/başarı metinlerini bu dilde üretir (Accept-Language: tr|en). Bu modül giriş paketinde:
+    // sözlük import edilmez, seçim doğrudan localStorage'dan okunur (src/locales/index.js ile aynı anahtar).
+    let language = "tr";
+    try {
+      language = localStorage.getItem("language") === "en" ? "en" : "tr";
+    } catch {
+      // localStorage erişilemezse varsayılan Türkçe
+    }
+    config.headers["Accept-Language"] = language;
+
     return config;
   },
   (error) => {
