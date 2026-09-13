@@ -126,25 +126,25 @@ const SessionManagement = () => {
         bg: 'bg-red-100 dark:bg-red-900/30',
         text: 'text-red-800 dark:text-red-300',
         border: 'border-red-300 dark:border-red-700',
-        label: t('sessions.roles.SUPER_ADMIN')
+        label: t('roles.superAdmin')
       },
       BROKER_ADMIN: {
         bg: 'bg-purple-100 dark:bg-purple-900/30',
         text: 'text-purple-800 dark:text-purple-300',
         border: 'border-purple-300 dark:border-purple-700',
-        label: t('sessions.roles.BROKER_ADMIN')
+        label: t('roles.brokerAdmin')
       },
       BROKER_USER: {
         bg: 'bg-blue-100 dark:bg-blue-900/30',
         text: 'text-blue-800 dark:text-blue-300',
         border: 'border-blue-300 dark:border-blue-700',
-        label: t('sessions.roles.BROKER_USER')
+        label: t('roles.brokerUser')
       },
       CLIENT_USER: {
         bg: 'bg-green-100 dark:bg-green-900/30',
         text: 'text-green-800 dark:text-green-300',
         border: 'border-green-300 dark:border-green-700',
-        label: t('sessions.roles.CLIENT_USER')
+        label: t('roles.clientUser')
       }
     };
     return badges[role] || {
@@ -333,10 +333,10 @@ const SessionManagement = () => {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors"
                   >
                     <option value="ALL">{t('management.all')}</option>
-                    <option value="SUPER_ADMIN">{t('sessions.roles.SUPER_ADMIN')}</option>
-                    <option value="BROKER_ADMIN">{t('sessions.roles.BROKER_ADMIN')}</option>
-                    <option value="BROKER_USER">{t('sessions.roles.BROKER_USER')}</option>
-                    <option value="CLIENT_USER">{t('sessions.roles.CLIENT_USER')}</option>
+                    <option value="SUPER_ADMIN">{t('roles.superAdmin')}</option>
+                    <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
+                    <option value="BROKER_USER">{t('roles.brokerUser')}</option>
+                    <option value="CLIENT_USER">{t('roles.clientUser')}</option>
                   </select>
                 </div>
 

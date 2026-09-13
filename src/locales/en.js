@@ -2513,13 +2513,6 @@ export const en = {
     roleFilter: "Filter by Role",
     ipFilter: "Filter by IP Address",
     ipPlaceholder: "Filter by IP address...",
-    // Role badge and filter options
-    roles: {
-      SUPER_ADMIN: "Super Admin",
-      BROKER_ADMIN: "Broker Admin",
-      BROKER_USER: "Broker User",
-      CLIENT_USER: "Client User",
-    },
     empty: "No active sessions yet",
     emptyHint: "Users will appear here as they sign in",
     emptyFiltered: "No sessions match the filters",
