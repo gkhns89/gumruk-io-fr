@@ -22,6 +22,28 @@ import { t, getCurrentLocale } from '../../locales';
 const ACTION_BASE = 'inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 const SELECT_CLASS = 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-colors';
 
+// Liste tüm geçmişi indirmesin: plannedAt için önce son 30 gün, sonra 90 gün, sonra tümü (null).
+// Açık gönderiler (PLANNED / IN_TRANSIT) pencereden bağımsız ayrıca çekilir; "Bugün"deki eski
+// açık gönderiler ve yaklaşanlar hiç kaybolmaz, pencere yalnızca eski kapanmış gönderileri keser.
+const HISTORY_WINDOWS = [30, 90, null];
+const OPEN_STATUSES = ['PLANNED', 'IN_TRANSIT'];
+const WINDOWED_TABS = ['completed', 'cancelled'];
+
+// Yerel günün başından `days` gün öncesi, UTC ISO (`...Z`) — backend `from` dahil
+const windowStart = (days) => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - days).toISOString();
+};
+
+// Pencere ve açık-durum yanıtlarını id'ye göre tekilleştirir (sıralamayı groupShipments yapar)
+const mergeShipments = (lists) => {
+  const byId = new Map();
+  lists.flat().forEach((shipment) => {
+    if (shipment && !byId.has(shipment.id)) byId.set(shipment.id, shipment);
+  });
+  return [...byId.values()];
+};
+
 // Filtre seçenekleri: kayıtlı listeler + gönderilerde geçenler (sözleşmesi biten müşteri, silinen kurye); id'ye göre tekil
 const mergeOptions = (...lists) => {
   const byId = new Map();
@@ -59,6 +81,8 @@ export default function CourierShipmentsPage() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const requestRef = useRef(0);
+  const [windowIndex, setWindowIndex] = useState(0);
+  const windowDays = HISTORY_WINDOWS[windowIndex];
 
   const [couriers, setCouriers] = useState([]);
   const [couriersLoading, setCouriersLoading] = useState(false);
@@ -99,12 +123,20 @@ export default function CourierShipmentsPage() {
     }
     setLoading(true);
     setLoadError('');
-    const result = await courierShipmentService.getShipments(isSuperAdmin ? { brokerCompanyId } : {});
-    if (requestId !== requestRef.current) return; // broker değişti, eski yanıt
-    setShipments(result.success ? result.data : []);
-    setLoadError(result.success ? '' : result.error);
+    const base = isSuperAdmin ? { brokerCompanyId } : {};
+    const requests = windowDays == null
+      ? [courierShipmentService.getShipments(base)]
+      : [
+        courierShipmentService.getShipments({ ...base, from: windowStart(windowDays) }),
+        ...OPEN_STATUSES.map((status) => courierShipmentService.getShipments({ ...base, status })),
+      ];
+    const results = await Promise.all(requests);
+    if (requestId !== requestRef.current) return; // broker ya da pencere değişti, eski yanıt
+    const failed = results.find((result) => !result.success);
+    setShipments(failed ? [] : mergeShipments(results.map((result) => result.data)));
+    setLoadError(failed ? failed.error : '');
     setLoading(false);
-  }, [brokerCompanyId, isSuperAdmin]);
+  }, [brokerCompanyId, isSuperAdmin, windowDays]);
 
   useEffect(() => {
     loadShipments();
@@ -347,6 +379,7 @@ export default function CourierShipmentsPage() {
                     setClientFilter('');
                     setCourierFilter('');
                     setTab('today');
+                    setWindowIndex(0);
                   }}
                   className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-text-main transition-colors appearance-none cursor-pointer"
                 >
@@ -459,6 +492,28 @@ export default function CourierShipmentsPage() {
                   />
                 ))}
               </ul>
+            )}
+
+            {/* Tarih penceresi — yalnızca pencerenin kestiği sekmelerde */}
+            {!loadError && WINDOWED_TABS.includes(tab) && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-text-secondary text-center">
+                <span>
+                  {windowDays == null
+                    ? t('courierShipments.dateWindow.all')
+                    : t('courierShipments.dateWindow.lastDays', { days: windowDays })}
+                </span>
+                {windowIndex < HISTORY_WINDOWS.length - 1 && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setWindowIndex((index) => Math.min(index + 1, HISTORY_WINDOWS.length - 1))}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base">history</span>
+                    {t('courierShipments.dateWindow.showOlder')}
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}

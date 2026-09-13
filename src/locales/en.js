@@ -1833,6 +1833,12 @@ export const en = {
     overdue: "Overdue",
     noCourier: "No courier assigned",
     emptyHint: "Use \"New Shipment\" to plan one",
+    // List date window — open shipments always load, older closed ones on request
+    dateWindow: {
+      lastDays: "Completed and cancelled shipments older than {{days}} days are hidden",
+      all: "Showing all shipments",
+      showOlder: "Show older shipments",
+    },
     // SHIPMENT_STATUSES — PICKED_UP is how DELIVERED reads for a pickup
     status: {
       PLANNED: "Planned",

@@ -1836,6 +1836,12 @@ export const tr = {
     overdue: "Gecikti",
     noCourier: "Kurye atanmamış",
     emptyHint: "Yeni bir gönderi planlamak için \"Yeni Gönderi\" düğmesini kullanın",
+    // Liste tarih penceresi — açık gönderiler her zaman gelir, eski kapanmışlar isteğe bağlı
+    dateWindow: {
+      lastDays: "{{days}} günden eski tamamlanan ve iptal edilen gönderiler gizli",
+      all: "Tüm gönderiler gösteriliyor",
+      showOlder: "Daha eski gönderileri göster",
+    },
     // SHIPMENT_STATUSES — PICKED_UP, müşteriden alımda DELIVERED'ın okunuşu
     status: {
       PLANNED: "Planlandı",
