@@ -13,7 +13,10 @@ import ShipmentListItem from '../../components/courierShipments/ShipmentListItem
 import ShipmentDetailModal from '../../components/courierShipments/ShipmentDetailModal';
 import ShipmentFormModal from '../../components/courierShipments/ShipmentFormModal';
 import ShipmentStatusFields from '../../components/courierShipments/ShipmentStatusFields';
-import { BROKER_TABS, companyLabel, groupShipments } from '../../components/courierShipments/shipmentUtils';
+import ShipmentDateWindow from '../../components/courierShipments/ShipmentDateWindow';
+import {
+  BROKER_TABS, HISTORY_WINDOWS, WINDOWED_TABS, companyLabel, groupShipments, windowStartDate,
+} from '../../components/courierShipments/shipmentUtils';
 import { FEATURE_FLAGS } from '../../utils/featureFlags';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -22,18 +25,13 @@ import { t, getCurrentLocale } from '../../locales';
 const ACTION_BASE = 'inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 const SELECT_CLASS = 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-colors';
 
-// Liste tüm geçmişi indirmesin: plannedAt için önce son 30 gün, sonra 90 gün, sonra tümü (null).
+// Liste tüm geçmişi indirmesin: plannedAt için HISTORY_WINDOWS penceresi (30 → 90 gün → tümü) sunucuda uygulanır.
 // Açık gönderiler (PLANNED / IN_TRANSIT) pencereden bağımsız ayrıca çekilir; "Bugün"deki eski
 // açık gönderiler ve yaklaşanlar hiç kaybolmaz, pencere yalnızca eski kapanmış gönderileri keser.
-const HISTORY_WINDOWS = [30, 90, null];
 const OPEN_STATUSES = ['PLANNED', 'IN_TRANSIT'];
-const WINDOWED_TABS = ['completed', 'cancelled'];
 
 // Yerel günün başından `days` gün öncesi, UTC ISO (`...Z`) — backend `from` dahil
-const windowStart = (days) => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - days).toISOString();
-};
+const windowStart = (days) => windowStartDate(days).toISOString();
 
 // Pencere ve açık-durum yanıtlarını id'ye göre tekilleştirir (sıralamayı groupShipments yapar)
 const mergeShipments = (lists) => {
@@ -496,24 +494,12 @@ export default function CourierShipmentsPage() {
 
             {/* Tarih penceresi — yalnızca pencerenin kestiği sekmelerde */}
             {!loadError && WINDOWED_TABS.includes(tab) && (
-              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-text-secondary text-center">
-                <span>
-                  {windowDays == null
-                    ? t('courierShipments.dateWindow.all')
-                    : t('courierShipments.dateWindow.lastDays', { days: windowDays })}
-                </span>
-                {windowIndex < HISTORY_WINDOWS.length - 1 && (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => setWindowIndex((index) => Math.min(index + 1, HISTORY_WINDOWS.length - 1))}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base">history</span>
-                    {t('courierShipments.dateWindow.showOlder')}
-                  </button>
-                )}
-              </div>
+              <ShipmentDateWindow
+                windowDays={windowDays}
+                canShowOlder={windowIndex < HISTORY_WINDOWS.length - 1}
+                disabled={loading}
+                onShowOlder={() => setWindowIndex((index) => Math.min(index + 1, HISTORY_WINDOWS.length - 1))}
+              />
             )}
           </>
         )}

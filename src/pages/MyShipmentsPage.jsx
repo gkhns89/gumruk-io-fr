@@ -7,13 +7,19 @@ import NewFeatureBadge from '../components/common/NewFeatureBadge';
 import ShipmentTabs from '../components/courierShipments/ShipmentTabs';
 import ShipmentListItem from '../components/courierShipments/ShipmentListItem';
 import ShipmentDetailModal from '../components/courierShipments/ShipmentDetailModal';
-import { CLIENT_TABS, groupShipments } from '../components/courierShipments/shipmentUtils';
+import ShipmentDateWindow from '../components/courierShipments/ShipmentDateWindow';
+import {
+  CLIENT_TABS, HISTORY_WINDOWS, WINDOWED_TABS, groupShipments, isWithinHistoryWindow,
+} from '../components/courierShipments/shipmentUtils';
 import { FEATURE_FLAGS } from '../utils/featureFlags';
 import { t } from '../locales';
 
 /**
  * Müşterinin kurye gönderileri (CLIENT_USER) — salt okunur: iç notlar ve işlem düğmeleri yok.
  * Bildirimden gelinirse `location.state.shipmentId` gönderinin detayını açar.
+ *
+ * `/courier-shipments/my` yalnızca `status` alır, tarih penceresi yok: liste tek istekte gelir ve
+ * tamamlanan / iptal sekmeleri tarayıcıda HISTORY_WINDOWS ile (30 → 90 gün → tümü) kısaltılır.
  */
 export default function MyShipmentsPage() {
   const location = useLocation();
@@ -25,6 +31,8 @@ export default function MyShipmentsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [tab, setTab] = useState(null); // null: yoldaki varsa "Yolda", yoksa "Yaklaşan"
+  const [windowIndex, setWindowIndex] = useState(0);
+  const windowDays = HISTORY_WINDOWS[windowIndex];
   const [detail, setDetail] = useState(null);
 
   const loadShipments = useCallback(async () => {
@@ -55,10 +63,15 @@ export default function MyShipmentsPage() {
     navigate(location.pathname, { replace: true, state: null });
   }, [pendingShipmentId, openDetail, navigate, location.pathname]);
 
-  const groups = groupShipments(shipments, CLIENT_TABS);
+  const now = new Date();
+  const inWindow = shipments.filter((shipment) => isWithinHistoryWindow(shipment, windowDays, now));
+  const groups = groupShipments(inWindow, CLIENT_TABS, now);
   const counts = Object.fromEntries(CLIENT_TABS.map((key) => [key, groups[key].length]));
   const activeTab = tab ?? (groups.inTransit.length > 0 ? 'inTransit' : 'upcoming');
   const visible = groups[activeTab] || [];
+  // Sayfa tüm listeyi zaten tuttuğu için düğme yalnızca bu sekmede gerçekten gizli gönderi varken çıkar
+  const hiddenInTab = WINDOWED_TABS.includes(activeTab)
+    && groupShipments(shipments, CLIENT_TABS, now)[activeTab].length > visible.length;
 
   return (
     <MainLayout>
@@ -106,6 +119,15 @@ export default function MyShipmentsPage() {
               />
             ))}
           </ul>
+        )}
+
+        {/* Tarih penceresi — yalnızca pencerenin kestiği sekmelerde */}
+        {!loading && !loadError && WINDOWED_TABS.includes(activeTab) && (
+          <ShipmentDateWindow
+            windowDays={windowDays}
+            canShowOlder={hiddenInTab && windowIndex < HISTORY_WINDOWS.length - 1}
+            onShowOlder={() => setWindowIndex((index) => Math.min(index + 1, HISTORY_WINDOWS.length - 1))}
+          />
         )}
       </div>
 

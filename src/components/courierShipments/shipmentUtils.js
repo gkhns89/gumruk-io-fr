@@ -70,6 +70,23 @@ const plannedTime = (shipment) => toDate(shipment.plannedAt)?.getTime() ?? 0;
 const closedTime = (shipment) =>
   toDate(shipment.completedAt || shipment.cancelledAt || shipment.updatedAt || shipment.plannedAt)?.getTime() ?? 0;
 
+// Liste penceresi: kapanmış gönderiler için önce son 30 gün, sonra 90 gün, sonra tümü (null).
+// Açık gönderiler (PLANNED / IN_TRANSIT) pencereden etkilenmez; pencere yalnızca bu sekmeleri keser.
+export const HISTORY_WINDOWS = [30, 90, null];
+export const WINDOWED_TABS = ['completed', 'cancelled'];
+
+/** Yerel günün başından `days` gün öncesi */
+export const windowStartDate = (days, now = new Date()) => addDays(now, -days);
+
+/**
+ * Gönderi `days` günlük pencerede mi? Açık gönderi ve `days == null` her zaman evet; kapanmış gönderide
+ * planlanan ya da kapanma zamanından biri pencere içindeyse evet (geç kapanan eski plan kaybolmaz).
+ */
+export const isWithinHistoryWindow = (shipment, days, now = new Date()) => {
+  if (days == null || shipment.status === 'PLANNED' || shipment.status === 'IN_TRANSIT') return true;
+  return Math.max(plannedTime(shipment), closedTime(shipment)) >= windowStartDate(days, now).getTime();
+};
+
 /** Planlanan saati geçmiş ama henüz yola çıkmamış */
 export const isOverdueShipment = (shipment, now = new Date()) =>
   shipment.status === 'PLANNED' && plannedTime(shipment) < now.getTime();
