@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import PaymentWarningModal from "./components/payment/PaymentWarningModal";
 import { useAuth } from "./hooks/useAuth";
+import { t } from "./locales/runtime";
 
 /**
  * TÜM sayfalar rota bazında ayrı chunk'a alınıyor.
@@ -46,13 +47,32 @@ const PlanManagementPage = lazy(() => import("./pages/management/PlanManagementP
 const FeedbackTasksPage = lazy(() => import("./pages/management/FeedbackTasksPage"));
 const FeatureFlagsPage = lazy(() => import("./pages/management/FeatureFlagsPage"));
 
-/** Chunk inerken gösterilen ekran — tema rengine uyar, ani beyaz parlama olmaz */
-function RouteFallback() {
+/**
+ * Ekran okuyucu etiketi. Bu ekranlar sözlükler yüklenmeden çizilebilir; runtime `t` o anda anahtarın
+ * kendisini döndürür, bu yüzden kayıtlı dil tercihine göre sabit bir etikete düşülür.
+ */
+function getLoadingLabel() {
+  const label = t("common.loading");
+  if (label !== "common.loading") return label;
+  try {
+    return localStorage.getItem("language") === "en" ? "Loading..." : "Yükleniyor...";
+  } catch {
+    return "Yükleniyor...";
+  }
+}
+
+/** Görünür metni olmayan yükleme göstergesi — sözlük yüklenmeden de dil karışmaz */
+function LoadingSpinner({ className = "" }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-brand-navy">
-      <p className="text-text-secondary">Yükleniyor...</p>
+    <div role="status" aria-label={getLoadingLabel()} className={`flex min-h-screen items-center justify-center ${className}`}>
+      <span aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
   );
+}
+
+/** Chunk inerken gösterilen ekran — tema rengine uyar, ani beyaz parlama olmaz */
+function RouteFallback() {
+  return <LoadingSpinner className="bg-white dark:bg-brand-navy" />;
 }
 
 // Protected Route Component with Role Support
@@ -60,11 +80,7 @@ function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Yükleniyor...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!isAuthenticated) {
@@ -88,11 +104,7 @@ function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Yükleniyor...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
   
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
