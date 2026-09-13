@@ -23,6 +23,22 @@ const SENSITIVE_KEYWORDS = [
   'jwt'
 ];
 
+// Kullanıcıya gösterilecek metinde hassas sayılan biçimler. Kelimenin kendisi ("Incorrect email or password",
+// "Oturumunuz sona erdi", "API token en fazla 1024 karakter") kullanıcı metninde geçer; hassas olan değer taşıyan
+// biçimdir. (Yukarıdaki kelime listesi yalnızca production konsol logu için, orada temkinli kalıyor.)
+const SENSITIVE_PATTERNS = [
+  /\b(password|passwd|pwd|token|secret|api[_-]?key|authorization|credential|passphrase|cookie|jwt|session[_-]?id)\b\s*[:=]/i,
+  /\bbearer\s+[a-z0-9._~+/-]{10,}/i,
+  /\beyJ[a-zA-Z0-9_-]{8,}\.[a-zA-Z0-9_-]{8,}/, // JWT
+];
+
+// Stack trace izleri: "at com.example.Foo.bar(Foo.java:12)" satırı ya da "IllegalStateException:" / "TypeError:" biçimi.
+// Eskiden metinde "at " aranıyordu; "that", "at most", "Hat zorunludur", "saat" gibi sıradan metinleri de yutuyordu.
+const STACK_TRACE_PATTERNS = [
+  /(^|\n)\s*at\s+[\w$.<>[\]]+\s*\(/,
+  /\b\w*(Error|Exception):/,
+];
+
 // Sunucunun `error` alanına koyduğu makine kodları (örn. PAYMENT_RESTRICTION) — kullanıcı metni değil.
 const ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9_]+$/;
 
@@ -83,19 +99,13 @@ export const sanitizeError = (error) => {
     errorMessage = t('api.errors.unexpected');
   }
 
-  // Hassas anahtar kelimeleri kontrol et
-  const lowerCaseMessage = errorMessage.toLowerCase();
-  const containsSensitiveInfo = SENSITIVE_KEYWORDS.some(keyword =>
-    lowerCaseMessage.includes(keyword)
-  );
-
-  // Hassas bilgi içeriyorsa genel bir mesaj döndür
-  if (containsSensitiveInfo) {
+  // Hassas bilgi (değer taşıyan biçim) içeriyorsa genel bir mesaj döndür
+  if (SENSITIVE_PATTERNS.some((pattern) => pattern.test(errorMessage))) {
     return t('api.errors.tryLater');
   }
 
   // Stack trace içeriyorsa temizle
-  if (errorMessage.includes('at ') || errorMessage.includes('Error:')) {
+  if (STACK_TRACE_PATTERNS.some((pattern) => pattern.test(errorMessage))) {
     return t('api.errors.tryLater');
   }
 
