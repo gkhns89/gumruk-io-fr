@@ -17,6 +17,13 @@ import CreateAgreementModal from '../common/CreateAgreementModal';
 import AddClientModal from '../common/AddClientModal';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
+// Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
+// hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
+const PRESENCE_ERROR_KEYS = [
+  "brokerCompany", "clientCompany", "fileNo", "customsId", "customsWarehouse", "containerAmount",
+  "gate", "weight", "tax", "guaranteeAmount", "senderName",
+];
+
 export default function AddTransactionModal({
   onClose,
   onSuccess,
@@ -474,7 +481,7 @@ export default function AddTransactionModal({
 
   // Clear general error message when all field errors are resolved
   useEffect(() => {
-    if (Object.keys(fieldErrors).length === 0 && error) {
+    if (!Object.values(fieldErrors).some(Boolean) && error) {
       setError("");
     }
   }, [fieldErrors]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -982,8 +989,7 @@ export default function AddTransactionModal({
       errors.declarationNumber = t("transactions.validation.declarationNumberLength");
     }
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   const handleSubmit = async (e) => {
@@ -991,15 +997,22 @@ export default function AddTransactionModal({
     setLoading(true);
     setError("");
 
-    // Validate required fields first
-    if (!validateRequiredFields()) {
+    // Temizlenen hatalar state'te null olarak kalıyor: yalnızca dolu mesajlar sayılır. Girilirken oluşan hatalar
+    // (tarih sırası, gecikme nedeni) korunur; zorunluluk hataları her kaydette yeniden hesaplanır.
+    const requiredErrors = validateRequiredFields();
+    const pendingErrors = Object.fromEntries(
+      Object.entries(fieldErrors).filter(([key, message]) => message && !PRESENCE_ERROR_KEYS.includes(key))
+    );
+
+    if (Object.keys(requiredErrors).length > 0) {
+      setFieldErrors({ ...pendingErrors, ...requiredErrors });
       setLoading(false);
       showError(t("transactions.form.fillRequired"));
       return;
     }
 
-    // Check if there are any field-level validation errors
-    if (Object.keys(fieldErrors).length > 0) {
+    setFieldErrors(pendingErrors);
+    if (Object.keys(pendingErrors).length > 0) {
       setLoading(false);
       showError(t("transactions.form.fixErrors"));
       return;

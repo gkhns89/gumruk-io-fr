@@ -11,6 +11,13 @@ import { formatLocaleNumber, parseLocaleNumber, toEditableNumber } from "../../u
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 
+// Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
+// hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
+const PRESENCE_ERROR_KEYS = [
+  "brokerCompany", "clientCompany", "fileNo", "customsId", "customsWarehouse", "containerAmount",
+  "gate", "weight", "tax", "guaranteeAmount", "senderName",
+];
+
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
 
@@ -231,8 +238,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Broker değiştiğinde client'ları yükle (SUPER_ADMIN için)
+  // Broker değiştiğinde client'ları yükle (SUPER_ADMIN için). Açılışta çalışmaz: kayıtlı müşteri firması silinmesin,
+  // mevcut broker'ın client'larını yukarıdaki etki zaten yüklüyor.
+  const previousBrokerIdRef = useRef(formData.brokerCompanyId);
   useEffect(() => {
+    if (previousBrokerIdRef.current === formData.brokerCompanyId) return;
+    previousBrokerIdRef.current = formData.brokerCompanyId;
     if (isSuperAdmin && formData.brokerCompanyId) {
       loadClientCompanies(formData.brokerCompanyId);
       // Client seçimini temizle
@@ -436,7 +447,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
   // Clear general error message when all field errors are resolved
   useEffect(() => {
-    if (Object.keys(fieldErrors).length === 0 && error) {
+    if (!Object.values(fieldErrors).some(Boolean) && error) {
       setError("");
     }
   }, [fieldErrors]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1009,8 +1020,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       }
     }
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   const handleSubmit = async (e) => {
@@ -1020,15 +1030,22 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     setLoading(true);
     setError("");
 
-    // Validate required fields first
-    if (!validateRequiredFields()) {
+    // Temizlenen hatalar state'te null olarak kalıyor: yalnızca dolu mesajlar sayılır. Girilirken oluşan hatalar
+    // (tarih sırası, gecikme nedeni) korunur; zorunluluk hataları her kaydette yeniden hesaplanır.
+    const requiredErrors = validateRequiredFields();
+    const pendingErrors = Object.fromEntries(
+      Object.entries(fieldErrors).filter(([key, message]) => message && !PRESENCE_ERROR_KEYS.includes(key))
+    );
+
+    if (Object.keys(requiredErrors).length > 0) {
+      setFieldErrors({ ...pendingErrors, ...requiredErrors });
       setLoading(false);
       showError(t("transactions.form.fillRequired"));
       return;
     }
 
-    // Check if there are any field-level validation errors
-    if (Object.keys(fieldErrors).length > 0) {
+    setFieldErrors(pendingErrors);
+    if (Object.keys(pendingErrors).length > 0) {
       setLoading(false);
       showError(t("transactions.form.fixErrors"));
       return;
@@ -1125,7 +1142,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         // Use requestAnimationFrame to wait for all renders to complete
         requestAnimationFrame(() => {
           if (modalRef.current) {
-            const firstInput = modalRef.current.querySelector('input:not([disabled])');
+            // Açılır liste input'ları odaklanınca listeyi açıyor: düzenleme açılırken liste açılmasın, ilk düz alana odaklan
+            const firstInput = [...modalRef.current.querySelectorAll('input:not([disabled])')]
+              .find((input) => !input.closest('[id$="-dropdown-container"]'));
             if (firstInput) {
               firstInput.focus();
             }
@@ -1658,7 +1677,6 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                   <div className="relative" id="edit-customs-dropdown-container">
                     <div className="relative">
                       <input
-                        autoFocus={!isReadOnly}
                         type="text"
                         value={customsSearchTerm}
                         onChange={(e) => {
