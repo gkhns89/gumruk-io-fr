@@ -15,6 +15,10 @@ const getGateBadge = (gate) => {
   return badgeStyles[gate] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
 };
 
+// Hat değeri API'de Türkçe sabit (SARI/KIRMIZI); görünen etiket sözlükten gelir. Bilinmeyen değer olduğu gibi gösterilir.
+const GATE_LABEL_KEYS = { SARI: 'gates.yellow', KIRMIZI: 'gates.red' };
+const gateLabelOf = (gate) => (GATE_LABEL_KEYS[gate] ? t(GATE_LABEL_KEYS[gate]) : gate);
+
 export default function TransactionDetailModal({ transaction, onClose, onEdit }) {
   const contentRef = useRef(null);
   const [copying, setCopying] = useState(false);
@@ -215,7 +219,7 @@ export default function TransactionDetailModal({ transaction, onClose, onEdit })
                   </span>
                   {transaction.gate && (
                     <span className={`px-3 py-0.5 text-xs font-semibold rounded-full ${gateBadgeClass}`}>
-                      {transaction.gate}
+                      {gateLabelOf(transaction.gate)}
                     </span>
                   )}
                 </div>
