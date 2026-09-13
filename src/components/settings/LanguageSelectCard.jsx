@@ -1,12 +1,8 @@
-import { useAuth } from '../../hooks/useAuth';
 import { t, getCurrentLanguage, getSupportedLanguages, setLanguage } from '../../locales';
 
-// Arayüz dili seçimi. Çeviri tamamlanana kadar yalnızca SUPER_ADMIN görür: müşteriler yarı
-// İngilizce bir arayüzle karşılaşmasın. Çeviri bitince bu koşul kaldırılmalı.
+// Arayüz dili seçimi — tüm kullanıcılar (13.09.2026'da SUPER_ADMIN kısıtı kaldırıldı).
+// Sunucudan gelen hata ve bildirim metinleri şimdilik Türkçe kalır; kartın alt notu bunu söyler.
 export default function LanguageSelectCard() {
-  const { user } = useAuth();
-  if (user?.globalRole !== 'SUPER_ADMIN') return null;
-
   const current = getCurrentLanguage();
 
   return (

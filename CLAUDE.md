@@ -210,9 +210,9 @@ the choice lives in `localStorage` under `language`. The rules:
   `MANAGEMENT_ITEMS`) for both `Sidebar` and `MobileMenu`.
 - Format dates and numbers with `getCurrentLocale()`, not a hard-coded `'tr-TR'` (many old
   call sites still have it).
-- The language picker (`LanguageSelectCard` on the profile page) is **SUPER_ADMIN-only**
-  until translation is complete, so customers never see a half-English app. Text produced by
-  the backend (error messages, notification titles) is still Turkish.
+- The language picker (`LanguageSelectCard` on the profile page) is **open to every user** since
+  13.09.2026 — every screen is translated, so new UI text must never be added as a literal. Text
+  produced by the backend (error messages, notification titles) is still Turkish.
 
 **Icons are Material Symbols ligatures** (`<span className="material-symbols-outlined">home</span>`),
 which browser translation extensions will happily translate into broken text. The

@@ -309,7 +309,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Dil seçimi — şimdilik yalnızca SUPER_ADMIN (bileşen kendisi kontrol ediyor) */}
+            {/* Dil seçimi — tüm kullanıcılar */}
             {activeTab === 'profile' && <LanguageSelectCard />}
 
             {/* Security tab */}
