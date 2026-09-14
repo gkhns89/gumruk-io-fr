@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
@@ -10,6 +10,7 @@ import { t, getCurrentLocale } from "../../locales";
 import { formatLocaleNumber, parseLocaleNumber, toEditableNumber } from "../../utils/numberInput";
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
 // hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
@@ -1155,12 +1156,29 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     }
   }, [isReadOnly]);
 
-  // Keyboard shortcuts: ESC to close, CTRL+S to save
+  // Kapatma koruması (salt okunur görünümde kapalı). Seçim alanlarında (broker, müşteri, gümrük) değer id'dir; arama
+  // metni yalnızca seçim yokken sayılır. Sayıların görüntü metni odak/blur'da yeniden biçimlendiği için yalnızca sayı
+  // değeri boşken sayılır (ayrıştırılamayan giriş); ayrıştırılan değer zaten formData'da.
+  const unsavedValues = useMemo(() => ({
+    formData,
+    brokerSearch: formData.brokerCompanyId ? "" : brokerSearchTerm,
+    clientSearch: formData.clientCompanyId ? "" : clientSearchTerm,
+    customsSearch: formData.customsId ? "" : customsSearchTerm,
+    senderSearchTerm,
+    warehouseSearchTerm,
+    displayWeight: formData.weight === "" ? displayWeight : "",
+    displayTax: formData.tax === "" ? displayTax : "",
+    displayGuaranteeAmount: formData.guaranteeAmount === "" ? displayGuaranteeAmount : "",
+  }), [formData, brokerSearchTerm, clientSearchTerm, customsSearchTerm, senderSearchTerm, warehouseSearchTerm,
+    displayWeight, displayTax, displayGuaranteeAmount]);
+  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose, enabled: !isReadOnly });
+
+  // Keyboard shortcuts: ESC to close (through the guard), CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
       // ESC to close modal
       if (e.key === 'Escape') {
-        onClose();
+        requestClose();
         return;
       }
 
@@ -1177,12 +1195,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [loading, isReadOnly, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, isReadOnly, requestClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
       className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         ref={modalRef}
@@ -1200,7 +1218,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={requestClose}
               className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 transition-colors"
             >
               <span className="material-symbols-outlined text-text-secondary">close</span>
@@ -2866,7 +2884,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-end gap-3 md:gap-4 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="w-full md:w-auto px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
               {isReadOnly ? t('common.close') : t('common.cancel')}

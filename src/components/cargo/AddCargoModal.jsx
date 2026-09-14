@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { gRadarService } from '../../api/gRadarService';
@@ -9,6 +9,7 @@ import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { gRadarStatusInfo } from '../../utils/gRadarLabels';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import AddClientModal from '../common/AddClientModal';
 import TagInput from '../common/TagInput';
@@ -659,32 +660,47 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     onClose();
   };
 
-  // ESC to close
+  // Unsaved-changes guard. Pickers (broker, client) count by id; their search text only while nothing is selected,
+  // because loading the lists rewrites the selected name. A G-Radar preview (credit spent) counts as a change too.
+  const unsavedValues = useMemo(() => ({
+    formData,
+    brokerSearch: formData.brokerCompanyId ? '' : brokerSearchTerm,
+    clientSearch: formData.clientCompanyId ? '' : clientSearchTerm,
+    senderSearchTerm,
+    carrierSearchTerm,
+    gRadarEnabled,
+    gRadarTrackingId,
+    requestGRadarEnable,
+    gRadarRequestNotes,
+  }), [formData, brokerSearchTerm, clientSearchTerm, senderSearchTerm, carrierSearchTerm,
+    gRadarEnabled, gRadarTrackingId, requestGRadarEnable, gRadarRequestNotes]);
+  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose: handleCloseWithCleanup });
+
+  // ESC to close (through the guard)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        handleCloseWithCleanup();
+        requestClose();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, gRadarTrackingId]);
+  }, [requestClose]);
 
-  // Tab-close / page-leave: best-effort release via sendBeacon. The browser
-  // tears down React state before this fires, so use the value we already
-  // captured in the dependency closure above.
+  // Tab-close / page-leave: best-effort release. `pagehide` rather than
+  // `beforeunload`: the unsaved-changes guard may show the leave prompt, and a
+  // user who chooses to stay must keep the previewed tracking.
   useEffect(() => {
     const onUnload = () => abandonGRadarIfNeeded();
-    window.addEventListener('beforeunload', onUnload);
-    return () => window.removeEventListener('beforeunload', onUnload);
+    window.addEventListener('pagehide', onUnload);
+    return () => window.removeEventListener('pagehide', onUnload);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gRadarTrackingId, formData.vehicleType]);
 
   return (
     <div
       className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
-      onClick={handleCloseWithCleanup}
+      onClick={requestClose}
     >
       <div
         ref={modalRef}
@@ -700,7 +716,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             </p>
           </div>
           <button
-            onClick={handleCloseWithCleanup}
+            onClick={requestClose}
             className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-secondary">close</span>
@@ -1816,7 +1832,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 transition-colors">
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             {t('common.cancel')}

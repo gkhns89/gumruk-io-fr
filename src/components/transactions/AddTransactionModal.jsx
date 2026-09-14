@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
@@ -16,6 +16,7 @@ import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import CreateAgreementModal from '../common/CreateAgreementModal';
 import AddClientModal from '../common/AddClientModal';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
 // hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
@@ -1229,12 +1230,29 @@ export default function AddTransactionModal({
     return `${option.emoji} ${t(option.labelKey)}`;
   };
 
-  // Keyboard shortcuts: ESC to close, CTRL+S to save
+  // Kapatma koruması. Seçim alanlarında (broker, müşteri, gümrük) değer id'dir; arama metni yalnızca seçim yokken
+  // sayılır. Sayıların görüntü metni odak/blur'da yeniden biçimlendiği için yalnızca sayı değeri boşken sayılır
+  // (ayrıştırılamayan giriş); ayrıştırılan değer zaten formData'da.
+  const unsavedValues = useMemo(() => ({
+    formData,
+    brokerSearch: formData.brokerCompanyId ? "" : brokerSearchTerm,
+    clientSearch: formData.clientCompanyId ? "" : clientSearchTerm,
+    customsSearch: formData.customsId ? "" : customsSearchTerm,
+    senderSearchTerm,
+    warehouseSearchTerm,
+    displayWeight: formData.weight === "" ? displayWeight : "",
+    displayTax: formData.tax === "" ? displayTax : "",
+    displayGuaranteeAmount: formData.guaranteeAmount === "" ? displayGuaranteeAmount : "",
+  }), [formData, brokerSearchTerm, clientSearchTerm, customsSearchTerm, senderSearchTerm, warehouseSearchTerm,
+    displayWeight, displayTax, displayGuaranteeAmount]);
+  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose });
+
+  // Keyboard shortcuts: ESC to close (through the guard), CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
       // ESC to close modal
       if (e.key === 'Escape') {
-        onClose();
+        requestClose();
         return;
       }
 
@@ -1251,13 +1269,13 @@ export default function AddTransactionModal({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [loading, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, requestClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
       <div
         className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
-        onClick={onClose}
+        onClick={requestClose}
       >
         <div
           ref={modalRef}
@@ -1275,7 +1293,7 @@ export default function AddTransactionModal({
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={requestClose}
               className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <span className="material-symbols-outlined text-text-secondary">
@@ -3016,7 +3034,7 @@ export default function AddTransactionModal({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="w-full md:w-auto px-6 py-3 text-text-secondary hover:text-text-main font-medium transition-colors"
             >
               {t("common.cancel")}

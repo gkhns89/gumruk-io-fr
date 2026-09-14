@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { gRadarService } from '../../api/gRadarService';
@@ -11,6 +11,7 @@ import TagInput from '../common/TagInput';
 import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
@@ -483,10 +484,21 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     }
   };
 
+  // Unsaved-changes guard (off in read-only view). The client picker counts by id; its search text only while
+  // nothing is selected, because loading the client list rewrites the name to the short name.
+  const unsavedValues = useMemo(() => ({
+    formData,
+    clientSearch: formData.clientCompanyId ? '' : clientSearchTerm,
+    senderSearchTerm,
+    carrierSearchTerm,
+    reRequestNotes,
+  }), [formData, clientSearchTerm, senderSearchTerm, carrierSearchTerm, reRequestNotes]);
+  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose, enabled: !isReadOnly });
+
   return (
     <div
       className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in"
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in transition-colors duration-300"
@@ -503,7 +515,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
             </h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="material-symbols-outlined text-text-secondary">close</span>
@@ -1334,7 +1346,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 transition-colors">
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             disabled={loading}
             className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
