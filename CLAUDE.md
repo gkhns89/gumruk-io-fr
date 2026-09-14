@@ -168,6 +168,16 @@ Pages combine it with role checks — the established pattern is
 - **Confirmations**: `confirmDialog({ title, message, intent })` from
   `src/utils/confirmDialog.js` — an imperative promise-based replacement for
   `window.confirm`. Use it instead of adding another confirm modal + state triple.
+- **Form modals guard unsaved changes**: add/edit modals (transactions, warehouse, cargo) call
+  `useUnsavedChangesGuard({ values, onClose, enabled })` from `src/hooks/` and route the backdrop,
+  X, Cancel and their document ESC handler through the returned `requestClose` — never `onClose`
+  directly. A dirty form opens `unsavedChangesDialog()` (`src/utils/`: keep / discard, plus draft
+  when `onSaveDraft` is passed) and warns on `beforeunload`; `enabled: !isReadOnly` for read-only
+  views. `values` is a `useMemo` of what the user can change: `formData`, free-text search terms
+  that are saved as typed, notes. Leave out option lists, loading flags and derived UI. Pickers
+  count by id, their search text only while nothing is selected (`clientSearch: formData.clientCompanyId ? '' : clientSearchTerm`),
+  because loaders rewrite the selected name. The baseline follows `values` until the user's first
+  key or click, so async prefill isn't a change. Success paths close through `onSuccess`, not the guard.
 - **Toasts**: `showSuccess/showError/showInfo/showWarning` from `src/utils/toastUtils.js`.
   User-facing errors should go through `sanitizeError()` (via `handleError`), which
   suppresses anything containing credential-ish keywords, stack traces, or >150 chars.
