@@ -646,6 +646,15 @@ export const en = {
     cancel: "Cancel",
   },
 
+  // Unsaved changes warning in form modals
+  unsavedChanges: {
+    title: "Unsaved changes",
+    message: "You have unsaved changes in this form. If you close it, the information you entered will be lost.",
+    keepEditing: "Keep editing",
+    discard: "Discard changes",
+    saveDraft: "Save as draft",
+  },
+
   // Transaction tracking screens
   transactions: {
     common: {

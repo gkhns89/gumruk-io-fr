@@ -646,6 +646,15 @@ export const tr = {
     cancel: "Vazgeç",
   },
 
+  // Form modallarında kaydedilmemiş değişiklik uyarısı
+  unsavedChanges: {
+    title: "Kaydedilmemiş değişiklikler",
+    message: "Bu formda kaydedilmemiş değişiklikleriniz var. Kapatırsanız girdiğiniz bilgiler kaybolacak.",
+    keepEditing: "Düzenlemeye dön",
+    discard: "Değişiklikleri at",
+    saveDraft: "Taslak olarak kaydet",
+  },
+
   // İşlem takip ekranları
   transactions: {
     common: {
