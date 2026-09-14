@@ -1117,7 +1117,7 @@ export default function AddTransactionModal({
       clientCompanyId: "",
       fileNo: "",
       recipientName: "",
-      customsName: "",
+      customsId: "",
       customsWarehouse: "",
       containerAmount: "",
       gate: "",
@@ -1148,6 +1148,12 @@ export default function AddTransactionModal({
     setShowClientDropdown(false);
     setSenderSearchTerm("");
     setShowSenderDropdown(false);
+    setCustomsSearchTerm("");
+    setSelectedCustomsId(null);
+    setShowCustomsDropdown(false);
+    setWarehouseSearchTerm("");
+    setShowWarehouseDropdown(false);
+    setFieldErrors({});
 
     if (isSuperAdmin) {
       setBrokerSearchTerm("");
