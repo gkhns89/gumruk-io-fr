@@ -5,6 +5,8 @@ import { handleError } from '../../utils/errorUtils';
 import { showSuccess } from '../../utils/toastUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { draftService } from '../../api/draftService';
+import { DRAFT_MODULE_PATHS } from '../../utils/drafts';
 import { t, getCurrentLocale } from '../../locales';
 
 export default function NotificationCenter() {
@@ -268,6 +270,12 @@ export default function NotificationCenter() {
       // Kurye gönderisi: sayfa state'teki gönderinin detayını açar
       const path = user?.globalRole === 'CLIENT_USER' ? '/my-shipments' : '/management/courier-shipments';
       navigate(path, { state: { shipmentId: notification.entityId } });
+    } else if (notification.entityType === 'DRAFT') {
+      // Taslak hatırlatması yalnızca taslak id'si taşır: modülü bulunur, o sayfada taslak listesi açılıp taslak
+      // vurgulanır. Taslak artık yoksa taslağı olan ilk modül, hiç taslak yoksa İşlem Takip açılır.
+      const located = await draftService.locateDraft(notification.entityId);
+      const module = located.success && located.data ? located.data : 'TRANSACTION';
+      navigate(DRAFT_MODULE_PATHS[module], { state: { openDrafts: true, draftId: notification.entityId } });
     } else if (notification.entityType === 'FEEDBACK') {
       if (isSuperAdmin) {
         navigate('/management/feedback-tasks');

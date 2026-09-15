@@ -10,6 +10,8 @@ import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import AutoRefreshControl from "./AutoRefreshControl";
+import DraftsControl from "../drafts/DraftsControl";
+import { DRAFT_MODULES } from "../../api/draftService";
 import { t } from "../../locales";
 
 // Kapanmış (Çekildi/İptal) işlemler için ilk yükleme penceresi. Açık işlemler
@@ -47,6 +49,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  // Taslaktan devam edilirken yeni kayıt modalına verilen taslak (DRAFTS)
+  const [draftToContinue, setDraftToContinue] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -395,6 +399,7 @@ export default function TransactionsPage() {
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
+    setDraftToContinue(null);
     loadData();
   };
 
@@ -571,6 +576,16 @@ export default function TransactionsPage() {
                 isFilterOpen={showFilters}
                 onOpen={() => setShowFilters(false)}
                 isScrolled={isScrolled}
+              />
+
+              <DraftsControl
+                module={DRAFT_MODULES.TRANSACTION}
+                isScrolled={isScrolled}
+                canContinue={!isCreateBlocked}
+                onContinue={(draft) => {
+                  setDraftToContinue(draft);
+                  setShowAddModal(true);
+                }}
               />
 
               {canCreate && (
@@ -1019,7 +1034,12 @@ export default function TransactionsPage() {
       {/* Modals */}
       {showAddModal && (
         <AddTransactionModal
-          onClose={() => setShowAddModal(false)}
+          key={draftToContinue?.id ?? "new"}
+          initialDraft={draftToContinue}
+          onClose={() => {
+            setShowAddModal(false);
+            setDraftToContinue(null);
+          }}
           onSuccess={handleAddSuccess}
           currentUser={user}
         />

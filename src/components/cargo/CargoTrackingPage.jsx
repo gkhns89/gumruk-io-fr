@@ -16,6 +16,8 @@ import CargoDetailModal from '../common/CargoDetailModal';
 import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
 import GRadarDetailsDrawer from './GRadarDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
+import DraftsControl from '../drafts/DraftsControl';
+import { DRAFT_MODULES } from '../../api/draftService';
 import { t } from '../../locales';
 
 export default function CargoTrackingPage() {
@@ -33,6 +35,8 @@ export default function CargoTrackingPage() {
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
+  // Taslaktan devam edilirken yeni kayıt modalına verilen taslak (DRAFTS)
+  const [draftToContinue, setDraftToContinue] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -331,6 +335,7 @@ export default function CargoTrackingPage() {
   const handleModalSuccess = () => {
     loadData();
     setShowAddModal(false);
+    setDraftToContinue(null);
     setShowEditModal(false);
     setShowDetailModal(false);
     setShowDeleteModal(false);
@@ -480,6 +485,17 @@ export default function CargoTrackingPage() {
                 isFilterOpen={showFilters}
                 onOpen={() => setShowFilters(false)}
                 isScrolled={isScrolled}
+              />
+
+              {/* Taslaklar (DRAFTS) */}
+              <DraftsControl
+                module={DRAFT_MODULES.CARGO}
+                isScrolled={isScrolled}
+                canContinue={!isCreateBlocked}
+                onContinue={(draft) => {
+                  setDraftToContinue(draft);
+                  setShowAddModal(true);
+                }}
               />
 
               {/* Add Button */}
@@ -747,7 +763,12 @@ export default function CargoTrackingPage() {
       {/* Modals */}
       {showAddModal && (
         <AddCargoModal
-          onClose={() => setShowAddModal(false)}
+          key={draftToContinue?.id ?? 'new'}
+          initialDraft={draftToContinue}
+          onClose={() => {
+            setShowAddModal(false);
+            setDraftToContinue(null);
+          }}
           onSuccess={handleModalSuccess}
           currentUser={user}
         />
