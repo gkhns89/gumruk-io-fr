@@ -655,6 +655,44 @@ export const tr = {
     saveDraft: "Taslak olarak kaydet",
   },
 
+  // Yeni kayıt taslakları (DRAFTS bayrağı) — modallar, sayfalardaki taslak listesi
+  drafts: {
+    modules: {
+      TRANSACTION: "İşlem Takip",
+      WAREHOUSE: "Antrepo Takip",
+      CARGO: "Yük Takip",
+    },
+    fallbackLabel: "{{module}} taslağı · {{time}}",
+    untitled: "Adsız taslak",
+    saving: "Kaydediliyor...",
+    saved: "Taslak kaydedildi",
+    savedUntil: "Taslak kaydedildi. Saat {{time}} itibarıyla silinecek.",
+    continuing: "Taslaktan devam ediyorsunuz",
+    continuingUntil: "Taslaktan devam ediyorsunuz · saat {{time}} itibarıyla silinir",
+    unsupportedVersion: "Bu taslak formun eski bir sürümüyle kaydedilmiş, açılamıyor.",
+    gRadarPreviewTitle: "G-Radar önizlemesi taslağa alınmaz",
+    gRadarPreviewMessage: "Getirilen alanlar taslakta kalır, ancak önizleme bırakılır. Kaydı tamamlarken bilgileri yeniden getirmek kredi harcayabilir.",
+    button: "Taslaklar",
+    buttonTitle: "Kaydedilmemiş taslaklar: {{count}}",
+    panel: {
+      title: "{{module}} taslakları",
+      purgeNote: "Taslaklar her gün saat {{time}} itibarıyla silinir.",
+      empty: "Kayıtlı taslak yok",
+      emptyHint: "Yeni kayıt formunu kapatırken \"Taslak olarak kaydet\"i seçerek taslak oluşturabilirsiniz.",
+      you: "Siz",
+      createdBy: "Oluşturan: {{name}}",
+      updatedAt: "Son değişiklik: {{time}}",
+      expiresAt: "Silinme: {{time}}",
+      continue: "Devam et",
+      othersHint: "Yalnızca oluşturan devam edebilir",
+      delete: "Sil",
+      deleteTitle: "Taslağı sil",
+      deleteMessage: "\"{{label}}\" taslağı silinecek. Bu işlem geri alınamaz.",
+      deleted: "Taslak silindi",
+      retry: "Tekrar dene",
+    },
+  },
+
   // İşlem takip ekranları
   transactions: {
     common: {
@@ -2064,6 +2102,24 @@ export const tr = {
     // {{name}} kalın yazılır; metin bu yer tutucunun iki yanından bölünür
     logoFor: "{{name}} için logo",
     selectCompanyHint: "Logosunu yönetmek için bir firma seçin.",
+    // Çalışma saatleri ve taslak silme saati (DRAFTS bayrağı, yalnızca BROKER_ADMIN)
+    workSettings: {
+      title: "Çalışma saatleri ve taslaklar",
+      hint: "Açık taslak hatırlatmaları yalnızca mesai saatlerinde gönderilir. Kaydedilmemiş taslaklar her gün silme saatinde temizlenir (Türkiye saati).",
+      workDays: "Çalışılan günler",
+      workStart: "Mesai başlangıcı",
+      workEnd: "Mesai bitişi",
+      draftPurgeTime: "Taslak silme saati",
+      draftPurgeHint: "Taslaklar her gün bu saatte silinir.",
+      saving: "Kaydediliyor...",
+      saved: "Çalışma saatleri kaydedildi",
+      retry: "Tekrar dene",
+      validation: {
+        daysRequired: "En az bir gün seçin",
+        timeRequired: "Saat girin",
+        startBeforeEnd: "Mesai başlangıcı bitişten önce olmalı",
+      },
+    },
   },
 
   // Raporlar
@@ -2154,6 +2210,19 @@ export const tr = {
       logoDeleteError: "Logo kaldırılamadı",
       updated: "Firma başarıyla güncellendi",
       updateError: "Firma güncellenemedi",
+      workSettingsLoadError: "Çalışma saatleri alınamadı",
+      workSettingsSaveError: "Çalışma saatleri kaydedilemedi",
+    },
+    // draftService — kaydedilmemiş form taslakları (DRAFTS bayrağı)
+    drafts: {
+      listError: "Taslaklar yüklenemedi",
+      summaryError: "Taslak özeti alınamadı",
+      saveError: "Taslak kaydedilemedi",
+      deleteError: "Taslak silinemedi",
+      tooLarge: "Taslak çok büyük olduğu için kaydedilemedi",
+      limitReached: "Taslak sınırına ulaştınız. Yeni taslak kaydetmek için eski taslaklardan birini silin.",
+      forbidden: "Bu taslak üzerinde işlem yapma yetkiniz yok",
+      notFound: "Taslak bulunamadı; silinmiş olabilir",
     },
     contact: {
       loadError: "İletişim bilgileri alınamadı",

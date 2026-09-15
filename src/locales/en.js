@@ -655,6 +655,44 @@ export const en = {
     saveDraft: "Save as draft",
   },
 
+  // New-record drafts (DRAFTS flag) — modals, the drafts list on the pages
+  drafts: {
+    modules: {
+      TRANSACTION: "Transactions",
+      WAREHOUSE: "Bonded Warehouse",
+      CARGO: "Cargo Tracking",
+    },
+    fallbackLabel: "{{module}} draft · {{time}}",
+    untitled: "Untitled draft",
+    saving: "Saving...",
+    saved: "Draft saved",
+    savedUntil: "Draft saved. It will be deleted at {{time}}.",
+    continuing: "Continuing from a draft",
+    continuingUntil: "Continuing from a draft · deleted at {{time}}",
+    unsupportedVersion: "This draft was saved with an older version of the form and can't be opened.",
+    gRadarPreviewTitle: "The G-Radar preview isn't kept in drafts",
+    gRadarPreviewMessage: "The fetched fields stay in the draft, but the preview is released. Fetching the details again when you finish the record may use a credit.",
+    button: "Drafts",
+    buttonTitle: "Unsaved drafts: {{count}}",
+    panel: {
+      title: "{{module}} drafts",
+      purgeNote: "Drafts are deleted every day at {{time}}.",
+      empty: "No saved drafts",
+      emptyHint: "Choose \"Save as draft\" when you close a new-record form to create a draft.",
+      you: "You",
+      createdBy: "Created by {{name}}",
+      updatedAt: "Last changed {{time}}",
+      expiresAt: "Deleted at {{time}}",
+      continue: "Continue",
+      othersHint: "Only the creator can continue",
+      delete: "Delete",
+      deleteTitle: "Delete draft",
+      deleteMessage: "The draft \"{{label}}\" will be deleted. This can't be undone.",
+      deleted: "Draft deleted",
+      retry: "Try again",
+    },
+  },
+
   // Transaction tracking screens
   transactions: {
     common: {
@@ -2061,6 +2099,24 @@ export const en = {
     // {{name}} is rendered in bold; the text is split around the placeholder
     logoFor: "Logo for {{name}}",
     selectCompanyHint: "Select a company to manage its logo.",
+    // Working hours and the draft purge time (DRAFTS flag, BROKER_ADMIN only)
+    workSettings: {
+      title: "Working hours and drafts",
+      hint: "Reminders about open drafts are sent only during working hours. Unsaved drafts are cleared every day at the purge time (Turkey time).",
+      workDays: "Working days",
+      workStart: "Work starts",
+      workEnd: "Work ends",
+      draftPurgeTime: "Draft purge time",
+      draftPurgeHint: "Drafts are deleted at this time every day.",
+      saving: "Saving...",
+      saved: "Working hours saved",
+      retry: "Try again",
+      validation: {
+        daysRequired: "Select at least one day",
+        timeRequired: "Enter a time",
+        startBeforeEnd: "Work must start before it ends",
+      },
+    },
   },
 
   // Reports
@@ -2153,6 +2209,19 @@ export const en = {
       logoDeleteError: "Could not remove the logo",
       updated: "Company updated successfully",
       updateError: "Could not update the company",
+      workSettingsLoadError: "Could not load the working hours",
+      workSettingsSaveError: "Could not save the working hours",
+    },
+    // draftService — unsaved form drafts (DRAFTS flag)
+    drafts: {
+      listError: "Could not load drafts",
+      summaryError: "Could not load the draft summary",
+      saveError: "Could not save the draft",
+      deleteError: "Could not delete the draft",
+      tooLarge: "The draft is too large to save",
+      limitReached: "You have reached the draft limit. Delete an older draft to save a new one.",
+      forbidden: "You don't have permission to change this draft",
+      notFound: "Draft not found; it may have been deleted",
     },
     contact: {
       loadError: "Could not load the contact information",

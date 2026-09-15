@@ -157,4 +157,40 @@ export const companyService = {
       };
     }
   },
+
+  /**
+   * Kullanıcının firmasının çalışma saatleri ve taslak silme saati (DRAFTS bayrağı).
+   * Saatler Europe/Istanbul, "HH:mm".
+   * @returns data: { workDays: ['MONDAY', ...], workStart: '09:00', workEnd: '18:00', draftPurgeTime: '21:00' }
+   */
+  getWorkSettings: async () => {
+    try {
+      const response = await axiosInstance.get('/company/work-settings');
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CompanyService - getWorkSettings', error);
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.company.workSettingsLoadError')),
+      };
+    }
+  },
+
+  /**
+   * Çalışma saatlerini kaydet — yalnızca BROKER_ADMIN
+   * @param {Object} settings - { workDays, workStart, workEnd, draftPurgeTime }
+   * @returns data: kaydedilen ayarlar
+   */
+  updateWorkSettings: async (settings) => {
+    try {
+      const response = await axiosInstance.put('/company/work-settings', settings);
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('CompanyService - updateWorkSettings', error);
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.company.workSettingsSaveError')),
+      };
+    }
+  },
 };
