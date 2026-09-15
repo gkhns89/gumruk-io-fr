@@ -205,7 +205,7 @@ export const tr = {
       firstName: "AHMET",
       lastName: "YILMAZ",
       email: "ahmet.yilmaz@example.com",
-      password: "En az 6 karakter",
+      password: "En az 8 karakter",
     },
   },
 
@@ -1712,6 +1712,20 @@ export const tr = {
     },
   },
 
+  // Yöneticinin başka biri için girdiği yeni şifre (NewPasswordFields, passwordUtils)
+  passwordForm: {
+    password: "Şifre",
+    newPassword: "Yeni şifre",
+    confirm: "Şifre (tekrar)",
+    generate: "Parola oluştur",
+    show: "Şifreyi göster",
+    hide: "Şifreyi gizle",
+    hint: "En az {{min}} karakter",
+    tooShort: "Şifre en az {{min}} karakter olmalıdır",
+    tooLong: "Şifre çok uzun: en fazla {{max}} bayt olabilir (Türkçe harfler 2 bayt sayılır)",
+    mismatch: "Şifreler eşleşmiyor",
+  },
+
   // Çalışan yönetimi ekranları (eski `employee` bölümünü tamamlar)
   employees: {
     common: {
@@ -1742,12 +1756,11 @@ export const tr = {
     add: {
       subtitle: "Yeni bir çalışan kaydı oluşturun",
       companyMissing: "Firma bilgisi eksik. Lütfen sayfayı yenileyin.",
-      passwordMin: "Şifre en az 6 karakter olmalıdır",
       quotaExceeded: "Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.",
       usernameHint: "Çalışanın adı ve soyadı",
       emailHint: "Giriş için kullanılacak email adresi",
-      passwordHint: "Minimum 6 karakter",
       roleHint: "Broker Yöneticisi: Tüm yetkilere sahip • Broker Kullanıcısı: İşlem yönetimi",
+      roleBrokerUserOnly: "Yeni çalışan Broker Kullanıcısı olarak eklenir. Broker Yöneticisi hesabını Süper Admin açar.",
       quotaWarning: "Çalışan limiti doldu. Yeni çalışan ekleyebilmek için aboneliğinizi yükseltin.",
       submit: "Çalışan Ekle",
     },

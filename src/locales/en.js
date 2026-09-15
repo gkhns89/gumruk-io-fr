@@ -205,7 +205,7 @@ export const en = {
       firstName: "JOHN",
       lastName: "DOE",
       email: "john.doe@example.com",
-      password: "At least 6 characters",
+      password: "At least 8 characters",
     },
   },
 
@@ -1709,6 +1709,20 @@ export const en = {
     },
   },
 
+  // New password an admin enters for someone else (NewPasswordFields, passwordUtils)
+  passwordForm: {
+    password: "Password",
+    newPassword: "New password",
+    confirm: "Confirm password",
+    generate: "Generate password",
+    show: "Show password",
+    hide: "Hide password",
+    hint: "At least {{min}} characters",
+    tooShort: "Password must be at least {{min}} characters",
+    tooLong: "The password is too long: at most {{max}} bytes (letters outside the English alphabet count as 2 bytes)",
+    mismatch: "The passwords do not match",
+  },
+
   // Employee management screens (complements the older `employee` section)
   employees: {
     common: {
@@ -1739,12 +1753,11 @@ export const en = {
     add: {
       subtitle: "Create a new employee record",
       companyMissing: "Company information is missing. Please refresh the page.",
-      passwordMin: "Password must be at least 6 characters",
       quotaExceeded: "Employee limit reached. Please upgrade your subscription.",
       usernameHint: "The employee's first and last name",
       emailHint: "Email address used to sign in",
-      passwordHint: "Minimum 6 characters",
       roleHint: "Broker Admin: all permissions • Broker User: transaction management",
+      roleBrokerUserOnly: "New employees are added as Broker Users. A Super Admin opens Broker Admin accounts.",
       quotaWarning: "Employee limit reached. Upgrade your subscription to add more employees.",
       submit: "Add Employee",
     },

@@ -485,6 +485,7 @@ const EmployeesPage = () => {
             onSuccess={() => { setShowAddModal(false); loadEmployees(); }}
             brokerCompanyId={effectiveCompanyId}
             currentLimits={limits}
+            canCreateAdmin={isSuperAdmin}
           />
         )}
 
