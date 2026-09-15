@@ -159,6 +159,8 @@ const EmployeesPage = () => {
 
   // Backend kuralları (son söz orada): BROKER_ADMIN başka bir BROKER_ADMIN'i düzenleyemez ve yalnızca BROKER_USER'a
   // şifre belirler; SUPER_ADMIN SUPER_ADMIN olmayan herkese; kimse kendine (kendi şifresi Hesabım > Güvenlik).
+  const canEditEmployee = (employee) =>
+    isSuperAdmin || employee.id === user?.id || employee.globalRole !== 'BROKER_ADMIN';
   const canSetPasswordFor = (employee) =>
     employee.id !== user?.id && (
       (isBrokerAdmin && employee.globalRole === 'BROKER_USER') ||
@@ -462,8 +464,9 @@ const EmployeesPage = () => {
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowEditModal(true); }}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title={t('common.edit')}
+                                      disabled={!canEditEmployee(employee)}
+                                      className="text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title={canEditEmployee(employee) ? t('common.edit') : t('employees.table.cannotEditOtherAdmin')}
                                     >
                                       <span className="material-symbols-outlined">edit</span>
                                     </button>
@@ -517,6 +520,7 @@ const EmployeesPage = () => {
           <ViewEmployeeModal
             onClose={() => { setShowViewModal(false); setSelectedEmployee(null); }}
             employee={selectedEmployee}
+            canEdit={canEditEmployee(selectedEmployee)}
             onEdit={(employee) => {
               setShowViewModal(false);
               setSelectedEmployee(employee);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { t, getCurrentLocale } from '../../locales';
 
-export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
+export default function ViewEmployeeModal({ onClose, employee, onEdit, canEdit = true }) {
 
   // Get role display text
   const getRoleText = (role) => {
@@ -211,16 +211,18 @@ export default function ViewEmployeeModal({ onClose, employee, onEdit }) {
           >
             {t('common.close')}
           </button>
-          <button
-            onClick={() => {
-              onEdit(employee);
-              onClose();
-            }}
-            className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">edit</span>
-            {t('common.edit')}
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => {
+                onEdit(employee);
+                onClose();
+              }}
+              className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">edit</span>
+              {t('common.edit')}
+            </button>
+          )}
         </div>
       </div>
     </div>

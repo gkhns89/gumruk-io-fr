@@ -1750,6 +1750,7 @@ export const en = {
       you: "(You)",
       paymentResponsibleHint: "Payment responsible",
       cannotDeleteSelf: "You cannot delete yourself",
+      cannotEditOtherAdmin: "Only a Super Admin can edit another Broker Admin",
       setPassword: "Set password",
     },
     add: {
@@ -1767,7 +1768,7 @@ export const en = {
       subtitle: "Update the employee's details",
       subtitleSelf: "Edit your own details",
       selfWarning: "You cannot change your own role or status",
-      cannotChangeOwnRole: "You cannot change your own role",
+      roleReadOnly: "The role cannot be changed here",
       cannotChangeOwnStatus: "You cannot change your own status",
       paymentResponsibleHint: "This user can submit payment notifications",
     },

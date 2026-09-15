@@ -1753,6 +1753,7 @@ export const tr = {
       you: "(Siz)",
       paymentResponsibleHint: "Ödeme sorumlusu",
       cannotDeleteSelf: "Kendinizi silemezsiniz",
+      cannotEditOtherAdmin: "Başka bir Broker Yöneticisini yalnızca Süper Admin düzenleyebilir",
       setPassword: "Parola belirle",
     },
     add: {
@@ -1770,7 +1771,7 @@ export const tr = {
       subtitle: "Çalışan bilgilerini güncelleyin",
       subtitleSelf: "Kendi bilgilerinizi düzenleyin",
       selfWarning: "Kendi rolünüzü ve durumunuzu değiştiremezsiniz",
-      cannotChangeOwnRole: "Kendi rolünüzü değiştiremezsiniz",
+      roleReadOnly: "Rol bu ekrandan değiştirilemez",
       cannotChangeOwnStatus: "Kendi durumunuzu değiştiremezsiniz",
       paymentResponsibleHint: "Bu kullanıcı ödeme bildirimlerini gönderebilir",
     },
