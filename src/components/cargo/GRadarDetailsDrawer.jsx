@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { confirmDialog } from '../../utils/confirmDialog';
 import {
   extractMovementGroups,
   countMovements,
@@ -20,16 +21,30 @@ import { t, getCurrentLocale } from '../../locales';
  *
  * Open / close is driven by the parent via the `cargo` prop: passing null
  * closes (with the slide-out animation falling through naturally).
+ *
+ * `canManage` (BROKER_ADMIN / SUPER_ADMIN, read-only değil) footer'da
+ * "Takibi kapat" ve — Yenile, G-Radar'ın takip kaydını bulamadığını
+ * bildirdiğinde — "Takibi yeniden başlat" düğmelerini açar. Tablo bu durumda
+ * kurtarma yolu sunamıyor: fetch, takip kimliği dolu yükü atlıyor.
+ * `onChanged` bu işlemlerden sonra sayfanın listesini yeniletir.
  */
 export default function GRadarDetailsDrawer({
   cargo,
   onClose,
+  onChanged,
   canRefresh = true,
+  canManage = false,
 }) {
   const isOpen = !!cargo;
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Yenile, G-Radar'ın bu yükün takip kaydını bulamadığını söyledi mi.
+  const [shipmentMissing, setShipmentMissing] = useState(false);
+  // 'disable' | 'restart' | null — çalışan işlem. Ref, onay penceresi açılmadan
+  // gelen ikinci tıklamayı da engelliyor (state güncellemesi bir render geç kalır).
+  const [busyAction, setBusyAction] = useState(null);
+  const busyRef = useRef(false);
 
   const load = useCallback(async (cargoId) => {
     if (!cargoId) return;
@@ -45,6 +60,7 @@ export default function GRadarDetailsDrawer({
   }, []);
 
   useEffect(() => {
+    setShipmentMissing(false);
     if (cargo?.id) {
       load(cargo.id);
     } else {
@@ -67,6 +83,7 @@ export default function GRadarDetailsDrawer({
     setRefreshing(true);
     const res = await gRadarService.refresh(cargo.id);
     setRefreshing(false);
+    setShipmentMissing(!!res.notFound);
     if (res.success) {
       showSuccess(t('cargoTracking.drawer.refreshed'));
       load(cargo.id);
@@ -74,6 +91,94 @@ export default function GRadarDetailsDrawer({
       showError(res.error || t('cargoTracking.drawer.refreshError'));
     }
   };
+
+  const handleDisable = async () => {
+    const cargoId = cargo?.id;
+    if (!cargoId || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const ok = await confirmDialog({
+        title: t('cargoTracking.drawer.disableTitle'),
+        message: t('cargoTracking.drawer.disableMessage'),
+        intent: 'danger',
+        icon: 'toggle_off',
+        confirmText: t('cargoTracking.drawer.disableConfirm'),
+      });
+      if (!ok) return;
+      setBusyAction('disable');
+      const res = await gRadarService.disable(cargoId);
+      if (res.success) {
+        showSuccess(t('cargoTracking.drawer.disabled'));
+        onChanged?.();
+        onClose?.();
+      } else {
+        showError(res.error || t('cargoTracking.drawer.disableError'));
+      }
+    } finally {
+      busyRef.current = false;
+      setBusyAction(null);
+    }
+  };
+
+  // Kapat → aç → bilgileri getir. fetch yalnızca takip kimliği boş yükte yeni
+  // kayıt açıyor; kimliği temizleyen disable olduğu için sıra önemli.
+  const handleRestart = async () => {
+    const cargoId = cargo?.id;
+    if (!cargoId || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const ok = await confirmDialog({
+        title: t('cargoTracking.drawer.restartTitle'),
+        message: t('cargoTracking.drawer.restartMessage'),
+        details: [
+          t('cargoTracking.drawer.restartStepClose'),
+          t('cargoTracking.drawer.restartStepOpen'),
+          t('cargoTracking.drawer.restartStepCredit'),
+        ],
+        intent: 'warning',
+        icon: 'restart_alt',
+        confirmText: t('cargoTracking.drawer.restartConfirm'),
+      });
+      if (!ok) return;
+      setBusyAction('restart');
+      const steps = [
+        ['stepDisable', () => gRadarService.disable(cargoId)],
+        ['stepEnable', () => gRadarService.enable(cargoId)],
+        ['stepFetch', () => gRadarService.fetch(cargoId)],
+      ];
+      let changed = false;
+      for (const [stepKey, runStep] of steps) {
+        const res = await runStep();
+        if (!res.success) {
+          showError(t('cargoTracking.drawer.restartFailed', {
+            step: t(`cargoTracking.drawer.${stepKey}`),
+            error: res.error || t('api.errors.generic'),
+          }));
+          // Önceki adımlar yükü değiştirdiyse liste ve çekmece yeni hâli göstersin.
+          if (changed) {
+            setShipmentMissing(false);
+            onChanged?.();
+            load(cargoId);
+          }
+          return;
+        }
+        changed = true;
+      }
+      showSuccess(t('cargoTracking.drawer.restarted'));
+      onChanged?.();
+      onClose?.();
+    } finally {
+      busyRef.current = false;
+      setBusyAction(null);
+    }
+  };
+
+  // Tamamlanmış yükte fetch reddediliyor ve tablo yeniden açma sunmuyor —
+  // orada takibi kapatmak geri dönüşsüz olurdu, düğmeler gösterilmiyor.
+  const canManageTracking = canManage
+    && !!details?.gRadarEnabled
+    && details?.status !== 'COMPLETED';
+  const busy = !!busyAction;
 
   // Hareket geçmişi iki ayrı şemadan geliyor (hava: düz movements, deniz:
   // containers[].movements) — normalize katmanı ikisini tek biçime indiriyor.
@@ -328,20 +433,63 @@ export default function GRadarDetailsDrawer({
           )}
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
-          <p className="text-[11px] text-text-secondary">
-            {details?.status === 'COMPLETED'
-              ? t('cargoTracking.drawer.completedFooter')
-              : t('cargoTracking.drawer.refreshFree')}
-          </p>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing || !canRefresh || !details?.gRadarTrackingId || details?.status === 'COMPLETED'}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
-          >
-            <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
-            {refreshing ? t('cargoTracking.drawer.refreshing') : t('cargoTracking.drawer.refresh')}
-          </button>
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40">
+          {shipmentMissing && details?.gRadarTrackingId && (
+            <div className="px-5 pt-3">
+              <div className="rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3 flex items-start gap-2">
+                <span className="material-symbols-outlined text-lg text-amber-600 dark:text-amber-400 flex-shrink-0">warning</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    {t('cargoTracking.drawer.shipmentMissing')}
+                  </p>
+                  {canManageTracking && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                      {t('cargoTracking.drawer.shipmentMissingHint')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] text-text-secondary">
+              {details?.status === 'COMPLETED'
+                ? t('cargoTracking.drawer.completedFooter')
+                : t('cargoTracking.drawer.refreshFree')}
+            </p>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {canManageTracking && (
+                <button
+                  type="button"
+                  onClick={handleDisable}
+                  disabled={busy || refreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-base">toggle_off</span>
+                  {busyAction === 'disable' ? t('cargoTracking.drawer.disabling') : t('cargoTracking.drawer.disable')}
+                </button>
+              )}
+              {canManageTracking && shipmentMissing && details?.gRadarTrackingId && (
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  disabled={busy || refreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className={`material-symbols-outlined text-base ${busyAction === 'restart' ? 'animate-spin' : ''}`}>restart_alt</span>
+                  {busyAction === 'restart' ? t('cargoTracking.drawer.restarting') : t('cargoTracking.drawer.restart')}
+                </button>
+              )}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing || busy || !canRefresh || !details?.gRadarTrackingId || details?.status === 'COMPLETED'}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/60 dark:hover:text-primary transition-colors disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-text-main disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
+              >
+                <span className={`material-symbols-outlined text-base ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
+                {refreshing ? t('cargoTracking.drawer.refreshing') : t('cargoTracking.drawer.refresh')}
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
     </>

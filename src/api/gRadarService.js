@@ -2,6 +2,28 @@ import axiosInstance from './axios';
 import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
+// Üretimdeki backend'in (ShipsGoCargoController) 400 ile döndürdüğü sabit metnin
+// değişmeyen başı.
+const SHIPMENT_NOT_FOUND_TEXT_PREFIX = 'G-Radar bu yükün takip kaydını bulamıyor';
+
+/**
+ * Refresh hatasının "yükün G-Radar takip kaydı yok" anlamına gelip gelmediğini söyler.
+ * - Staging backend: HTTP 404 ya da `code === 'GRADAR_SHIPMENT_NOT_FOUND'`.
+ * - Üretim backend: HTTP 400 + sabit Türkçe metin.
+ *   GEÇİCİ KÖPRÜ: metin eşleşmesi yalnızca üretimdeki eski backend için; staging
+ *   backend'i (404 + code) üretime çıkınca bu dal silinebilir.
+ */
+const isShipmentNotFoundError = (error) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  if (status === 404 || data?.code === 'GRADAR_SHIPMENT_NOT_FOUND') return true;
+  if (status === 400) {
+    const text = [data?.message, data?.error].find((v) => typeof v === 'string') || '';
+    return text.startsWith(SHIPMENT_NOT_FOUND_TEXT_PREFIX);
+  }
+  return false;
+};
+
 /**
  * Cargo-bound G-Radar endpoints (Phase 7 backend).
  *
@@ -138,13 +160,19 @@ export const gRadarService = {
     }
   },
 
+  // notFound: G-Radar yükün takip kaydını bulamıyor (kayıt silinmiş olabilir) —
+  // çekmece bunu görünce "Takibi yeniden başlat" seçeneğini açıyor.
   refresh: async (cargoId) => {
     try {
       const res = await axiosInstance.post(`/g-radar/cargo/${cargoId}/refresh`);
-      return { success: true, data: res.data };
+      return { success: true, data: res.data, notFound: false };
     } catch (error) {
       logError('GRadarService - refresh', error);
-      return { success: false, error: getApiErrorMessage(error) };
+      return {
+        success: false,
+        error: getApiErrorMessage(error),
+        notFound: isShipmentNotFoundError(error),
+      };
     }
   },
 
