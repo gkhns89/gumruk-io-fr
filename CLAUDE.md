@@ -178,6 +178,17 @@ Pages combine it with role checks — the established pattern is
   count by id, their search text only while nothing is selected (`clientSearch: formData.clientCompanyId ? '' : clientSearchTerm`),
   because loaders rewrite the selected name. The baseline follows `values` until the user's first
   key or click, so async prefill isn't a change. Success paths close through `onSuccess`, not the guard.
+- **New-record drafts** (`DRAFTS` flag, BROKER_ADMIN / BROKER_USER only — `canUseDrafts()` in
+  `src/utils/drafts.js`): new Add-style form modals use the guard **plus** `useRecordDraft` (`src/hooks/`).
+  Its `saveDraft` goes to the guard's `onSaveDraft` and a footer `SaveDraftButton`; `getSnapshot` returns
+  `{ payload, label }` — everything needed to rebuild the form (`formData`, search terms, number display
+  texts). A draft reopens as `initialDraft`: seed the `useState` initializers from `readDraftPayload()` /
+  `mergeDraftFields()` (not async setters, so dropdowns stay closed) and call `discardDraft()` on a successful
+  create. Server side is `src/api/draftService.js`; bump `DRAFT_SCHEMA_VERSION` if a snapshot's shape changes.
+  The G-Radar preview (credit-bound tracking id) is never part of a draft. Pages list drafts with
+  `components/drafts/DraftsControl` (header button + panel, also opened by `DRAFT` notifications via
+  `location.state.openDrafts`); work days/hours and the purge time live in `WorkSettingsCard` on
+  `/company-settings`. Edit modals don't offer drafts yet (pending changes are phase 3).
 - **Toasts**: `showSuccess/showError/showInfo/showWarning` from `src/utils/toastUtils.js`.
   User-facing errors should go through `sanitizeError()` (via `handleError`), which
   suppresses anything containing credential-ish keywords, stack traces, or >150 chars.
