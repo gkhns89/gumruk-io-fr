@@ -451,7 +451,7 @@ export default function GRadarDetailsDrawer({
               </div>
             </div>
           )}
-          <div className="px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-text-secondary">
               {details?.status === 'COMPLETED'
                 ? t('cargoTracking.drawer.completedFooter')
