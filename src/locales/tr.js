@@ -1752,6 +1752,7 @@ export const tr = {
       you: "(Siz)",
       paymentResponsibleHint: "Ödeme sorumlusu",
       cannotDeleteSelf: "Kendinizi silemezsiniz",
+      setPassword: "Parola belirle",
     },
     add: {
       subtitle: "Yeni bir çalışan kaydı oluşturun",
@@ -1771,6 +1772,14 @@ export const tr = {
       cannotChangeOwnRole: "Kendi rolünüzü değiştiremezsiniz",
       cannotChangeOwnStatus: "Kendi durumunuzu değiştiremezsiniz",
       paymentResponsibleHint: "Bu kullanıcı ödeme bildirimlerini gönderebilir",
+    },
+    setPassword: {
+      title: "Parola belirle",
+      submit: "Parolayı belirle",
+      sessionsWarning: "Kaydettiğinizde kullanıcının açık oturumları kapatılır; yeni şifreyle yeniden giriş yapması gerekir. Şifreyi kullanıcıya güvenli bir kanaldan iletin.",
+      confirmTitle: "Şifre belirlensin mi?",
+      confirmMessage: "{{name}} kullanıcısının açık oturumları kapatılacak ve yeni şifreyle yeniden giriş yapması gerekecek.",
+      success: "{{name}} için şifre belirlendi. Açık oturumları kapatıldı.",
     },
     view: {
       subtitle: "Çalışan bilgilerini görüntüleyin",
@@ -2391,6 +2400,7 @@ export const tr = {
       photoUploadError: "Fotoğraf yüklenemedi",
       photoDeleteError: "Fotoğraf kaldırılamadı",
       passwordChangeError: "Şifre değiştirilemedi",
+      setPasswordError: "Şifre belirlenemedi",
     },
     warehouse: {
       listError: "Antrepo kayıtları alınamadı",

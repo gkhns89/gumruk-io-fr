@@ -1749,6 +1749,7 @@ export const en = {
       you: "(You)",
       paymentResponsibleHint: "Payment responsible",
       cannotDeleteSelf: "You cannot delete yourself",
+      setPassword: "Set password",
     },
     add: {
       subtitle: "Create a new employee record",
@@ -1768,6 +1769,14 @@ export const en = {
       cannotChangeOwnRole: "You cannot change your own role",
       cannotChangeOwnStatus: "You cannot change your own status",
       paymentResponsibleHint: "This user can submit payment notifications",
+    },
+    setPassword: {
+      title: "Set password",
+      submit: "Set password",
+      sessionsWarning: "Saving closes the user's open sessions; they will need to sign in again with the new password. Pass the password on through a secure channel.",
+      confirmTitle: "Set the password?",
+      confirmMessage: "{{name}}'s open sessions will be closed and they will need to sign in again with the new password.",
+      success: "Password set for {{name}}. Their open sessions have been closed.",
     },
     view: {
       subtitle: "View the employee's details",
@@ -2390,6 +2399,7 @@ export const en = {
       photoUploadError: "Could not upload the photo",
       photoDeleteError: "Could not remove the photo",
       passwordChangeError: "Could not change the password",
+      setPasswordError: "Could not set the password",
     },
     warehouse: {
       listError: "Could not load bonded warehouse records",
