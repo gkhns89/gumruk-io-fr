@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { draftService } from '../../api/draftService';
+import { draftService, isFeatureDisabled } from '../../api/draftService';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { isStackedDialogOpen } from '../../utils/unsavedChangesDialog';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -21,10 +21,15 @@ export default function DraftsPanel({ module, purgeTime, canContinue = true, hig
     setLoading(true);
     setError('');
     const result = await draftService.listDrafts(module);
+    // Bayrak sayfa açıkken kapatıldı: bayraklar tazelenir, panel sessizce kapanır
+    if (isFeatureDisabled(result)) {
+      onClose();
+      return;
+    }
     if (result.success) setDrafts(result.data);
     else setError(result.error);
     setLoading(false);
-  }, [module]);
+  }, [module, onClose]);
 
   useEffect(() => {
     load();
@@ -60,12 +65,15 @@ export default function DraftsPanel({ module, purgeTime, canContinue = true, hig
     setDeletingId(draft.id);
     const result = await draftService.deleteDraft(draft.id);
     setDeletingId(null);
-    // 404: taslak zaten silinmiş (günlük temizlik ya da yönetici) — listeden de kalkar
-    if (result.success || result.status === 404) {
+    if (result.success) {
       setDrafts((prev) => prev.filter((item) => item.id !== draft.id));
+      // Zaten yoksa (temizlenmiş, süresi dolmuş, başkası silmiş) listeden sessizce kalkar
+      if (!result.data?.alreadyGone) showSuccess(t('drafts.panel.deleted'));
+    } else if (isFeatureDisabled(result)) {
+      onClose();
+    } else {
+      showError(result.error);
     }
-    if (result.success) showSuccess(t('drafts.panel.deleted'));
-    else showError(result.error);
   };
 
   const moduleName = t(`drafts.modules.${module}`);

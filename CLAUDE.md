@@ -69,7 +69,10 @@ one to OFF / PILOT / ON and picks pilot brokers on `/management/feature-flags`.
 `FeatureFlagProvider` loads `/feature-flags/me` once per login; read it with
 `useFeatureFlags()` → `hasFeature(key)` to branch, `isPilotFeature(key)` to show
 `<NewFeatureBadge />`. In PILOT the backend also turns a flag on for client users linked to a
-pilot broker. The frontend only reveals UI — flagged endpoints check the flag themselves.
+pilot broker. The frontend only reveals UI — flagged endpoints check the flag themselves and answer 400
+`FEATURE_DISABLED` when it is off. Services pass such errors to `reportIfFeatureDisabled(error)`
+(`src/utils/featureFlags.js`), which makes `FeatureFlagProvider` reload the flags quietly; callers skip
+the error toast, so a flag switched off mid-session just makes its UI disappear.
 When a flag goes ON for good, delete the old code path, the constant and the backend key.
 
 ### Routing (`src/App.jsx`)

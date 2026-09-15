@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useCallback, useMemo } from 're
 import { featureFlagService } from '../api/featureFlagService';
 import { AuthContext } from './authContext';
 import { FeatureFlagContext } from './featureFlagContext';
+import { FEATURE_FLAGS_STALE_EVENT } from '../utils/featureFlags';
 
 /**
  * Giriş yapmış kullanıcı için açık bayrakları bir kez yükler (kullanıcı değişince yeniden).
@@ -23,6 +24,13 @@ export default function FeatureFlagProvider({ children }) {
 
   useEffect(() => {
     loadFeatures();
+  }, [loadFeatures]);
+
+  // Bayraklı bir uç "özellik kapalı" dediğinde (bayrak oturum sırasında kapatıldı) listeyi sessizce tazele.
+  useEffect(() => {
+    const onStale = () => { loadFeatures(); };
+    window.addEventListener(FEATURE_FLAGS_STALE_EVENT, onStale);
+    return () => window.removeEventListener(FEATURE_FLAGS_STALE_EVENT, onStale);
   }, [loadFeatures]);
 
   const value = useMemo(() => {

@@ -670,6 +670,7 @@ export const en = {
     continuing: "Continuing from a draft",
     continuingUntil: "Continuing from a draft · deleted at {{time}}",
     unsupportedVersion: "This draft was saved with an older version of the form and can't be opened.",
+    unavailable: "Saving drafts isn't available right now. The form stays open and your entries are kept.",
     gRadarPreviewTitle: "The G-Radar preview isn't kept in drafts",
     gRadarPreviewMessage: "The fetched fields stay in the draft, but the preview is released. Fetching the details again when you finish the record may use a credit.",
     button: "Drafts",
@@ -2222,6 +2223,7 @@ export const en = {
       limitReached: "You have reached the draft limit. Delete an older draft to save a new one.",
       forbidden: "You don't have permission to change this draft",
       notFound: "Draft not found; it may have been deleted",
+      featureDisabled: "Drafts are currently turned off",
     },
     contact: {
       loadError: "Could not load the contact information",

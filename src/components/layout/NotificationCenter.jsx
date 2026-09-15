@@ -271,11 +271,12 @@ export default function NotificationCenter() {
       const path = user?.globalRole === 'CLIENT_USER' ? '/my-shipments' : '/management/courier-shipments';
       navigate(path, { state: { shipmentId: notification.entityId } });
     } else if (notification.entityType === 'DRAFT') {
-      // Taslak hatırlatması yalnızca taslak id'si taşır: modülü bulunur, o sayfada taslak listesi açılıp taslak
-      // vurgulanır. Taslak artık yoksa taslağı olan ilk modül, hiç taslak yoksa İşlem Takip açılır.
+      // Taslak hatırlatması kullanıcının en son güncellenen taslağının id'sini taşır: taslak GET /drafts/{id} ile
+      // alınır, modülünün sayfasında taslak listesi açılıp taslak vurgulanır. Taslak artık yoksa taslağı olan ilk
+      // modül, hiç taslak yoksa İşlem Takip açılır.
       const located = await draftService.locateDraft(notification.entityId);
-      const module = located.success && located.data ? located.data : 'TRANSACTION';
-      navigate(DRAFT_MODULE_PATHS[module], { state: { openDrafts: true, draftId: notification.entityId } });
+      const path = (located.success && DRAFT_MODULE_PATHS[located.data]) || DRAFT_MODULE_PATHS.TRANSACTION;
+      navigate(path, { state: { openDrafts: true, draftId: notification.entityId } });
     } else if (notification.entityType === 'FEEDBACK') {
       if (isSuperAdmin) {
         navigate('/management/feedback-tasks');

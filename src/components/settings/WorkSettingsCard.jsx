@@ -66,12 +66,16 @@ export default function WorkSettingsCard({ isPilot = false }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
+  // Bayrak sayfa açıkken kapatıldı (FEATURE_DISABLED): bayraklar tazelenene kadar kart sessizce gizlenir
+  const [featureDisabled, setFeatureDisabled] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     const result = await companyService.getWorkSettings();
-    if (result.success) {
+    if (result.code === 'FEATURE_DISABLED') {
+      setFeatureDisabled(true);
+    } else if (result.success) {
       const next = normalize(result.data);
       setSaved(next);
       setForm(next);
@@ -108,6 +112,10 @@ export default function WorkSettingsCard({ isPilot = false }) {
     setSaving(true);
     const result = await companyService.updateWorkSettings(form);
     setSaving(false);
+    if (result.code === 'FEATURE_DISABLED') {
+      setFeatureDisabled(true);
+      return;
+    }
     if (!result.success) {
       showError(result.error);
       return;
@@ -117,6 +125,8 @@ export default function WorkSettingsCard({ isPilot = false }) {
     setForm(next);
     showSuccess(t('companySettings.workSettings.saved'));
   };
+
+  if (featureDisabled) return null;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-background-dark">

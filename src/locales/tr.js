@@ -670,6 +670,7 @@ export const tr = {
     continuing: "Taslaktan devam ediyorsunuz",
     continuingUntil: "Taslaktan devam ediyorsunuz · saat {{time}} itibarıyla silinir",
     unsupportedVersion: "Bu taslak formun eski bir sürümüyle kaydedilmiş, açılamıyor.",
+    unavailable: "Taslak kaydetme şu anda kullanılamıyor. Form açık kalıyor, girdiğiniz bilgiler duruyor.",
     gRadarPreviewTitle: "G-Radar önizlemesi taslağa alınmaz",
     gRadarPreviewMessage: "Getirilen alanlar taslakta kalır, ancak önizleme bırakılır. Kaydı tamamlarken bilgileri yeniden getirmek kredi harcayabilir.",
     button: "Taslaklar",
@@ -2223,6 +2224,7 @@ export const tr = {
       limitReached: "Taslak sınırına ulaştınız. Yeni taslak kaydetmek için eski taslaklardan birini silin.",
       forbidden: "Bu taslak üzerinde işlem yapma yetkiniz yok",
       notFound: "Taslak bulunamadı; silinmiş olabilir",
+      featureDisabled: "Taslak özelliği şu anda kapalı",
     },
     contact: {
       loadError: "İletişim bilgileri alınamadı",

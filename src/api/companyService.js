@@ -1,5 +1,6 @@
 import axiosInstance from './axios';
 import { logError, getApiErrorMessage } from '../utils/errorUtils';
+import { reportIfFeatureDisabled } from '../utils/featureFlags';
 import { t } from '../locales';
 
 export const companyService = {
@@ -168,6 +169,8 @@ export const companyService = {
       const response = await axiosInstance.get('/company/work-settings');
       return { success: true, data: response.data };
     } catch (error) {
+      // Bayrak kapatıldıysa bayraklar sessizce tazelenir; çağıran kartı gizler
+      if (reportIfFeatureDisabled(error)) return { success: false, code: 'FEATURE_DISABLED', error: '' };
       logError('CompanyService - getWorkSettings', error);
       return {
         success: false,
@@ -186,6 +189,7 @@ export const companyService = {
       const response = await axiosInstance.put('/company/work-settings', settings);
       return { success: true, data: response.data };
     } catch (error) {
+      if (reportIfFeatureDisabled(error)) return { success: false, code: 'FEATURE_DISABLED', error: '' };
       logError('CompanyService - updateWorkSettings', error);
       return {
         success: false,

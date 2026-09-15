@@ -1,16 +1,23 @@
 import axiosInstance from './axios';
 import { logError, getApiErrorMessage } from '../utils/errorUtils';
+import { reportIfFeatureDisabled } from '../utils/featureFlags';
 import { t } from '../locales';
 
 /**
  * Kaydedilmemiş form taslakları (DRAFTS bayrağı arkasında; backend de kontrol ediyor).
  *
- * Taslak sunucuda firma ve oluşturan kullanıcıyla saklanır, her gün firmanın silme saatinde temizlenir.
+ * Taslak sunucuda firma ve oluşturan kullanıcıyla saklanır, her gün firmanın silme saatinde temizlenir. Süresi dolmuş
+ * taslak temizlik işi çalışmadan da hiçbir uçta görünmez.
  * BROKER_USER yalnızca kendi taslaklarını görür; BROKER_ADMIN firmadaki tüm taslakları görür. Başkasının taslağında
- * `mine` false gelir: yönetici silebilir, ama devam edemez ve üzerine yazamaz (PUT yalnızca oluşturana açık).
+ * `mine` false gelir: yönetici silebilir, ama devam edemez ve üzerine yazamaz (PUT → 403 FORBIDDEN).
  *
  * Taslak öğesi: { id, module, targetId, label, payload, schemaVersion, createdBy: { id, fullName },
- *   createdAt, updatedAt, expiresAt, mine }. `payload` formun geri yüklenebilir JSON görüntüsüdür.
+ *   createdAt, updatedAt, expiresAt, mine }. Zamanlar UTC (`2026-09-15T20:30:00Z`); `createdBy.fullName` kullanıcı
+ *   adıdır. `payload` formun geri yüklenebilir JSON görüntüsüdür.
+ *
+ * Hatalar: 404 `DRAFT_NOT_FOUND` (yok, silinmiş, süresi dolmuş ya da görünmüyor), 400 `DRAFT_TOO_LARGE`,
+ * 409 `DRAFT_LIMIT_REACHED`, 403 `FORBIDDEN`, 400 `FEATURE_DISABLED` (bayrak sayfa açıkken kapatıldı: bayraklar
+ * sessizce tazelenir, çağıran toast göstermez).
  *
  * Servisler hata fırlatmaz: `{ success: true, data }` | `{ success: false, error, code, status }`.
  * Başarılı her değişiklik window'a `draftsChanged` olayı yayar; sayfalardaki taslak sayacı bunu dinler.
@@ -30,8 +37,10 @@ export const DRAFTS_CHANGED_EVENT = 'draftsChanged';
 
 // Sözleşmedeki hata kodları → yedek metin. Sunucu kendi mesajını gönderirse o gösterilir.
 const CODE_FALLBACK_KEYS = {
+  DRAFT_NOT_FOUND: 'api.drafts.notFound',
   DRAFT_TOO_LARGE: 'api.drafts.tooLarge',
   DRAFT_LIMIT_REACHED: 'api.drafts.limitReached',
+  FEATURE_DISABLED: 'api.drafts.featureDisabled',
 };
 
 const STATUS_FALLBACK_KEYS = {
@@ -39,13 +48,26 @@ const STATUS_FALLBACK_KEYS = {
   404: 'api.drafts.notFound',
 };
 
-const failure = (context, error, fallbackKey) => {
-  logError(`DraftService - ${context}`, error);
-  const status = error?.response?.status;
+const errorCodeOf = (error) => {
   const data = error?.response?.data;
-  const code = typeof data?.code === 'string'
-    ? data.code
-    : (typeof data?.error === 'string' && CODE_FALLBACK_KEYS[data.error] ? data.error : undefined);
+  if (typeof data?.code === 'string') return data.code;
+  return typeof data?.error === 'string' && CODE_FALLBACK_KEYS[data.error] ? data.error : undefined;
+};
+
+const isNotFoundError = (error) => error?.response?.status === 404 || errorCodeOf(error) === 'DRAFT_NOT_FOUND';
+
+/** Servis sonucu "taslak yok" mu (silinmiş, temizlenmiş, süresi dolmuş ya da görünmüyor)? */
+export const isDraftNotFound = (result) => result?.status === 404 || result?.code === 'DRAFT_NOT_FOUND';
+
+/** Servis sonucu "bayrak kapalı" mı? Bayraklar zaten tazeleniyor; çağıran hata toast'ı göstermemeli. */
+export const isFeatureDisabled = (result) => result?.code === 'FEATURE_DISABLED';
+
+const failure = (context, error, fallbackKey) => {
+  const status = error?.response?.status;
+  const code = errorCodeOf(error);
+  const featureDisabled = reportIfFeatureDisabled(error);
+  // Beklenen durumlar konsolu kirletmesin
+  if (!featureDisabled && !isNotFoundError(error)) logError(`DraftService - ${context}`, error);
   const key = CODE_FALLBACK_KEYS[code] || STATUS_FALLBACK_KEYS[status] || fallbackKey;
   return { success: false, error: getApiErrorMessage(error, t(key)), code, status };
 };
@@ -72,6 +94,19 @@ export const draftService = {
   },
 
   /**
+   * Tek taslak (listeyle aynı görünürlük). Yoksa `code: 'DRAFT_NOT_FOUND'`, `status: 404`.
+   * @param {number|string} id
+   */
+  getDraft: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/drafts/${id}`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return failure('getDraft', error, 'api.drafts.notFound');
+    }
+  },
+
+  /**
    * Modül başına taslak sayısı ve firmanın silme saati
    * @returns data: { TRANSACTION, WAREHOUSE, CARGO, purgeTime: "21:00" | null }
    */
@@ -85,7 +120,7 @@ export const draftService = {
           TRANSACTION: countOf(data.TRANSACTION),
           WAREHOUSE: countOf(data.WAREHOUSE),
           CARGO: countOf(data.CARGO),
-          purgeTime: typeof data.purgeTime === 'string' ? data.purgeTime.substring(0, 5) : null,
+          purgeTime: typeof data.purgeTime === 'string' ? data.purgeTime : null,
         },
       };
     } catch (error) {
@@ -109,13 +144,14 @@ export const draftService = {
   },
 
   /**
-   * Taslağı güncelle — yalnızca oluşturan. Taslak bu arada silinmişse `status: 404` döner.
+   * Taslağı güncelle — yalnızca oluşturan. Etiket değiştirilir (null temizler), bu yüzden her seferinde güncel etiket
+   * gönderilmeli. Taslak bu arada silinmiş ya da süresi dolmuşsa `isDraftNotFound(result)`.
    * @param {number} id
-   * @param {Object} body - { label?, payload, schemaVersion }
+   * @param {Object} body - { label, payload, schemaVersion }
    */
   updateDraft: async (id, { label, payload, schemaVersion }) => {
     try {
-      const response = await axiosInstance.put(`/drafts/${id}`, { label, payload, schemaVersion });
+      const response = await axiosInstance.put(`/drafts/${id}`, { label: label ?? null, payload, schemaVersion });
       notifyChanged(response.data?.module);
       return { success: true, data: response.data };
     } catch (error) {
@@ -124,35 +160,38 @@ export const draftService = {
   },
 
   /**
-   * Taslağı sil (oluşturan ya da BROKER_ADMIN)
+   * Taslağı sil (oluşturan ya da BROKER_ADMIN). Taslak zaten yoksa (404) silme amacına ulaşmış sayılır:
+   * `{ success: true, data: { alreadyGone: true } }`.
    * @param {number} id
    */
   deleteDraft: async (id) => {
     try {
       await axiosInstance.delete(`/drafts/${id}`);
       notifyChanged();
-      return { success: true, data: null };
+      return { success: true, data: { alreadyGone: false } };
     } catch (error) {
+      if (isNotFoundError(error)) {
+        notifyChanged();
+        return { success: true, data: { alreadyGone: true } };
+      }
       return failure('deleteDraft', error, 'api.drafts.deleteError');
     }
   },
 
   /**
-   * Hatırlatma bildirimi yalnızca taslak id'si taşır; taslağın hangi modülde olduğunu bulur.
-   * Tek modülde taslak varsa listeye bakmadan onu, birden fazlaysa listelerde id'yi arar.
-   * Taslak artık yoksa taslağı olan ilk modülü, hiç taslak yoksa null döner.
+   * Hatırlatma bildirimi yalnızca taslak id'si taşır; taslağın modülünü bulur. Taslak alınamazsa (yok, süresi
+   * dolmuş, ağ hatası) taslağı olan ilk modülü, hiç taslak yoksa null döner.
    * @param {number|string} id
    * @returns data: 'TRANSACTION' | 'WAREHOUSE' | 'CARGO' | null
    */
   locateDraft: async (id) => {
-    const summary = await draftService.getSummary();
-    if (!summary.success) return summary;
-    const withDrafts = Object.values(DRAFT_MODULES).filter((module) => summary.data[module] > 0);
-    if (withDrafts.length <= 1) return { success: true, data: withDrafts[0] || null };
+    const draft = await draftService.getDraft(id);
+    if (draft.success && DRAFT_MODULES[draft.data?.module]) return { success: true, data: draft.data.module };
+    if (isFeatureDisabled(draft)) return { success: true, data: null };
 
-    const lists = await Promise.all(withDrafts.map((module) => draftService.listDrafts(module)));
-    const index = lists.findIndex((list) => list.success && list.data.some((draft) => String(draft.id) === String(id)));
-    return { success: true, data: index >= 0 ? withDrafts[index] : withDrafts[0] };
+    const summary = await draftService.getSummary();
+    if (!summary.success) return { success: true, data: null };
+    return { success: true, data: Object.values(DRAFT_MODULES).find((module) => summary.data[module] > 0) || null };
   },
 };
 

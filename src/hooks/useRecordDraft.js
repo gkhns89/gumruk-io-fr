@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { draftService, DRAFT_SCHEMA_VERSION } from '../api/draftService';
+import { draftService, DRAFT_SCHEMA_VERSION, isDraftNotFound, isFeatureDisabled } from '../api/draftService';
 import { useFeatureFlags } from './useFeatureFlags';
 import { FEATURE_FLAGS } from '../utils/featureFlags';
 import { canUseDrafts, formatDraftClock } from '../utils/drafts';
-import { showSuccess, showError } from '../utils/toastUtils';
+import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 import { t } from '../locales';
 
 /**
@@ -49,12 +49,15 @@ export function useRecordDraft({ module, currentUser, initialDraft, getSnapshot 
       let result = null;
       if (draftIdRef.current) {
         result = await draftService.updateDraft(draftIdRef.current, body);
-        if (!result.success && result.status === 404) result = null;
+        // Taslak bu arada silinmiş, temizlenmiş ya da süresi dolmuş: yenisi oluşturulur
+        if (!result.success && isDraftNotFound(result)) result = null;
       }
       if (!result) result = await draftService.createDraft({ module, ...body });
 
       if (!result.success) {
-        showError(result.error);
+        // Bayrak sayfa açıkken kapatıldı: bayraklar sessizce tazelenir, form açık kalır ve veri kaybolmaz
+        if (isFeatureDisabled(result)) showInfo(t('drafts.unavailable'));
+        else showError(result.error);
         return false;
       }
       if (result.data?.id != null) draftIdRef.current = result.data.id;
