@@ -3,6 +3,9 @@ import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { companyService } from '../api/companyService';
 import ImageUploadField from '../components/common/ImageUploadField';
+import WorkSettingsCard from '../components/settings/WorkSettingsCard';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { FEATURE_FLAGS } from '../utils/featureFlags';
 import { t } from '../locales';
 
 /**
@@ -10,12 +13,15 @@ import { t } from '../locales';
  *  - SUPER_ADMIN: combobox ile herhangi bir gümrük firmasını seçip logosunu değiştirir.
  *  - BROKER_ADMIN: yalnızca kendi gümrük firmasının logosunu değiştirir.
  * (Müşteri firmalarının logoları "Müşteri Firmaları" sayfasından yönetilir.)
+ * DRAFTS bayrağı açıkken BROKER_ADMIN kendi firmasının çalışma saatlerini ve taslak silme saatini de düzenler.
  */
 export default function CompanySettingsPage() {
   const { user, refreshUser } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
   const isBrokerAdmin = user?.globalRole === 'BROKER_ADMIN';
   const hasAccess = isSuperAdmin || isBrokerAdmin;
+  const { hasFeature, isPilotFeature } = useFeatureFlags();
+  const showWorkSettings = isBrokerAdmin && hasFeature(FEATURE_FLAGS.DRAFTS);
 
   // SUPER_ADMIN: broker listesi + seçim
   const [brokers, setBrokers] = useState([]);
@@ -72,7 +78,7 @@ export default function CompanySettingsPage() {
               <p className="text-base">{t('management.noAccess')}</p>
             </div>
           ) : (
-            <div className="max-w-2xl">
+            <div className="max-w-2xl space-y-6">
               <div className="bg-white dark:bg-background-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-primary">image</span>
@@ -140,6 +146,8 @@ export default function CompanySettingsPage() {
                   )}
                 </div>
               </div>
+
+              {showWorkSettings && <WorkSettingsCard isPilot={isPilotFeature(FEATURE_FLAGS.DRAFTS)} />}
             </div>
           )}
         </div>
