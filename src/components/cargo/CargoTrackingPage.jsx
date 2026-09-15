@@ -65,6 +65,8 @@ export default function CargoTrackingPage() {
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
   const canManageGRadar = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
+  // BROKER_USER takibi kendisi açıp kapatamaz, yöneticisine talep gönderir (tablodaki "Talep Et" gibi).
+  const canRequestGRadar = user?.globalRole === 'BROKER_USER';
   const isClientUser = user?.globalRole === 'CLIENT_USER';
 
   // G-Radar per-cargo actions
@@ -792,6 +794,7 @@ export default function CargoTrackingPage() {
         onChanged={loadData}
         canRefresh
         canManage={canManageGRadar && !isTableReadOnly}
+        canRequest={canRequestGRadar && !isTableReadOnly}
       />
     </MainLayout>
   );

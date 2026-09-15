@@ -196,7 +196,9 @@ export const gRadarService = {
     }
   },
 
-  // ---- Enable-request workflow (BROKER_USER ↔ BROKER_ADMIN) ----
+  // ---- Enable / disable request workflow (BROKER_USER ↔ BROKER_ADMIN) ----
+  // Her iki uç da { message, requestId, requestType } döndürüyor. Talep satırlarında
+  // requestType eksikse (eski backend) ENABLE sayılır.
   requestEnable: async (cargoId, { notes } = {}) => {
     try {
       const res = await axiosInstance.post(`/g-radar/cargo/${cargoId}/request-enable`, { notes });
@@ -204,6 +206,17 @@ export const gRadarService = {
     } catch (error) {
       logError('GRadarService - requestEnable', error);
       return { success: false, error: getApiErrorMessage(error, t('cargoTracking.gRadarActions.requestError')) };
+    }
+  },
+
+  // Yalnızca BROKER_USER; yöneticiler takibi doğrudan kapatır (backend onlara 400 döner).
+  requestDisable: async (cargoId, { notes } = {}) => {
+    try {
+      const res = await axiosInstance.post(`/g-radar/cargo/${cargoId}/request-disable`, { notes });
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('GRadarService - requestDisable', error);
+      return { success: false, error: getApiErrorMessage(error, t('cargoTracking.gRadarActions.disableRequestError')) };
     }
   },
 

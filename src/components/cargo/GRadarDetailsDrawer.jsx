@@ -26,6 +26,11 @@ import { t, getCurrentLocale } from '../../locales';
  * "Takibi kapat" ve — Yenile, G-Radar'ın takip kaydını bulamadığını
  * bildirdiğinde — "Takibi yeniden başlat" düğmelerini açar. Tablo bu durumda
  * kurtarma yolu sunamıyor: fetch, takip kimliği dolu yükü atlıyor.
+ * `canRequest` (BROKER_USER, read-only değil) aynı yerde "Kapatma talebi gönder"
+ * düğmesini açar: takibi yönetici onayıyla kapatma yolu. Yükte bekleyen bir talep
+ * (tipi fark etmez, backend yük başına tek bekleyen talebe izin veriyor) varsa
+ * düğme yerine "Talep bekliyor" gösterilir; bu bilgi çekmece açılınca yükün talep
+ * listesinden bir kez okunur — yalnızca canRequest olan kullanıcı için.
  * `onChanged` bu işlemlerden sonra sayfanın listesini yeniletir.
  */
 export default function GRadarDetailsDrawer({
@@ -34,6 +39,7 @@ export default function GRadarDetailsDrawer({
   onChanged,
   canRefresh = true,
   canManage = false,
+  canRequest = false,
 }) {
   const isOpen = !!cargo;
   const [details, setDetails] = useState(null);
@@ -41,10 +47,14 @@ export default function GRadarDetailsDrawer({
   const [refreshing, setRefreshing] = useState(false);
   // Yenile, G-Radar'ın bu yükün takip kaydını bulamadığını söyledi mi.
   const [shipmentMissing, setShipmentMissing] = useState(false);
-  // 'disable' | 'restart' | null — çalışan işlem. Ref, onay penceresi açılmadan
+  // 'disable' | 'restart' | 'request' | null — çalışan işlem. Ref, onay penceresi açılmadan
   // gelen ikinci tıklamayı da engelliyor (state güncellemesi bir render geç kalır).
   const [busyAction, setBusyAction] = useState(null);
   const busyRef = useRef(false);
+  // Yükte bekleyen talep: undefined = henüz bilinmiyor, null = yok, nesne = bekleyen talep.
+  const [pendingRequest, setPendingRequest] = useState(undefined);
+  // Çekmece başka bir yüke geçtiyse geç gelen talep listesi yazılmasın.
+  const cargoIdRef = useRef(null);
 
   const load = useCallback(async (cargoId) => {
     if (!cargoId) return;
@@ -59,8 +69,21 @@ export default function GRadarDetailsDrawer({
     }
   }, []);
 
+  // Yükte bekleyen talep var mı (tipi fark etmez). Liste alınamazsa düğme açık
+  // kalır; bekleyen talep varsa backend yine reddeder ve hata mesajı gösterilir.
+  const loadPendingRequest = useCallback(async (cargoId) => {
+    const res = await gRadarService.listCargoRequests(cargoId);
+    if (cargoIdRef.current !== cargoId) return;
+    const pending = res.success
+      ? (res.data?.requests || []).find((r) => r.status === 'PENDING')
+      : null;
+    setPendingRequest(pending || null);
+  }, []);
+
   useEffect(() => {
+    cargoIdRef.current = cargo?.id ?? null;
     setShipmentMissing(false);
+    setPendingRequest(undefined);
     if (cargo?.id) {
       load(cargo.id);
     } else {
@@ -68,11 +91,17 @@ export default function GRadarDetailsDrawer({
     }
   }, [cargo?.id, load]);
 
-  // ESC closes the drawer (matches the surrounding modal pattern)
+  // Talep listesi yalnızca talep gönderebilen kullanıcı için okunur — yöneticiye ek çağrı yok.
+  useEffect(() => {
+    if (cargo?.id && canRequest) loadPendingRequest(cargo.id);
+  }, [cargo?.id, canRequest, loadPendingRequest]);
+
+  // ESC closes the drawer (matches the surrounding modal pattern). Üstte bir onay
+  // penceresi açıksa ESC yalnızca onu kapatsın, çekmeceyi değil.
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape' && !document.querySelector('[data-confirm-dialog]')) onClose?.();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -173,9 +202,61 @@ export default function GRadarDetailsDrawer({
     }
   };
 
+  // BROKER_USER'ın kapatma talebi. Onaylanana kadar takip açık kaldığı için
+  // çekmece açık kalır; düğme "Talep bekliyor" hâline geçer ve liste yenilenir.
+  const handleRequestDisable = async () => {
+    const cargoId = cargo?.id;
+    if (!cargoId || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      // confirmDialog ayrı bir React kökünde çiziliyor: not state'e değil buraya yazılır.
+      const values = { notes: '' };
+      const ok = await confirmDialog({
+        title: t('cargoTracking.gRadarActions.disableRequestTitle'),
+        message: t('cargoTracking.gRadarActions.disableRequestMessage', {
+          identifier: details?.identifier || t('cargoTracking.common.thisCargo'),
+        }),
+        details: [
+          t('cargoTracking.gRadarActions.disableRequestStaysOn'),
+          t('cargoTracking.gRadarActions.disableRequestNotifyHint'),
+        ],
+        intent: 'warning',
+        icon: 'send',
+        confirmText: t('cargoTracking.gRadarActions.disableRequestConfirm'),
+        content: <RequestNoteField onChange={(value) => { values.notes = value; }} />,
+      });
+      if (!ok) return;
+      setBusyAction('request');
+      const res = await gRadarService.requestDisable(cargoId, { notes: values.notes.trim() || null });
+      if (res.success) {
+        showSuccess(res.data?.message || t('cargoTracking.gRadarActions.disableRequestSent'));
+        if (cargoIdRef.current === cargoId) {
+          setPendingRequest({
+            id: res.data?.requestId,
+            status: 'PENDING',
+            requestType: res.data?.requestType || 'DISABLE',
+          });
+        }
+        onChanged?.();
+      } else {
+        showError(res.error || t('cargoTracking.gRadarActions.disableRequestError'));
+        // Örn. arada başka bir talep açıldıysa düğmenin hâli sunucuya göre güncellensin.
+        loadPendingRequest(cargoId);
+      }
+    } finally {
+      busyRef.current = false;
+      setBusyAction(null);
+    }
+  };
+
   // Tamamlanmış yükte fetch reddediliyor ve tablo yeniden açma sunmuyor —
   // orada takibi kapatmak geri dönüşsüz olurdu, düğmeler gösterilmiyor.
   const canManageTracking = canManage
+    && !!details?.gRadarEnabled
+    && details?.status !== 'COMPLETED';
+  // Talep düğmesi yöneticinin doğrudan düğmeleriyle aynı kurala bağlı.
+  const canRequestTracking = canRequest
+    && !canManage
     && !!details?.gRadarEnabled
     && details?.status !== 'COMPLETED';
   const busy = !!busyAction;
@@ -469,6 +550,30 @@ export default function GRadarDetailsDrawer({
                   {busyAction === 'disable' ? t('cargoTracking.drawer.disabling') : t('cargoTracking.drawer.disable')}
                 </button>
               )}
+              {canRequestTracking && (pendingRequest ? (
+                // Yük başına tek bekleyen talep: yenisi gönderilemez, düğme yerine durum gösterilir.
+                <span
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-text-secondary cursor-default"
+                  title={pendingRequest.requestType === 'DISABLE'
+                    ? t('cargoTracking.drawer.requestPendingDisableHint')
+                    : t('cargoTracking.drawer.requestPendingEnableHint')}
+                >
+                  <span className="material-symbols-outlined text-base">schedule</span>
+                  {t('cargoTracking.drawer.requestPending')}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRequestDisable}
+                  // undefined: talep listesi henüz gelmedi.
+                  disabled={busy || refreshing || pendingRequest === undefined}
+                  title={t('cargoTracking.drawer.requestDisableHint')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-base">send</span>
+                  {busyAction === 'request' ? t('cargoTracking.common.sending') : t('cargoTracking.drawer.requestDisable')}
+                </button>
+              ))}
               {canManageTracking && shipmentMissing && details?.gRadarTrackingId && (
                 <button
                   type="button"
@@ -493,6 +598,30 @@ export default function GRadarDetailsDrawer({
         </div>
       </aside>
     </>
+  );
+}
+
+/**
+ * Kapatma talebi onay penceresindeki isteğe bağlı not. confirmDialog ayrı bir React
+ * kökünde çizildiği için değer state'e değil `onChange(value)` ile çağırana gider.
+ */
+function RequestNoteField({ onChange }) {
+  return (
+    <div className="text-left">
+      <label htmlFor="gradar-request-note" className="block text-sm font-medium text-text-main mb-1">
+        {t('cargoTracking.gRadarActions.disableRequestNoteLabel')}
+        {' '}
+        <span className="text-xs font-normal text-text-secondary">({t('common.optional')})</span>
+      </label>
+      <textarea
+        id="gradar-request-note"
+        rows={3}
+        maxLength={500}
+        placeholder={t('cargoTracking.gRadarActions.disableRequestNotePlaceholder')}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-sm resize-none"
+      />
+    </div>
   );
 }
 

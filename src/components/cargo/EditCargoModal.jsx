@@ -3,7 +3,8 @@ import { cargoService } from '../../api/cargoService';
 import { companyService } from '../../api/companyService';
 import { gRadarService } from '../../api/gRadarService';
 import { confirmDialog } from '../../utils/confirmDialog';
-import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType } from '../../utils/constants';
+import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES, getVehicleType, isGRadarDisableRequest } from '../../utils/constants';
+import GRadarRequestTypeBadge from '../gradar/GRadarRequestTypeBadge';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
@@ -44,15 +45,17 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
   // The newest request always wins (rejection vs. pending vs. approved).
   const latestRequest = requestHistory[0] || null;
 
-  const handleCancelMyRequest = async (requestId) => {
+  const handleCancelMyRequest = async (request) => {
     const ok = await confirmDialog({
       title: t('cargoTracking.requests.cancelTitle'),
-      message: t('cargoTracking.requests.cancelMessage'),
+      message: isGRadarDisableRequest(request)
+        ? t('cargoTracking.requests.cancelDisableMessage')
+        : t('cargoTracking.requests.cancelMessage'),
       intent: 'warning',
       confirmText: t('cargoTracking.requests.cancelConfirm'),
     });
     if (!ok) return;
-    const res = await gRadarService.cancelRequest(requestId);
+    const res = await gRadarService.cancelRequest(request.id);
     if (res.success) {
       showSuccess(t('cargoTracking.requests.cancelled'));
       loadRequests();
@@ -61,9 +64,12 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     }
   };
 
-  const handleReRequest = async () => {
+  // requestType: bandın gönderdiği talebin tipi. Kapalı yük için gösterilen "Talep Gönder"
+  // her zaman açma talebidir; reddedilen kapatma talebinin "Tekrar Talep Et"i kapatma talebini yineler.
+  const handleReRequest = async (requestType) => {
     setReRequesting(true);
-    const res = await gRadarService.requestEnable(cargo.id, { notes: reRequestNotes.trim() || null });
+    const send = requestType === 'DISABLE' ? gRadarService.requestDisable : gRadarService.requestEnable;
+    const res = await send(cargo.id, { notes: reRequestNotes.trim() || null });
     setReRequesting(false);
     if (res.success) {
       showSuccess(t('cargoTracking.requests.resent'));
@@ -1470,14 +1476,21 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
  * component would just couple them through props.
  */
 /**
- * In-modal banner reflecting the latest G-Radar enable-request on the cargo.
- * Three states matter:
+ * In-modal banner reflecting the latest G-Radar request on the cargo — an
+ * ENABLE ("turn tracking on") or DISABLE ("turn tracking off") request; rows
+ * without `requestType` (older backend) count as ENABLE. Each banner carries a
+ * type badge. States that matter:
  *  - PENDING (the request is sitting in some BROKER_ADMIN's queue): blue
  *    info banner. The original requester sees a "Talebi iptal et" button.
  *  - REJECTED: red banner quoting the admin's reason. A "Tekrar Talep Et"
- *    affordance lets the user file a fresh request (with a fresh note).
- *  - APPROVED but G-Radar isn't actually active anymore (rare; admin
+ *    affordance lets the user file a fresh request of the same type (with a
+ *    fresh note). For DISABLE only a BROKER_USER may re-request, and only while
+ *    tracking is still on and the cargo isn't completed.
+ *  - APPROVED ENABLE but G-Radar isn't actually active anymore (rare; admin
  *    disabled afterwards): green hint nudging the user to re-request.
+ *  - A DISABLE that is no longer pending while tracking is off: nothing to say
+ *    (approved = expected outcome; rejected = an admin turned it off later), so
+ *    it counts as "no active request" and the off-state call-to-action shows.
  *  - APPROVED and G-Radar still active, or CANCELLED, or nothing: no banner.
  */
 function GRadarRequestBanner({
@@ -1488,7 +1501,9 @@ function GRadarRequestBanner({
 }) {
   const supportsGRadar = vehicleType === 'SHIP' || vehicleType === 'AIRPLANE';
   const isCompleted = cargoStatus === 'COMPLETED';
-  const noActiveRequest = !latest || latest.status === 'CANCELLED';
+  const isDisableRequest = isGRadarDisableRequest(latest);
+  const isSettledDisableWhileOff = isDisableRequest && latest.status !== 'PENDING' && !gRadarEnabled;
+  const noActiveRequest = !latest || latest.status === 'CANCELLED' || isSettledDisableWhileOff;
 
   // "G-Radar is off, nothing pending, can still be turned on" — show a
   // call-to-action so the user has a way to enable from inside the modal
@@ -1542,7 +1557,7 @@ function GRadarRequestBanner({
           />
           <button
             type="button"
-            onClick={onReRequest}
+            onClick={() => onReRequest('ENABLE')}
             disabled={reRequesting}
             className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
           >
@@ -1556,8 +1571,11 @@ function GRadarRequestBanner({
   // No request at all → no banner. CANCELLED also stays quiet (the user
   // intentionally walked away from it). Both branches dropped here so the
   // demo doesn't show stale banners for cargos that never had a request.
+  // A settled DISABLE while tracking is off is stale too (see the doc comment).
   if (!latest) return null;
   if (latest.status === 'CANCELLED') return null;
+  if (isSettledDisableWhileOff) return null;
+  const typeBadge = <GRadarRequestTypeBadge requestType={latest.requestType} />;
   const isOwner = latest.requestedByEmail && currentUserId
     ? false
     : latest.requestedByEmail && currentUserId === latest.requestedByEmail
@@ -1572,9 +1590,12 @@ function GRadarRequestBanner({
       <div className="mb-4 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex-1 min-w-[200px]">
-            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex flex-wrap items-center gap-2">
               <span className="material-symbols-outlined text-base">schedule</span>
-              {t('cargoTracking.requests.pendingTitle')}
+              {isDisableRequest
+                ? t('cargoTracking.requests.pendingDisableTitle')
+                : t('cargoTracking.requests.pendingTitle')}
+              {typeBadge}
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
               {t('cargoTracking.requests.requestedAt', { date: new Date(latest.requestedAt).toLocaleString(getCurrentLocale()) })}
@@ -1582,7 +1603,7 @@ function GRadarRequestBanner({
             </p>
           </div>
           <button
-            onClick={() => onCancel(latest.id)}
+            onClick={() => onCancel(latest)}
             className="px-3 py-1.5 text-xs border border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
           >
             {t('cargoTracking.requests.cancelConfirm')}
@@ -1596,11 +1617,24 @@ function GRadarRequestBanner({
   }
 
   if (latest.status === 'REJECTED') {
+    // ENABLE: as before, anyone viewing may re-request. DISABLE: only a BROKER_USER
+    // (admins turn tracking off directly; the backend refuses their request), and
+    // only while tracking is still on — otherwise we returned above.
+    const canReRequest = !isDisableRequest
+      || (supportsGRadar && !isCompleted && !isAdmin && !isReadOnly);
+    const rejectedHint = !isDisableRequest
+      ? t('cargoTracking.requests.rejectedHint')
+      : canReRequest
+        ? t('cargoTracking.requests.rejectedDisableHint')
+        : t('cargoTracking.requests.rejectedDisableStaysOn');
     return (
       <div className="mb-4 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4">
-        <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
+        <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex flex-wrap items-center gap-2">
           <span className="material-symbols-outlined text-base">cancel</span>
-          {t('cargoTracking.requests.rejectedTitle')}
+          {isDisableRequest
+            ? t('cargoTracking.requests.rejectedDisableTitle')
+            : t('cargoTracking.requests.rejectedTitle')}
+          {typeBadge}
         </p>
         {latest.rejectionReason && (
           <p className="text-xs text-red-700 dark:text-red-400 mt-1 italic">
@@ -1616,35 +1650,39 @@ function GRadarRequestBanner({
           </p>
         )}
         <p className="text-xs text-red-700 dark:text-red-400 mt-2">
-          {t('cargoTracking.requests.rejectedHint')}
+          {rejectedHint}
         </p>
-        <div className="mt-3 flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            maxLength={500}
-            value={reRequestNotes}
-            onChange={(e) => setReRequestNotes(e.target.value)}
-            placeholder={t('cargoTracking.requests.newNotePlaceholder')}
-            className="flex-1 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-          />
-          <button
-            onClick={onReRequest}
-            disabled={reRequesting}
-            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
-          >
-            {reRequesting ? t('cargoTracking.common.sending') : t('cargoTracking.requests.resend')}
-          </button>
-        </div>
+        {canReRequest && (
+          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              maxLength={500}
+              value={reRequestNotes}
+              onChange={(e) => setReRequestNotes(e.target.value)}
+              placeholder={t('cargoTracking.requests.newNotePlaceholder')}
+              className="flex-1 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            <button
+              onClick={() => onReRequest(isDisableRequest ? 'DISABLE' : 'ENABLE')}
+              disabled={reRequesting}
+              className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
+            >
+              {reRequesting ? t('cargoTracking.common.sending') : t('cargoTracking.requests.resend')}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (latest.status === 'APPROVED' && !gRadarEnabled) {
+  // Only an approved ENABLE: an approved DISABLE is supposed to leave tracking off.
+  if (latest.status === 'APPROVED' && !gRadarEnabled && !isDisableRequest) {
     return (
       <div className="mb-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
-        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex flex-wrap items-center gap-2">
           <span className="material-symbols-outlined text-base">check_circle</span>
           {t('cargoTracking.requests.approvedOffTitle')}
+          {typeBadge}
         </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
           {t('cargoTracking.requests.approvedOffHint')}
@@ -1659,7 +1697,7 @@ function GRadarRequestBanner({
             className="flex-1 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button
-            onClick={onReRequest}
+            onClick={() => onReRequest('ENABLE')}
             disabled={reRequesting}
             className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold disabled:opacity-50 whitespace-nowrap"
           >

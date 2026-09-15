@@ -2,10 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError } from '../../utils/toastUtils';
+import { confirmDialog } from '../../utils/confirmDialog';
+import { isGRadarDisableRequest } from '../../utils/constants';
+import GRadarRequestTypeBadge from './GRadarRequestTypeBadge';
 import { t, getCurrentLocale } from '../../locales';
 
 /**
- * Header bell + popover that lists PENDING G-Radar enable requests.
+ * Header bell + popover that lists PENDING G-Radar requests filed by
+ * BROKER_USERs — both "turn tracking on" (ENABLE) and "turn tracking off"
+ * (DISABLE) requests, each row labelled with a type badge.
  *  - BROKER_ADMIN: requests for their own broker, with approve / reject
  *    actions. They are the audience the original notification flow
  *    targets, so the badge is the active to-do indicator.
@@ -14,10 +19,19 @@ import { t, getCurrentLocale } from '../../locales';
  *    broker admins (the people who can actually act); this is purely
  *    visibility for dev.
  *
+ * Kapatma talebinde "Onayla + Bilgileri Getir" yok (çekilecek bir şey yok) ve onay
+ * takibi kapattığı için önce onay penceresi açılır. Yük talepten sonra zaten hedef
+ * duruma geldiyse (yönetici doğrudan açtı / kapattı) backend onayı reddeder, talep
+ * beklemede kalır; mesaj normal hata bildirimi olarak gösterilir.
+ *
  * Polling: every 10 minutes while mounted. The upstream changes infrequently
  * (humans typing notes) so anything tighter just adds chatter.
  */
 const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Onay penceresi ayrı bir React kökünde, popover'ın dışında çiziliyor: içindeki
+// tıklama ya da ESC popover'ı kapatmasın.
+const CONFIRM_DIALOG_SELECTOR = '[data-confirm-dialog]';
 
 export default function GRadarRequestsBell() {
   const { user } = useAuth();
@@ -55,13 +69,14 @@ export default function GRadarRequestsBell() {
   useEffect(() => {
     if (!open) return;
     const onClickOutside = (e) => {
+      if (e.target.closest?.(CONFIRM_DIALOG_SELECTOR)) return;
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setOpen(false);
         setRejectingId(null);
       }
     };
     const onKey = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !document.querySelector(CONFIRM_DIALOG_SELECTOR)) {
         setOpen(false);
         setRejectingId(null);
       }
@@ -76,15 +91,40 @@ export default function GRadarRequestsBell() {
 
   if (!isEligible) return null;
 
-  const approve = async (id, fetchImmediately) => {
+  const approve = async (request, fetchImmediately) => {
+    const { id } = request;
+    const isDisable = isGRadarDisableRequest(request);
     setActingId(id);
-    const res = await gRadarService.approveRequest(id, { fetchImmediately });
-    setActingId(null);
-    if (res.success) {
-      showSuccess(res.data?.message || t('gRadarAdmin.requests.approved'));
-      load();
-    } else {
-      showError(res.error);
+    try {
+      if (isDisable) {
+        const ok = await confirmDialog({
+          title: t('gRadarAdmin.requests.approveDisableTitle'),
+          message: t('gRadarAdmin.requests.approveDisableMessage', {
+            identifier: request.cargoIdentifier || t('gRadarAdmin.requests.cargoFallback', { id: request.cargoId }),
+          }),
+          details: [
+            t('gRadarAdmin.requests.approveDisableKeepsData'),
+            t('gRadarAdmin.requests.approveDisableCredit'),
+          ],
+          intent: 'danger',
+          icon: 'toggle_off',
+          confirmText: t('gRadarAdmin.requests.approveDisableConfirm'),
+        });
+        if (!ok) return;
+      }
+      // Kapatma talebinde bilgi çekilecek bir şey yok; backend de fetchImmediately'yi yok sayıyor.
+      const res = await gRadarService.approveRequest(id, {
+        fetchImmediately: isDisable ? false : fetchImmediately,
+      });
+      if (res.success) {
+        showSuccess(res.data?.message
+          || t(isDisable ? 'gRadarAdmin.requests.approvedDisable' : 'gRadarAdmin.requests.approved'));
+        load();
+      } else {
+        showError(res.error);
+      }
+    } finally {
+      setActingId(null);
     }
   };
 
@@ -151,97 +191,105 @@ export default function GRadarRequestsBell() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {requests.map((r) => (
-                <div key={r.id} className="p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-text-main truncate">
-                        {r.cargoVehicleType === 'AIRPLANE' ? '✈️' : '🚢'} {r.cargoIdentifier || t('gRadarAdmin.requests.cargoFallback', { id: r.cargoId })}
-                      </p>
-                      {/* SUPER_ADMIN sees requests across every broker — show
-                          which one this belongs to so the pool view is
-                          legible. BROKER_ADMIN always sees just their own
-                          broker, so the line is hidden. */}
-                      {isSuperAdmin && r.brokerCompanyName && (
-                        <p className="text-[11px] text-primary font-medium">
-                          {r.brokerCompanyName}
+              {requests.map((r) => {
+                const isDisable = isGRadarDisableRequest(r);
+                return (
+                  <div key={r.id} className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-text-main truncate">
+                          {r.cargoVehicleType === 'AIRPLANE' ? '✈️' : '🚢'} {r.cargoIdentifier || t('gRadarAdmin.requests.cargoFallback', { id: r.cargoId })}
                         </p>
-                      )}
-                      <p className="text-[11px] text-text-secondary">
-                        {r.requestedByUsername || r.requestedByEmail || t('gRadarAdmin.requests.unknownUser')}
-                        {' · '}
-                        {new Date(r.requestedAt).toLocaleString(getCurrentLocale())}
-                      </p>
+                        {/* SUPER_ADMIN sees requests across every broker — show
+                            which one this belongs to so the pool view is
+                            legible. BROKER_ADMIN always sees just their own
+                            broker, so the line is hidden. */}
+                        {isSuperAdmin && r.brokerCompanyName && (
+                          <p className="text-[11px] text-primary font-medium">
+                            {r.brokerCompanyName}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-text-secondary">
+                          {r.requestedByUsername || r.requestedByEmail || t('gRadarAdmin.requests.unknownUser')}
+                          {' · '}
+                          {new Date(r.requestedAt).toLocaleString(getCurrentLocale())}
+                        </p>
+                      </div>
+                      <GRadarRequestTypeBadge requestType={r.requestType} className="flex-shrink-0 mt-0.5" />
                     </div>
-                  </div>
-                  {r.notes && (
-                    <p className="text-xs italic text-text-secondary border-l-2 border-primary/40 pl-2">
-                      "{r.notes}"
-                    </p>
-                  )}
-                  {isSuperAdmin ? (
-                    // Read-only oversight pool — broker admins are the only
-                    // ones who can act, SuperAdmin just watches.
-                    <p className="text-[11px] text-text-secondary italic">
-                      {t('gRadarAdmin.requests.viewOnly')}
-                    </p>
-                  ) : rejectingId === r.id ? (
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="text"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder={t('adminCommon.rejectionReasonPlaceholder')}
-                        className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      <div className="flex gap-2 justify-end">
+                    {r.notes && (
+                      <p className="text-xs italic text-text-secondary border-l-2 border-primary/40 pl-2">
+                        "{r.notes}"
+                      </p>
+                    )}
+                    {isSuperAdmin ? (
+                      // Read-only oversight pool — broker admins are the only
+                      // ones who can act, SuperAdmin just watches.
+                      <p className="text-[11px] text-text-secondary italic">
+                        {t('gRadarAdmin.requests.viewOnly')}
+                      </p>
+                    ) : rejectingId === r.id ? (
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          placeholder={t('adminCommon.rejectionReasonPlaceholder')}
+                          className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                            className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-main"
+                          >
+                            {t('common.cancel')}
+                          </button>
+                          <button
+                            onClick={() => reject(r.id)}
+                            disabled={actingId === r.id}
+                            className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50"
+                          >
+                            {actingId === r.id ? '...' : t('payment.reject')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
                         <button
-                          onClick={() => { setRejectingId(null); setRejectReason(''); }}
-                          className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-main"
-                        >
-                          {t('common.cancel')}
-                        </button>
-                        <button
-                          onClick={() => reject(r.id)}
+                          onClick={() => approve(r, false)}
                           disabled={actingId === r.id}
-                          className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold disabled:opacity-50"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                          title={isDisable
+                            ? t('gRadarAdmin.requests.approveDisableHint')
+                            : t('gRadarAdmin.requests.approveHint')}
                         >
-                          {actingId === r.id ? '...' : t('payment.reject')}
+                          <span className="material-symbols-outlined text-sm">check</span>
+                          {t('payment.confirm')}
+                        </button>
+                        {!isDisable && (
+                          <button
+                            onClick={() => approve(r, true)}
+                            disabled={actingId === r.id}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary hover:opacity-90 text-white rounded-lg font-medium disabled:opacity-50"
+                            title={t('gRadarAdmin.requests.approveAndFetchHint')}
+                          >
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            {t('gRadarAdmin.requests.approveAndFetch')}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setRejectingId(r.id)}
+                          disabled={actingId === r.id}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs border border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-sm">close</span>
+                          {t('payment.reject')}
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        onClick={() => approve(r.id, false)}
-                        disabled={actingId === r.id}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
-                        title={t('gRadarAdmin.requests.approveHint')}
-                      >
-                        <span className="material-symbols-outlined text-sm">check</span>
-                        {t('payment.confirm')}
-                      </button>
-                      <button
-                        onClick={() => approve(r.id, true)}
-                        disabled={actingId === r.id}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary hover:opacity-90 text-white rounded-lg font-medium disabled:opacity-50"
-                        title={t('gRadarAdmin.requests.approveAndFetchHint')}
-                      >
-                        <span className="material-symbols-outlined text-sm">download</span>
-                        {t('gRadarAdmin.requests.approveAndFetch')}
-                      </button>
-                      <button
-                        onClick={() => setRejectingId(r.id)}
-                        disabled={actingId === r.id}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs border border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium disabled:opacity-50"
-                      >
-                        <span className="material-symbols-outlined text-sm">close</span>
-                        {t('payment.reject')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

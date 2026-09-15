@@ -687,6 +687,40 @@ export const getShipmentEventType = (value) => {
   return SHIPMENT_EVENT_TYPES.find((type) => type.value === value) || null;
 };
 
+/**
+ * G-Radar talep tipleri (BROKER_USER → BROKER_ADMIN): yükte takibi açma ya da kapatma talebi.
+ * Eski backend talep satırında requestType göndermeyebilir; eksik tip ENABLE sayılır.
+ */
+export const GRADAR_REQUEST_TYPES = [
+  {
+    value: 'ENABLE',
+    labelKey: 'gRadarAdmin.requests.types.ENABLE',
+    get label() { return t(this.labelKey); },
+    icon: 'toggle_on',
+    badgeClass: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  },
+  {
+    value: 'DISABLE',
+    labelKey: 'gRadarAdmin.requests.types.DISABLE',
+    get label() { return t(this.labelKey); },
+    icon: 'toggle_off',
+    badgeClass: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+  },
+];
+
+/**
+ * Talep tipini değere göre bul. Eksik değer ENABLE sayılır; bilinmeyen değer null döner.
+ * @param {string|null|undefined} value - ENABLE | DISABLE
+ * @returns {Object|null}
+ */
+export const getGRadarRequestType = (value) => {
+  const normalized = value ?? 'ENABLE';
+  return GRADAR_REQUEST_TYPES.find((type) => type.value === normalized) || null;
+};
+
+/** Talep takibi kapatmak için mi? Tipi eksik talep açma talebidir. */
+export const isGRadarDisableRequest = (request) => request?.requestType === 'DISABLE';
+
 export default {
   GATE_OPTIONS,
   TRANSACTION_STATUS,
