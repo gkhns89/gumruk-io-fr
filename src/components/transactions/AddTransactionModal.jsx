@@ -17,6 +17,11 @@ import CreateAgreementModal from '../common/CreateAgreementModal';
 import AddClientModal from '../common/AddClientModal';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useRecordDraft } from '../../hooks/useRecordDraft';
+import { DRAFT_MODULES } from '../../api/draftService';
+import { readDraftPayload, mergeDraftFields, draftText, buildDraftLabel } from '../../utils/drafts';
+import DraftContinuingBadge from '../drafts/DraftContinuingBadge';
+import SaveDraftButton from '../drafts/SaveDraftButton';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
 // hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
@@ -29,12 +34,13 @@ export default function AddTransactionModal({
   onClose,
   onSuccess,
   currentUser,
+  initialDraft = null,
 }) {
   // Yetki kontrolü
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
   const locale = getCurrentLocale();
 
-  const [formData, setFormData] = useState({
+  const createEmptyFormData = () => ({
     brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
     clientCompanyId: "",
     fileNo: "",
@@ -61,9 +67,20 @@ export default function AddTransactionModal({
     },
   });
 
+  // Taslaktan açıldıysa formun kaydedilmiş görüntüsü (DRAFTS). Yalnızca ilk render'da okunur; state'ler buradan
+  // başlar, böylece açılışta dropdown açılmaz ve kapatma korumasının temeli taslağın kendisi olur.
+  const [draftPayload] = useState(() => readDraftPayload(initialDraft, DRAFT_MODULES.TRANSACTION));
+
+  const [formData, setFormData] = useState(() => {
+    const empty = createEmptyFormData();
+    if (!draftPayload) return empty;
+    // Broker her zaman kullanıcının firması: taslak firmaya bağlı
+    return { ...mergeDraftFields(empty, draftPayload.formData), brokerCompanyId: empty.brokerCompanyId };
+  });
+
   const [availableClients, setAvailableClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [clientSearchTerm, setClientSearchTerm] = useState(() => draftText(draftPayload, "clientSearchTerm"));
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [selectedClientInfo, setSelectedClientInfo] = useState(null);
 
@@ -75,28 +92,28 @@ export default function AddTransactionModal({
   // SUPER_ADMIN için broker listesi
   const [availableBrokers, setAvailableBrokers] = useState([]);
   const [filteredBrokers, setFilteredBrokers] = useState([]);
-  const [brokerSearchTerm, setBrokerSearchTerm] = useState("");
+  const [brokerSearchTerm, setBrokerSearchTerm] = useState(() => draftText(draftPayload, "brokerSearchTerm"));
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
 
   // Gönderici listesi state'leri
   const [availableSenders, setAvailableSenders] = useState([]);
   const [filteredSenders, setFilteredSenders] = useState([]);
-  const [senderSearchTerm, setSenderSearchTerm] = useState("");
+  const [senderSearchTerm, setSenderSearchTerm] = useState(() => draftText(draftPayload, "senderSearchTerm"));
   const [showSenderDropdown, setShowSenderDropdown] = useState(false);
   const [loadingSenders, setLoadingSenders] = useState(false);
 
   // Gümrük listesi state'leri
   const [availableCustoms, setAvailableCustoms] = useState([]); // Now array of customs objects
   const [filteredCustoms, setFilteredCustoms] = useState([]);
-  const [customsSearchTerm, setCustomsSearchTerm] = useState("");
-  const [selectedCustomsId, setSelectedCustomsId] = useState(null); // Track selected customs ID
+  const [customsSearchTerm, setCustomsSearchTerm] = useState(() => draftText(draftPayload, "customsSearchTerm"));
+  const [selectedCustomsId, setSelectedCustomsId] = useState(() => formData.customsId || null); // Track selected customs ID
   const [showCustomsDropdown, setShowCustomsDropdown] = useState(false);
   const [loadingCustoms, setLoadingCustoms] = useState(false);
 
   // Antrepo listesi state'leri
   const [availableWarehouses, setAvailableWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
-  const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
+  const [warehouseSearchTerm, setWarehouseSearchTerm] = useState(() => draftText(draftPayload, "warehouseSearchTerm"));
   const [showWarehouseDropdown, setShowWarehouseDropdown] = useState(false);
   const [loadingWarehouses, setLoadingWarehouses] = useState(false);
 
@@ -118,10 +135,20 @@ export default function AddTransactionModal({
   // Yeni firma ekleme modal state
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
+  // Taslaktan açılışta sayı alanının görüntü metni: değer varsa seçili dilde biçimlenir, yoksa taslaktaki
+  // (ayrıştırılamamış) metin olduğu gibi gelir.
+  const restoreDisplayNumber = (field, displayKey) => {
+    if (!draftPayload) return "";
+    const value = formData[field];
+    return value !== "" && value != null
+      ? formatLocaleNumber(value, 2, locale)
+      : draftText(draftPayload, displayKey);
+  };
+
   // Number formatlama için display state'leri
-  const [displayWeight, setDisplayWeight] = useState("");
-  const [displayTax, setDisplayTax] = useState("");
-  const [displayGuaranteeAmount, setDisplayGuaranteeAmount] = useState("");
+  const [displayWeight, setDisplayWeight] = useState(() => restoreDisplayNumber("weight", "displayWeight"));
+  const [displayTax, setDisplayTax] = useState(() => restoreDisplayNumber("tax", "displayTax"));
+  const [displayGuaranteeAmount, setDisplayGuaranteeAmount] = useState(() => restoreDisplayNumber("guaranteeAmount", "displayGuaranteeAmount"));
 
   // Ref for modal container (for auto-focus)
   const modalRef = useRef(null);
@@ -1099,6 +1126,7 @@ export default function AddTransactionModal({
 
       if (result.success) {
         console.log("✅ İşlem başarıyla oluşturuldu");
+        discardDraft();
         showSuccess(t("transactions.form.createSuccess"));
         onSuccess();
       } else {
@@ -1112,32 +1140,7 @@ export default function AddTransactionModal({
   };
 
   const handleClear = () => {
-    setFormData({
-      brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
-      clientCompanyId: "",
-      fileNo: "",
-      recipientName: "",
-      customsId: "",
-      customsWarehouse: "",
-      containerAmount: "",
-      gate: "",
-      weight: "",
-      tax: "",
-      guaranteeAmount: "",
-      senderName: "",
-      warehouseArrivalDate: "",
-      registrationDate: "",
-      declarationNumber: "",
-      lineClosureDate: "",
-      importProcessingTime: "",
-      withdrawalDate: "",
-      description: "",
-      delayReasons: {
-        arrivalToRegistration: "",
-        registrationToClosure: "",
-        closureToWithdrawal: ""
-      },
-    });
+    setFormData(createEmptyFormData());
     // Formatlanmış gösterim state'leri de sıfırlanmalı, aksi halde alanlar eski değeri göstermeye devam eder
     setDisplayWeight("");
     setDisplayTax("");
@@ -1251,7 +1254,36 @@ export default function AddTransactionModal({
     displayGuaranteeAmount: formData.guaranteeAmount === "" ? displayGuaranteeAmount : "",
   }), [formData, brokerSearchTerm, clientSearchTerm, customsSearchTerm, senderSearchTerm, warehouseSearchTerm,
     displayWeight, displayTax, displayGuaranteeAmount]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose });
+
+  // Taslak (DRAFTS). Geri yükleme için formData ile arama metinleri ve sayıların görüntü metinleri saklanır; seçenek
+  // listeleri, seçili müşterinin bilgisi/vekaleti, gecikme uyarıları ve alan hataları açılışta yeniden yüklenir.
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.TRANSACTION,
+    currentUser,
+    initialDraft: draftPayload ? initialDraft : null,
+    getSnapshot: () => ({
+      payload: {
+        formData,
+        brokerSearchTerm,
+        clientSearchTerm,
+        customsSearchTerm,
+        senderSearchTerm,
+        warehouseSearchTerm,
+        displayWeight,
+        displayTax,
+        displayGuaranteeAmount,
+      },
+      label: buildDraftLabel([
+        toUpperCase(formData.fileNo || "", locale),
+        formData.clientCompanyId ? (selectedClientInfo?.name || clientSearchTerm) : "",
+      ], DRAFT_MODULES.TRANSACTION),
+    }),
+  });
+  const { requestClose, isDirty } = useUnsavedChangesGuard({ values: unsavedValues, onClose, onSaveDraft: saveDraft });
+
+  const handleSaveDraftAndClose = async () => {
+    if (await saveDraft?.()) onClose();
+  };
 
   // Keyboard shortcuts: ESC to close (through the guard), CTRL+S to save
   useEffect(() => {
@@ -1297,6 +1329,7 @@ export default function AddTransactionModal({
               <p className="text-text-secondary text-sm mt-1">
                 {t("transactions.form.addSubtitle")}
               </p>
+              <DraftContinuingBadge draft={draftPayload ? initialDraft : null} className="mt-2" />
             </div>
             <button
               onClick={requestClose}
@@ -1616,7 +1649,7 @@ export default function AddTransactionModal({
                 <div className="relative" id="client-dropdown-container">
                   <div className="relative">
                     <input
-                      autoFocus={!isSuperAdmin}
+                      autoFocus={!isSuperAdmin && !draftPayload}
                       type="text"
                       value={clientSearchTerm}
                       onChange={(e) => {
@@ -3045,6 +3078,15 @@ export default function AddTransactionModal({
             >
               {t("common.cancel")}
             </button>
+            {draftsEnabled && (
+              <SaveDraftButton
+                onClick={handleSaveDraftAndClose}
+                disabled={loading || !isDirty}
+                saving={savingDraft}
+                isPilot={isDraftPilot}
+                className="w-full md:w-auto px-6 py-3"
+              />
+            )}
             <button
               onClick={handleSubmit}
               disabled={loading}

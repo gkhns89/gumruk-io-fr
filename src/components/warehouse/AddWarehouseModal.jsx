@@ -9,6 +9,11 @@ import { toUpperCase } from "../../utils/textUtils";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { useDropdownKeyboard } from "../../hooks/useDropdownKeyboard";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+import { useRecordDraft } from "../../hooks/useRecordDraft";
+import { DRAFT_MODULES } from "../../api/draftService";
+import { readDraftPayload, mergeDraftFields, draftText, buildDraftLabel } from "../../utils/drafts";
+import DraftContinuingBadge from "../drafts/DraftContinuingBadge";
+import SaveDraftButton from "../drafts/SaveDraftButton";
 import AgreementInfoPanel from "../agreements/AgreementInfoPanel";
 import { t, getCurrentLocale } from "../../locales";
 
@@ -143,27 +148,36 @@ function SectionHeader({ icon, title, accent = "text-primary" }) {
 
 /* ─────────────────────────────────────────────────────────────────── */
 
-export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
+export default function AddWarehouseModal({ onClose, onSuccess, currentUser, initialDraft = null }) {
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
   const currentBrokerId = isSuperAdmin ? "" : (currentUser?.company?.id || "");
 
-  const [formData, setFormData] = useState({
-    brokerCompanyId: currentBrokerId,
-    clientCompanyId: "",
-    fileNo: "",
-    declarationNo: "",
-    recipientName: "",
-    senderName: "",
-    warehouse: "",
-    customsId: "",
-    containerAmount: "",
-    weight: "",
-    carrierName: "",
-    representativeId: currentUser?.id || "",
-    gate: "",
-    declarationDate: "",
-    stampPaymentDate: "",
-    protocol: false,
+  // Taslaktan açıldıysa formun kaydedilmiş görüntüsü (DRAFTS). Yalnızca ilk render'da okunur; state'ler buradan
+  // başlar, böylece açılışta dropdown açılmaz ve kapatma korumasının temeli taslağın kendisi olur.
+  const [draftPayload] = useState(() => readDraftPayload(initialDraft, DRAFT_MODULES.WAREHOUSE));
+
+  const [formData, setFormData] = useState(() => {
+    const empty = {
+      brokerCompanyId: currentBrokerId,
+      clientCompanyId: "",
+      fileNo: "",
+      declarationNo: "",
+      recipientName: "",
+      senderName: "",
+      warehouse: "",
+      customsId: "",
+      containerAmount: "",
+      weight: "",
+      carrierName: "",
+      representativeId: currentUser?.id || "",
+      gate: "",
+      declarationDate: "",
+      stampPaymentDate: "",
+      protocol: false,
+    };
+    if (!draftPayload) return empty;
+    // Broker her zaman kullanıcının firması: taslak firmaya bağlı
+    return { ...mergeDraftFields(empty, draftPayload.formData), brokerCompanyId: currentBrokerId };
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
@@ -172,14 +186,14 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
   /* ── Broker ── */
   const [availableBrokers, setAvailableBrokers] = useState([]);
   const [filteredBrokers, setFilteredBrokers] = useState([]);
-  const [brokerSearch, setBrokerSearch] = useState("");
+  const [brokerSearch, setBrokerSearch] = useState(() => draftText(draftPayload, "brokerSearch"));
   const [showBrokerDd, setShowBrokerDd] = useState(false);
   const [loadingBrokers, setLoadingBrokers] = useState(false);
 
   /* ── Client (ALICI) ── */
   const [availableClients, setAvailableClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
-  const [clientSearch, setClientSearch] = useState("");
+  const [clientSearch, setClientSearch] = useState(() => draftText(draftPayload, "clientSearch"));
   const [showClientDd, setShowClientDd] = useState(false);
   const [loadingClients, setLoadingClients] = useState(false);
   const [clientAgreements, setClientAgreements] = useState({});
@@ -188,29 +202,31 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
   /* ── Customs ── */
   const [availableCustoms, setAvailableCustoms] = useState([]);
   const [filteredCustoms, setFilteredCustoms] = useState([]);
-  const [customsSearch, setCustomsSearch] = useState("");
+  const [customsSearch, setCustomsSearch] = useState(() => draftText(draftPayload, "customsSearch"));
   const [showCustomsDd, setShowCustomsDd] = useState(false);
 
   /* ── Autocomplete suggestions ── */
   const [senderSuggestions, setSenderSuggestions] = useState([]);
   const [filteredSenders, setFilteredSenders] = useState([]);
-  const [senderSearch, setSenderSearch] = useState("");
+  const [senderSearch, setSenderSearch] = useState(() => draftText(draftPayload, "senderSearch"));
   const [showSenderDd, setShowSenderDd] = useState(false);
 
   const [whSuggestions, setWhSuggestions] = useState([]);
   const [filteredWh, setFilteredWh] = useState([]);
-  const [whSearch, setWhSearch] = useState("");
+  const [whSearch, setWhSearch] = useState(() => draftText(draftPayload, "whSearch"));
   const [showWhDd, setShowWhDd] = useState(false);
 
   const [carrierSuggestions, setCarrierSuggestions] = useState([]);
   const [filteredCarriers, setFilteredCarriers] = useState([]);
-  const [carrierSearch, setCarrierSearch] = useState("");
+  const [carrierSearch, setCarrierSearch] = useState(() => draftText(draftPayload, "carrierSearch"));
   const [showCarrierDd, setShowCarrierDd] = useState(false);
 
   /* ── Representatives ── */
   const [representatives, setRepresentatives] = useState([]);
   const [filteredReps, setFilteredReps] = useState([]);
-  const [repSearch, setRepSearch] = useState(getRepName(currentUser));
+  const [repSearch, setRepSearch] = useState(() => (draftPayload ? draftText(draftPayload, "repSearch") : getRepName(currentUser)));
+  // Taslaktan açılışta çalışan listesi gelince temsilci kullanıcının kendisiyle ezilmesin: taslaktaki seçim bir kez korunur.
+  const restoreRepRef = useRef(draftPayload ? { id: formData.representativeId || null } : null);
   const [showRepDd, setShowRepDd] = useState(false);
 
   const clearErr = (f) => setFieldErrors((p) => ({ ...p, [f]: null }));
@@ -354,6 +370,15 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
     if (r?.success) {
       setRepresentatives(r.data);
       setFilteredReps(r.data.slice(0, 100));
+      const restore = restoreRepRef.current;
+      restoreRepRef.current = null;
+      if (restore) {
+        const rep = restore.id ? r.data.find((u) => u.id === restore.id) : null;
+        if (rep) setRepSearch(getRepName(rep));
+        // Taslaktaki temsilci artık firmada değil: seçim kalkar, kayıtta doğrulama yeniden sorar
+        else if (restore.id) setFormData((p) => ({ ...p, representativeId: "" }));
+        return;
+      }
       const self = r.data.find((u) => u.id === currentUser?.id);
       if (self) {
         setFormData((p) => ({ ...p, representativeId: self.id }));
@@ -379,6 +404,13 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
       loadRepresentatives(formData.brokerCompanyId);
     }
   }, [formData.brokerCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Taslaktan açılışta alıcı listeden seçilmediği için vekaleti, vekalet haritası gelince eşlenir.
+  useEffect(() => {
+    if (draftPayload && formData.clientCompanyId) {
+      setSelectedClientAgreement(clientAgreements[formData.clientCompanyId] || null);
+    }
+  }, [clientAgreements]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Filter effects ── */
   useEffect(() => {
@@ -510,6 +542,7 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
       };
       const result = await warehouseService.create(payload);
       if (result.success) {
+        discardDraft();
         showSuccess(result.message || t("warehouse.form.createSuccess"));
         onSuccess();
       } else {
@@ -537,7 +570,26 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
     whSearch,
     carrierSearch,
   }), [formData, brokerSearch, clientSearch, customsSearch, repSearch, senderSearch, whSearch, carrierSearch]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose });
+
+  // Taslak (DRAFTS). Geri yükleme için formData ile tüm arama metinleri saklanır; seçenek listeleri, vekalet bilgisi
+  // ve alan hataları açılışta yeniden yüklenir.
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.WAREHOUSE,
+    currentUser,
+    initialDraft: draftPayload ? initialDraft : null,
+    getSnapshot: () => ({
+      payload: { formData, brokerSearch, clientSearch, customsSearch, repSearch, senderSearch, whSearch, carrierSearch },
+      label: buildDraftLabel([
+        formData.fileNo,
+        formData.clientCompanyId ? clientSearch : "",
+      ], DRAFT_MODULES.WAREHOUSE),
+    }),
+  });
+  const { requestClose, isDirty } = useUnsavedChangesGuard({ values: unsavedValues, onClose, onSaveDraft: saveDraft });
+
+  const handleSaveDraftAndClose = async () => {
+    if (await saveDraft?.()) onClose();
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -567,6 +619,7 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
             <div>
               <h2 className="text-xl font-bold text-text-main">{t("warehouse.common.newRecord")}</h2>
               <p className="text-text-secondary text-sm">{t("warehouse.form.requiredHint")}</p>
+              <DraftContinuingBadge draft={draftPayload ? initialDraft : null} className="mt-1.5" />
             </div>
           </div>
           <button onClick={requestClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors">
@@ -886,11 +939,20 @@ export default function AddWarehouseModal({ onClose, onSuccess, currentUser }) {
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0 rounded-b-2xl">
           <p className="text-xs text-text-secondary"><span className="text-red-500">*</span> {t("warehouse.form.requiredFields")}</p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <button type="button" onClick={requestClose} disabled={loading}
               className="px-5 py-2.5 text-text-secondary hover:text-text-main font-medium transition-colors disabled:opacity-50 text-sm">
               {t("common.cancel")}
             </button>
+            {draftsEnabled && (
+              <SaveDraftButton
+                onClick={handleSaveDraftAndClose}
+                disabled={loading || !isDirty}
+                saving={savingDraft}
+                isPilot={isDraftPilot}
+                className="px-5 py-2.5 text-sm rounded-xl"
+              />
+            )}
             <button type="button" onClick={handleSubmit} disabled={loading}
               className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm">
               {loading

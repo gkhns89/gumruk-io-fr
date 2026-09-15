@@ -10,47 +10,61 @@ import { showSuccess, showError } from '../../utils/toastUtils';
 import { gRadarStatusInfo } from '../../utils/gRadarLabels';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useRecordDraft } from '../../hooks/useRecordDraft';
+import { DRAFT_MODULES } from '../../api/draftService';
+import { readDraftPayload, mergeDraftFields, draftText, buildDraftLabel } from '../../utils/drafts';
+import DraftContinuingBadge from '../drafts/DraftContinuingBadge';
+import SaveDraftButton from '../drafts/SaveDraftButton';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import AddClientModal from '../common/AddClientModal';
 import TagInput from '../common/TagInput';
 import { t, getCurrentLocale } from '../../locales';
 import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
 
-export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
+export default function AddCargoModal({ onClose, onSuccess, currentUser, initialDraft = null }) {
   const locale = getCurrentLocale();
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
   const modalRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
-    clientCompanyId: "",
-    vehicleType: "",
-    senderCompany: "",
-    containerCount: "",
-    weightKg: "",
-    lokalAmount: "",
-    lokalCurrency: "TRY",
-    depositoAmount: "",
-    depositoCurrency: "TRY",
-    ordinoAmount: "",
-    ordinoCurrency: "TRY",
-    paymentStatus: "NO_PAYMENT",
-    carrierName: "",
-    billOfLading: "",
-    licensePlate: "",
-    consignmentNumber: "",
-    containerNumbers: [],
-    transportInfo: "",
-    documentDeliveryType: null,
-    documentReceiver: "",
-    documentDeliveryDate: "",
-    estimatedArrivalDate: "",
-    cargoArrivalDate: "",
+  // Taslaktan açıldıysa formun kaydedilmiş görüntüsü (DRAFTS). Yalnızca ilk render'da okunur; state'ler buradan
+  // başlar, böylece açılışta dropdown açılmaz ve kapatma korumasının temeli taslağın kendisi olur.
+  const [draftPayload] = useState(() => readDraftPayload(initialDraft, DRAFT_MODULES.CARGO));
+
+  const [formData, setFormData] = useState(() => {
+    const empty = {
+      brokerCompanyId: isSuperAdmin ? "" : currentUser?.company?.id || "",
+      clientCompanyId: "",
+      vehicleType: "",
+      senderCompany: "",
+      containerCount: "",
+      weightKg: "",
+      lokalAmount: "",
+      lokalCurrency: "TRY",
+      depositoAmount: "",
+      depositoCurrency: "TRY",
+      ordinoAmount: "",
+      ordinoCurrency: "TRY",
+      paymentStatus: "NO_PAYMENT",
+      carrierName: "",
+      billOfLading: "",
+      licensePlate: "",
+      consignmentNumber: "",
+      containerNumbers: [],
+      transportInfo: "",
+      documentDeliveryType: null,
+      documentReceiver: "",
+      documentDeliveryDate: "",
+      estimatedArrivalDate: "",
+      cargoArrivalDate: "",
+    };
+    if (!draftPayload) return empty;
+    // Broker her zaman kullanıcının firması: taslak firmaya bağlı
+    return { ...mergeDraftFields(empty, draftPayload.formData), brokerCompanyId: empty.brokerCompanyId };
   });
 
   const [availableClients, setAvailableClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [clientSearchTerm, setClientSearchTerm] = useState(() => draftText(draftPayload, 'clientSearchTerm'));
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [selectedClientInfo, setSelectedClientInfo] = useState(null);
 
@@ -60,20 +74,20 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
 
   const [availableBrokers, setAvailableBrokers] = useState([]);
   const [filteredBrokers, setFilteredBrokers] = useState([]);
-  const [brokerSearchTerm, setBrokerSearchTerm] = useState("");
+  const [brokerSearchTerm, setBrokerSearchTerm] = useState(() => draftText(draftPayload, 'brokerSearchTerm'));
   const [showBrokerDropdown, setShowBrokerDropdown] = useState(false);
 
   // Sender company autocomplete states
   const [availableSenders, setAvailableSenders] = useState([]);
   const [filteredSenders, setFilteredSenders] = useState([]);
-  const [senderSearchTerm, setSenderSearchTerm] = useState("");
+  const [senderSearchTerm, setSenderSearchTerm] = useState(() => draftText(draftPayload, 'senderSearchTerm'));
   const [showSenderDropdown, setShowSenderDropdown] = useState(false);
   const [loadingSenders, setLoadingSenders] = useState(false);
 
   // Carrier name autocomplete states
   const [availableCarriers, setAvailableCarriers] = useState([]);
   const [filteredCarriers, setFilteredCarriers] = useState([]);
-  const [carrierSearchTerm, setCarrierSearchTerm] = useState("");
+  const [carrierSearchTerm, setCarrierSearchTerm] = useState(() => draftText(draftPayload, 'carrierSearchTerm'));
   const [showCarrierDropdown, setShowCarrierDropdown] = useState(false);
   const [loadingCarriers, setLoadingCarriers] = useState(false);
 
@@ -105,8 +119,10 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
   // enable request that a BROKER_ADMIN approves. The two states below
   // travel to the backend in the same POST /cargo body as `requestGRadarEnable`
   // and `gRadarRequestNotes`.
-  const [requestGRadarEnable, setRequestGRadarEnable] = useState(false);
-  const [gRadarRequestNotes, setGRadarRequestNotes] = useState('');
+  // Taslaktan gelir: talep yalnızca kullanıcının niyeti, kredi ya da süre bağı yok. Önizleme state'i (anahtar,
+  // trackingId, getirilen görüntü) ise taslaktan hiç yüklenmez; bkz. saveCargoDraft.
+  const [requestGRadarEnable, setRequestGRadarEnable] = useState(() => draftPayload?.requestGRadarEnable === true);
+  const [gRadarRequestNotes, setGRadarRequestNotes] = useState(() => draftText(draftPayload, 'gRadarRequestNotes'));
 
   const isGRadarCompatible = formData.vehicleType === 'AIRPLANE' || formData.vehicleType === 'SHIP';
 
@@ -631,6 +647,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
       const result = await cargoService.createCargo(dataToSend);
 
       if (result.success) {
+        discardDraft();
         showSuccess(t('cargoTracking.form.createSuccess'));
         // Cargo committed — don't release the upstream shipment on the way out.
         setGRadarTrackingId(null);
@@ -674,7 +691,58 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
     gRadarRequestNotes,
   }), [formData, brokerSearchTerm, clientSearchTerm, senderSearchTerm, carrierSearchTerm,
     gRadarEnabled, gRadarTrackingId, requestGRadarEnable, gRadarRequestNotes]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose: handleCloseWithCleanup });
+
+  // Taslak (DRAFTS). Düz form alanları ve BROKER_USER'ın G-Radar talebi saklanır. Önizleme saklanmaz: trackingId
+  // kredi harcanarak alınmış, süreli bir sağlayıcı kaydıdır ve modal kapanınca abandonPreview ile bırakılır; taslaktan
+  // geri yüklenseydi bırakılmış bir takibi kayda bağlamaya çalışırdık. Önizlemenin forma yazdığı ETA ve taşıyıcı
+  // formData'da düz değer olarak kalır; takip anahtarı kapalı gelir.
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.CARGO,
+    currentUser,
+    initialDraft: draftPayload ? initialDraft : null,
+    getSnapshot: () => ({
+      payload: {
+        formData,
+        brokerSearchTerm,
+        clientSearchTerm,
+        senderSearchTerm,
+        carrierSearchTerm,
+        requestGRadarEnable,
+        gRadarRequestNotes,
+      },
+      label: buildDraftLabel([
+        toUpperCase(formData.billOfLading || formData.consignmentNumber || formData.licensePlate
+          || formData.containerNumbers?.[0] || ''),
+        formData.clientCompanyId
+          ? (selectedClientInfo?.shortName || selectedClientInfo?.name || clientSearchTerm)
+          : '',
+      ], DRAFT_MODULES.CARGO),
+    }),
+  });
+
+  // Önizleme yapılmışsa taslak kaydı onu bırakacağı için önce sorulur. false → modal açık kalır.
+  const saveCargoDraft = async () => {
+    if (gRadarTrackingId) {
+      const ok = await confirmDialog({
+        title: t('drafts.gRadarPreviewTitle'),
+        message: t('drafts.gRadarPreviewMessage'),
+        intent: 'warning',
+        confirmText: t('unsavedChanges.saveDraft'),
+      });
+      if (!ok) return false;
+    }
+    return saveDraft();
+  };
+
+  const { requestClose, isDirty } = useUnsavedChangesGuard({
+    values: unsavedValues,
+    onClose: handleCloseWithCleanup,
+    onSaveDraft: saveDraft ? saveCargoDraft : undefined,
+  });
+
+  const handleSaveDraftAndClose = async () => {
+    if (saveDraft && await saveCargoDraft()) handleCloseWithCleanup();
+  };
 
   // ESC to close (through the guard)
   useEffect(() => {
@@ -714,6 +782,7 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
             <p className="text-text-secondary text-sm mt-1">
               {t('cargoTracking.form.addSubtitle')}
             </p>
+            <DraftContinuingBadge draft={draftPayload ? initialDraft : null} className="mt-2" />
           </div>
           <button
             onClick={requestClose}
@@ -1837,6 +1906,15 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser }) {
           >
             {t('common.cancel')}
           </button>
+          {draftsEnabled && (
+            <SaveDraftButton
+              onClick={handleSaveDraftAndClose}
+              disabled={loading || !isDirty}
+              saving={savingDraft}
+              isPilot={isDraftPilot}
+              className="px-6 py-2.5"
+            />
+          )}
           <button
             type="submit"
             onClick={handleSubmit}
