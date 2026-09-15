@@ -192,6 +192,14 @@ Pages combine it with role checks — the established pattern is
   `components/drafts/DraftsControl` (header button + panel, also opened by `DRAFT` notifications via
   `location.state.openDrafts`); work days/hours and the purge time live in `WorkSettingsCard` on
   `/company-settings`. Edit modals don't offer drafts yet (pending changes are phase 3).
+- **Passwords typed for someone else** (add employee, set password, client account): the password
+  inputs carry `autoComplete="new-password"` and the e-mail input `type="email"` + `autoComplete="off"`.
+  Without them the browser treats the form as a sign-in and fills in the admin's own saved password,
+  so the account opens with a password nobody knows. Use `components/common/NewPasswordFields`
+  (password + confirmation, show/hide, "Parola oluştur"); the rules (8 characters, at most 72 UTF-8
+  bytes) live in `utils/passwordUtils.js` and mirror the backend `PasswordPolicy`. An admin sets
+  another user's password only with `userService.setUserPassword` (`PUT /users/{id}/password`, which
+  closes that user's sessions); `PUT /users/{id}` rejects a `password` field. Never log these payloads.
 - **Toasts**: `showSuccess/showError/showInfo/showWarning` from `src/utils/toastUtils.js`.
   User-facing errors should go through `sanitizeError()` (via `handleError`), which
   suppresses anything containing credential-ish keywords, stack traces, or >150 chars.
