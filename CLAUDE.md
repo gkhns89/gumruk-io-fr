@@ -114,7 +114,11 @@ text the backend sends is passed through as is. Callers branch on `result.succes
 `handleApiResponse()` / `handleError()` in `src/utils/errorUtils.js` do the toast for you.
 Follow this shape in new services — code all over the app assumes it. (A handful of
 `paymentService` methods break the rule and return raw data / throw; those callers wrap
-them in `try/catch` themselves.)
+them in `try/catch` themselves.) When a form maps server errors to its fields, the failure also
+carries `code` and `details` from the envelope (`companyService.createBrokerCompany` →
+`CreateBrokerCompanyModal`: `COMPANY_NAME_EXISTS`, `USER_EMAIL_EXISTS`, ...). A request whose body holds
+a password must not hand the raw axios error to `logError()` (dev logs it with `config.data`); pass
+`{ message, response: { status, data } }` instead.
 
 Server error bodies are `{ error, message, code, details? }`: `message` is the user-facing
 text, `error` repeats it for older callers (except `PAYMENT_RESTRICTION`, where `error` is
