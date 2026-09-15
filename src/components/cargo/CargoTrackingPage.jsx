@@ -789,7 +789,9 @@ export default function CargoTrackingPage() {
       <GRadarDetailsDrawer
         cargo={gRadarDrawerCargo}
         onClose={() => setGRadarDrawerCargo(null)}
+        onChanged={loadData}
         canRefresh
+        canManage={canManageGRadar && !isTableReadOnly}
       />
     </MainLayout>
   );
