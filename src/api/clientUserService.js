@@ -29,15 +29,14 @@ export const clientUserService = {
   },
 
   /**
-   * Hesabı güncelle. password boş gönderilirse backend şifreye dokunmuyor,
-   * bu yüzden "sadece e-postayı değiştir" ve "sadece şifreyi sıfırla" aynı uçtan.
+   * Hesabın e-postası, kullanıcı adı ya da aktifliği. Şifre bu uçtan değişmez (backend 400 döner):
+   * userService.setUserPassword kullanılır.
    */
-  updateAccount: async (userId, { email, username, password, isActive }) => {
+  updateAccount: async (userId, { email, username, isActive }) => {
     try {
       const payload = {};
       if (email) payload.email = email;
       if (username) payload.username = username;
-      if (password) payload.password = password;
       if (isActive !== undefined) payload.isActive = isActive;
 
       const response = await axiosInstance.put(`/users/${userId}`, payload);
