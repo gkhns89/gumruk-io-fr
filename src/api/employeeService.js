@@ -54,7 +54,7 @@ export const employeeService = {
   // Yeni çalışan oluştur
   createEmployee: async (employeeData) => {
     try {
-      console.log('📤 Employee oluşturuluyor:', employeeData);
+      // Yük şifre taşır: loglanmaz (dev ve LAN derlemelerinde console.log silinmiyor)
       const response = await axiosInstance.post('/users', employeeData);
       console.log('✅ Employee oluşturuldu:', response.data);
       return {
@@ -84,7 +84,6 @@ export const employeeService = {
   // Çalışan bilgilerini güncelle
   updateEmployee: async (userId, employeeData) => {
     try {
-      console.log('📤 Employee güncelleniyor:', userId, employeeData);
       const response = await axiosInstance.put(`/users/${userId}`, employeeData);
       console.log('✅ Employee güncellendi:', response.data);
       return {
