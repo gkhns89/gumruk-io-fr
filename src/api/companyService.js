@@ -107,6 +107,33 @@ export const companyService = {
     }
   },
 
+  /**
+   * SUPER_ADMIN: gümrük firması + abonelik + ilk Broker Yöneticisi, sunucuda tek işlem.
+   * @param {Object} payload - { name, shortName, description, subscriptionPlanId, startDate, endDate, billingCycle,
+   *   nextPaymentDue, customMaxBrokerUsers, customMaxClientCompanies, notes, admin: { email, username, password } }
+   * @returns data: { id, name, shortName, companyCode, subscriptionId, adminUserId, ... }. Hatada `code`
+   *   (COMPANY_NAME_EXISTS, COMPANY_SHORT_NAME_EXISTS, USER_EMAIL_EXISTS, USER_USERNAME_EXISTS,
+   *   SUBSCRIPTION_END_DATE_INVALID, VALIDATION_FAILED) ve `details` alan eşlemesi için döner.
+   */
+  createBrokerCompany: async (payload) => {
+    try {
+      const response = await axiosInstance.post('/companies/broker', payload);
+      return { success: true, data: response.data };
+    } catch (error) {
+      // İstek gövdesi yöneticinin şifresini taşıyor: axios hatasının kendisi (config.data) loglanmaz.
+      logError('CompanyService - createBrokerCompany', {
+        message: error?.message,
+        response: error?.response ? { status: error.response.status, data: error.response.data } : undefined,
+      });
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.company.brokerCreateError')),
+        code: error?.response?.data?.code,
+        details: error?.response?.data?.details,
+      };
+    }
+  },
+
   // Firma logosunu yükle/değiştir (SUPER_ADMIN her firma; BROKER_ADMIN kendi broker'ı/client'ları)
   uploadCompanyLogo: async (companyId, file) => {
     try {
