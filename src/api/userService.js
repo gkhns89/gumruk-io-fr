@@ -98,4 +98,18 @@ export const userService = {
       };
     }
   },
+
+  // Yönetici başka bir kullanıcıya (çalışan, müşteri hesabı) şifre belirler; kullanıcının açık oturumları kapanır
+  setUserPassword: async (userId, { newPassword, confirmPassword }) => {
+    try {
+      const response = await axiosInstance.put(`/users/${userId}/password`, { newPassword, confirmPassword });
+      return { success: true, data: response.data };
+    } catch (error) {
+      logError('UserService - setUserPassword', error);
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.user.setPasswordError')),
+      };
+    }
+  },
 };

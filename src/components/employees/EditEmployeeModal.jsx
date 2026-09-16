@@ -9,10 +9,10 @@ import { t, getCurrentLocale } from '../../locales';
 export default function EditEmployeeModal({ onClose, employee, currentUser, onSuccess }) {
   const locale = getCurrentLocale();
 
+  // Rol bu formda değişmez: PUT /users/{id} rol almıyor, gönderilen globalRole sessizce yok sayılıyordu.
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    globalRole: 'BROKER_USER',
     isActive: true,
     isPaymentResponsible: false,
   });
@@ -26,7 +26,6 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
       setFormData({
         username: employee.username || '',
         email: employee.email || '',
-        globalRole: employee.globalRole || 'BROKER_USER',
         isActive: employee.isActive !== undefined ? employee.isActive : true,
         isPaymentResponsible: employee.isPaymentResponsible ?? false,
       });
@@ -56,16 +55,15 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
         email: formData.email
       };
 
-      // Only include role and status if not editing self
+      // Only include status if not editing self
       if (!isEditingSelf) {
-        updateData.globalRole = formData.globalRole;
         updateData.isActive = formData.isActive;
       }
 
       const result = await employeeService.updateEmployee(employee.id, updateData);
 
       // Ödeme sorumlusu değiştiyse güncelle
-      if (!isEditingSelf && isBrokerStaffRole(formData.globalRole)) {
+      if (!isEditingSelf && isBrokerStaffRole(employee.globalRole)) {
         await paymentService.setPaymentResponsible(employee.id, formData.isPaymentResponsible);
       }
 
@@ -178,29 +176,17 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
               )}
             </div>
 
-            {/* Role Selection - Disabled when editing self */}
+            {/* Role - read-only: the update endpoint does not change roles */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
-                {t('employee.role')} *
+                {t('employee.role')}
               </label>
-              <select
-                value={formData.globalRole}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  globalRole: e.target.value
-                }))}
-                disabled={isEditingSelf}
-                required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 transition-colors"
-              >
-                <option value="BROKER_USER">{t('roles.brokerUser')}</option>
-                <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
-              </select>
-              {isEditingSelf && (
-                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                  {t('employees.edit.cannotChangeOwnRole')}
-                </p>
-              )}
+              <div className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-text-main rounded-lg cursor-not-allowed transition-colors">
+                {employee.globalRole === 'BROKER_ADMIN' ? t('roles.brokerAdmin') : t('roles.brokerUser')}
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
+                {t('employees.edit.roleReadOnly')}
+              </p>
             </div>
 
             {/* Status Selection - Disabled when editing self */}
@@ -230,7 +216,7 @@ export default function EditEmployeeModal({ onClose, employee, currentUser, onSu
 
 
             {/* Ödeme Sorumlusu - Sadece BROKER_ADMIN veya BROKER_USER için */}
-            {!isEditingSelf && isBrokerStaffRole(formData.globalRole) && (
+            {!isEditingSelf && isBrokerStaffRole(employee.globalRole) && (
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
                 <div>
                   <p className="text-sm font-medium text-text-main">{t('payment.paymentResponsible')}</p>

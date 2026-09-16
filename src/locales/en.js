@@ -205,7 +205,7 @@ export const en = {
       firstName: "JOHN",
       lastName: "DOE",
       email: "john.doe@example.com",
-      password: "At least 6 characters",
+      password: "At least 8 characters",
     },
   },
 
@@ -1651,7 +1651,7 @@ export const en = {
       generatePassword: "Generate password",
       passwordKeepPlaceholder: "Leave blank to keep it unchanged",
       passwordMinHint: "At least {{min}} characters",
-      passwordKeepHint: "Leave blank to keep the current password",
+      passwordKeepHint: "Leave blank to keep the current password. Saving a new password closes the client's open sessions.",
       show: "Show",
       hide: "Hide",
       passwordOnceWarning: "This password is shown only here. It cannot be displayed again after saving — remember to pass it on to the client.",
@@ -1666,6 +1666,7 @@ export const en = {
       passwordMin: "Password must be at least {{min}} characters",
       createSuccess: "Login account created for {{name}}",
       updateSuccess: "Login account updated",
+      passwordSetSuccess: "Password set. The client's open sessions have been closed.",
       activated: "Account activated",
       deactivated: "Account deactivated",
     },
@@ -1709,6 +1710,20 @@ export const en = {
     },
   },
 
+  // New password an admin enters for someone else (NewPasswordFields, passwordUtils)
+  passwordForm: {
+    password: "Password",
+    newPassword: "New password",
+    confirm: "Confirm password",
+    generate: "Generate password",
+    show: "Show password",
+    hide: "Hide password",
+    hint: "At least {{min}} characters",
+    tooShort: "Password must be at least {{min}} characters",
+    tooLong: "The password is too long: at most {{max}} bytes (letters outside the English alphabet count as 2 bytes)",
+    mismatch: "The passwords do not match",
+  },
+
   // Employee management screens (complements the older `employee` section)
   employees: {
     common: {
@@ -1735,16 +1750,17 @@ export const en = {
       you: "(You)",
       paymentResponsibleHint: "Payment responsible",
       cannotDeleteSelf: "You cannot delete yourself",
+      cannotEditOtherAdmin: "Only a Super Admin can edit another Broker Admin",
+      setPassword: "Set password",
     },
     add: {
       subtitle: "Create a new employee record",
       companyMissing: "Company information is missing. Please refresh the page.",
-      passwordMin: "Password must be at least 6 characters",
       quotaExceeded: "Employee limit reached. Please upgrade your subscription.",
       usernameHint: "The employee's first and last name",
       emailHint: "Email address used to sign in",
-      passwordHint: "Minimum 6 characters",
       roleHint: "Broker Admin: all permissions • Broker User: transaction management",
+      roleBrokerUserOnly: "New employees are added as Broker Users. A Super Admin opens Broker Admin accounts.",
       quotaWarning: "Employee limit reached. Upgrade your subscription to add more employees.",
       submit: "Add Employee",
     },
@@ -1752,9 +1768,17 @@ export const en = {
       subtitle: "Update the employee's details",
       subtitleSelf: "Edit your own details",
       selfWarning: "You cannot change your own role or status",
-      cannotChangeOwnRole: "You cannot change your own role",
+      roleReadOnly: "The role cannot be changed here",
       cannotChangeOwnStatus: "You cannot change your own status",
       paymentResponsibleHint: "This user can submit payment notifications",
+    },
+    setPassword: {
+      title: "Set password",
+      submit: "Set password",
+      sessionsWarning: "Saving closes the user's open sessions; they will need to sign in again with the new password. Pass the password on through a secure channel.",
+      confirmTitle: "Set the password?",
+      confirmMessage: "{{name}}'s open sessions will be closed and they will need to sign in again with the new password.",
+      success: "Password set for {{name}}. Their open sessions have been closed.",
     },
     view: {
       subtitle: "View the employee's details",
@@ -2378,6 +2402,7 @@ export const en = {
       photoUploadError: "Could not upload the photo",
       photoDeleteError: "Could not remove the photo",
       passwordChangeError: "Could not change the password",
+      setPasswordError: "Could not set the password",
     },
     warehouse: {
       listError: "Could not load bonded warehouse records",

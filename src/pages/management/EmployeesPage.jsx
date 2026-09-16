@@ -8,6 +8,7 @@ import AddEmployeeModal from '../../components/employees/AddEmployeeModal';
 import ViewEmployeeModal from '../../components/employees/ViewEmployeeModal';
 import EditEmployeeModal from '../../components/employees/EditEmployeeModal';
 import DeleteEmployeeModal from '../../components/employees/DeleteEmployeeModal';
+import SetPasswordModal from '../../components/employees/SetPasswordModal';
 import ImageUploadField from '../../components/common/ImageUploadField';
 import { userService } from '../../api/userService';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
@@ -16,6 +17,7 @@ import { t, getCurrentLocale } from '../../locales';
 const EmployeesPage = () => {
   const { user } = useAuth();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
+  const isBrokerAdmin = user?.globalRole === 'BROKER_ADMIN';
 
   // SUPER_ADMIN: broker seçim state'leri
   const [brokers, setBrokers] = useState([]);
@@ -39,6 +41,7 @@ const EmployeesPage = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [avatarBust, setAvatarBust] = useState(0);
 
@@ -151,6 +154,18 @@ const EmployeesPage = () => {
   const canAddEmployee = limits && (limits.canAddUser !== false) && (limits.remainingUserQuota > 0);
   const { isWriteBlocked, isFullReadOnly } = usePaymentRestriction();
   const isAddBlocked = !isSuperAdmin && (isWriteBlocked || isFullReadOnly);
+  // Şifre belirleme bir PUT: ödeme kısıtında yalnızca FULL_READONLY engeller
+  const isPasswordBlocked = !isSuperAdmin && isFullReadOnly;
+
+  // Backend kuralları (son söz orada): BROKER_ADMIN başka bir BROKER_ADMIN'i düzenleyemez ve yalnızca BROKER_USER'a
+  // şifre belirler; SUPER_ADMIN SUPER_ADMIN olmayan herkese; kimse kendine (kendi şifresi Hesabım > Güvenlik).
+  const canEditEmployee = (employee) =>
+    isSuperAdmin || employee.id === user?.id || employee.globalRole !== 'BROKER_ADMIN';
+  const canSetPasswordFor = (employee) =>
+    employee.id !== user?.id && (
+      (isBrokerAdmin && employee.globalRole === 'BROKER_USER') ||
+      (isSuperAdmin && employee.globalRole !== 'SUPER_ADMIN')
+    );
 
   return (
     <MainLayout>
@@ -449,11 +464,22 @@ const EmployeesPage = () => {
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowEditModal(true); }}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title={t('common.edit')}
+                                      disabled={!canEditEmployee(employee)}
+                                      className="text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title={canEditEmployee(employee) ? t('common.edit') : t('employees.table.cannotEditOtherAdmin')}
                                     >
                                       <span className="material-symbols-outlined">edit</span>
                                     </button>
+                                    {canSetPasswordFor(employee) && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowSetPasswordModal(true); }}
+                                        disabled={isPasswordBlocked}
+                                        className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title={isPasswordBlocked ? t('payment.restrictionWarning') : t('employees.table.setPassword')}
+                                      >
+                                        <span className="material-symbols-outlined">lock_reset</span>
+                                      </button>
+                                    )}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setShowDeleteModal(true); }}
                                       disabled={isSelf}
@@ -485,6 +511,7 @@ const EmployeesPage = () => {
             onSuccess={() => { setShowAddModal(false); loadEmployees(); }}
             brokerCompanyId={effectiveCompanyId}
             currentLimits={limits}
+            canCreateAdmin={isSuperAdmin}
           />
         )}
 
@@ -493,6 +520,7 @@ const EmployeesPage = () => {
           <ViewEmployeeModal
             onClose={() => { setShowViewModal(false); setSelectedEmployee(null); }}
             employee={selectedEmployee}
+            canEdit={canEditEmployee(selectedEmployee)}
             onEdit={(employee) => {
               setShowViewModal(false);
               setSelectedEmployee(employee);
@@ -508,6 +536,14 @@ const EmployeesPage = () => {
             employee={selectedEmployee}
             currentUser={user}
             onSuccess={() => { setShowEditModal(false); setSelectedEmployee(null); loadEmployees(); }}
+          />
+        )}
+
+        {/* Set Password Modal */}
+        {showSetPasswordModal && selectedEmployee && (
+          <SetPasswordModal
+            onClose={() => { setShowSetPasswordModal(false); setSelectedEmployee(null); }}
+            employee={selectedEmployee}
           />
         )}
 

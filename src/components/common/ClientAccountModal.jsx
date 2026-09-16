@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import { clientUserService } from '../../api/clientUserService';
+import { userService } from '../../api/userService';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getApiErrorMessage } from '../../utils/errorUtils';
+import {
+  generatePassword,
+  passwordByteLength,
+  MIN_PASSWORD_LENGTH,
+  MAX_PASSWORD_BYTES,
+} from '../../utils/passwordUtils';
 import { t, getCurrentLocale } from '../../locales';
-
-// Backend UserCreateRequest en az 8 karakter istiyor; formda da aynı eşik.
-const MIN_PASSWORD_LENGTH = 8;
-const PASSWORD_ALPHABET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-/** Okunurluğu bozan l/1/O/0 çiftleri dışarıda: parola telefonda okunup yazılacak. */
-function generatePassword() {
-  const values = new Uint32Array(12);
-  crypto.getRandomValues(values);
-  return Array.from(values, (v) => PASSWORD_ALPHABET[v % PASSWORD_ALPHABET.length]).join('');
-}
 
 /**
  * Müşteri firmasının giriş hesabı.
@@ -23,6 +19,9 @@ function generatePassword() {
  * çalışıyor: hesap yoksa oluşturma, varsa e-posta/parola güncelleme. Parola
  * yalnızca burada bir kez görünür — sistem henüz e-posta göndermediği için
  * broker'ın onu müşteriye kendi kanalından iletmesi gerekiyor.
+ *
+ * Düzenlemede e-posta/kullanıcı adı PUT /users/{id} ile, yeni parola ayrı olarak
+ * PUT /users/{id}/password ile gider; o uç müşterinin açık oturumlarını kapatır.
  *
  * @param {Object} props.client - Müşteri firması (account alanı hesabı taşır)
  * @param {function} props.onSuccess - Kaydetme sonrası listeyi tazelemek için
@@ -71,6 +70,8 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
     const passwordRequired = !isEdit || formData.password.length > 0;
     if (passwordRequired && formData.password.length < MIN_PASSWORD_LENGTH) {
       errors.password = t('clients.account.passwordMin', { min: MIN_PASSWORD_LENGTH });
+    } else if (passwordRequired && passwordByteLength(formData.password) > MAX_PASSWORD_BYTES) {
+      errors.password = t('passwordForm.tooLong', { max: MAX_PASSWORD_BYTES });
     }
 
     setFieldErrors(errors);
@@ -83,28 +84,53 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
 
     setLoading(true);
     try {
-      const result = isEdit
-        ? await clientUserService.updateAccount(account.id, {
-            email: formData.email,
-            username: formData.username,
-            password: formData.password || undefined,
-          })
-        : await clientUserService.createAccount({
-            clientCompanyId: client.id,
-            email: formData.email,
-            username: formData.username,
-            password: formData.password,
-          });
-
-      if (result.success) {
-        showSuccess(isEdit
-          ? t('clients.account.updateSuccess')
-          : t('clients.account.createSuccess', { name: client.name }));
+      if (!isEdit) {
+        const result = await clientUserService.createAccount({
+          clientCompanyId: client.id,
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+        });
+        if (!result.success) {
+          showError(result.error);
+          return;
+        }
+        showSuccess(t('clients.account.createSuccess', { name: client.name }));
         onSuccess();
         onClose();
-      } else {
-        showError(result.error);
+        return;
       }
+
+      const detailsChanged = formData.email !== account.email || formData.username !== account.username;
+      if (detailsChanged) {
+        const updated = await clientUserService.updateAccount(account.id, {
+          email: formData.email,
+          username: formData.username,
+        });
+        if (!updated.success) {
+          showError(updated.error);
+          return;
+        }
+      }
+
+      if (formData.password) {
+        // Bu modalda tekrar alanı yok: parola göster/üret ile görünür durumda ve müşteriye iletilecek.
+        const passwordResult = await userService.setUserPassword(account.id, {
+          newPassword: formData.password,
+          confirmPassword: formData.password,
+        });
+        if (!passwordResult.success) {
+          showError(passwordResult.error);
+          if (detailsChanged) onSuccess();
+          return;
+        }
+      }
+
+      showSuccess(formData.password
+        ? t('clients.account.passwordSetSuccess')
+        : t('clients.account.updateSuccess'));
+      onSuccess();
+      onClose();
     } catch (err) {
       showError(getApiErrorMessage(err, t('management.unexpectedError')));
     } finally {
@@ -168,7 +194,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} autoComplete="off" className="p-6">
           <div className="space-y-4">
             {/* E-posta */}
             <div>
@@ -176,7 +202,8 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
                 {t('clients.account.email')} *
               </label>
               <input
-                type="text"
+                type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={(e) => {
                   setFormData((prev) => ({ ...prev, email: e.target.value.toLowerCase() }));
@@ -203,6 +230,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
               </label>
               <input
                 type="text"
+                autoComplete="off"
                 value={formData.username}
                 onChange={(e) => {
                   setFormData((prev) => ({
@@ -243,6 +271,7 @@ export default function ClientAccountModal({ isOpen, onClose, client, onSuccess 
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={(e) => {
                     setFormData((prev) => ({ ...prev, password: e.target.value }));

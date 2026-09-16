@@ -205,7 +205,7 @@ export const tr = {
       firstName: "AHMET",
       lastName: "YILMAZ",
       email: "ahmet.yilmaz@example.com",
-      password: "En az 6 karakter",
+      password: "En az 8 karakter",
     },
   },
 
@@ -1654,7 +1654,7 @@ export const tr = {
       generatePassword: "Parola üret",
       passwordKeepPlaceholder: "Değiştirmek istemiyorsanız boş bırakın",
       passwordMinHint: "En az {{min}} karakter",
-      passwordKeepHint: "Boş bırakırsanız mevcut parola korunur",
+      passwordKeepHint: "Boş bırakırsanız mevcut parola korunur. Yeni parola kaydedilince müşterinin açık oturumları kapatılır.",
       show: "Göster",
       hide: "Gizle",
       passwordOnceWarning: "Bu parola yalnızca burada görünür. Kaydettikten sonra bir daha gösterilemez — müşteriye iletmeyi unutmayın.",
@@ -1669,6 +1669,7 @@ export const tr = {
       passwordMin: "Parola en az {{min}} karakter olmalıdır",
       createSuccess: "{{name}} için giriş hesabı oluşturuldu",
       updateSuccess: "Giriş hesabı güncellendi",
+      passwordSetSuccess: "Parola belirlendi. Müşterinin açık oturumları kapatıldı.",
       activated: "Hesap aktifleştirildi",
       deactivated: "Hesap pasife alındı",
     },
@@ -1712,6 +1713,20 @@ export const tr = {
     },
   },
 
+  // Yöneticinin başka biri için girdiği yeni şifre (NewPasswordFields, passwordUtils)
+  passwordForm: {
+    password: "Şifre",
+    newPassword: "Yeni şifre",
+    confirm: "Şifre (tekrar)",
+    generate: "Parola oluştur",
+    show: "Şifreyi göster",
+    hide: "Şifreyi gizle",
+    hint: "En az {{min}} karakter",
+    tooShort: "Şifre en az {{min}} karakter olmalıdır",
+    tooLong: "Şifre çok uzun: en fazla {{max}} bayt olabilir (Türkçe harfler 2 bayt sayılır)",
+    mismatch: "Şifreler eşleşmiyor",
+  },
+
   // Çalışan yönetimi ekranları (eski `employee` bölümünü tamamlar)
   employees: {
     common: {
@@ -1738,16 +1753,17 @@ export const tr = {
       you: "(Siz)",
       paymentResponsibleHint: "Ödeme sorumlusu",
       cannotDeleteSelf: "Kendinizi silemezsiniz",
+      cannotEditOtherAdmin: "Başka bir Broker Yöneticisini yalnızca Süper Admin düzenleyebilir",
+      setPassword: "Parola belirle",
     },
     add: {
       subtitle: "Yeni bir çalışan kaydı oluşturun",
       companyMissing: "Firma bilgisi eksik. Lütfen sayfayı yenileyin.",
-      passwordMin: "Şifre en az 6 karakter olmalıdır",
       quotaExceeded: "Çalışan limiti doldu. Lütfen aboneliğinizi yükseltin.",
       usernameHint: "Çalışanın adı ve soyadı",
       emailHint: "Giriş için kullanılacak email adresi",
-      passwordHint: "Minimum 6 karakter",
       roleHint: "Broker Yöneticisi: Tüm yetkilere sahip • Broker Kullanıcısı: İşlem yönetimi",
+      roleBrokerUserOnly: "Yeni çalışan Broker Kullanıcısı olarak eklenir. Broker Yöneticisi hesabını Süper Admin açar.",
       quotaWarning: "Çalışan limiti doldu. Yeni çalışan ekleyebilmek için aboneliğinizi yükseltin.",
       submit: "Çalışan Ekle",
     },
@@ -1755,9 +1771,17 @@ export const tr = {
       subtitle: "Çalışan bilgilerini güncelleyin",
       subtitleSelf: "Kendi bilgilerinizi düzenleyin",
       selfWarning: "Kendi rolünüzü ve durumunuzu değiştiremezsiniz",
-      cannotChangeOwnRole: "Kendi rolünüzü değiştiremezsiniz",
+      roleReadOnly: "Rol bu ekrandan değiştirilemez",
       cannotChangeOwnStatus: "Kendi durumunuzu değiştiremezsiniz",
       paymentResponsibleHint: "Bu kullanıcı ödeme bildirimlerini gönderebilir",
+    },
+    setPassword: {
+      title: "Parola belirle",
+      submit: "Parolayı belirle",
+      sessionsWarning: "Kaydettiğinizde kullanıcının açık oturumları kapatılır; yeni şifreyle yeniden giriş yapması gerekir. Şifreyi kullanıcıya güvenli bir kanaldan iletin.",
+      confirmTitle: "Şifre belirlensin mi?",
+      confirmMessage: "{{name}} kullanıcısının açık oturumları kapatılacak ve yeni şifreyle yeniden giriş yapması gerekecek.",
+      success: "{{name}} için şifre belirlendi. Açık oturumları kapatıldı.",
     },
     view: {
       subtitle: "Çalışan bilgilerini görüntüleyin",
@@ -2379,6 +2403,7 @@ export const tr = {
       photoUploadError: "Fotoğraf yüklenemedi",
       photoDeleteError: "Fotoğraf kaldırılamadı",
       passwordChangeError: "Şifre değiştirilemedi",
+      setPasswordError: "Şifre belirlenemedi",
     },
     warehouse: {
       listError: "Antrepo kayıtları alınamadı",

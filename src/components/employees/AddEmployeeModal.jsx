@@ -1,30 +1,38 @@
 import React, { useState } from 'react';
 import { employeeService } from '../../api/employeeService';
+import NewPasswordFields from '../common/NewPasswordFields';
 import { toUpperCase } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getApiErrorMessage } from '../../utils/errorUtils';
+import { validateNewPassword } from '../../utils/passwordUtils';
 import { t, getCurrentLocale } from '../../locales';
 
-export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, currentLimits }) {
+const EMPTY_FORM = { username: '', email: '', password: '', confirmPassword: '', globalRole: 'BROKER_USER' };
+
+/**
+ * Yeni çalışan.
+ *
+ * Broker Yöneticisi seçeneği yalnızca SUPER_ADMIN'e görünür: BROKER_ADMIN'in açtığı her hesap BROKER_USER'dır
+ * (backend başka rolü 403 ile reddeder).
+ *
+ * Form giriş formuna benzemesin diye e-posta type="email" + autoComplete="off", şifreler autoComplete="new-password"
+ * ve tekrar alanıyla: tarayıcı yöneticinin kendi kayıtlı şifresini doldurunca çalışan, kimsenin bilmediği bir şifreyle
+ * açılıyordu.
+ */
+export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, currentLimits, canCreateAdmin = false }) {
   const locale = getCurrentLocale();
 
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    globalRole: 'BROKER_USER'
-  });
-
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Clear previous errors
     setEmailError('');
-    setPasswordError('');
+    setPasswordErrors({});
 
     // Validate broker company ID
     if (!brokerCompanyId || isNaN(brokerCompanyId)) {
@@ -39,9 +47,10 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
       return;
     }
 
-    // Validate password length
-    if (formData.password.length < 6) {
-      setPasswordError(t('employees.add.passwordMin'));
+    // Şifre: en az 8 karakter, en fazla 72 bayt, tekrarıyla aynı
+    const errors = validateNewPassword(formData.password, formData.confirmPassword);
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
       return;
     }
 
@@ -55,7 +64,10 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
 
     try {
       const result = await employeeService.createEmployee({
-        ...formData,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        globalRole: canCreateAdmin ? formData.globalRole : 'BROKER_USER',
         companyId: brokerCompanyId
       });
 
@@ -64,7 +76,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
         onSuccess(result.data);
 
         // Reset form and close
-        setFormData({ username: '', email: '', password: '', globalRole: 'BROKER_USER' });
+        setFormData(EMPTY_FORM);
         onClose();
       } else {
         // API error - show as toast
@@ -79,9 +91,9 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
   };
 
   const handleClose = () => {
-    setFormData({ username: '', email: '', password: '', globalRole: 'BROKER_USER' });
+    setFormData(EMPTY_FORM);
     setEmailError('');
-    setPasswordError('');
+    setPasswordErrors({});
     onClose();
   };
 
@@ -123,7 +135,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} autoComplete="off" className="p-6 overflow-y-auto">
           <div className="space-y-4">
             {/* Username - UPPERCASE transformation */}
             <div>
@@ -132,6 +144,7 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
               </label>
               <input
                 type="text"
+                autoComplete="off"
                 value={formData.username}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
@@ -153,7 +166,8 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
                 {t('employee.email')} *
               </label>
               <input
-                type="text"
+                type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={(e) => {
                   setFormData(prev => ({
@@ -178,57 +192,52 @@ export default function AddEmployeeModal({ onClose, onSuccess, brokerCompanyId, 
               )}
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2">
-                {t('employee.password')} *
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    password: e.target.value
-                  }));
-                  if (passwordError) setPasswordError('');
-                }}
-                required
-                minLength={6}
-                placeholder={t('employee.placeholders.password')}
-                className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${
-                  passwordError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {passwordError ? (
-                <p className="mt-1 text-xs text-red-600">{passwordError}</p>
-              ) : (
-                <p className="mt-1 text-xs text-text-secondary">
-                  {t('employees.add.passwordHint')}
-                </p>
-              )}
-            </div>
+            {/* Password + confirmation */}
+            <NewPasswordFields
+              value={{ password: formData.password, confirm: formData.confirmPassword }}
+              onChange={({ password, confirm }) => {
+                setFormData(prev => ({ ...prev, password, confirmPassword: confirm }));
+                if (passwordErrors.password || passwordErrors.confirm) setPasswordErrors({});
+              }}
+              errors={passwordErrors}
+              label={t('employee.password')}
+              disabled={loading}
+              idPrefix="add-employee"
+            />
 
-            {/* Role Selection */}
+            {/* Role */}
             <div>
               <label className="block text-sm font-medium text-text-main mb-2">
                 {t('employee.role')} *
               </label>
-              <select
-                value={formData.globalRole}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  globalRole: e.target.value
-                }))}
-                required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              >
-                <option value="BROKER_USER">{t('roles.brokerUser')}</option>
-                <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
-              </select>
-              <p className="mt-1 text-xs text-text-secondary">
-                {t('employees.add.roleHint')}
-              </p>
+              {canCreateAdmin ? (
+                <>
+                  <select
+                    value={formData.globalRole}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      globalRole: e.target.value
+                    }))}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-text-main dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  >
+                    <option value="BROKER_USER">{t('roles.brokerUser')}</option>
+                    <option value="BROKER_ADMIN">{t('roles.brokerAdmin')}</option>
+                  </select>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {t('employees.add.roleHint')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-text-main rounded-lg transition-colors">
+                    {t('roles.brokerUser')}
+                  </div>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {t('employees.add.roleBrokerUserOnly')}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Quota Warning */}
