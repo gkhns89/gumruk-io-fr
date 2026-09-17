@@ -264,6 +264,12 @@ from all user-visible surfaces. Two services, deliberately split:
 - `gRadarService.js` — master config (SUPER_ADMIN), and turning tracking on/off per cargo row.
 - `gRadarCreditService.js` — wallet, pricing, credit purchases.
 
+**Out of credits.** Credit-spending calls fail with `code: 'GRADAR_INSUFFICIENT_CREDITS'` (the approve response
+carries it as `fetchFailureCode`). Hand that to `showGRadarCreditShortage({ user, navigate, context })` from
+`src/utils/gRadarCreditGuidance.js` rather than showing the raw error: a BROKER_ADMIN (the only role that may buy
+credits) gets a dialog whose "Buy credits" button opens `/payment/submit?tab=g-radar` (a new tab from the Add Cargo
+modal, so the form survives); everyone else gets an "ask your admin" warning without a link.
+
 Some backend enum constants still say `SHIPSGO_*` internally while serializing as
 `GRADAR_*`; `constants.js` uses the external name.
 

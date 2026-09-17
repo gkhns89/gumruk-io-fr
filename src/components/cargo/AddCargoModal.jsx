@@ -4,6 +4,7 @@ import { companyService } from '../../api/companyService';
 import { gRadarService } from '../../api/gRadarService';
 import { gRadarCreditService } from '../../api/gRadarCreditService';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { isGRadarCreditShortage, showGRadarCreditShortage } from '../../utils/gRadarCreditGuidance';
 import { VEHICLE_TYPES, CURRENCY_OPTIONS, PAYMENT_STATUS_OPTIONS, DOCUMENT_DELIVERY_TYPES } from '../../utils/constants';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
@@ -177,7 +178,12 @@ export default function AddCargoModal({ onClose, onSuccess, currentUser, initial
     setGRadarPreviewing(false);
 
     if (!res.success) {
-      showError(res.error || t('cargoTracking.preview.error'));
+      if (isGRadarCreditShortage(res.code)) {
+        // Satın alma sayfası yeni sekmede açılır: modal ve girilen bilgiler yerinde kalır.
+        showGRadarCreditShortage({ user: currentUser, context: 'preview' });
+      } else {
+        showError(res.error || t('cargoTracking.preview.error'));
+      }
       return;
     }
 

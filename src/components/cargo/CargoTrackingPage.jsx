@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePaymentRestriction } from '../../hooks/usePaymentRestriction';
 import { cargoService } from '../../api/cargoService';
@@ -8,6 +8,7 @@ import { CARGO_STATUS, VEHICLE_TYPES } from '../../utils/constants';
 import { handleError } from '../../utils/errorUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { isGRadarCreditShortage, showGRadarCreditShortage } from '../../utils/gRadarCreditGuidance';
 import MainLayout from '../layout/MainLayout';
 import CargoTrackingTable from './CargoTrackingTable';
 import AddCargoModal from './AddCargoModal';
@@ -25,6 +26,7 @@ const FETCH_DENIED_CODES = ['GRADAR_FETCH_NOT_APPROVED', 'GRADAR_FETCH_FORBIDDEN
 
 export default function CargoTrackingPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Sidebar state for footer positioning
   const [sidebarWide, setSidebarWide] = useState(() => {
@@ -152,6 +154,9 @@ export default function CargoTrackingPage() {
     if (res.success) {
       showSuccess(t('cargoTracking.gRadarActions.fetchSuccess'));
       loadData();
+    } else if (isGRadarCreditShortage(res.code)) {
+      // Yöneticiye satın alma yolu, Broker Kullanıcısına "yöneticinizden isteyin".
+      showGRadarCreditShortage({ user, navigate });
     } else if (FETCH_DENIED_CODES.includes(res.code)) {
       // İzin arada değişti (onay geri alındı, takip kapatıldı...): satırı sunucudaki hâline getir.
       showError(res.error || t('cargoTracking.gRadarActions.fetchNotApproved'));

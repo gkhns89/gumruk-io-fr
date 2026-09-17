@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { gRadarService } from '../../api/gRadarService';
 import { showSuccess, showError, showWarning } from '../../utils/toastUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { isGRadarDisableRequest } from '../../utils/constants';
+import { isGRadarCreditShortage, showGRadarCreditShortage } from '../../utils/gRadarCreditGuidance';
 import GRadarRequestTypeBadge from './GRadarRequestTypeBadge';
 import { t, getCurrentLocale } from '../../locales';
 
@@ -35,6 +37,7 @@ const CONFIRM_DIALOG_SELECTOR = '[data-confirm-dialog]';
 
 export default function GRadarRequestsBell() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isEligible = user?.globalRole === 'BROKER_ADMIN' || user?.globalRole === 'SUPER_ADMIN';
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
 
@@ -119,8 +122,12 @@ export default function GRadarRequestsBell() {
       if (res.success) {
         const message = res.data?.message
           || t(isDisable ? 'gRadarAdmin.requests.approvedDisable' : 'gRadarAdmin.requests.approved');
-        // Onay kaydedildi ama bilgiler çekilemedi (ör. kredi yetersiz): uyarı olarak göster.
-        if (!isDisable && fetchImmediately && res.data?.fetched === false) {
+        // Onay kaydedildi ama bilgiler çekilemedi: kredi yetmediyse nedeni ve (yöneticiye) satın alma yolu,
+        // başka bir nedenle genel uyarı.
+        const fetchFailed = !isDisable && fetchImmediately && res.data?.fetched === false;
+        if (fetchFailed && isGRadarCreditShortage(res.data?.fetchFailureCode)) {
+          showGRadarCreditShortage({ user, navigate, context: 'approved' });
+        } else if (fetchFailed) {
           showWarning(message);
         } else {
           showSuccess(message);

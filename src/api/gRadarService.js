@@ -113,6 +113,8 @@ export const gRadarService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.gRadar.previewError')),
+        // GRADAR_INSUFFICIENT_CREDITS: kredi yetmedi (bkz. utils/gRadarCreditGuidance)
+        code: error?.response?.data?.code,
       };
     }
   },
@@ -142,7 +144,8 @@ export const gRadarService = {
 
   /**
    * 1 kredi harcar. Broker Kullanıcısı yalnızca satırın `gRadarFetchAllowed` bayrağı doğruyken basabilir;
-   * değilse sunucu 403 + `code` GRADAR_FETCH_NOT_APPROVED / GRADAR_FETCH_FORBIDDEN döner.
+   * değilse sunucu 403 + `code` GRADAR_FETCH_NOT_APPROVED / GRADAR_FETCH_FORBIDDEN döner. Kredi yetmezse
+   * 400 + `code` GRADAR_INSUFFICIENT_CREDITS.
    */
   fetch: async (cargoId) => {
     try {
@@ -250,6 +253,8 @@ export const gRadarService = {
     }
   },
 
+  // Yanıt: { message, fetched, fetchFailureCode? }. Onay getirme başarısız olsa da kaydedilir;
+  // fetchFailureCode yalnızca kredi yetersizliğinde gelir (GRADAR_INSUFFICIENT_CREDITS).
   approveRequest: async (requestId, { fetchImmediately = false } = {}) => {
     try {
       const res = await axiosInstance.post(

@@ -9,8 +9,10 @@ import { t } from '../locales';
  * { success: false, error, code? } on failure, mirroring the pattern used by
  * the other services in this directory. The optional `code` carries the
  * machine-readable response codes the backend emits — currently
- * MASTER_POOL_UNAVAILABLE (409) and INSUFFICIENT_GRADAR_CREDITS (402) — so
+ * MASTER_POOL_UNAVAILABLE (409) and INSUFFICIENT_WALLET (409, admin debit) — so
  * UI components can show specific guidance without parsing error strings.
+ * A credit shortage while spending credits (fetch / preview) comes back from
+ * gRadarService as 400 GRADAR_INSUFFICIENT_CREDITS; see utils/gRadarCreditGuidance.
  */
 export const gRadarCreditService = {
   // ---- Broker-self reads ----

@@ -1233,6 +1233,20 @@ export const tr = {
   // G-Radar'dan gelen durum ve hareket kodlarının karşılıkları (bkz. utils/gRadarLabels.js).
   // Sözlükte olmayan kod gelirse ham değer okunur hâle getirilip gösterilir.
   gRadar: {
+    // Kredi yetmediği için bilgiler çekilemedi (sunucu kodu GRADAR_INSUFFICIENT_CREDITS)
+    creditShortage: {
+      title: "G-Radar krediniz yetersiz",
+      message: "Yeterli krediniz olmadığı için bilgiler çekilemedi. Dilerseniz kredi satın alabilirsiniz.",
+      approvedNote: "Talep onaylandı. Kredi aldıktan sonra bilgileri listedeki \"Bilgileri Getir\" ile çekebilirsiniz.",
+      restartedNote: "Takip yeniden açıldı. Kredi aldıktan sonra bilgileri listedeki \"Bilgileri Getir\" ile çekebilirsiniz.",
+      previewNote: "Satın alma sayfası yeni sekmede açılır; bu formdaki bilgiler kaybolmaz.",
+      buy: "Kredi satın al",
+      close: "Kapat",
+      askAdmin: "Firmanızın G-Radar kredisi yetersiz. Yöneticinizden kredi eklemesini isteyin.",
+      // Süper Admin kredi satın alamaz (satın alma Broker Yöneticisine ait); yalnızca nedeni görür.
+      brokerShort: "Brokerın G-Radar kredisi yetersiz olduğu için bilgiler çekilemedi.",
+      brokerShortApproved: "Talep onaylandı, ancak brokerın G-Radar kredisi yetersiz olduğu için bilgiler çekilemedi.",
+    },
     movementFallback: "Hareket",
     containerFallback: "Konteyner {{index}}",
     // `label` detay panelindeki başlık, `short` liste hücresindeki dar rozet

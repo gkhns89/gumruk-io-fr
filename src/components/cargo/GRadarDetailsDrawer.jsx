@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gRadarService } from '../../api/gRadarService';
+import { useAuth } from '../../hooks/useAuth';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { isGRadarCreditShortage, showGRadarCreditShortage } from '../../utils/gRadarCreditGuidance';
 import {
   extractMovementGroups,
   countMovements,
@@ -42,6 +45,8 @@ export default function GRadarDetailsDrawer({
   canRequest = false,
 }) {
   const isOpen = !!cargo;
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -179,10 +184,15 @@ export default function GRadarDetailsDrawer({
       for (const [stepKey, runStep] of steps) {
         const res = await runStep();
         if (!res.success) {
-          showError(t('cargoTracking.drawer.restartFailed', {
-            step: t(`cargoTracking.drawer.${stepKey}`),
-            error: res.error || t('api.errors.generic'),
-          }));
+          if (stepKey === 'stepFetch' && isGRadarCreditShortage(res.code)) {
+            // Takip kapatılıp yeniden açıldı; yalnızca bilgiler kredi yetmediği için çekilemedi.
+            showGRadarCreditShortage({ user, navigate, context: 'restarted' });
+          } else {
+            showError(t('cargoTracking.drawer.restartFailed', {
+              step: t(`cargoTracking.drawer.${stepKey}`),
+              error: res.error || t('api.errors.generic'),
+            }));
+          }
           // Önceki adımlar yükü değiştirdiyse liste ve çekmece yeni hâli göstersin.
           if (changed) {
             setShipmentMissing(false);

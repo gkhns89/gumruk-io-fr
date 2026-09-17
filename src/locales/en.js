@@ -1233,6 +1233,20 @@ export const en = {
   // Labels for G-Radar status and movement codes (see utils/gRadarLabels.js).
   // Unknown codes fall back to a readable version of the raw value.
   gRadar: {
+    // The data could not be fetched for lack of credits (server code GRADAR_INSUFFICIENT_CREDITS)
+    creditShortage: {
+      title: "Not enough G-Radar credits",
+      message: "The data could not be fetched because you do not have enough credits. You can buy credits if you like.",
+      approvedNote: "The request is approved. After buying credits, fetch the data with \"Fetch Data\" in the list.",
+      restartedNote: "Tracking is on again. After buying credits, fetch the data with \"Fetch Data\" in the list.",
+      previewNote: "The purchase page opens in a new tab, so this form keeps what you entered.",
+      buy: "Buy credits",
+      close: "Close",
+      askAdmin: "Your company does not have enough G-Radar credits. Ask your admin to add credits.",
+      // Super Admins cannot buy credits (buying belongs to the Broker Admin); they only see the reason.
+      brokerShort: "The data could not be fetched because the broker does not have enough G-Radar credits.",
+      brokerShortApproved: "The request is approved, but the data could not be fetched because the broker does not have enough G-Radar credits.",
+    },
     movementFallback: "Movement",
     containerFallback: "Container {{index}}",
     // `label` is the detail panel heading, `short` the narrow badge in the list
