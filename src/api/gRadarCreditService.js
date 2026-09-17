@@ -173,6 +173,27 @@ export const gRadarCreditService = {
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.gRadar.toggleError')),
+        // GRADAR_PLAN_PRICE_MISSING: planın G-Radar fiyatı yok (utils/gRadarPlanPrice)
+        code: error.response?.data?.code,
+      };
+    }
+  },
+
+  /**
+   * SUPER_ADMIN: yalnızca planın G-Radar kredi fiyatını değiştirir. Fiyat planı kullanan tüm firmalarda geçerli olur.
+   * data: { planId, planName, pricePerCreditUsd, brokerCount, gRadarEnabledBrokerCount, message }.
+   * Hata kodu GRADAR_PLAN_PRICE_INVALID olabilir.
+   */
+  updatePlanPrice: async (planId, pricePerCreditUsd) => {
+    try {
+      const res = await axiosInstance.put(`/subscriptions/plans/${planId}/gradar-price`, { pricePerCreditUsd });
+      return { success: true, data: res.data };
+    } catch (error) {
+      logError('GRadarCreditService - updatePlanPrice', error);
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.gRadar.planPriceError')),
+        code: error.response?.data?.code,
       };
     }
   },

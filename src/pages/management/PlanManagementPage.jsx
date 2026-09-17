@@ -4,6 +4,7 @@ import { planService } from '../../api/planService';
 import { brokerSubscriptionService } from '../../api/brokerSubscriptionService';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getApiErrorMessage } from '../../utils/errorUtils';
+import { GRADAR_PLAN_PRICE_CODES, getGRadarPlanPriceError, hasGRadarPrice } from '../../utils/gRadarPlanPrice';
 import { t, getCurrentLocale } from '../../locales';
 
 const EMPTY_FORM = {
@@ -47,7 +48,8 @@ function StatCard({ icon, label, value, color = 'text-primary' }) {
 }
 
 /* ───────────────────────── Plan Form Modal ───────────────────────── */
-function PlanFormModal({ plan, onClose, onSaved }) {
+// gRadarEnabledCount: bu planı kullanan ve G-Radar'ı açık firma sayısı — varsa G-Radar fiyatı zorunlu
+function PlanFormModal({ plan, gRadarEnabledCount = 0, onClose, onSaved }) {
   const [form, setForm] = useState(
     plan
       ? {
@@ -62,8 +64,13 @@ function PlanFormModal({ plan, onClose, onSaved }) {
       : EMPTY_FORM
   );
   const [saving, setSaving] = useState(false);
+  const [gRadarPriceError, setGRadarPriceError] = useState(null);
+  const gRadarPriceRequired = gRadarEnabledCount > 0;
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    if (k === 'gRadarPricePerCreditUsd') setGRadarPriceError(null);
+    setForm((p) => ({ ...p, [k]: e.target.value }));
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) return showError(t('planManagement.form.nameRequired'));
@@ -71,6 +78,12 @@ function PlanFormModal({ plan, onClose, onSaved }) {
       return showError(t('planManagement.form.maxUsersInvalid'));
     if (!form.maxClientCompanies || Number(form.maxClientCompanies) < 1)
       return showError(t('planManagement.form.maxClientsInvalid'));
+    // G-Radar'ı açık firmaların planında fiyat kaldırılamaz/sıfırlanamaz (backend: GRADAR_PLAN_PRICE_IN_USE)
+    if (gRadarPriceRequired && !hasGRadarPrice(form.gRadarPricePerCreditUsd)) {
+      const message = t('planManagement.form.gRadarPriceRequired');
+      setGRadarPriceError(message);
+      return showError(message);
+    }
 
     setSaving(true);
     try {
@@ -96,8 +109,18 @@ function PlanFormModal({ plan, onClose, onSaved }) {
         showSuccess(t('planManagement.form.created'));
       }
       onSaved();
-    } catch {
-      showError(t('adminCommon.actionFailed'));
+    } catch (err) {
+      const priceError = getGRadarPlanPriceError(
+        err.response?.data?.code,
+        getApiErrorMessage(err),
+        { planName: plan?.name ?? form.name.trim() },
+      );
+      if (priceError) {
+        setGRadarPriceError(priceError);
+        showError(priceError);
+      } else {
+        showError(getApiErrorMessage(err, t('adminCommon.actionFailed')));
+      }
     } finally {
       setSaving(false);
     }
@@ -177,14 +200,28 @@ function PlanFormModal({ plan, onClose, onSaved }) {
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-text-secondary">
-              {t('planManagement.form.gRadarPrice')}
+              {gRadarPriceRequired ? t('planManagement.form.gRadarPriceRequiredLabel') : t('planManagement.form.gRadarPrice')}
             </span>
             <input
-              type="number" min="0" step="0.01" value={form.gRadarPricePerCreditUsd}
+              type="number" min="0" step="0.0001" value={form.gRadarPricePerCreditUsd}
               onChange={set('gRadarPricePerCreditUsd')}
               placeholder={t('planManagement.form.gRadarPricePlaceholder')}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+              required={gRadarPriceRequired}
+              aria-invalid={gRadarPriceError ? 'true' : undefined}
+              className={`rounded-lg border bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                gRadarPriceError
+                  ? 'border-red-500 ring-2 ring-red-500/30 focus:ring-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+              }`}
             />
+            {gRadarPriceError && (
+              <span className="text-xs text-red-600 dark:text-red-400" role="alert">{gRadarPriceError}</span>
+            )}
+            {gRadarPriceRequired && (
+              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                {t('planManagement.form.gRadarPriceInUse', { count: gRadarEnabledCount })}
+              </span>
+            )}
             <span className="text-[11px] text-text-secondary">
               {t('planManagement.form.gRadarPriceHint')}
             </span>
@@ -323,6 +360,8 @@ function DeactivateModal({ plan, subscribers, allActivePlans, onClose, onConfirm
 function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate }) {
   const [expanded, setExpanded] = useState(false);
   const accent = accentFor(plan.id);
+  const gRadarCount = subscriberList.filter((b) => b.gRadarEnabled).length;
+  const gRadarPriceMissing = gRadarCount > 0 && !hasGRadarPrice(plan.gRadarPricePerCreditUsd);
   // Sayılar kalın yazılır; metin yer tutucunun iki yanından bölünür
   const [usersBefore, usersAfter] = t('planManagement.card.users').split('{{count}}');
   const [clientsBefore, clientsAfter] = t('planManagement.card.clients').split('{{count}}');
@@ -379,8 +418,19 @@ function PlanCard({ plan, subscriberCount, subscriberList, onEdit, onDeactivate 
               ? `$${Number(plan.gRadarPricePerCreditUsd).toFixed(2)}`
               : '—'}
           </p>
+          {gRadarCount > 0 && (
+            <p className="text-[10px] font-medium text-purple-700 dark:text-purple-400 mt-0.5">
+              {t('planManagement.card.gRadarEnabled', { count: gRadarCount })}
+            </p>
+          )}
         </div>
       </div>
+      {gRadarPriceMissing && (
+        <p className="mx-5 mt-2 text-[11px] font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+          <span className="material-symbols-outlined text-[14px]">price_change</span>
+          {t('planManagement.card.gRadarPriceMissing')}
+        </p>
+      )}
 
       {/* ── Limit Satırı ── */}
       <div className="px-5 py-4 flex items-center gap-4">
@@ -520,10 +570,15 @@ export default function PlanManagementPage() {
         brokerId: broker.brokerId,
         brokerName: broker.brokerName,
         billingCycle: broker.subscription?.billingCycle,
+        gRadarEnabled: !!broker.subscription?.gRadarEnabled,
+        gRadarPriceMissing: !!broker.subscription?.gRadarPriceMissing,
       });
     });
     return map;
   }, [allSubscriptions]);
+
+  const gRadarEnabledCount = (planId) =>
+    (subscribersByPlan[planId] || []).filter((b) => b.gRadarEnabled).length;
 
   const activePlans  = plans.filter((p) => p.isActive);
   const inactivePlans = plans.filter((p) => !p.isActive);
@@ -561,7 +616,12 @@ export default function PlanManagementPage() {
       setDeactivateSubscribers([]);
       load();
     } catch (err) {
-      showError(getApiErrorMessage(err, t('adminCommon.actionFailed')));
+      // G-Radar'ı açık firma fiyatsız plana taşınamaz — sunucu mesajı hedef planı adıyla anar
+      const code = err.response?.data?.code;
+      const message = code === GRADAR_PLAN_PRICE_CODES.MISSING
+        ? getGRadarPlanPriceError(code, getApiErrorMessage(err))
+        : getApiErrorMessage(err, t('adminCommon.actionFailed'));
+      showError(message);
     }
   };
 
@@ -691,7 +751,12 @@ export default function PlanManagementPage() {
 
       {/* Plan Oluştur / Düzenle Modal */}
       {showForm && (
-        <PlanFormModal plan={editingPlan} onClose={handleFormClose} onSaved={handleFormSaved} />
+        <PlanFormModal
+          plan={editingPlan}
+          gRadarEnabledCount={editingPlan ? gRadarEnabledCount(editingPlan.id) : 0}
+          onClose={handleFormClose}
+          onSaved={handleFormSaved}
+        />
       )}
 
       {/* Pasife Al Modal */}

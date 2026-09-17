@@ -280,6 +280,12 @@ approved may press it too. The server decides; cargo rows (list, detail, drawer 
 "admin must approve" tooltip for a BROKER_USER). `gRadarService.fetch` returns the envelope `code`;
 403 `GRADAR_FETCH_NOT_APPROVED` / `GRADAR_FETCH_FORBIDDEN` toast the server message and reload the list.
 
+The credit price lives on the **plan** (a broker-specific price is a custom plan). The backend refuses to keep G-Radar
+on a plan without a price and answers with `GRADAR_PLAN_PRICE_MISSING` / `_IN_USE` / `_INVALID`;
+`src/utils/gRadarPlanPrice.js` turns those codes into messages and validates price input. `BrokerSubscriptionsPage`
+edits the plan price in place (`gRadarCreditService.updatePlanPrice`, with a `confirmDialog` naming how many companies the
+plan affects), disables the G-Radar toggle while the plan has no price, and badges `gRadarPriceMissing` rows.
+
 `src/utils/gRadarLabels.js` normalizes the provider's two inconsistent schemas (air returns
 `movements`, sea returns per-container `movements`, with field names varying) into one shape
 and translates codes to Turkish, falling back to a readable raw value for unknown codes.

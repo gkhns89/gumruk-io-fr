@@ -5,7 +5,16 @@ import { addonService } from '../../api/addonService';
 import { gRadarCreditService } from '../../api/gRadarCreditService';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { paymentService } from '../../api/paymentService';
-import { showSuccess, showError } from '../../utils/toastUtils';
+import { showSuccess, showError, showInfo } from '../../utils/toastUtils';
+import { getApiErrorMessage } from '../../utils/errorUtils';
+import {
+  GRADAR_PLAN_PRICE_CODES,
+  formatGRadarPrice,
+  getGRadarPlanPriceError,
+  hasGRadarPrice,
+  isValidGRadarPriceInput,
+  parseGRadarPriceInput,
+} from '../../utils/gRadarPlanPrice';
 import { getBalanceTransactionType } from '../../utils/constants';
 import { t, getCurrentLocale } from '../../locales';
 import { useAuth } from '../../hooks/useAuth';
@@ -46,6 +55,11 @@ export default function BrokerSubscriptionsPage() {
   const [togglingGRadar, setTogglingGRadar] = useState({}); // { brokerId: bool }
   const [gRadarWallets, setGRadarWallets] = useState({}); // { brokerId: walletView }
   const [addingCredit, setAddingCredit] = useState({});
+  // G-Radar plan fiyatı (planın fiyatı — plandaki tüm firmaları etkiler)
+  const [priceForms, setPriceForms] = useState({}); // { brokerId: string }
+  const [savingPrice, setSavingPrice] = useState({}); // { brokerId: bool }
+  const [priceFieldErrors, setPriceFieldErrors] = useState({}); // { brokerId: message }
+  const [planFieldErrors, setPlanFieldErrors] = useState({}); // { brokerId: message }
 
   // Balance history state
   const [balanceHistory, setBalanceHistory] = useState({}); // { brokerId: [] }
@@ -237,10 +251,30 @@ export default function BrokerSubscriptionsPage() {
 
   const handleFormChange = (brokerId, field, value) => {
     setEditForms(prev => ({ ...prev, [brokerId]: { ...prev[brokerId], [field]: value } }));
+    if (field === 'newPlanId') {
+      setPlanFieldErrors(prev => ({ ...prev, [brokerId]: null }));
+    }
   };
+
+  // Firmada G-Radar açık mı: cüzdan görünümü güncel kaynak, yüklenmediyse abonelik listesi
+  const isGRadarOn = (broker) =>
+    !!(gRadarWallets[broker.brokerId]?.gRadarEnabled ?? broker.subscription?.gRadarEnabled);
 
   const handleSave = async (brokerId) => {
     const form = editForms[brokerId];
+    const broker = brokers.find(b => b.brokerId === brokerId);
+    const currentPlanId = broker?.subscription?.plan?.id;
+    const targetPlan = form.newPlanId ? plans.find(p => String(p.id) === String(form.newPlanId)) : null;
+    const planChanges = !!targetPlan && String(targetPlan.id) !== String(currentPlanId);
+
+    // G-Radar'ı açık firma fiyatsız plana taşınamaz (backend de reddeder: GRADAR_PLAN_PRICE_MISSING)
+    if (planChanges && broker && isGRadarOn(broker) && !hasGRadarPrice(targetPlan.gRadarPricePerCreditUsd)) {
+      const message = t('brokerSubscriptions.gRadarPrice.targetPlanMissing', { plan: targetPlan.name });
+      setPlanFieldErrors(prev => ({ ...prev, [brokerId]: message }));
+      showError(message);
+      return;
+    }
+
     setSaving(prev => ({ ...prev, [brokerId]: true }));
     try {
       await brokerSubscriptionService.updateBrokerSubscription(brokerId, {
@@ -253,11 +287,81 @@ export default function BrokerSubscriptionsPage() {
         notes: form.notes || null,
       });
       showSuccess(t('brokerSubscriptions.edit.saved'));
+      setPlanFieldErrors(prev => ({ ...prev, [brokerId]: null }));
       await load();
-    } catch {
-      showError(t('adminCommon.updateFailed'));
+    } catch (err) {
+      const priceError = getGRadarPlanPriceError(
+        err.response?.data?.code,
+        getApiErrorMessage(err),
+        { planName: targetPlan?.name },
+      );
+      if (priceError) {
+        setPlanFieldErrors(prev => ({ ...prev, [brokerId]: priceError }));
+        showError(priceError);
+      } else {
+        showError(t('adminCommon.updateFailed'));
+      }
     } finally {
       setSaving(prev => ({ ...prev, [brokerId]: false }));
+    }
+  };
+
+  const handlePriceFormChange = (brokerId, value) => {
+    setPriceForms(prev => ({ ...prev, [brokerId]: value }));
+    setPriceFieldErrors(prev => ({ ...prev, [brokerId]: null }));
+  };
+
+  // Planın G-Radar kredi fiyatını değiştirir — plandaki tüm firmaları etkiler, bu yüzden önce onay alınır
+  const handleSavePlanPrice = async (broker) => {
+    const brokerId = broker.brokerId;
+    const plan = broker.subscription?.plan;
+    if (!plan) return;
+
+    const raw = priceForms[brokerId];
+    if (!isValidGRadarPriceInput(raw)) {
+      const message = t('brokerSubscriptions.gRadarPrice.invalid');
+      setPriceFieldErrors(prev => ({ ...prev, [brokerId]: message }));
+      showError(message);
+      return;
+    }
+    const price = parseGRadarPriceInput(raw);
+    const oldPrice = plan.gRadarPricePerCreditUsd;
+    if (hasGRadarPrice(oldPrice) && Number(oldPrice) === price) {
+      showInfo(t('brokerSubscriptions.gRadarPrice.unchanged'));
+      return;
+    }
+
+    const gRadarCount = plan.gRadarEnabledBrokerCount ?? 0;
+    const ok = await confirmDialog({
+      title: t('brokerSubscriptions.gRadarPrice.confirmTitle'),
+      message: t('brokerSubscriptions.gRadarPrice.confirmMessage', { plan: plan.name, count: plan.brokerCount ?? 0 }),
+      details: [
+        t('brokerSubscriptions.gRadarPrice.confirmChange', {
+          old: formatGRadarPrice(oldPrice) ?? t('brokerSubscriptions.gRadarPrice.notSet'),
+          new: formatGRadarPrice(price),
+        }),
+        ...(gRadarCount > 0 ? [t('brokerSubscriptions.gRadarPrice.confirmGRadarCount', { count: gRadarCount })] : []),
+      ],
+      intent: 'warning',
+      confirmText: t('brokerSubscriptions.gRadarPrice.confirmButton'),
+    });
+    if (!ok) return;
+
+    setSavingPrice(prev => ({ ...prev, [brokerId]: true }));
+    const res = await gRadarCreditService.updatePlanPrice(plan.id, price);
+    setSavingPrice(prev => ({ ...prev, [brokerId]: false }));
+    if (res.success) {
+      showSuccess(t('brokerSubscriptions.gRadarPrice.saved', {
+        plan: plan.name,
+        price: formatGRadarPrice(res.data?.pricePerCreditUsd ?? price),
+      }));
+      setPriceForms(prev => ({ ...prev, [brokerId]: '' }));
+      setPriceFieldErrors(prev => ({ ...prev, [brokerId]: null }));
+      await load();
+    } else {
+      const message = getGRadarPlanPriceError(res.code, res.error, { planName: plan.name }) ?? res.error;
+      setPriceFieldErrors(prev => ({ ...prev, [brokerId]: message }));
+      showError(message);
     }
   };
 
@@ -317,6 +421,14 @@ export default function BrokerSubscriptionsPage() {
       } else {
         loadGRadarWallet(brokerId);
       }
+      // Listedeki "G-Radar fiyatı eksik" rozeti açık/kapalı durumuna bağlı
+      if (res.data?.changed) load();
+    } else if (res.code === GRADAR_PLAN_PRICE_CODES.MISSING) {
+      // Planın fiyatı yok: fiyat alanını işaretle, mesajda planı adıyla an
+      const planName = brokers.find(b => b.brokerId === brokerId)?.subscription?.plan?.name;
+      const message = getGRadarPlanPriceError(res.code, res.error, { planName });
+      setPriceFieldErrors(prev => ({ ...prev, [brokerId]: message }));
+      showError(message);
     } else {
       showError(res.error);
     }
@@ -502,6 +614,11 @@ export default function BrokerSubscriptionsPage() {
               const cfg = sub ? (RESTRICTION_CONFIG[sub.restrictionLevel] ?? RESTRICTION_CONFIG.NONE) : null;
               const form = editForms[broker.brokerId] ?? {};
               const brokerUsers = users[broker.brokerId] ?? [];
+              const gRadarOn = isGRadarOn(broker);
+              const planPrice = sub?.plan?.gRadarPricePerCreditUsd;
+              const planPriceMissing = !hasGRadarPrice(planPrice);
+              const priceFieldError = priceFieldErrors[broker.brokerId];
+              const planFieldError = planFieldErrors[broker.brokerId];
 
               return (
                 <div key={broker.brokerId} className="bg-white dark:bg-background-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
@@ -526,6 +643,17 @@ export default function BrokerSubscriptionsPage() {
                       <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.cls}`}>
                         <span className="material-symbols-outlined text-sm">{cfg.icon}</span>
                         {cfg.label}
+                      </span>
+                    )}
+
+                    {/* G-Radar açık ama planın fiyatı yok (eski veri) — firma kredi alamaz */}
+                    {sub?.gRadarPriceMissing && (
+                      <span
+                        title={t('brokerSubscriptions.gRadarPrice.badgeTitle')}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      >
+                        <span className="material-symbols-outlined text-sm">price_change</span>
+                        {t('brokerSubscriptions.gRadarPrice.badge')}
                       </span>
                     )}
 
@@ -647,7 +775,14 @@ export default function BrokerSubscriptionsPage() {
                                       : t('brokerSubscriptions.gRadar.disabledHint')}
                                   </p>
                                 </div>
-                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                <label
+                                  className={`inline-flex items-center gap-2 ${
+                                    !gRadarWallets[broker.brokerId]?.gRadarEnabled && planPriceMissing ? 'cursor-not-allowed' : 'cursor-pointer'
+                                  }`}
+                                  title={!gRadarWallets[broker.brokerId]?.gRadarEnabled && planPriceMissing
+                                    ? t('brokerSubscriptions.gRadarPrice.enableNeedsPrice')
+                                    : undefined}
+                                >
                                   <span className={`text-xs font-medium ${
                                     gRadarWallets[broker.brokerId]?.gRadarEnabled
                                       ? 'text-green-700 dark:text-green-400'
@@ -658,12 +793,82 @@ export default function BrokerSubscriptionsPage() {
                                   <input
                                     type="checkbox"
                                     checked={!!gRadarWallets[broker.brokerId]?.gRadarEnabled}
-                                    disabled={togglingGRadar[broker.brokerId] || !gRadarWallets[broker.brokerId]}
+                                    // Fiyatsız planda açılamaz; kapatmak her zaman serbest
+                                    disabled={
+                                      togglingGRadar[broker.brokerId]
+                                      || !gRadarWallets[broker.brokerId]
+                                      || (!gRadarWallets[broker.brokerId].gRadarEnabled && planPriceMissing)
+                                    }
                                     onChange={(e) => handleToggleGRadarEnabled(broker.brokerId, e.target.checked)}
                                     className="h-5 w-9 rounded-full accent-purple-600 disabled:opacity-50"
                                   />
                                 </label>
                               </div>
+
+                              {/* Planın G-Radar kredi fiyatı — planı kullanan tüm firmalarda geçerli */}
+                              {sub.plan && (
+                                <div className="mt-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-white/70 dark:bg-gray-800/60 p-3 space-y-2 transition-colors">
+                                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <p className="text-xs font-semibold text-text-main flex items-center gap-1.5">
+                                      <span className="material-symbols-outlined text-base text-purple-600 dark:text-purple-400">sell</span>
+                                      {t('brokerSubscriptions.gRadarPrice.label', { plan: sub.plan.name })}
+                                    </p>
+                                    <p className={`text-sm font-bold ${
+                                      planPriceMissing ? 'text-red-600 dark:text-red-400' : 'text-purple-700 dark:text-purple-400'
+                                    }`}>
+                                      {t('brokerSubscriptions.gRadarPrice.current', {
+                                        price: formatGRadarPrice(planPrice) ?? t('brokerSubscriptions.gRadarPrice.notSet'),
+                                      })}
+                                    </p>
+                                  </div>
+
+                                  {planPriceMissing && (gRadarOn ? (
+                                    <p className="text-xs text-red-700 dark:text-red-400 flex items-start gap-1.5">
+                                      <span className="material-symbols-outlined text-sm">error</span>
+                                      {t('brokerSubscriptions.gRadarPrice.enabledWithoutPrice')}
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
+                                      <span className="material-symbols-outlined text-sm">info</span>
+                                      {t('brokerSubscriptions.gRadarPrice.enableNeedsPrice')}
+                                    </p>
+                                  ))}
+
+                                  <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                                    <label className="flex flex-col gap-1 w-full sm:w-44">
+                                      <span className="text-xs font-medium text-text-secondary">{t('brokerSubscriptions.gRadarPrice.newPrice')}</span>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={priceForms[broker.brokerId] ?? ''}
+                                        onChange={e => handlePriceFormChange(broker.brokerId, e.target.value)}
+                                        placeholder={t('brokerSubscriptions.gRadarPrice.placeholder')}
+                                        aria-invalid={priceFieldError ? 'true' : undefined}
+                                        className={`rounded-lg border bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                                          priceFieldError || (planPriceMissing && gRadarOn)
+                                            ? 'border-red-500 ring-2 ring-red-500/30 focus:ring-red-500'
+                                            : 'border-purple-300 dark:border-purple-700 focus:ring-purple-500'
+                                        }`}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSavePlanPrice(broker)}
+                                      disabled={savingPrice[broker.brokerId] || !String(priceForms[broker.brokerId] ?? '').trim()}
+                                      className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                      <span className="material-symbols-outlined text-base">save</span>
+                                      {savingPrice[broker.brokerId] ? t('brokerSubscriptions.gRadarPrice.saving') : t('brokerSubscriptions.gRadarPrice.save')}
+                                    </button>
+                                  </div>
+                                  {priceFieldError && (
+                                    <p className="text-xs text-red-600 dark:text-red-400" role="alert">{priceFieldError}</p>
+                                  )}
+                                  <p className="text-[11px] text-text-secondary">
+                                    {t('brokerSubscriptions.gRadarPrice.planWide', { plan: sub.plan.name, count: sub.plan.brokerCount ?? 0 })}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                               <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
@@ -843,13 +1048,21 @@ export default function BrokerSubscriptionsPage() {
                                 <select
                                   value={form.newPlanId ?? ''}
                                   onChange={e => handleFormChange(broker.brokerId, 'newPlanId', e.target.value)}
-                                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                                  aria-invalid={planFieldError ? 'true' : undefined}
+                                  className={`rounded-lg border bg-white dark:bg-gray-700 text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                                    planFieldError
+                                      ? 'border-red-500 ring-2 ring-red-500/30 focus:ring-red-500'
+                                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+                                  }`}
                                 >
                                   <option value="">{t('brokerSubscriptions.edit.keepPlan')}</option>
                                   {plans.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                   ))}
                                 </select>
+                                {planFieldError && (
+                                  <span className="text-xs text-red-600 dark:text-red-400" role="alert">{planFieldError}</span>
+                                )}
                               </label>
 
                               <label className="flex flex-col gap-1">
