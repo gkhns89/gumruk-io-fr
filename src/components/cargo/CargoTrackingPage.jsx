@@ -872,6 +872,8 @@ export default function CargoTrackingPage() {
           onClose={() => {
             setShowEditModal(false);
             setSelectedCargo(null);
+            // Modalda taslak kaydedilmiş olabilir: rozet olayı kaçarsa bile liste tazelensin
+            refreshPending();
           }}
           onSuccess={handleModalSuccess}
           isReadOnly={isTableReadOnly}

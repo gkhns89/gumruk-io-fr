@@ -668,7 +668,12 @@ export default function WarehousePage() {
       {showEditModal && selectedDeclaration && (
         <EditWarehouseModal
           declaration={selectedDeclaration}
-          onClose={() => { setShowEditModal(false); setSelectedDeclaration(null); }}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedDeclaration(null);
+            // Modalda taslak kaydedilmiş olabilir: rozet olayı kaçarsa bile liste tazelensin
+            refreshPending();
+          }}
           onSuccess={handleEditSuccess}
           currentUser={user}
         />

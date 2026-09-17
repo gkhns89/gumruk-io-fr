@@ -1117,6 +1117,8 @@ export default function TransactionsPage() {
           onClose={() => {
             setShowEditModal(false);
             setSelectedTransaction(null);
+            // Modalda taslak kaydedilmiş olabilir: rozet olayı kaçarsa bile liste tazelensin
+            refreshPending();
           }}
           onSuccess={handleEditSuccess}
           isReadOnly={isTableReadOnly}
