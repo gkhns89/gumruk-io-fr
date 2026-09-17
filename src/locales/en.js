@@ -2189,6 +2189,7 @@ export const en = {
       sessionInvalidated: "Someone signed in from another device, so your session was ended.",
       sessionExpired: "Your session has expired. Please sign in again.",
       sessionTimedOut: "Your session timed out. Please sign in again.",
+      signedOutElsewhere: "You were signed out in another tab or window. Please sign in again.",
     },
     agreement: {
       checkError: "Could not check the agreement",
