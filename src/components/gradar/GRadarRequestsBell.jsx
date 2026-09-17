@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { gRadarService } from '../../api/gRadarService';
-import { showSuccess, showError } from '../../utils/toastUtils';
+import { showSuccess, showError, showWarning } from '../../utils/toastUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { isGRadarDisableRequest } from '../../utils/constants';
 import GRadarRequestTypeBadge from './GRadarRequestTypeBadge';
@@ -117,8 +117,14 @@ export default function GRadarRequestsBell() {
         fetchImmediately: isDisable ? false : fetchImmediately,
       });
       if (res.success) {
-        showSuccess(res.data?.message
-          || t(isDisable ? 'gRadarAdmin.requests.approvedDisable' : 'gRadarAdmin.requests.approved'));
+        const message = res.data?.message
+          || t(isDisable ? 'gRadarAdmin.requests.approvedDisable' : 'gRadarAdmin.requests.approved');
+        // Onay kaydedildi ama bilgiler çekilemedi (ör. kredi yetersiz): uyarı olarak göster.
+        if (!isDisable && fetchImmediately && res.data?.fetched === false) {
+          showWarning(message);
+        } else {
+          showSuccess(message);
+        }
         load();
       } else {
         showError(res.error);
