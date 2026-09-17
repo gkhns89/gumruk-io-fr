@@ -527,8 +527,9 @@ export default function CargoTrackingTable({
  *  - TRUCK or COMPLETED cargo → dash (G-Radar doesn't apply).
  *  - gRadarEnabled=false → muted "Kapalı" pill.
  *  - gRadarEnabled=true && gRadarTrackingId=null → "Bilgileri Getir"
- *    action button (only clickable by BROKER_ADMIN / SUPER_ADMIN; spent
- *    1 credit per click, confirmed in the parent).
+ *    action button (BROKER_ADMIN / SUPER_ADMIN, or a BROKER_USER whose
+ *    request was approved — the row's gRadarFetchAllowed; spends 1 credit
+ *    per click, confirmed in the parent). Otherwise "Bilgi bekleniyor".
  *  - gRadarEnabled=true && gRadarTrackingId set → green dot + last-sync
  *    tooltip indicating live tracking.
  *
@@ -559,6 +560,7 @@ function GRadarStatusCell({
       status: cargoItem.status,
       gRadarEnabled: cargoItem.gRadarEnabled,
       gRadarTrackingId: cargoItem.gRadarTrackingId,
+      gRadarFetchAllowed: cargoItem.gRadarFetchAllowed,
       canManage,
       isReadOnly,
     });
@@ -639,9 +641,14 @@ function GRadarStatusCell({
     );
   }
   if (!cargoItem.gRadarTrackingId) {
-    if (!canManage || isReadOnly) {
+    // Yöneticiler her zaman; Broker Kullanıcısı talebi onaylandıysa (sunucunun gRadarFetchAllowed bayrağı).
+    const canFetch = !isReadOnly && (canManage || cargoItem.gRadarFetchAllowed === true);
+    if (!canFetch) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs">
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs"
+          title={!canManage && !isReadOnly ? t("cargoTracking.table.gRadar.awaitingApprovalHint") : undefined}
+        >
           {t("cargoTracking.table.gRadar.awaitingData")}
         </span>
       );

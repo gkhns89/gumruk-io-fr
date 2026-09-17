@@ -267,6 +267,13 @@ from all user-visible surfaces. Two services, deliberately split:
 Some backend enum constants still say `SHIPSGO_*` internally while serializing as
 `GRADAR_*`; `constants.js` uses the external name.
 
+**"Bilgileri Getir" (1 credit)** is not admin-only: a BROKER_USER whose G-Radar request an admin
+approved may press it too. The server decides; cargo rows (list, detail, drawer details) carry
+`gRadarFetchAllowed`, and `GRadarStatusCell` shows the button when
+`!isReadOnly && (canManage || gRadarFetchAllowed)`, otherwise the "Bilgi bekleniyor" pill (with an
+"admin must approve" tooltip for a BROKER_USER). `gRadarService.fetch` returns the envelope `code`;
+403 `GRADAR_FETCH_NOT_APPROVED` / `GRADAR_FETCH_FORBIDDEN` toast the server message and reload the list.
+
 `src/utils/gRadarLabels.js` normalizes the provider's two inconsistent schemas (air returns
 `movements`, sea returns per-container `movements`, with field names varying) into one shape
 and translates codes to Turkish, falling back to a readable raw value for unknown codes.

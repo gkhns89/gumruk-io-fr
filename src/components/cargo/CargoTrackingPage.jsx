@@ -20,6 +20,9 @@ import DraftsControl from '../drafts/DraftsControl';
 import { DRAFT_MODULES } from '../../api/draftService';
 import { t } from '../../locales';
 
+// "Bilgileri Getir" artık yapılamıyor (sunucunun 403 kodları)
+const FETCH_DENIED_CODES = ['GRADAR_FETCH_NOT_APPROVED', 'GRADAR_FETCH_FORBIDDEN'];
+
 export default function CargoTrackingPage() {
   const { user } = useAuth();
 
@@ -148,6 +151,10 @@ export default function CargoTrackingPage() {
     setFetchingGRadar(prev => ({ ...prev, [cargoItem.id]: false }));
     if (res.success) {
       showSuccess(t('cargoTracking.gRadarActions.fetchSuccess'));
+      loadData();
+    } else if (FETCH_DENIED_CODES.includes(res.code)) {
+      // İzin arada değişti (onay geri alındı, takip kapatıldı...): satırı sunucudaki hâline getir.
+      showError(res.error || t('cargoTracking.gRadarActions.fetchNotApproved'));
       loadData();
     } else {
       showError(res.error || t('cargoTracking.gRadarActions.fetchError'));
