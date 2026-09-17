@@ -354,7 +354,9 @@ export default function GRadarDetailsDrawer({
           ) : !details.gRadarTrackingId ? (
             <div className="m-5 rounded-xl border border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                {t('cargoTracking.drawer.noData')}
+                {canManage || details.gRadarFetchAllowed === true
+                  ? t('cargoTracking.drawer.noData')
+                  : t('cargoTracking.drawer.noDataAwaitingApproval')}
               </p>
             </div>
           ) : (

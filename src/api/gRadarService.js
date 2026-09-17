@@ -140,13 +140,21 @@ export const gRadarService = {
     }
   },
 
+  /**
+   * 1 kredi harcar. Broker Kullanıcısı yalnızca satırın `gRadarFetchAllowed` bayrağı doğruyken basabilir;
+   * değilse sunucu 403 + `code` GRADAR_FETCH_NOT_APPROVED / GRADAR_FETCH_FORBIDDEN döner.
+   */
   fetch: async (cargoId) => {
     try {
       const res = await axiosInstance.post(`/g-radar/cargo/${cargoId}/fetch`);
       return { success: true, data: res.data };
     } catch (error) {
       logError('GRadarService - fetch', error);
-      return { success: false, error: getApiErrorMessage(error) };
+      return {
+        success: false,
+        error: getApiErrorMessage(error),
+        code: error?.response?.data?.code,
+      };
     }
   },
 
