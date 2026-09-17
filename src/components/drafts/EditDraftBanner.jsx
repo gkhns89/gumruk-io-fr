@@ -1,19 +1,18 @@
-import { useMemo } from 'react';
 import PendingChangeModal from './PendingChangeModal';
 import { formatDraftDateTime } from '../../utils/drafts';
-import { diffDraftFields } from '../../utils/draftDiff';
 import { t } from '../../locales';
 
 /**
  * Düzenleme modalının üstündeki taslak bandı (DRAFTS bayrağı, taslak aşama 4).
  *
- * Kullanıcının bu kayıtta kendi bekleyen taslağı varsa form onun değerleriyle açılır (`useEditDraftPrefill`);
- * bu bant ne olduğunu söyler ve üç çıkış sunar: orijinali yükle, karşılaştır, taslağı sil. Her şey yolundayken
- * sakin görünür — kullanıcı zaten bilerek kendi taslağına dönmüştür.
+ * Kullanıcının bu kayıtta kendi bekleyen taslağı varsa form **kaydın şimdiki hâli + taslağın farkı** ile açılır
+ * (`useEditDraftPrefill`); bu bant ne olduğunu söyler ve üç çıkış sunar: orijinali yükle, karşılaştır, taslağı sil.
+ * Her şey yolundayken sakin görünür — kullanıcı zaten bilerek kendi taslağına dönmüştür.
  *
- * Kayıt taslak alındıktan sonra başkası tarafından değiştirildiyse (`target.stale`) ya da kaydederken 409 geldiyse
- * bant kırmızı uyarıya döner: kimin ne zaman değiştirdiği, hangi alanların değiştiği ve öne çıkmış bir
- * "Karşılaştır". Kaydetmek yine serbesttir — kullanıcının bilerek üzerine yazması engellenmez.
+ * Bant yalnızca **gerçek çakışmada** kırmızıya döner: taslakçının değiştirdiği bir alanı bu arada başkası da
+ * değiştirmişse (ya da kaydederken 409 geldiyse, ya da taslak `payload.base` taşımayan eski bir taslaksa).
+ * Kaydın başka alanlarının değişmiş olması çakışma değil, bilgidir: taslak onlara dokunmaz. Kaydetmek yine
+ * serbesttir — kullanıcının bilerek üzerine yazması engellenmez.
  *
  * "Karşılaştır" var olan karşılaştırma penceresini salt okunur açar: uygulama ve silme bandın kendi düğmelerinde.
  *
@@ -23,17 +22,15 @@ import { t } from '../../locales';
  * @param {Array}    props.fields          Alan tanımları (bkz. utils/draftDiff.js)
  * @param {Function} props.recordToFields  (record) => karşılaştırma alanları
  * @param {Function} props.payloadToFields (payloadLike, record) => karşılaştırma alanları
+ * @param {Function} props.recordToPayload (record) => kaydın şimdiki payload'ı
  * @param {string}   [props.className]
  */
 export default function EditDraftBanner({ prefill, module, record, fields, recordToFields, payloadToFields,
-  className = '' }) {
-  const { draft, stale } = prefill;
-
-  // Taslak alındıktan sonra kaydı başkasının değiştirdiği alanlar: taslak, alındığı andaki kaydı da taşıyor.
-  const conflicts = useMemo(() => {
-    if (!stale || !draft?.payload?.base || !record) return [];
-    return diffDraftFields(payloadToFields(draft.payload.base, record), recordToFields(record), fields);
-  }, [stale, draft, record, fields, recordToFields, payloadToFields]);
+  recordToPayload, className = '' }) {
+  const { draft, pending, hasConflict } = prefill;
+  const stale = hasConflict;
+  const conflicts = pending?.conflicts || [];
+  const otherChanges = pending?.otherChanges || [];
 
   if (!draft) return null;
 
@@ -100,6 +97,14 @@ export default function EditDraftBanner({ prefill, module, record, fields, recor
                   {t('drafts.editBanner.staleSaveHint')}
                 </p>
               )}
+              {/* Kayıt bu arada değişti ama taslak o alanlara dokunmuyor: uyarı değil, bilgi */}
+              {!stale && !onRecord && otherChanges.length > 0 && (
+                <p className="mt-1.5 text-xs text-text-secondary">
+                  {t('drafts.pending.otherChanged', {
+                    fields: otherChanges.map((change) => change.label).join(', '),
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
@@ -149,6 +154,7 @@ export default function EditDraftBanner({ prefill, module, record, fields, recor
           fields={fields}
           recordToFields={recordToFields}
           payloadToFields={payloadToFields}
+          recordToPayload={recordToPayload}
           onClose={prefill.closeCompare}
         />
       )}

@@ -136,3 +136,19 @@ export const transactionPayloadToFields = (payloadLike, transaction) => {
 /** Taslaktaki form alanları (uygulanacak değerler) */
 export const transactionPayloadToFormData = (payloadLike, transaction) =>
   mergeDraftFields(createTransactionFormData(transaction), payloadLike?.formData);
+
+/**
+ * Kaydın şimdiki hâlinin payload karşılığı. İki yerde kullanılır ve aynı olmak zorundadır:
+ *  - düzenleme modalı taslağı kaydederken `payload.base` (taslak alındığı andaki form),
+ *  - taslak uygulanırken farkın üstüne yazılacağı taban (kaydın şimdiki hâli).
+ * Sayı alanlarının görüntü metinleri (displayWeight...) burada yok: yalnızca ekranda görünen, gövdeye girmeyen
+ * değerler oldukları için taslaktakiler kullanılır.
+ */
+export const transactionRecordToPayload = (transaction) => ({
+  formData: createTransactionFormData(transaction),
+  brokerSearchTerm: transaction?.brokerCompany?.name || '',
+  clientSearchTerm: transaction?.clientCompany?.name || '',
+  customsSearchTerm: transaction?.customs?.customsShortName || '',
+  senderSearchTerm: transaction?.senderName || '',
+  warehouseSearchTerm: transaction?.customsWarehouse || '',
+});

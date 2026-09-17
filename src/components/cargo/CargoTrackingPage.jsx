@@ -25,6 +25,7 @@ import {
   cargoDraftFields,
   cargoRecordToFields,
   cargoPayloadToFields,
+  cargoRecordToPayload,
   cargoPayloadToFormData,
   buildCargoUpdatePayload,
 } from './cargoDraftFields';
@@ -375,18 +376,24 @@ export default function CargoTrackingPage() {
     setPendingChange({ draftId: draft.id, record });
   }, [cargo]);
 
+  // Karşılaştırma penceresi kaydın **şimdiki** hâlini taban alır (taslağın farkı bunun üstüne yazılır), bu yüzden
+  // satır listeden canlı okunur: liste tazelendiğinde (örneğin 409 sonrası) taban da tazelenir. Kayıt listeden
+  // düşmüşse pencerenin açıldığı andaki satır kalır.
+  const pendingRecord = useMemo(() => (pendingChange
+    ? cargo.find((item) => item.id === pendingChange.record.id) || pendingChange.record
+    : null), [pendingChange, cargo]);
+
   // "Uygula": gövde düzenleme modalıyla aynı yerden gelir (cargoDraftFields.js). Araç tipi ve müşteri yalnızca
   // yöneticinin düzenleyebildiği alanlar; yetkisi olmayanın taslağı bunları göndermez.
   const applyPendingChange = useCallback(async (payload) => {
-    const record = pendingChange?.record;
-    if (!record) return { success: false };
+    if (!pendingRecord) return { success: false };
     const canEditAdminFields = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole) && !isTableReadOnly;
-    const formData = cargoPayloadToFormData(payload, record);
-    return cargoService.updateCargo(record.id, buildCargoUpdatePayload(formData, {
+    const formData = cargoPayloadToFormData(payload, pendingRecord);
+    return cargoService.updateCargo(pendingRecord.id, buildCargoUpdatePayload(formData, {
       canEditVehicleType: canEditAdminFields,
       canEditClientCompany: canEditAdminFields,
     }));
-  }, [pendingChange, user, isTableReadOnly]);
+  }, [pendingRecord, user, isTableReadOnly]);
 
   const handlePendingApplied = useCallback(() => {
     refreshPending();
@@ -854,10 +861,11 @@ export default function CargoTrackingPage() {
         <PendingChangeModal
           draftId={pendingChange.draftId}
           module={DRAFT_MODULES.CARGO}
-          record={pendingChange.record}
+          record={pendingRecord}
           fields={pendingFields}
           recordToFields={cargoRecordToFields}
           payloadToFields={cargoPayloadToFields}
+          recordToPayload={cargoRecordToPayload}
           onApply={applyPendingChange}
           canApply={!isTableReadOnly}
           blockedReason={t('payment.restrictionWarning')}

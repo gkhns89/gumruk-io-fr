@@ -114,6 +114,18 @@ export const cargoRecordToFields = (cargo) => withNames(createCargoFormData(carg
 export const cargoPayloadToFormData = (payloadLike, cargo) =>
   mergeDraftFields(createCargoFormData(cargo), payloadLike?.formData);
 
+/**
+ * Kaydın şimdiki hâlinin payload karşılığı. İki yerde kullanılır ve aynı olmak zorundadır: taslak kaydedilirken
+ * `payload.base`, taslak uygulanırken farkın üstüne yazılacağı taban. G-Radar önizlemesi ve takip kimliği burada
+ * da yok; `createCargoFormData` bu alanları taşımadığı için fark hesabına hiç girmezler.
+ */
+export const cargoRecordToPayload = (cargo) => ({
+  formData: createCargoFormData(cargo),
+  clientSearchTerm: cargo?.clientCompany?.name || '',
+  senderSearchTerm: cargo?.senderCompany || '',
+  carrierSearchTerm: cargo?.carrierName || '',
+});
+
 /** Taslaktaki (ya da taslak alındığı andaki) hâli, karşılaştırma için */
 export const cargoPayloadToFields = (payloadLike, cargo) => {
   const formData = cargoPayloadToFormData(payloadLike, cargo);

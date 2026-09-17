@@ -20,6 +20,8 @@ export const idValue = (id, text) => ({ __draftId: id ?? null, text: text || '' 
 
 const isIdValue = (value) => value !== null && typeof value === 'object' && '__draftId' in value;
 
+const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
 /** "a.b.c" yolundan değer okur */
 export const draftFieldValue = (source, key) => {
   if (!source || !key) return undefined;
@@ -73,6 +75,125 @@ export const diffDraftFields = (current, next, fields) => {
     });
     return changes;
   }, []);
+};
+
+// ==================== TASLAK = FARK ====================
+
+/**
+ * Bekleyen değişiklik bir **fark**tır. Taslak, formun tamamının fotoğrafını taşır; ama taslakçı yalnızca birkaç
+ * alana dokunmuştur. Dokunulmayan alanlar formu açtığı andaki değerleriyle duruyordur ve taslak uygulanırken
+ * bunların yazılması, bu arada başkasının yaptığı değişikliği sessizce geri alırdı.
+ *
+ * Bu yüzden taslak, alındığı andaki formu da taşır (`payload.base`). Fark = taslak ∖ base; uygulama = kaydın
+ * **şimdiki** hâli + fark. Öncesinde alınmış taslaklarda `base` yok: onlarda eski davranış sürer (tüm form
+ * uygulanır) ve arayüz bunu açıkça söyler.
+ */
+
+/** Nesnenin yaprak yolları ("formData.delayReasons.arrivalToRegistration"); diziler yaprak sayılır. */
+const leafPaths = (source, prefix = '') => {
+  if (!isPlainObject(source)) return prefix ? [prefix] : [];
+  return Object.entries(source).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return isPlainObject(value) ? leafPaths(value, path) : [path];
+  });
+};
+
+/**
+ * Alan tanımı olmayan anahtarların karşılaştırması (kimlikler, arama kutusu metinleri, formdan türeyen
+ * `recipientName` gibi). Boş sayılan değerler (null, undefined, "") birbirinden farklı değildir; kimlikler
+ * metin olarak karşılaştırılır, böylece 5 ile "5" aynıdır.
+ */
+const rawCompareKey = (value) => {
+  if (value === undefined || value === null || value === '') return '';
+  if (Array.isArray(value)) return JSON.stringify(value.filter((item) => item != null && item !== ''));
+  if (isPlainObject(value)) return JSON.stringify(value);
+  return String(value);
+};
+
+const clonePayload = (value) => (isPlainObject(value)
+  ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clonePayload(item)]))
+  : value);
+
+const setDraftPath = (target, path, value) => {
+  const parts = String(path).split('.');
+  const last = parts.pop();
+  const parent = parts.reduce((node, part) => {
+    if (!isPlainObject(node[part])) node[part] = {};
+    return node[part];
+  }, target);
+  parent[last] = value;
+};
+
+/**
+ * Taslakçının gerçekten değiştirdiği payload yolları: taslak ile `base` (taslak alındığı andaki form) arasındaki
+ * fark. Alan tanımı olan anahtarlar tanımdaki `format` ile ölçülür, böylece "1500" ile 1500 ya da "2026-09-15"
+ * ile aynı tarihin başka yazımı fark sayılmaz.
+ *
+ * @returns {Array<string>|null} `base` yoksa null (eski taslak)
+ */
+export const draftDeltaPaths = (basePayload, draftPayload, fields) => {
+  if (!isPlainObject(basePayload) || !isPlainObject(draftPayload)) return null;
+  const formats = new Map((Array.isArray(fields) ? fields : []).map((field) => [`formData.${field.key}`, field.format]));
+  const paths = [...new Set([...leafPaths(basePayload), ...leafPaths(draftPayload)])]
+    .filter((path) => path !== 'base' && !path.startsWith('base.'));
+  return paths.filter((path) => {
+    const draftValue = draftFieldValue(draftPayload, path);
+    // Taslakta hiç bulunmayan alan (form sonradan büyümüş) fark sayılmaz: kaydınki kalır.
+    if (draftValue === undefined) return false;
+    const baseValue = draftFieldValue(basePayload, path);
+    const format = formats.get(path);
+    return format
+      ? draftValueText(baseValue, format) !== draftValueText(draftValue, format)
+      : rawCompareKey(baseValue) !== rawCompareKey(draftValue);
+  });
+};
+
+/** Kaydın şimdiki payload'ı + taslakçının farkı. Fark dışındaki her alan kaydın şimdiki değerinde kalır. */
+export const mergeDraftDelta = (recordPayload, draftPayload, paths) => {
+  const merged = clonePayload(isPlainObject(recordPayload) ? recordPayload : {});
+  (paths || []).forEach((path) => setDraftPath(merged, path, draftFieldValue(draftPayload, path)));
+  return merged;
+};
+
+/**
+ * Bekleyen değişikliğin özeti — hem karşılaştırma penceresi (`PendingChangeModal`) hem düzenleme modalının bandı
+ * ve ön doldurması (`useEditDraftPrefill`) buradan geçer, böylece gösterilen ile uygulanan ayrışamaz.
+ *
+ * @param {object}   options.payload         Taslağın payload'ı
+ * @param {object}   options.record          Kaydın şimdiki hâli
+ * @param {Array}    options.fields          Alan tanımları
+ * @param {Function} options.recordToFields  (record) => karşılaştırma alanları
+ * @param {Function} options.payloadToFields (payloadLike, record) => karşılaştırma alanları
+ * @param {Function} [options.recordToPayload] (record) => kaydın şimdiki hâlinin payload karşılığı
+ * @returns {{ legacy, effectivePayload, changes, conflicts, otherChanges }|null}
+ *   `legacy`           eski taslak: `base` yok, formun tamamı uygulanacak
+ *   `effectivePayload` uygulanacak / forma yazılacak payload (kayıt + fark)
+ *   `changes`          taslakçının farkı, "şimdiki değer → taslaktaki değer"
+ *   `conflicts`        farkın, bu arada başkasının da değiştirdiği alanları (gerçek çakışma)
+ *   `otherChanges`     bu arada değişen ama taslağın dokunmayacağı alanlar (yalnızca bilgi)
+ */
+export const buildPendingChange = ({ payload, record, fields, recordToFields, payloadToFields, recordToPayload }) => {
+  if (!payload || !record) return null;
+  const basePayload = isPlainObject(payload.base) ? payload.base : null;
+  const currentFields = recordToFields(record);
+
+  const deltaPaths = basePayload && typeof recordToPayload === 'function'
+    ? draftDeltaPaths(basePayload, payload, fields)
+    : null;
+  const effectivePayload = deltaPaths ? mergeDraftDelta(recordToPayload(record), payload, deltaPaths) : payload;
+
+  const changes = diffDraftFields(currentFields, payloadToFields(effectivePayload, record), fields);
+  const changedKeys = new Set(changes.map((change) => change.key));
+  // Taslak alındıktan sonra kaydı başkasının değiştirdiği alanlar
+  const others = basePayload ? diffDraftFields(payloadToFields(basePayload, record), currentFields, fields) : [];
+
+  return {
+    legacy: !deltaPaths,
+    effectivePayload,
+    changes,
+    conflicts: changes.filter((change) => others.some((other) => other.key === change.key)),
+    otherChanges: others.filter((other) => !changedKeys.has(other.key)),
+  };
 };
 
 // ==================== ORTAK BİÇİMLENDİRİCİLER ====================

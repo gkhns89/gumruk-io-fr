@@ -21,6 +21,7 @@ import {
   warehouseDraftFields,
   warehouseRecordToFields,
   warehousePayloadToFields,
+  warehouseRecordToPayload,
   warehouseDraftToPayload,
 } from "./warehouseDraftFields";
 import { t } from "../../locales";
@@ -280,12 +281,18 @@ export default function WarehousePage() {
     setPendingChange({ draftId: draft.id, record });
   }, [declarations]);
 
+  // Karşılaştırma penceresi kaydın **şimdiki** hâlini taban alır (taslağın farkı bunun üstüne yazılır), bu yüzden
+  // satır listeden canlı okunur: liste tazelendiğinde (örneğin 409 sonrası) taban da tazelenir. Kayıt listeden
+  // düşmüşse pencerenin açıldığı andaki satır kalır.
+  const pendingRecord = useMemo(() => (pendingChange
+    ? declarations.find((item) => item.id === pendingChange.record.id) || pendingChange.record
+    : null), [pendingChange, declarations]);
+
   // "Uygula": gövde düzenleme modalıyla aynı yerden gelir (warehouseDraftFields.js)
   const applyPendingChange = useCallback(async (payload) => {
-    const record = pendingChange?.record;
-    if (!record) return { success: false };
-    return warehouseService.update(record.id, warehouseDraftToPayload(payload, record));
-  }, [pendingChange]);
+    if (!pendingRecord) return { success: false };
+    return warehouseService.update(pendingRecord.id, warehouseDraftToPayload(payload, pendingRecord));
+  }, [pendingRecord]);
 
   // loadData bu sayfada useCallback değil; bağımlılığa koymak her render'da kimliğini değiştirirdi.
   const handlePendingApplied = () => {
@@ -653,10 +660,11 @@ export default function WarehousePage() {
         <PendingChangeModal
           draftId={pendingChange.draftId}
           module={DRAFT_MODULES.WAREHOUSE}
-          record={pendingChange.record}
+          record={pendingRecord}
           fields={pendingFields}
           recordToFields={warehouseRecordToFields}
           payloadToFields={warehousePayloadToFields}
+          recordToPayload={warehouseRecordToPayload}
           onApply={applyPendingChange}
           canApply={!isTableReadOnly}
           blockedReason={t("payment.restrictionWarning")}

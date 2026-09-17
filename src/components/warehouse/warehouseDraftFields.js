@@ -133,6 +133,19 @@ const payloadSearches = (payloadLike) => ({
 export const warehousePayloadToFormData = (payloadLike, declaration) =>
   mergeDraftFields(createWarehouseFormData(declaration), payloadLike?.formData);
 
+/**
+ * Kaydın şimdiki hâlinin payload karşılığı. İki yerde kullanılır ve aynı olmak zorundadır: taslak kaydedilirken
+ * `payload.base`, taslak uygulanırken farkın üstüne yazılacağı taban. Bu formda gönderici, antrepo, nakliyeci ve
+ * alıcı arama kutularının metninden geldiği için onlar da buradadır — yoksa fark hesabı bu alanları ıskalardı.
+ */
+export const warehouseRecordToPayload = (declaration) => ({
+  formData: createWarehouseFormData(declaration),
+  brokerSearch: declaration?.brokerCompany?.name || '',
+  customsSearch: declaration?.customs?.customsShortName || '',
+  repSearch: getRepName(declaration?.representative),
+  ...recordSearches(declaration),
+});
+
 /** Taslaktaki (ya da taslak alındığı andaki) hâli, karşılaştırma için */
 export const warehousePayloadToFields = (payloadLike, declaration) => {
   const formData = warehousePayloadToFormData(payloadLike, declaration);

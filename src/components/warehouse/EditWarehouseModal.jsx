@@ -25,6 +25,7 @@ import {
   warehouseDraftFields,
   warehouseRecordToFields,
   warehousePayloadToFields,
+  warehouseRecordToPayload,
 } from "./warehouseDraftFields";
 import { t } from "../../locales";
 
@@ -530,17 +531,9 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
         senderSearch,
         whSearch,
         carrierSearch,
-        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
-        base: {
-          formData: baseFormData,
-          brokerSearch: declaration.brokerCompany?.name || "",
-          clientSearch: declaration.clientCompany?.name || "",
-          customsSearch: declaration.customs?.customsShortName || "",
-          repSearch: getRepName(declaration.representative),
-          senderSearch: declaration.senderName || "",
-          whSearch: declaration.warehouse || "",
-          carrierSearch: declaration.carrierName || "",
-        },
+        // Taslak alındığı andaki kayıt. Taslağın *farkı* bununla bulunur: uygulanırken yalnızca bu tabana göre
+        // değişmiş alanlar yazılır, geri kalanı kaydın o anki değerinde kalır.
+        base: warehouseRecordToPayload(declaration),
       },
       label: buildDraftLabel([formData.fileNo, formData.clientCompanyId ? clientSearch : ""], DRAFT_MODULES.WAREHOUSE),
     }),
@@ -577,16 +570,22 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
     setFieldErrors({});
   };
 
+  const draftCompareFields = useMemo(() => warehouseDraftFields(), []);
+
   const draftPrefill = useEditDraftPrefill({
     enabled: draftsEnabled,
     module: DRAFT_MODULES.WAREHOUSE,
     targetId: declaration.id,
+    record: declaration,
+    fields: draftCompareFields,
+    recordToFields: warehouseRecordToFields,
+    payloadToFields: warehousePayloadToFields,
+    recordToPayload: warehouseRecordToPayload,
     onDraftFound: setExistingDraft,
     applyPayload: applyDraftPayload,
     resetToRecord: resetFormToRecord,
     discardDraft,
   });
-  const draftCompareFields = useMemo(() => warehouseDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -659,6 +658,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               fields={draftCompareFields}
               recordToFields={warehouseRecordToFields}
               payloadToFields={warehousePayloadToFields}
+              recordToPayload={warehouseRecordToPayload}
             />
           )}
 

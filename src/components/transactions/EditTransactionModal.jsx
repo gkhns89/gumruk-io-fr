@@ -24,6 +24,7 @@ import {
   transactionDraftFields,
   transactionRecordToFields,
   transactionPayloadToFields,
+  transactionRecordToPayload,
 } from './transactionDraftFields';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
@@ -1143,13 +1144,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         displayWeight,
         displayTax,
         displayGuaranteeAmount,
-        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
-        base: {
-          formData: baseFormData,
-          brokerSearchTerm: transaction.brokerCompany?.name || "",
-          clientSearchTerm: transaction.clientCompany?.name || "",
-          customsSearchTerm: transaction.customs?.customsShortName || "",
-        },
+        // Taslak alındığı andaki kayıt. Taslağın *farkı* bununla bulunur: uygulanırken yalnızca bu tabana göre
+        // değişmiş alanlar yazılır, geri kalanı kaydın o anki değerinde kalır.
+        base: transactionRecordToPayload(transaction),
       },
       label: buildDraftLabel([
         toUpperCase(formData.fileNo || "", locale),
@@ -1205,16 +1202,22 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     setError("");
   };
 
+  const draftCompareFields = useMemo(() => transactionDraftFields(), []);
+
   const draftPrefill = useEditDraftPrefill({
     enabled: draftsEnabled && !isReadOnly,
     module: DRAFT_MODULES.TRANSACTION,
     targetId: transaction.id,
+    record: transaction,
+    fields: draftCompareFields,
+    recordToFields: transactionRecordToFields,
+    payloadToFields: transactionPayloadToFields,
+    recordToPayload: transactionRecordToPayload,
     onDraftFound: setExistingDraft,
     applyPayload: applyDraftPayload,
     resetToRecord: resetFormToRecord,
     discardDraft,
   });
-  const draftCompareFields = useMemo(() => transactionDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -1290,6 +1293,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 fields={draftCompareFields}
                 recordToFields={transactionRecordToFields}
                 payloadToFields={transactionPayloadToFields}
+                recordToPayload={transactionRecordToPayload}
                 className="mb-6"
               />
             )}

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { draftService } from '../api/draftService';
 import { readDraftPayload } from '../utils/drafts';
+import { buildPendingChange } from '../utils/draftDiff';
 import { confirmDialog } from '../utils/confirmDialog';
 import { showSuccess, showError } from '../utils/toastUtils';
 import { t } from '../locales';
@@ -13,6 +14,10 @@ import { t } from '../locales';
  * taslağıyla dolu bulur, üstte de ne olduğunu anlatan bir bant çıkar (`EditDraftBanner`).
  *
  * Kurallar:
+ *  - **Forma yazılan şey taslağın fotoğrafı değil, farkıdır**: kaydın şimdiki hâli + taslakçının değiştirdiği
+ *    alanlar (bkz. `buildPendingChange`). Böylece dokunulmamış alanlar kaydın güncel değerini gösterir ve
+ *    kaydetmek başkasının bu arada yaptığı değişikliği geri almaz. `payload.base` taşımayan eski taslaklarda
+ *    eski davranış sürer: formun tamamı taslaktan gelir.
  *  - Yalnızca kendi taslağı (`mine !== false`) yüklenir. Başkasının taslağı asla forma girmez; yönetici onu eskisi
  *    gibi rozetten inceler.
  *  - Taslak bulunur bulunmaz `onDraftFound` ile modala bildirilir; `useRecordDraft` böylece ikinci bir taslak
@@ -26,13 +31,18 @@ import { t } from '../locales';
  * @param {boolean}  options.enabled      Taslaklar açık ve form düzenlenebilir mi
  * @param {string}   options.module       DRAFT_MODULES değeri
  * @param {number}   options.targetId     Düzenlenen kaydın id'si
+ * @param {object}   options.record       Kaydın şimdiki hâli (farkın üstüne yazılacağı taban)
+ * @param {Array}    options.fields       Alan tanımları (bkz. utils/draftDiff.js)
+ * @param {Function} options.recordToFields    (record) => karşılaştırma alanları
+ * @param {Function} options.payloadToFields   (payloadLike, record) => karşılaştırma alanları
+ * @param {Function} options.recordToPayload   (record) => kaydın şimdiki payload'ı
  * @param {Function} options.onDraftFound `({ id, mine })` ya da null — useRecordDraft'ın `initialDraft`'ı
  * @param {Function} options.applyPayload Taslak payload'ını forma yazar
  * @param {Function} options.resetToRecord Formu kaydın şimdiki hâline döndürür
  * @param {Function} options.discardDraft useRecordDraft'ın `discardDraft`'ı (promise döner)
  */
-export function useEditDraftPrefill({ enabled, module, targetId, onDraftFound, applyPayload, resetToRecord,
-  discardDraft }) {
+export function useEditDraftPrefill({ enabled, module, targetId, record, fields, recordToFields, payloadToFields,
+  recordToPayload, onDraftFound, applyPayload, resetToRecord, discardDraft }) {
   const [draft, setDraft] = useState(null);
   // 'draft' → formda taslak değerleri, 'record' → kullanıcı "Orijinali yükle" dedi (taslak duruyor)
   const [mode, setMode] = useState('draft');
@@ -46,6 +56,18 @@ export function useEditDraftPrefill({ enabled, module, targetId, onDraftFound, a
   useEffect(() => {
     callbacks.current = { onDraftFound, applyPayload, resetToRecord, discardDraft };
   });
+
+  // Farkı hesaplayan girdiler; yükleme etkisi bunlar yüzünden yeniden çalışmasın diye ref üzerinden okunur.
+  const compare = useRef({ record, fields, recordToFields, payloadToFields, recordToPayload });
+  useEffect(() => {
+    compare.current = { record, fields, recordToFields, payloadToFields, recordToPayload };
+  });
+
+  /** Forma yazılacak payload: kaydın şimdiki hâli + taslakçının farkı (eski taslakta taslağın kendisi). */
+  const effectivePayload = useCallback(
+    (payload) => buildPendingChange({ payload, ...compare.current })?.effectivePayload || payload,
+    [],
+  );
 
   useEffect(() => {
     if (!enabled || targetId == null) return undefined;
@@ -63,12 +85,12 @@ export function useEditDraftPrefill({ enabled, module, targetId, onDraftFound, a
       const payload = readDraftPayload(full.data, module);
       // Eski şema ya da başkasının taslağı: form kaydın hâliyle kalır, bant çıkmaz.
       if (!payload) return;
-      callbacks.current.applyPayload(payload);
+      callbacks.current.applyPayload(effectivePayload(payload));
       setDraft(full.data);
       setMode('draft');
     })();
     return () => { active = false; };
-  }, [enabled, module, targetId]);
+  }, [enabled, module, targetId, effectivePayload]);
 
   /** Formu kaydın şimdiki hâline döndürür; taslak durur. */
   const loadOriginal = useCallback(() => {
@@ -80,9 +102,9 @@ export function useEditDraftPrefill({ enabled, module, targetId, onDraftFound, a
   const loadDraft = useCallback(() => {
     const payload = draft?.payload;
     if (!payload) return;
-    callbacks.current.applyPayload(payload);
+    callbacks.current.applyPayload(effectivePayload(payload));
     setMode('draft');
-  }, [draft]);
+  }, [draft, effectivePayload]);
 
   const openCompare = useCallback(() => setCompareOpen(true), []);
   const closeCompare = useCallback(() => setCompareOpen(false), []);
@@ -124,13 +146,28 @@ export function useEditDraftPrefill({ enabled, module, targetId, onDraftFound, a
     if (refreshed.success) setDraft(refreshed.data);
   }, [draft]);
 
+  // Bandın gösterdiği hesap: taslakçının farkı, gerçek çakışmalar ve bu arada değişen ama dokunulmayacak alanlar.
+  const pending = useMemo(
+    () => (draft?.payload && record
+      ? buildPendingChange({ payload: draft.payload, record, fields, recordToFields, payloadToFields,
+        recordToPayload })
+      : null),
+    [draft, record, fields, recordToFields, payloadToFields, recordToPayload],
+  );
+
+  // Kayıt taslaktan sonra değişti: ya sunucu öyle diyor ya da kaydederken 409 aldık
+  const stale = !!draft && (draft.target?.stale === true || conflict);
+
   return {
     draft,
     draftId: draft?.id ?? null,
     active: !!draft,
     mode,
-    // Kayıt taslaktan sonra değişti: ya sunucu öyle diyor ya da kaydederken 409 aldık
-    stale: !!draft && (draft.target?.stale === true || conflict),
+    pending,
+    stale,
+    // Gerçek çakışma: aynı alanı ikisi de değiştirmiş. Eski taslakta (base yok) fark bilinemez, kayıt değiştiyse
+    // formun tamamı yazılacağı için çakışma sayılır; 409 da öyle.
+    hasConflict: stale && (pending ? (pending.conflicts.length > 0 || pending.legacy || conflict) : true),
     busy,
     compareOpen,
     loadOriginal,

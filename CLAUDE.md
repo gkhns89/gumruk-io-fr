@@ -198,27 +198,42 @@ Pages combine it with role checks — the established pattern is
   `/company-settings`.
 - **Pending changes on an existing record** (`DRAFTS`, phase 3): the three Edit modals pass `targetId` (the
   record's id) and `baseUpdatedAt` (its `updatedAt` when the modal opened) to `useRecordDraft`, and their
-  snapshot carries a `base` block — the record as the modal found it — so a conflict can name the fields that
-  moved underneath.
+  snapshot carries a `base` block — the record as the modal found it, built by the module's `*RecordToPayload`.
+  **A pending-change draft is a delta, not a snapshot.** The payload is a whole form, but only the fields that
+  differ from `payload.base` belong to the drafter; applying means *the record as it is now, plus those fields*.
+  `buildPendingChange()` (`src/utils/draftDiff.js`) does the whole calculation in one place — the delta paths, the
+  payload to apply (`recordToPayload(record)` overwritten with the delta), the rows to show, the true conflicts and
+  the fields someone else moved that the draft will not touch — and the comparison modal, the banner and the form
+  prefill all read it, so what is shown and what is written can never drift. Drafts taken before this (no
+  `payload.base`) keep the old whole-form behaviour and say so in the UI (`drafts.pending.legacyNote`).
+  So: never apply `draft.payload` directly, and never re-anchor `payload.base` to anything but the record the form
+  was seeded from — saving a draft again re-takes both from the modal's own record, which is what keeps the delta
+  intact.
   **Each module owns one file** — `transactionDraftFields.js`, `warehouseDraftFields.js`, `cargoDraftFields.js` next to
   its modal — holding `create*FormData(record)`, `build*UpdatePayload(formData, …)`, the comparison field list
   (`key`, `label` — the same `t()` key the form's label uses — and an optional `format`) and the
-  `*RecordToFields` / `*PayloadToFields` pair. The Edit modal and the "Uygula" action both go through them, so the
-  two can never send different bodies; add a new form field in that file, not inline.
+  `*RecordToFields` / `*PayloadToFields` / `*RecordToPayload` trio. The Edit modal and the "Uygula" action both go
+  through them, so the two can never send different bodies; add a new form field in that file, not inline. A value
+  the body reads from somewhere other than `formData` (warehouse takes sender/warehouse/carrier from the search
+  boxes) must be in `*RecordToPayload` too, or the delta would miss it.
   Lists get their badges from one `GET /drafts/pending` per module (`usePendingDrafts`), never per row;
   `PendingChangeBadge` sits in the row and opens `PendingChangeModal`, which diffs with
   `diffDraftFields()` (`src/utils/draftDiff.js` — comparison is on the rendered text, so `1500` and `"1500.00"`
-  match; id-bearing fields are wrapped in `idValue(id, name)` so they compare by id and display by name).
-  `target.stale` from the server means the record changed after the draft: the modal shows the conflicting fields,
-  marks the ones the draft would overwrite and keeps "Uygula" locked until the user ticks the acknowledgement.
+  match; id-bearing fields are wrapped in `idValue(id, name)` so they compare by id and display by name). The pages
+  resolve that record live from the loaded list, because it is the base the delta is written onto.
+  The red "review before applying" state and its checkbox appear **only on a true conflict** — the drafter and
+  someone else changed the same field (or the draft is a legacy one). A record that merely changed elsewhere gets a
+  calm informational line instead.
 - **The Edit modal opens on your own draft** (`DRAFTS`, phase 4): `useEditDraftPrefill` (`src/hooks/`) finds the
-  user's **own** pending draft for that record (`mine !== false` — someone else's never prefills), loads the payload
-  into the form with the module's `*PayloadToFormData` and hands the draft id to `useRecordDraft` so saving a draft
-  again updates the same one. Each Edit modal supplies two imperative functions: `applyDraftPayload(payload)` (form
+  user's **own** pending draft for that record (`mine !== false` — someone else's never prefills), loads **the
+  record as it is now with that draft's delta applied** into the form with the module's `*PayloadToFormData` (so
+  untouched fields show fresh values, not the stale snapshot) and hands the draft id to `useRecordDraft` so saving a
+  draft again updates the same one. Each Edit modal supplies two imperative functions: `applyDraftPayload(payload)` (form
   state, search texts, selected ids, display numbers re-formatted in the current locale — dropdowns are never
   opened) and `resetFormToRecord()`. `EditDraftBanner` sits at the top of the form: calm by default with "Orijinali
-  yükle" / "Karşılaştır" / "Taslağı sil"; when `target.stale` it turns red, names the fields the other user changed
-  and pushes "Karşılaştır" forward — saving stays allowed, it is the user's deliberate overwrite. "Karşılaştır"
+  yükle" / "Karşılaştır" / "Taslağı sil"; it turns red only on a true conflict (`prefill.hasConflict`), names the
+  fields both of you changed and pushes "Karşılaştır" forward — saving stays allowed, it is the user's deliberate
+  overwrite. Other fields the record picked up meanwhile are a quiet line, not a warning. "Karşılaştır"
   reuses `PendingChangeModal` with `readOnly` (no apply/delete there: saving the form is the apply). A successful
   update calls `discardDraft()`, which deletes the draft and drops the badge; a 409 `CONCURRENT_UPDATE`
   (`isConcurrentUpdate()` in `utils/drafts.js`, on the `status`/`code` the update services now pass through) keeps

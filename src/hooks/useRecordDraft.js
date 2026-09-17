@@ -19,6 +19,12 @@ import { t } from '../locales';
  * modalın açıldığı andaki kayıt sürümüdür, çakışma bununla bulunur. Kayıt silinmişse (404 `DRAFT_TARGET_NOT_FOUND`)
  * yeniden oluşturma denenmez, kullanıcıya hata gösterilir.
  *
+ * **Bekleyen değişiklik bir farktır** (bkz. utils/draftDiff.js). Farkın tabanı `payload.base`: modalın açıldığı
+ * andaki kayıt — `getSnapshot` onu her kayıtta yeniden verir, `baseUpdatedAt` da aynı anın sürümüdür. Kendi
+ * taslağıyla açılan formda değerler zaten "kaydın şimdiki hâli + fark" olduğu için (`useEditDraftPrefill`), tabanı
+ * bu anda yenilemek farkı olduğu gibi korur. Taban eski taslağınki bırakılsaydı, bu arada başkasının yaptığı
+ * değişiklikler de farka karışır ve taslak onları geri alırdı.
+ *
  * @param {object}   options
  * @param {string}   options.module       DRAFT_MODULES değeri
  * @param {object}   options.currentUser

@@ -19,6 +19,7 @@ import {
   transactionDraftFields,
   transactionRecordToFields,
   transactionPayloadToFields,
+  transactionRecordToPayload,
   transactionPayloadToFormData,
   buildTransactionUpdatePayload,
 } from "./transactionDraftFields";
@@ -442,13 +443,20 @@ export default function TransactionsPage() {
     setPendingChange({ draftId: draft.id, record });
   }, [transactions]);
 
+  // Karşılaştırma penceresi kaydın **şimdiki** hâlini taban alır (taslağın farkı bunun üstüne yazılır), bu yüzden
+  // satır listeden canlı okunur: liste tazelendiğinde (örneğin 409 sonrası) taban da tazelenir. Kayıt listeden
+  // düşmüşse pencerenin açıldığı andaki satır kalır.
+  const pendingRecord = useMemo(() => (pendingChange
+    ? transactions.find((item) => item.id === pendingChange.record.id) || pendingChange.record
+    : null), [pendingChange, transactions]);
+
   // "Uygula": taslaktaki değerlerle normal güncelleme ucu. Gövde düzenleme modalıyla aynı yerden gelir.
   const applyPendingChange = useCallback(async (payload) => {
-    const record = pendingChange?.record;
-    if (!record) return { success: false };
-    const formData = transactionPayloadToFormData(payload, record);
-    return transactionService.updateTransaction(record.id, buildTransactionUpdatePayload(formData, getCurrentLocale()));
-  }, [pendingChange]);
+    if (!pendingRecord) return { success: false };
+    const formData = transactionPayloadToFormData(payload, pendingRecord);
+    return transactionService.updateTransaction(pendingRecord.id,
+      buildTransactionUpdatePayload(formData, getCurrentLocale()));
+  }, [pendingRecord]);
 
   const handlePendingApplied = useCallback(() => {
     refreshPending();
@@ -1099,10 +1107,11 @@ export default function TransactionsPage() {
         <PendingChangeModal
           draftId={pendingChange.draftId}
           module={DRAFT_MODULES.TRANSACTION}
-          record={pendingChange.record}
+          record={pendingRecord}
           fields={pendingFields}
           recordToFields={transactionRecordToFields}
           payloadToFields={transactionPayloadToFields}
+          recordToPayload={transactionRecordToPayload}
           onApply={applyPendingChange}
           canApply={!isTableReadOnly}
           blockedReason={t("payment.restrictionWarning")}

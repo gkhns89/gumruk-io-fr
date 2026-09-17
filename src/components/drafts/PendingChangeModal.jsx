@@ -4,20 +4,23 @@ import { confirmDialog } from '../../utils/confirmDialog';
 import { isStackedDialogOpen } from '../../utils/unsavedChangesDialog';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { draftDisplayLabel, formatDraftDateTime } from '../../utils/drafts';
-import { diffDraftFields } from '../../utils/draftDiff';
+import { buildPendingChange } from '../../utils/draftDiff';
 import { t } from '../../locales';
 
 /**
  * Bir kayıttaki bekleyen değişikliğin karşılaştırması (DRAFTS bayrağı, taslak aşama 3).
  *
- * Alan bazlı "şimdiki değer → taslaktaki değer" listesi; yalnızca gerçekten değişen alanlar görünür ve etiketler
- * formdakilerle aynıdır. "Uygula" onay diyaloğundan sonra normal güncelleme ucunu çağırır, başarılı olunca taslağı
- * siler. "Sil" taslağı onayla atar.
+ * **Taslak bir farktır.** Listelenen ve uygulanan şey, taslakçının taslağı aldığı andaki forma göre gerçekten
+ * değiştirdiği alanlardır (`payload.base` ile karşılaştırılır). Uygulamak = kaydın **şimdiki** hâli + bu fark;
+ * dokunulmayan alanlar kaydın şimdiki değerinde kalır. Böylece taslakçının açmadığı bir alanı bu arada başkası
+ * değiştirdiyse taslak onu geri almaz. Hesap `buildPendingChange` içinde, bant ve ön doldurmayla ortaktır.
  *
- * **Çakışma.** Taslak alındıktan sonra kaydı başkası değiştirdiyse (`draft.target.stale`) kırmızı uyarı çıkar ve
- * uygulama, kullanıcı listeyi gözden geçirdiğini onaylayana kadar kilitli kalır. Taslak, alındığı andaki kaydı da
- * (`payload.base.formData`) taşıdığı için "altından değişen alanlar" tam olarak hesaplanır; bunlardan taslakta da
- * değişmiş olanlar ayrıca "üzerine yazılacak" diye işaretlenir. Hiçbir zaman sessizce üzerine yazılmaz.
+ * **Çakışma** yalnızca aynı alanı iki kişinin de değiştirmesidir: o zaman kırmızı uyarı çıkar, satıra
+ * "üzerine yazılacak" düşer ve uygulama, kullanıcı gözden geçirdiğini onaylayana kadar kilitli kalır. Kaydın
+ * başka alanlarının değişmiş olması çakışma değildir; sakin bir bilgi satırıyla söylenir.
+ *
+ * **Eski taslaklar** (`payload.base` yok) bu değişiklikten önce alınmıştır: onlarda formun tamamı uygulanır ve
+ * karşılaştırmanın üstünde bunu söyleyen bir not çıkar.
  *
  * @param {number}   props.draftId
  * @param {string}   props.module          DRAFT_MODULES değeri
@@ -25,7 +28,8 @@ import { t } from '../../locales';
  * @param {Array}    props.fields          Alan tanımları ({ key, label, format }), bkz. utils/draftDiff.js
  * @param {Function} props.recordToFields  (record) => karşılaştırma alanları
  * @param {Function} props.payloadToFields (payloadLike, record) => karşılaştırma alanları
- * @param {Function} [props.onApply]       async (draftPayload, draft) => { success, error } — normal güncelleme ucu
+ * @param {Function} [props.recordToPayload] (record) => kaydın şimdiki payload'ı; fark bunun üstüne yazılır
+ * @param {Function} [props.onApply]       async (payload, draft) => { success, error } — normal güncelleme ucu
  * @param {boolean}  props.canApply        Kullanıcının bu kaydı düzenleme yetkisi var mı (ödeme kısıtı dahil)
  * @param {string}   [props.blockedReason] canApply false ise düğmenin başlığı
  * @param {boolean}  [props.readOnly]      Yalnızca karşılaştırma: düzenleme modalının taslak bandından açılır.
@@ -33,8 +37,11 @@ import { t } from '../../locales';
  * @param {Function} [props.onDone]        Taslak uygulandı ya da silindi: liste tazelensin
  * @param {Function} props.onClose
  */
+// Taslak henüz okunmadı: aynı nesne kullanılır ki türetilen useMemo/useCallback'ler her render'da değişmesin.
+const EMPTY_PENDING = { legacy: false, effectivePayload: null, changes: [], conflicts: [], otherChanges: [] };
+
 export default function PendingChangeModal({ draftId, module, record, fields, recordToFields, payloadToFields,
-  onApply, canApply = true, blockedReason, readOnly = false, onDone, onClose }) {
+  recordToPayload, onApply, canApply = true, blockedReason, readOnly = false, onDone, onClose }) {
   const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -76,49 +83,42 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  const currentFields = useMemo(() => (record ? recordToFields(record) : null), [record, recordToFields]);
-
-  // Taslaktaki hâl: taslakta olmayan alanlar kaydınkiyle kalır, böylece form sonradan büyüdüyse sahte fark çıkmaz.
-  const draftFields = useMemo(
-    () => (draft && record ? payloadToFields(draft.payload, record) : null),
-    [draft, record, payloadToFields],
+  // Taslakçının farkı, uygulanacak payload ve çakışmalar — bant ve ön doldurmayla ortak hesap.
+  const pending = useMemo(
+    () => (draft && record
+      ? buildPendingChange({ payload: draft.payload, record, fields, recordToFields, payloadToFields,
+        recordToPayload })
+      : null),
+    [draft, record, fields, recordToFields, payloadToFields, recordToPayload],
   );
 
-  const changes = useMemo(
-    () => diffDraftFields(currentFields, draftFields, fields),
-    [currentFields, draftFields, fields],
-  );
+  const { changes, conflicts, otherChanges, legacy } = pending || EMPTY_PENDING;
 
   const stale = draft?.target?.stale === true;
   const targetGone = draft?.target?.exists === false;
 
-  // Taslak alındıktan sonra kaydı başkasının değiştirdiği alanlar: taslak, alındığı andaki kaydı da taşıyor.
-  const conflicts = useMemo(() => {
-    if (!stale || !record || !draft?.payload?.base) return [];
-    return diffDraftFields(payloadToFields(draft.payload.base, record), currentFields, fields);
-  }, [stale, draft, record, currentFields, payloadToFields, fields]);
-
-  const overwritten = useMemo(() => {
-    const changedKeys = new Set(changes.map((change) => change.key));
-    return conflicts.filter((conflict) => changedKeys.has(conflict.key));
-  }, [changes, conflicts]);
+  // Gerçek çakışma: aynı alanı ikisi de değiştirmiş. Eski taslakta (base yok) fark hesaplanamadığı için kayıt
+  // değişmişse tamamı çakışma sayılır — formun tamamı yazılacak.
+  const hasConflict = conflicts.length > 0 || (legacy && stale);
+  const conflictKeys = useMemo(() => new Set(conflicts.map((conflict) => conflict.key)), [conflicts]);
 
   const applyBlocked = !canApply || draft?.mine === false || targetGone || changes.length === 0
-    || (stale && !conflictAcknowledged);
+    || (hasConflict && !conflictAcknowledged);
 
   const handleApply = useCallback(async () => {
     if (readOnly || applyBlocked || busy) return;
     const ok = await confirmDialog({
       title: t('drafts.pending.applyTitle'),
-      message: stale ? t('drafts.pending.applyStaleMessage') : t('drafts.pending.applyMessage'),
+      message: hasConflict ? t('drafts.pending.applyStaleMessage') : t('drafts.pending.applyMessage'),
       details: changes.map((change) => `${change.label}: ${change.currentText} → ${change.draftText}`),
-      intent: stale ? 'warning' : 'primary',
+      intent: hasConflict ? 'warning' : 'primary',
       confirmText: t('drafts.pending.apply'),
     });
     if (!ok) return;
 
     setBusy('apply');
-    const result = await onApply(draft.payload, draft);
+    // Kaydın şimdiki hâli + taslakçının farkı. Gövde normal kaydetmedekiyle aynı yerden üretilir.
+    const result = await onApply(pending.effectivePayload, draft);
     if (!result?.success) {
       setBusy('');
       // 409: kayıt tam da bu sırada değişti. Taslak durur, kullanıcı yeniden bakar.
@@ -139,7 +139,7 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
     showSuccess(t('drafts.pending.applied'));
     onDone?.();
     onClose();
-  }, [readOnly, applyBlocked, busy, stale, changes, onApply, draft, draftId, onDone, onClose]);
+  }, [readOnly, applyBlocked, busy, hasConflict, changes, pending, onApply, draft, draftId, onDone, onClose]);
 
   const handleDelete = useCallback(async () => {
     if (busy) return;
@@ -244,8 +244,15 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
                 </div>
               )}
 
-              {/* Çakışma uyarısı */}
-              {stale && !targetGone && (
+              {/* Eski taslak: fark hesaplanamıyor, formun tamamı uygulanacak */}
+              {legacy && !targetGone && changes.length > 0 && (
+                <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                  {t('drafts.pending.legacyNote')}
+                </p>
+              )}
+
+              {/* Gerçek çakışma: aynı alanı ikisi de değiştirmiş */}
+              {hasConflict && !targetGone && (
                 <div className="rounded-xl border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                   <p className="flex items-center gap-2 font-semibold text-red-800 dark:text-red-300">
                     <span className="material-symbols-outlined text-lg">warning</span>
@@ -262,11 +269,9 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
                           <span className="line-through opacity-70">{conflict.currentText}</span>
                           <span className="material-symbols-outlined text-sm">arrow_forward</span>
                           <span className="font-semibold">{conflict.draftText}</span>
-                          {overwritten.some((item) => item.key === conflict.key) && (
-                            <span className="rounded-full bg-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-900 dark:bg-red-800 dark:text-red-100">
-                              {t('drafts.pending.willOverwrite')}
-                            </span>
-                          )}
+                          <span className="rounded-full bg-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-900 dark:bg-red-800 dark:text-red-100">
+                            {t('drafts.pending.willOverwrite')}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -289,6 +294,20 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
                 </div>
               )}
 
+              {/* Kayıt bu arada değişti ama taslak o alanlara dokunmuyor: yalnızca bilgi, uyarı değil */}
+              {!hasConflict && !targetGone && (otherChanges.length > 0 || stale) && (
+                <p className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-text-secondary dark:border-gray-700 dark:bg-gray-800/60">
+                  <span className="material-symbols-outlined mr-1 align-[-3px] text-sm">info</span>
+                  {otherChanges.length > 0
+                    ? t('drafts.pending.otherChanged', {
+                      fields: otherChanges.map((change) => change.label).join(', '),
+                    })
+                    : t('drafts.pending.otherChangedUnknown', {
+                      time: formatDraftDateTime(draft?.target?.updatedAt),
+                    })}
+                </p>
+              )}
+
               {/* Değişiklik listesi */}
               {changes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 py-10 text-center dark:border-gray-600">
@@ -308,7 +327,14 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
                       <li key={change.key} className="grid grid-cols-[1fr_1fr_1fr] items-start gap-2 px-4 py-2.5 text-sm">
                         <span className="font-medium text-text-main">{change.label}</span>
                         <span className="break-words text-text-secondary line-through">{change.currentText}</span>
-                        <span className="break-words font-semibold text-text-main">{change.draftText}</span>
+                        <span className="break-words font-semibold text-text-main">
+                          {change.draftText}
+                          {conflictKeys.has(change.key) && (
+                            <span className="ml-1.5 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800 dark:bg-red-900/40 dark:text-red-200">
+                              {t('drafts.pending.willOverwrite')}
+                            </span>
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>

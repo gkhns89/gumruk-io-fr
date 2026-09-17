@@ -26,6 +26,7 @@ import {
   cargoDraftFields,
   cargoRecordToFields,
   cargoPayloadToFields,
+  cargoRecordToPayload,
 } from './cargoDraftFields';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
@@ -503,13 +504,9 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
         clientSearchTerm,
         senderSearchTerm,
         carrierSearchTerm,
-        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
-        base: {
-          formData: baseFormData,
-          clientSearchTerm: cargo.clientCompany?.name || '',
-          senderSearchTerm: cargo.senderCompany || '',
-          carrierSearchTerm: cargo.carrierName || '',
-        },
+        // Taslak alındığı andaki kayıt. Taslağın *farkı* bununla bulunur: uygulanırken yalnızca bu tabana göre
+        // değişmiş alanlar yazılır, geri kalanı kaydın o anki değerinde kalır.
+        base: cargoRecordToPayload(cargo),
       },
       label: buildDraftLabel([
         toUpperCase(formData.billOfLading || formData.consignmentNumber || formData.licensePlate
@@ -538,16 +535,22 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     setSelectedClientInfo(cargo.clientCompany || null);
   };
 
+  const draftCompareFields = useMemo(() => cargoDraftFields(), []);
+
   const draftPrefill = useEditDraftPrefill({
     enabled: draftsEnabled && !isReadOnly,
     module: DRAFT_MODULES.CARGO,
     targetId: cargo.id,
+    record: cargo,
+    fields: draftCompareFields,
+    recordToFields: cargoRecordToFields,
+    payloadToFields: cargoPayloadToFields,
+    recordToPayload: cargoRecordToPayload,
     onDraftFound: setExistingDraft,
     applyPayload: applyDraftPayload,
     resetToRecord: resetFormToRecord,
     discardDraft,
   });
-  const draftCompareFields = useMemo(() => cargoDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -598,6 +601,7 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
               fields={draftCompareFields}
               recordToFields={cargoRecordToFields}
               payloadToFields={cargoPayloadToFields}
+              recordToPayload={cargoRecordToPayload}
               className="mb-4"
             />
           )}
