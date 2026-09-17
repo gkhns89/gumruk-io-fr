@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { draftService } from '../../api/draftService';
 import { DRAFT_MODULE_PATHS } from '../../utils/drafts';
+import { notifyGRadarRequestsChanged, openGRadarRequests } from '../../utils/gRadarRequestEvents';
 import { t, getCurrentLocale } from '../../locales';
 
 export default function NotificationCenter() {
@@ -92,6 +93,9 @@ export default function NotificationCenter() {
           const hasNewArrivals = newCount > prev && !isOpen;
           if (hasNewArrivals) {
             setHasNewNotif(true);
+            // G-Radar talep zili 10 dakikada bir yeniliyor: yeni bildirim varsa hemen tazelesin (zil, yetkisi
+            // olmayan kullanıcıda zaten yok)
+            notifyGRadarRequestsChanged();
             try {
               const notifResult = await notificationService.getAll();
               if (notifResult.success) {
@@ -277,6 +281,9 @@ export default function NotificationCenter() {
       const located = await draftService.locateDraft(notification.entityId);
       const path = (located.success && DRAFT_MODULE_PATHS[located.data]) || DRAFT_MODULE_PATHS.TRANSACTION;
       navigate(path, { state: { openDrafts: true, draftId: notification.entityId } });
+    } else if (notification.entityType === 'GRADAR_REQUEST') {
+      // Talep zili zaten başlıkta: sayfa değiştirmeden güncel listeyi aç ve bildirimin talebini vurgula
+      openGRadarRequests(notification.entityId);
     } else if (notification.entityType === 'FEEDBACK') {
       if (isSuperAdmin) {
         navigate('/management/feedback-tasks');

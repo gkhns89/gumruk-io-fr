@@ -7,6 +7,10 @@ import { confirmDialog } from '../../utils/confirmDialog';
 import { isGRadarDisableRequest } from '../../utils/constants';
 import { isGRadarCreditShortage, showGRadarCreditShortage } from '../../utils/gRadarCreditGuidance';
 import GRadarRequestTypeBadge from './GRadarRequestTypeBadge';
+import {
+  GRADAR_REQUESTS_CHANGED_EVENT,
+  OPEN_GRADAR_REQUESTS_EVENT,
+} from '../../utils/gRadarRequestEvents';
 import { t, getCurrentLocale } from '../../locales';
 
 /**
@@ -47,6 +51,7 @@ export default function GRadarRequestsBell() {
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actingId, setActingId] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
   const wrapperRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -66,6 +71,24 @@ export default function GRadarRequestsBell() {
     load();
     const id = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(id);
+  }, [isEligible, load]);
+
+  // Bildirim merkezi bildirimleri çok daha sık yokluyor: yeni bildirim gördüğünde listeyi hemen tazeleyelim, talep
+  // bildirimine tıklandığında da zili güncel listeyle açalım (yönetici sayfayı yenilemek zorunda kalmasın).
+  useEffect(() => {
+    if (!isEligible) return undefined;
+    const onChanged = () => load();
+    const onOpenRequest = (event) => {
+      setHighlightId(event.detail?.requestId ?? null);
+      setOpen(true);
+      load();
+    };
+    window.addEventListener(GRADAR_REQUESTS_CHANGED_EVENT, onChanged);
+    window.addEventListener(OPEN_GRADAR_REQUESTS_EVENT, onOpenRequest);
+    return () => {
+      window.removeEventListener(GRADAR_REQUESTS_CHANGED_EVENT, onChanged);
+      window.removeEventListener(OPEN_GRADAR_REQUESTS_EVENT, onOpenRequest);
+    };
   }, [isEligible, load]);
 
   // Outside click + ESC close
@@ -164,7 +187,14 @@ export default function GRadarRequestsBell() {
   return (
     <div ref={wrapperRef} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          // Elle açarken de taze liste gelsin; 10 dakikalık yoklama arada kalmış olabilir
+          if (!open) {
+            setHighlightId(null);
+            load();
+          }
+          setOpen((o) => !o);
+        }}
         className="relative flex items-center justify-center h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         title={t('gRadarAdmin.requests.title')}
         aria-label={t('gRadarAdmin.requests.title')}
@@ -207,7 +237,12 @@ export default function GRadarRequestsBell() {
               {requests.map((r) => {
                 const isDisable = isGRadarDisableRequest(r);
                 return (
-                  <div key={r.id} className="p-3 space-y-2">
+                  <div
+                    key={r.id}
+                    className={`p-3 space-y-2 ${
+                      r.id === highlightId ? 'bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-text-main truncate">
