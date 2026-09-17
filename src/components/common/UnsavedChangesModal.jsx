@@ -34,7 +34,10 @@ export default function UnsavedChangesModal({ allowDraft = false, onChoose }) {
       onClick={(e) => { e.stopPropagation(); onChoose('keep'); }}
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full animate-zoom-in"
+        // Taslak seçeneğiyle üç düğme oluyor: dar kutuda uzun etiketler kırılıp bozuk görünüyordu
+        className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full animate-zoom-in ${
+          allowDraft ? 'max-w-xl' : 'max-w-md'
+        }`}
         onClick={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
@@ -64,11 +67,11 @@ export default function UnsavedChangesModal({ allowDraft = false, onChoose }) {
           </p>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 rounded-b-2xl">
+        <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center sm:justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 rounded-b-2xl">
           <button
             type="button"
             onClick={() => onChoose('discard')}
-            className="sm:mr-auto px-5 py-2.5 text-red-600 dark:text-red-400 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm text-sm font-medium flex items-center justify-center gap-2"
+            className="sm:mr-auto px-5 py-2.5 whitespace-nowrap text-red-600 dark:text-red-400 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm text-sm font-medium flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">delete</span>
             <span>{t('unsavedChanges.discard')}</span>
@@ -77,7 +80,7 @@ export default function UnsavedChangesModal({ allowDraft = false, onChoose }) {
             <button
               type="button"
               onClick={() => onChoose('draft')}
-              className="px-5 py-2.5 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm text-sm font-medium flex items-center justify-center gap-2"
+              className="px-5 py-2.5 whitespace-nowrap text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm text-sm font-medium flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">draft</span>
               <span>{t('unsavedChanges.saveDraft')}</span>
@@ -87,7 +90,7 @@ export default function UnsavedChangesModal({ allowDraft = false, onChoose }) {
             ref={keepRef}
             type="button"
             onClick={() => onChoose('keep')}
-            className="px-5 py-2.5 text-white bg-primary hover:opacity-90 rounded-lg transition-colors shadow-sm text-sm font-semibold flex items-center justify-center gap-2"
+            className="px-5 py-2.5 whitespace-nowrap text-white bg-primary hover:opacity-90 rounded-lg transition-colors shadow-sm text-sm font-semibold flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">edit</span>
             <span>{t('unsavedChanges.keepEditing')}</span>
