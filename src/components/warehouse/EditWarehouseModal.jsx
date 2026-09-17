@@ -11,12 +11,15 @@ import { showSuccess, showError } from "../../utils/toastUtils";
 import { useDropdownKeyboard } from "../../hooks/useDropdownKeyboard";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import AgreementInfoPanel from "../agreements/AgreementInfoPanel";
+import { useRecordDraft } from "../../hooks/useRecordDraft";
+import { useExistingPendingDraft } from "../../hooks/usePendingDrafts";
+import { DRAFT_MODULES } from "../../api/draftService";
+import { buildDraftLabel } from "../../utils/drafts";
+import SaveDraftButton from "../drafts/SaveDraftButton";
+import { createWarehouseFormData, buildWarehouseUpdatePayload, getRepName } from "./warehouseDraftFields";
 import { t } from "../../locales";
 
 const today = new Date().toISOString().split("T")[0];
-
-const getRepName = (r) =>
-  r ? (r.firstName && r.lastName ? `${r.firstName} ${r.lastName}` : r.username || r.email || "") : "";
 
 /* ─── Module-level UI primitives ─── */
 
@@ -149,24 +152,10 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
   const isSuperAdmin = user?.globalRole === "SUPER_ADMIN";
   const brokerId = declaration.brokerCompany?.id;
 
-  const [formData, setFormData] = useState({
-    brokerCompanyId: brokerId || "",
-    clientCompanyId: declaration.clientCompany?.id || "",
-    fileNo: declaration.fileNo || "",
-    declarationNo: declaration.declarationNo || "",
-    recipientName: declaration.recipientName || "",
-    senderName: declaration.senderName || "",
-    warehouse: declaration.warehouse || "",
-    customsId: declaration.customs?.id || "",
-    containerAmount: declaration.containerAmount || "",
-    weight: declaration.weight || "",
-    carrierName: declaration.carrierName || "",
-    representativeId: declaration.representative?.id || "",
-    gate: declaration.gate || "",
-    declarationDate: declaration.declarationDate || "",
-    stampPaymentDate: declaration.stampPaymentDate || "",
-    protocol: declaration.protocol || false,
-  });
+  // Açılıştaki hâl taslakta da saklanır: bekleyen değişiklik uygulanırken "kaydı başkası değiştirdi mi" bunun
+  // üzerinden bulunur (bkz. warehouseDraftFields.js).
+  const [baseFormData] = useState(() => createWarehouseFormData(declaration));
+  const [formData, setFormData] = useState(baseFormData);
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -464,26 +453,12 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
     if (!validate()) { showError(t("transactions.form.fillRequired")); return; }
     setLoading(true);
     try {
-      const payload = {
-        brokerCompanyId: Number(formData.brokerCompanyId),
-        clientCompanyId: Number(formData.clientCompanyId),
-        fileNo: formData.fileNo.trim(),
-        declarationNo: formData.declarationNo.trim(),
-        recipientName: formData.recipientName.trim() || toUpperCase(clientSearch),
-        senderName: toUpperCase(senderSearch.trim()),
-        warehouse: toUpperCase(whSearch.trim()),
-        customsId: Number(formData.customsId),
-        containerAmount: Number(formData.containerAmount),
-        weight: parseFloat(formData.weight),
-        carrierName: toUpperCase(carrierSearch.trim()),
-        representativeId: Number(formData.representativeId),
-        gate: formData.gate,
-        declarationDate: formData.declarationDate,
-        stampPaymentDate: formData.stampPaymentDate || null,
-        protocol: formData.protocol,
-      };
+      // Gövde bekleyen değişikliğin "Uygula"sıyla aynı yerden gelir (warehouseDraftFields.js)
+      const payload = buildWarehouseUpdatePayload(formData, { clientSearch, senderSearch, whSearch, carrierSearch });
       const result = await warehouseService.update(declaration.id, payload);
       if (result.success) {
+        // Bu kayda ait kendi taslağımız varsa değişiklik uygulandı, taslak gereksiz
+        discardDraft();
         showSuccess(result.message || t("warehouse.form.updateSuccess"));
         onSuccess();
       } else {
@@ -511,7 +486,51 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
     whSearch,
     carrierSearch,
   }), [formData, brokerSearch, clientSearch, customsSearch, repSearch, senderSearch, whSearch, carrierSearch]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose });
+
+  // Bekleyen değişiklik taslağı: kaydın id'si hedef, açılıştaki `updatedAt` çakışma ölçüsü.
+  const [existingDraft, setExistingDraft] = useState(null);
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.WAREHOUSE,
+    currentUser: user,
+    initialDraft: existingDraft,
+    targetId: declaration.id,
+    baseUpdatedAt: declaration.updatedAt || null,
+    getSnapshot: () => ({
+      payload: {
+        formData,
+        brokerSearch,
+        clientSearch,
+        customsSearch,
+        repSearch,
+        senderSearch,
+        whSearch,
+        carrierSearch,
+        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
+        base: {
+          formData: baseFormData,
+          brokerSearch: declaration.brokerCompany?.name || "",
+          clientSearch: declaration.clientCompany?.name || "",
+          customsSearch: declaration.customs?.customsShortName || "",
+          repSearch: getRepName(declaration.representative),
+          senderSearch: declaration.senderName || "",
+          whSearch: declaration.warehouse || "",
+          carrierSearch: declaration.carrierName || "",
+        },
+      },
+      label: buildDraftLabel([formData.fileNo, formData.clientCompanyId ? clientSearch : ""], DRAFT_MODULES.WAREHOUSE),
+    }),
+  });
+  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.WAREHOUSE, declaration.id, setExistingDraft);
+
+  const { requestClose, isDirty } = useUnsavedChangesGuard({
+    values: unsavedValues,
+    onClose,
+    onSaveDraft: saveDraft,
+  });
+
+  const handleSaveDraftAndClose = async () => {
+    if (await saveDraft?.()) onClose();
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -865,6 +884,15 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
               className="px-5 py-2.5 text-text-secondary hover:text-text-main font-medium transition-colors disabled:opacity-50 text-sm">
               {t("common.cancel")}
             </button>
+            {draftsEnabled && (
+              <SaveDraftButton
+                onClick={handleSaveDraftAndClose}
+                disabled={loading || !isDirty}
+                saving={savingDraft}
+                isPilot={isDraftPilot}
+                className="px-5 py-2.5 text-sm rounded-xl"
+              />
+            )}
             <button type="button" onClick={handleSubmit} disabled={loading}
               className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm">
               {loading

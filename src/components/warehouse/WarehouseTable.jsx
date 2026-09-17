@@ -1,4 +1,5 @@
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
+import PendingChangeBadge from '../drafts/PendingChangeBadge';
 import { warehouseService } from "../../api/warehouseService";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { getGateOption } from "../../utils/constants";
@@ -62,6 +63,8 @@ export default function WarehouseTable({
   onEdit,
   onDelete,
   onTransfer,
+  pendingFor = null,
+  onOpenPendingChange = null,
   scrollHeight = null,
   onScroll = null,
 }) {
@@ -221,6 +224,11 @@ export default function WarehouseTable({
                             {decl.transferredFileNos.length}
                           </span>
                         )}
+                        {/* Bekleyen taslak değişiklik (DRAFTS) */}
+                        <PendingChangeBadge
+                          drafts={pendingFor?.(decl.id)}
+                          onClick={(drafts) => onOpenPendingChange?.(drafts, decl)}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">

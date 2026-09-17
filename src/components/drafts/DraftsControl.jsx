@@ -16,9 +16,10 @@ import { t } from '../../locales';
  * Bayrak kapalıysa ya da rol taslak kullanmıyorsa (SUPER_ADMIN, CLIENT_USER) hiçbir şey çizmez. Düğme yalnızca
  * modülde taslak varken görünür; sayı `draftsChanged` olayıyla tazelenir. Hatırlatma bildiriminden gelinince
  * (`location.state.openDrafts`, `draftId`) liste sayı sıfır olsa da açılır ve taslak vurgulanır.
- * "Devam et" → `onContinue(draft)`: sayfa yeni kayıt modalını `initialDraft` ile açar.
+ * "Devam et" → `onContinue(draft)`: sayfa yeni kayıt modalını `initialDraft` ile açar. Bekleyen değişiklik
+ * taslağında (hedefi olan) "İncele" → `onReview(draft)`: sayfa karşılaştırmayı açar (aşama 3).
  */
-export default function DraftsControl({ module, isScrolled = false, canContinue = true, onContinue }) {
+export default function DraftsControl({ module, isScrolled = false, canContinue = true, onContinue, onReview }) {
   const { user } = useAuth();
   const { hasFeature, isPilotFeature } = useFeatureFlags();
   const enabled = canUseDrafts(user, hasFeature);
@@ -56,6 +57,11 @@ export default function DraftsControl({ module, isScrolled = false, canContinue 
   const handleContinue = (draft) => {
     setPanel(null);
     onContinue?.(draft);
+  };
+
+  const handleReview = (draft) => {
+    setPanel(null);
+    onReview?.(draft);
   };
 
   if (!enabled) return null;
@@ -97,6 +103,7 @@ export default function DraftsControl({ module, isScrolled = false, canContinue 
           canContinue={canContinue}
           highlightId={panel.highlightId}
           onContinue={handleContinue}
+          onReview={onReview ? handleReview : undefined}
           onClose={closePanel}
         />,
         document.body,

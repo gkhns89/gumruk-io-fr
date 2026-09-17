@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { usePaymentRestriction } from "../../hooks/usePaymentRestriction";
@@ -13,7 +13,16 @@ import TransferToTransactionModal from "./TransferToTransactionModal";
 import AutoRefreshControl from "../transactions/AutoRefreshControl";
 import ViewWarehouseModal from "./ViewWarehouseModal";
 import DraftsControl from "../drafts/DraftsControl";
+import PendingChangeModal from "../drafts/PendingChangeModal";
+import { usePendingDrafts } from "../../hooks/usePendingDrafts";
 import { DRAFT_MODULES } from "../../api/draftService";
+import { showError } from "../../utils/toastUtils";
+import {
+  warehouseDraftFields,
+  warehouseRecordToFields,
+  warehousePayloadToFields,
+  warehouseDraftToPayload,
+} from "./warehouseDraftFields";
 import { t } from "../../locales";
 
 export default function WarehousePage() {
@@ -33,6 +42,8 @@ export default function WarehousePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   // Taslaktan devam edilirken yeni kayıt modalına verilen taslak (DRAFTS)
   const [draftToContinue, setDraftToContinue] = useState(null);
+  // Bekleyen değişiklik (taslak aşama 3): { draftId, record }
+  const [pendingChange, setPendingChange] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -249,6 +260,39 @@ export default function WarehousePage() {
     loadData();
   };
 
+  // ===== Bekleyen değişiklikler (taslak aşama 3) =====
+  const { pendingFor, refresh: refreshPending } = usePendingDrafts(DRAFT_MODULES.WAREHOUSE, user);
+  const pendingFields = useMemo(() => warehouseDraftFields(), []);
+
+  // Satırdaki rozetten: aynı kayıtta birden çok taslak olabilir; en son güncellenen açılır.
+  const openPendingChange = useCallback((drafts, record) => {
+    if (!drafts?.length) return;
+    setPendingChange({ draftId: drafts[0].id, record });
+  }, []);
+
+  // "Taslaklar" panelindeki "İncele"den
+  const openPendingFromDraft = useCallback((draft) => {
+    const record = declarations.find((item) => item.id === draft.targetId);
+    if (!record) {
+      showError(t("drafts.pending.targetGoneMessage"));
+      return;
+    }
+    setPendingChange({ draftId: draft.id, record });
+  }, [declarations]);
+
+  // "Uygula": gövde düzenleme modalıyla aynı yerden gelir (warehouseDraftFields.js)
+  const applyPendingChange = useCallback(async (payload) => {
+    const record = pendingChange?.record;
+    if (!record) return { success: false };
+    return warehouseService.update(record.id, warehouseDraftToPayload(payload, record));
+  }, [pendingChange]);
+
+  // loadData bu sayfada useCallback değil; bağımlılığa koymak her render'da kimliğini değiştirirdi.
+  const handlePendingApplied = () => {
+    refreshPending();
+    loadData();
+  };
+
   const handleDeleteSuccess = () => {
     setShowDeleteModal(false);
     setSelectedDeclaration(null);
@@ -374,6 +418,7 @@ export default function WarehousePage() {
                   setDraftToContinue(draft);
                   setShowAddModal(true);
                 }}
+                onReview={openPendingFromDraft}
               />
 
               {/* Add Button */}
@@ -580,6 +625,8 @@ export default function WarehousePage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onTransfer={handleTransfer}
+              pendingFor={pendingFor}
+              onOpenPendingChange={openPendingChange}
               scrollHeight={tableScrollHeight}
               onScroll={handleTableScroll}
             />
@@ -598,6 +645,23 @@ export default function WarehousePage() {
           }}
           onSuccess={handleAddSuccess}
           currentUser={user}
+        />
+      )}
+
+      {/* Bekleyen taslak değişikliğin karşılaştırması (DRAFTS) */}
+      {pendingChange && (
+        <PendingChangeModal
+          draftId={pendingChange.draftId}
+          module={DRAFT_MODULES.WAREHOUSE}
+          record={pendingChange.record}
+          fields={pendingFields}
+          recordToFields={warehouseRecordToFields}
+          payloadToFields={warehousePayloadToFields}
+          onApply={applyPendingChange}
+          canApply={!isTableReadOnly}
+          blockedReason={t("payment.restrictionWarning")}
+          onDone={handlePendingApplied}
+          onClose={() => setPendingChange(null)}
         />
       )}
 
