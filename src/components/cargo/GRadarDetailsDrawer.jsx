@@ -670,9 +670,10 @@ function formatMovementDate(movement) {
 /**
  * Tek konteynerin (ya da hava yükünün) hareket listesi.
  *
- * Varsayılan olarak kapalı ve yalnızca son durumu gösteriyor — kullanıcının
- * ilk aradığı bilgi bu, geri kalan geçmiş paneli gereksiz uzatıyordu. Başlığa
- * basınca tüm hareketler aşağı doğru açılıyor.
+ * Kapalıyken yalnızca son durumu gösteriyor — kullanıcının ilk aradığı bilgi
+ * bu. Açılınca başlıktaki özet kalkıyor ve hareketler gerçekleşme sırasıyla
+ * listeleniyor; son durum listede kendi yerinde vurgulanıyor. Özet açıkken de
+ * dursaydı aynı olay hem en üstte hem sırasında görünüp karışıklık yaratıyordu.
  *
  * Açılma animasyonu grid-rows 0fr → 1fr ile yapılıyor: max-height tahmin
  * etmeye gerek kalmadan gerçek yüksekliğe yumuşak geçiş sağlıyor, hareket
@@ -680,6 +681,7 @@ function formatMovementDate(movement) {
  */
 function MovementGroup({ group, showHeader }) {
   const [expanded, setExpanded] = useState(false);
+  const currentRowRef = useRef(null);
 
   const lastActualIndex = group.movements.reduce(
     (found, mv, idx) => (mv.actual ? idx : found),
@@ -693,6 +695,16 @@ function MovementGroup({ group, showHeader }) {
   const total = group.movements.length;
   const currentDate = formatMovementDate(current);
 
+  // Uzun geçmişte son durum listenin ortasında kalabiliyor: açılma animasyonu
+  // bitince o satır görünür alana getirilir.
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const timer = setTimeout(() => {
+      currentRowRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [expanded]);
+
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <button
@@ -701,14 +713,18 @@ function MovementGroup({ group, showHeader }) {
         aria-expanded={expanded}
         className="w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
       >
-        <span
-          className={`mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 border-2 ${
-            current?.actual
-              ? 'bg-primary border-primary ring-4 ring-primary/20'
-              : 'bg-white dark:bg-background-dark border-gray-300 dark:border-gray-600'
-          }`}
-          aria-hidden="true"
-        />
+        {expanded ? (
+          <span className="material-symbols-outlined text-base text-text-secondary flex-shrink-0">history</span>
+        ) : (
+          <span
+            className={`mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 border-2 ${
+              current?.actual
+                ? 'bg-primary border-primary ring-4 ring-primary/20'
+                : 'bg-white dark:bg-background-dark border-gray-300 dark:border-gray-600'
+            }`}
+            aria-hidden="true"
+          />
+        )}
         <div className="min-w-0 flex-1">
           {showHeader && group.containerNumber && (
             <p className="text-[11px] font-mono text-text-secondary flex items-center gap-1">
@@ -716,19 +732,27 @@ function MovementGroup({ group, showHeader }) {
               {group.containerNumber}
             </p>
           )}
-          <p className={`text-sm font-medium ${current?.actual ? 'text-text-main' : 'text-text-secondary'}`}>
-            {current?.eventLabel ?? t('gRadar.movementFallback')}
-            {current && !current.actual && (
-              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
-                {t('cargoTracking.drawer.estimated')}
-              </span>
-            )}
-          </p>
-          {current?.location && (
-            <p className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
-              <span className="material-symbols-outlined text-[13px]">place</span>
-              <span className="truncate">{current.location}</span>
+          {expanded ? (
+            <p className="text-sm font-medium text-text-main">
+              {t('cargoTracking.drawer.movementCount', { count: total })}
             </p>
+          ) : (
+            <>
+              <p className={`text-sm font-medium ${current?.actual ? 'text-text-main' : 'text-text-secondary'}`}>
+                {current?.eventLabel ?? t('gRadar.movementFallback')}
+                {current && !current.actual && (
+                  <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-text-secondary">
+                    {t('cargoTracking.drawer.estimated')}
+                  </span>
+                )}
+              </p>
+              {current?.location && (
+                <p className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+                  <span className="material-symbols-outlined text-[13px]">place</span>
+                  <span className="truncate">{current.location}</span>
+                </p>
+              )}
+            </>
           )}
           <p className="text-[11px] text-text-secondary mt-1">
             {expanded
@@ -737,7 +761,7 @@ function MovementGroup({ group, showHeader }) {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          {currentDate && (
+          {!expanded && currentDate && (
             <span
               className="text-xs text-text-secondary whitespace-nowrap"
               title={current?.rawTimestamp ? t('cargoTracking.drawer.rawValue', { value: current.rawTimestamp }) : undefined}
@@ -770,6 +794,7 @@ function MovementGroup({ group, showHeader }) {
                 key={mv.key}
                 movement={mv}
                 isCurrent={idx === currentIndex}
+                rowRef={idx === currentIndex ? currentRowRef : undefined}
               />
             ))}
           </ol>
@@ -784,12 +809,19 @@ function MovementGroup({ group, showHeader }) {
  * tahmini olay içi boş nokta, soluk metin ve "tahmini" etiketiyle çiziliyor —
  * kullanıcı henüz olmamış bir olayı olmuş sanmasın.
  */
-function MovementRow({ movement, isCurrent }) {
+function MovementRow({ movement, isCurrent, rowRef }) {
   const { eventLabel, location, vehicle, voyage, timestamp, rawTimestamp, actual } = movement;
   const formattedDate = formatMovementDate(movement);
 
   return (
-    <li className="ml-4">
+    <li
+      ref={rowRef}
+      aria-current={isCurrent ? 'step' : undefined}
+      // Son durum listede kendi sırasında kalır, çerçeveli zeminle öne çıkar
+      className={isCurrent
+        ? 'ml-2 px-2 py-1.5 -my-1.5 rounded-lg bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30'
+        : 'ml-4'}
+    >
       <span
         className={`absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full border-2 ${
           isCurrent
@@ -810,8 +842,8 @@ function MovementRow({ movement, isCurrent }) {
               </span>
             )}
             {isCurrent && (
-              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                {t('cargoTracking.drawer.current')}
+              <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white">
+                {t('cargoTracking.drawer.latestStatus')}
               </span>
             )}
           </p>

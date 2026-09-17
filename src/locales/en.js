@@ -1170,6 +1170,7 @@ export const en = {
       current: "now",
       showAllHistory: "Show full history ({{count}} events)",
       hideHistory: "Hide history",
+      latestStatus: "Latest status",
       rawValue: "Raw value from G-Radar: {{value}}",
       shipmentMissing: "G-Radar can't find the tracking record for this cargo (it may have been deleted).",
       shipmentMissingHint: "Restart tracking to open a new tracking record (1 credit).",

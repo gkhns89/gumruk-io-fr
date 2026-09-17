@@ -1170,6 +1170,7 @@ export const tr = {
       current: "şu an",
       showAllHistory: "Tüm geçmişi göster ({{count}} hareket)",
       hideHistory: "Geçmişi gizle",
+      latestStatus: "Son durum",
       rawValue: "G-Radar'dan gelen ham değer: {{value}}",
       shipmentMissing: "G-Radar bu yükün takip kaydını bulamıyor (kayıt silinmiş olabilir).",
       shipmentMissingHint: "Takibi yeniden başlatarak yeni bir takip kaydı açabilirsiniz (1 kredi).",
