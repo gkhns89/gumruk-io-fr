@@ -10,9 +10,15 @@ import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import TagInput from '../common/TagInput';
 import { t, getCurrentLocale } from '../../locales';
-import { toUpperCase, transformFormData, CARGO_UPPERCASE_FIELDS } from '../../utils/textUtils';
+import { toUpperCase } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useRecordDraft } from '../../hooks/useRecordDraft';
+import { useExistingPendingDraft } from '../../hooks/usePendingDrafts';
+import { DRAFT_MODULES } from '../../api/draftService';
+import { buildDraftLabel } from '../../utils/drafts';
+import SaveDraftButton from '../drafts/SaveDraftButton';
+import { createCargoFormData, buildCargoUpdatePayload } from './cargoDraftFields';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
@@ -139,32 +145,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     }
   };
 
-  const [formData, setFormData] = useState({
-    status: cargo.status || "TRACKING",
-    vehicleType: cargo.vehicleType || "",
-    clientCompanyId: cargo.clientCompany?.id || "",
-    senderCompany: cargo.senderCompany || "",
-    containerCount: cargo.containerCount || "",
-    weightKg: cargo.weightKg || "",
-    lokalAmount: cargo.lokalAmount || "",
-    lokalCurrency: cargo.lokalCurrency || "TRY",
-    depositoAmount: cargo.depositoAmount || "",
-    depositoCurrency: cargo.depositoCurrency || "TRY",
-    ordinoAmount: cargo.ordinoAmount || "",
-    ordinoCurrency: cargo.ordinoCurrency || "TRY",
-    paymentStatus: cargo.paymentStatus || "NO_PAYMENT",
-    carrierName: cargo.carrierName || "",
-    billOfLading: cargo.billOfLading || "",
-    licensePlate: cargo.licensePlate || "",
-    consignmentNumber: cargo.consignmentNumber || "",
-    containerNumbers: cargo.containerNumbers || [],
-    transportInfo: cargo.transportInfo || "",
-    documentDeliveryType: cargo.documentDeliveryType || null,
-    documentReceiver: cargo.documentReceiver || "",
-    documentDeliveryDate: cargo.documentDeliveryDate || "",
-    estimatedArrivalDate: cargo.estimatedArrivalDate || "",
-    cargoArrivalDate: cargo.cargoArrivalDate || "",
-  });
+  // Açılıştaki hâl taslakta da saklanır: bekleyen değişiklik uygulanırken "kaydı başkası değiştirdi mi" bunun
+  // üzerinden bulunur (bkz. cargoDraftFields.js).
+  const [baseFormData] = useState(() => createCargoFormData(cargo));
+  const [formData, setFormData] = useState(baseFormData);
 
   const [loading, setLoading] = useState(false);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -462,22 +446,14 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     setLoading(true);
 
     try {
-      // Transform uppercase fields
-      const transformedData = transformFormData(formData, CARGO_UPPERCASE_FIELDS);
-
-      const dataToSend = {
-        ...transformedData,
-        containerCount: transformedData.containerCount ? parseInt(transformedData.containerCount) : null,
-        weightKg: transformedData.weightKg ? parseFloat(transformedData.weightKg) : null,
-        costsAmount: transformedData.costsAmount ? parseFloat(transformedData.costsAmount) : null,
-        // Include vehicleType and clientCompanyId if admin edited them
-        ...(canEditVehicleType && { vehicleType: transformedData.vehicleType }),
-        ...(canEditClientCompany && { clientCompanyId: transformedData.clientCompanyId }),
-      };
+      // Gövde bekleyen değişikliğin "Uygula"sıyla aynı yerden gelir (cargoDraftFields.js)
+      const dataToSend = buildCargoUpdatePayload(formData, { canEditVehicleType, canEditClientCompany });
 
       const result = await cargoService.updateCargo(cargo.id, dataToSend);
 
       if (result.success) {
+        // Bu kayda ait kendi taslağımız varsa değişiklik uygulandı, taslak gereksiz
+        discardDraft();
         showSuccess(t('cargoTracking.form.updateSuccess'));
         onSuccess();
       } else {
@@ -499,7 +475,49 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
     carrierSearchTerm,
     reRequestNotes,
   }), [formData, clientSearchTerm, senderSearchTerm, carrierSearchTerm, reRequestNotes]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose, enabled: !isReadOnly });
+
+  // Bekleyen değişiklik taslağı: kaydın id'si hedef, açılıştaki `updatedAt` çakışma ölçüsü. G-Radar önizlemesi ve
+  // takip kimliği taslağa alınmaz (aşama 2 kararı), bu yüzden yeniden istek notu da taşınmaz.
+  const [existingDraft, setExistingDraft] = useState(null);
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.CARGO,
+    currentUser,
+    initialDraft: existingDraft,
+    targetId: cargo.id,
+    baseUpdatedAt: cargo.updatedAt || null,
+    getSnapshot: () => ({
+      payload: {
+        formData,
+        clientSearchTerm,
+        senderSearchTerm,
+        carrierSearchTerm,
+        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
+        base: {
+          formData: baseFormData,
+          clientSearchTerm: cargo.clientCompany?.name || '',
+          senderSearchTerm: cargo.senderCompany || '',
+          carrierSearchTerm: cargo.carrierName || '',
+        },
+      },
+      label: buildDraftLabel([
+        toUpperCase(formData.billOfLading || formData.consignmentNumber || formData.licensePlate
+          || formData.containerNumbers?.[0] || ''),
+        formData.clientCompanyId ? (selectedClientInfo?.shortName || selectedClientInfo?.name || clientSearchTerm) : '',
+      ], DRAFT_MODULES.CARGO),
+    }),
+  });
+  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.CARGO, cargo.id, setExistingDraft);
+
+  const { requestClose, isDirty } = useUnsavedChangesGuard({
+    values: unsavedValues,
+    onClose,
+    enabled: !isReadOnly,
+    onSaveDraft: isReadOnly ? undefined : saveDraft,
+  });
+
+  const handleSaveDraftAndClose = async () => {
+    if (await saveDraft?.()) onClose();
+  };
 
   return (
     <div
@@ -1358,6 +1376,15 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
           >
             {isReadOnly ? t('common.close') : t('common.cancel')}
           </button>
+          {!isReadOnly && draftsEnabled && (
+            <SaveDraftButton
+              onClick={handleSaveDraftAndClose}
+              disabled={loading || !isDirty}
+              saving={savingDraft}
+              isPilot={isDraftPilot}
+              className="px-6 py-2.5"
+            />
+          )}
           {!isReadOnly && (
             <button
               type="submit"

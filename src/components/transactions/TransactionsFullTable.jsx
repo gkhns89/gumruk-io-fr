@@ -1,5 +1,6 @@
 import { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
+import PendingChangeBadge from '../drafts/PendingChangeBadge';
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { warehouseOriginLabel } from "../../utils/warehouseOrigin";
@@ -63,6 +64,8 @@ export default function TransactionsFullTable({
   canDelete,
   isReadOnly,
   onRowClick,
+  pendingFor = null,
+  onOpenPendingChange = null,
   scrollHeight = null,
   onScroll = null,
 }) {
@@ -262,6 +265,11 @@ export default function TransactionsFullTable({
                             warehouse
                           </span>
                         )}
+                        {/* Bekleyen taslak değişiklik (DRAFTS) */}
+                        <PendingChangeBadge
+                          drafts={pendingFor?.(transaction.id)}
+                          onClick={(drafts) => onOpenPendingChange?.(drafts, transaction)}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">

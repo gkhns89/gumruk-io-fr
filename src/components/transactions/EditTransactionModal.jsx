@@ -3,7 +3,7 @@ import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
 import { GATE_OPTIONS } from "../../utils/constants";
-import { toUpperCase, transformFormData, TRANSACTION_UPPERCASE_FIELDS } from "../../utils/textUtils";
+import { toUpperCase } from "../../utils/textUtils";
 import { handleError, handleApiResponse, logError } from "../../utils/errorUtils";
 import { showSuccess, showError } from "../../utils/toastUtils";
 import { t, getCurrentLocale } from "../../locales";
@@ -11,6 +11,12 @@ import { formatLocaleNumber, parseLocaleNumber, toEditableNumber } from "../../u
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useRecordDraft } from '../../hooks/useRecordDraft';
+import { DRAFT_MODULES } from '../../api/draftService';
+import { buildDraftLabel } from '../../utils/drafts';
+import SaveDraftButton from '../drafts/SaveDraftButton';
+import { useExistingPendingDraft } from '../../hooks/usePendingDrafts';
+import { createTransactionFormData, buildTransactionUpdatePayload } from './transactionDraftFields';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
 // hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
@@ -25,45 +31,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   // Yetki kontrolü
   const isAdmin = currentUser?.globalRole === "SUPER_ADMIN" || currentUser?.globalRole === "BROKER_ADMIN";
 
-  const [formData, setFormData] = useState({
-    brokerCompanyId: transaction.brokerCompany?.id || "",
-    clientCompanyId: transaction.clientCompany?.id || "",
-    fileNo: transaction.fileNo || "",
-    recipientName: transaction.recipientName || "",
-    customsId: transaction.customs?.id || "",
-    customsWarehouse: transaction.customsWarehouse || "",
-    containerAmount: transaction.containerAmount || "",
-    gate: transaction.gate || "",
-    weight: transaction.weight || "",
-    tax: transaction.tax || "",
-    guaranteeAmount: transaction.guaranteeAmount || "",
-    senderName: transaction.senderName || "",
-    warehouseArrivalDate: transaction.warehouseArrivalDate || "",
-    registrationDate: transaction.registrationDate || "",
-    declarationNumber: transaction.declarationNumber || "",
-    lineClosureDate: transaction.lineClosureDate || "",
-    withdrawalDate: transaction.withdrawalDate || "",
-    description: transaction.description || "",
-    delayReasons: (() => {
-      console.log("🔍 [EditTransactionModal] Backend'den gelen transaction.userDelayNote:", transaction.userDelayNote);
-      try {
-        const parsed = transaction.userDelayNote ? JSON.parse(transaction.userDelayNote) : {
-          arrivalToRegistration: "",
-          registrationToClosure: "",
-          closureToWithdrawal: ""
-        };
-        console.log("✅ [EditTransactionModal] Parse edilen delayReasons:", parsed);
-        return parsed;
-      } catch (error) {
-        console.error("❌ [EditTransactionModal] userDelayNote parse hatası:", error);
-        return {
-          arrivalToRegistration: "",
-          registrationToClosure: "",
-          closureToWithdrawal: ""
-        };
-      }
-    })(),
-  });
+  // Açılıştaki hâl taslakta da saklanır: bekleyen değişiklik uygulanırken "kaydı başkası değiştirdi mi" bunun
+  // üzerinden bulunur (bkz. transactionDraftFields.js).
+  const [baseFormData] = useState(() => createTransactionFormData(transaction));
+  const [formData, setFormData] = useState(baseFormData);
 
   // Broker ve client company state'leri (sadece admin için)
   const isSuperAdmin = currentUser?.globalRole === "SUPER_ADMIN";
@@ -1082,47 +1053,14 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         }
       }
 
-      // ✅ Belirli alanları büyük harfe çevir
-      const transformedData = transformFormData(formData, TRANSACTION_UPPERCASE_FIELDS, locale);
-
-      // Boş gecikme nedenlerini temizle
-      const cleanedDelayReasons = Object.fromEntries(
-        Object.entries(transformedData.delayReasons || {}).filter(([, v]) => v && v.trim() !== "")
-      );
-
-      // delayReasons'ı güncelle
-      transformedData.delayReasons = Object.keys(cleanedDelayReasons).length > 0
-        ? cleanedDelayReasons
-        : undefined;
-
-      // Boş string değerlerini null'a çevir (alan temizleme için)
-      const cleanedData = Object.fromEntries(
-        Object.entries(transformedData).map(([key, value]) => {
-          // Boş string ise null yap (veritabanında alanı temizlemek için)
-          if (value === "") {
-            return [key, null];
-          }
-          return [key, value];
-        })
-      );
-
-      // Sayısal değerleri dönüştür
-      if (cleanedData.weight !== null && cleanedData.weight !== undefined) {
-        cleanedData.weight = parseFloat(cleanedData.weight);
-      }
-      if (cleanedData.tax !== null && cleanedData.tax !== undefined) {
-        cleanedData.tax = parseFloat(cleanedData.tax);
-      }
-      if (cleanedData.guaranteeAmount !== null && cleanedData.guaranteeAmount !== undefined) {
-        cleanedData.guaranteeAmount = parseFloat(cleanedData.guaranteeAmount);
-      }
-      if (cleanedData.containerAmount !== null && cleanedData.containerAmount !== undefined) {
-        cleanedData.containerAmount = parseInt(cleanedData.containerAmount);
-      }
+      // Gövde bekleyen değişikliğin "Uygula"sıyla aynı yerden gelir (transactionDraftFields.js)
+      const cleanedData = buildTransactionUpdatePayload(formData, locale);
 
       const result = await transactionService.updateTransaction(transaction.id, cleanedData);
 
       if (result.success) {
+        // Bu kayda ait kendi taslağımız varsa değişiklik uygulandı, taslak gereksiz
+        discardDraft();
         showSuccess(t("transactions.form.updateSuccess"));
         onSuccess();
       } else {
@@ -1171,7 +1109,53 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     displayGuaranteeAmount: formData.guaranteeAmount === "" ? displayGuaranteeAmount : "",
   }), [formData, brokerSearchTerm, clientSearchTerm, customsSearchTerm, senderSearchTerm, warehouseSearchTerm,
     displayWeight, displayTax, displayGuaranteeAmount]);
-  const { requestClose } = useUnsavedChangesGuard({ values: unsavedValues, onClose, enabled: !isReadOnly });
+
+  // Bekleyen değişiklik taslağı: kaydın id'si hedef, açılıştaki `updatedAt` çakışma ölçüsü. Aynı kayıtta kendi açık
+  // taslağımız varsa yenisi açılmaz, o güncellenir (`existingDraft`).
+  const [existingDraft, setExistingDraft] = useState(null);
+  const { draftsEnabled, isDraftPilot, saveDraft, savingDraft, discardDraft } = useRecordDraft({
+    module: DRAFT_MODULES.TRANSACTION,
+    currentUser,
+    initialDraft: existingDraft,
+    targetId: transaction.id,
+    baseUpdatedAt: transaction.updatedAt || null,
+    getSnapshot: () => ({
+      payload: {
+        formData,
+        brokerSearchTerm,
+        clientSearchTerm,
+        customsSearchTerm,
+        senderSearchTerm,
+        warehouseSearchTerm,
+        displayWeight,
+        displayTax,
+        displayGuaranteeAmount,
+        // Taslak alındığı andaki kayıt: çakışmada hangi alanların altımızdan değiştiğini gösterir
+        base: {
+          formData: baseFormData,
+          brokerSearchTerm: transaction.brokerCompany?.name || "",
+          clientSearchTerm: transaction.clientCompany?.name || "",
+          customsSearchTerm: transaction.customs?.customsShortName || "",
+        },
+      },
+      label: buildDraftLabel([
+        toUpperCase(formData.fileNo || "", locale),
+        formData.clientCompanyId ? clientSearchTerm : "",
+      ], DRAFT_MODULES.TRANSACTION),
+    }),
+  });
+  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.TRANSACTION, transaction.id, setExistingDraft);
+
+  const { requestClose, isDirty } = useUnsavedChangesGuard({
+    values: unsavedValues,
+    onClose,
+    enabled: !isReadOnly,
+    onSaveDraft: isReadOnly ? undefined : saveDraft,
+  });
+
+  const handleSaveDraftAndClose = async () => {
+    if (await saveDraft?.()) onClose();
+  };
 
   // Keyboard shortcuts: ESC to close (through the guard), CTRL+S to save
   useEffect(() => {
@@ -2889,6 +2873,15 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
             >
               {isReadOnly ? t('common.close') : t('common.cancel')}
             </button>
+            {!isReadOnly && draftsEnabled && (
+              <SaveDraftButton
+                onClick={handleSaveDraftAndClose}
+                disabled={loading || !isDirty}
+                saving={savingDraft}
+                isPilot={isDraftPilot}
+                className="w-full md:w-auto px-6 py-3"
+              />
+            )}
             {!isReadOnly && (
               <button
                 onClick={handleSubmit}

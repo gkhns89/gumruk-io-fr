@@ -7,7 +7,7 @@ import { showSuccess, showError, showInfo } from '../utils/toastUtils';
 import { t } from '../locales';
 
 /**
- * Yeni kayıt modallarının taslak kaydı (DRAFTS bayrağı). `useUnsavedChangesGuard` ile birlikte kullanılır:
+ * Form modallarının taslak kaydı (DRAFTS bayrağı). `useUnsavedChangesGuard` ile birlikte kullanılır:
  * `saveDraft` guard'ın `onSaveDraft`'ına verilir; bayrak kapalıysa ya da rol taslak kullanmıyorsa undefined döner ve
  * diyalog bugünkü gibi iki seçenekli kalır.
  *
@@ -15,15 +15,22 @@ import { t } from '../locales';
  * kayıt aynı taslağı günceller; taslak bu arada silinmişse (günlük temizlik, yönetici) yenisi oluşturulur.
  * Kayıt başarıyla oluşturulunca modal `discardDraft()` çağırır.
  *
+ * `targetId` verilirse taslak var olan bir kaydın **bekleyen değişikliği** olur (düzenleme modalları): `baseUpdatedAt`
+ * modalın açıldığı andaki kayıt sürümüdür, çakışma bununla bulunur. Kayıt silinmişse (404 `DRAFT_TARGET_NOT_FOUND`)
+ * yeniden oluşturma denenmez, kullanıcıya hata gösterilir.
+ *
  * @param {object}   options
  * @param {string}   options.module       DRAFT_MODULES değeri
  * @param {object}   options.currentUser
  * @param {object}   [options.initialDraft] Taslaktan devam ediliyorsa taslak öğesi
+ * @param {number}   [options.targetId]     Bekleyen değişiklikte düzenlenen kaydın id'si
+ * @param {string}   [options.baseUpdatedAt] Kaydın modal açılırkenki `updatedAt` değeri
  * @param {Function} options.getSnapshot  `() => ({ payload, label })` — kayıt anındaki form görüntüsü
  * @returns {{ draftsEnabled: boolean, isDraftPilot: boolean, saveDraft: Function|undefined, savingDraft: boolean,
  *   discardDraft: Function }}
  */
-export function useRecordDraft({ module, currentUser, initialDraft, getSnapshot }) {
+export function useRecordDraft({ module, currentUser, initialDraft, targetId = null, baseUpdatedAt = null,
+  getSnapshot }) {
   const { hasFeature, isPilotFeature } = useFeatureFlags();
   const enabled = canUseDrafts(currentUser, hasFeature);
   const isPilot = enabled && isPilotFeature(FEATURE_FLAGS.DRAFTS);
@@ -41,7 +48,7 @@ export function useRecordDraft({ module, currentUser, initialDraft, getSnapshot 
   const saveDraft = useCallback(async () => {
     if (!enabled || savingRef.current) return false;
     const { payload, label } = getSnapshotRef.current();
-    const body = { label, payload, schemaVersion: DRAFT_SCHEMA_VERSION };
+    const body = { label, payload, schemaVersion: DRAFT_SCHEMA_VERSION, baseUpdatedAt };
 
     savingRef.current = true;
     setSaving(true);
@@ -52,7 +59,7 @@ export function useRecordDraft({ module, currentUser, initialDraft, getSnapshot 
         // Taslak bu arada silinmiş, temizlenmiş ya da süresi dolmuş: yenisi oluşturulur
         if (!result.success && isDraftNotFound(result)) result = null;
       }
-      if (!result) result = await draftService.createDraft({ module, ...body });
+      if (!result) result = await draftService.createDraft({ module, targetId, ...body });
 
       if (!result.success) {
         // Bayrak sayfa açıkken kapatıldı: bayraklar sessizce tazelenir, form açık kalır ve veri kaybolmaz
@@ -68,7 +75,7 @@ export function useRecordDraft({ module, currentUser, initialDraft, getSnapshot 
       savingRef.current = false;
       setSaving(false);
     }
-  }, [enabled, module]);
+  }, [enabled, module, targetId, baseUpdatedAt]);
 
   // Kayıt oluşturulduktan sonra taslağı kaldırır. Beklenmez: silinemezse günlük temizlik zaten siler.
   const discardDraft = useCallback(() => {

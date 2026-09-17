@@ -10,8 +10,11 @@ import { t } from '../../locales';
  * Bir modülün kaydedilmemiş taslakları (DRAFTS). `DraftsControl` açar.
  *  - Kendi taslağı: "Devam et" yeni kayıt modalını taslakla açar (ödeme kısıtında kilitli), "Sil".
  *  - BROKER_ADMIN'in gördüğü başkasının taslağı (`mine` false): oluşturanın adı, yalnızca "Sil".
+ *  - `targetId` dolu taslak var olan bir kaydın **bekleyen değişikliği**dir: yeni kayıt formunu açmaz, "İncele"
+ *    karşılaştırmayı açar (aşama 3).
  */
-export default function DraftsPanel({ module, purgeTime, canContinue = true, highlightId = null, onContinue, onClose }) {
+export default function DraftsPanel({ module, purgeTime, canContinue = true, highlightId = null, onContinue, onReview,
+  onClose }) {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -144,6 +147,7 @@ export default function DraftsPanel({ module, purgeTime, canContinue = true, hig
             <ul className="space-y-3">
               {drafts.map((draft) => {
                 const mine = draft.mine !== false;
+                const pendingChange = draft.targetId != null;
                 const deleting = deletingId === draft.id;
                 const highlighted = highlightId != null && String(draft.id) === String(highlightId);
                 return (
@@ -158,6 +162,16 @@ export default function DraftsPanel({ module, purgeTime, canContinue = true, hig
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-text-main">{draftDisplayLabel(draft)}</p>
+                        {pendingChange && (
+                          <span
+                            title={t('drafts.panel.pendingHint')}
+                            className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-300"
+                          >
+                            <span className="material-symbols-outlined text-sm">pending_actions</span>
+                            {t('drafts.pending.badge')}
+                            {draft.target?.label ? ` · ${draft.target.label}` : ''}
+                          </span>
+                        )}
                         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
                           <span className="inline-flex items-center gap-1">
                             <span className="material-symbols-outlined text-sm">person</span>
@@ -179,7 +193,17 @@ export default function DraftsPanel({ module, purgeTime, canContinue = true, hig
                       </div>
 
                       <div className="flex flex-shrink-0 items-center gap-2">
-                        {mine ? (
+                        {pendingChange ? (
+                          <button
+                            type="button"
+                            onClick={() => onReview?.(draft)}
+                            disabled={deleting || !onReview}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <span className="material-symbols-outlined text-base">difference</span>
+                            {t('drafts.panel.review')}
+                          </button>
+                        ) : mine ? (
                           <button
                             type="button"
                             onClick={() => handleContinue(draft)}

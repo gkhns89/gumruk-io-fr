@@ -4,6 +4,7 @@ import { usePaymentRestriction } from "../../hooks/usePaymentRestriction";
 import { useSearchParams } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
+import { showError } from '../../utils/toastUtils';
 import MainLayout from "../layout/MainLayout";
 import TransactionsFullTable from "./TransactionsFullTable";
 import AddTransactionModal from "./AddTransactionModal";
@@ -11,8 +12,17 @@ import EditTransactionModal from "./EditTransactionModal";
 import TransactionDetailModal from "../common/TransactionDetailModal";
 import AutoRefreshControl from "./AutoRefreshControl";
 import DraftsControl from "../drafts/DraftsControl";
+import PendingChangeModal from "../drafts/PendingChangeModal";
+import { usePendingDrafts } from "../../hooks/usePendingDrafts";
 import { DRAFT_MODULES } from "../../api/draftService";
-import { t } from "../../locales";
+import {
+  transactionDraftFields,
+  transactionRecordToFields,
+  transactionPayloadToFields,
+  transactionPayloadToFormData,
+  buildTransactionUpdatePayload,
+} from "./transactionDraftFields";
+import { t, getCurrentLocale } from "../../locales";
 
 // Kapanmış (Çekildi/İptal) işlemler için ilk yükleme penceresi. Açık işlemler
 // her zaman gelir; kapanmışlardan yalnızca seçilen dönem içindekiler çekilir,
@@ -51,6 +61,8 @@ export default function TransactionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   // Taslaktan devam edilirken yeni kayıt modalına verilen taslak (DRAFTS)
   const [draftToContinue, setDraftToContinue] = useState(null);
+  // Bekleyen değişiklik (taslak aşama 3): { draftId, record }
+  const [pendingChange, setPendingChange] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -409,6 +421,40 @@ export default function TransactionsPage() {
     loadData();
   };
 
+  // ===== Bekleyen değişiklikler (taslak aşama 3) =====
+  const { pendingFor, refresh: refreshPending } = usePendingDrafts(DRAFT_MODULES.TRANSACTION, user);
+  const pendingFields = useMemo(() => transactionDraftFields(), []);
+
+  // Satırdaki rozetten: aynı kayıtta birden çok taslak olabilir (yönetici meslektaşınınkini de görür); en son
+  // güncellenen açılır, kalanlar "Taslaklar" panelinden görülür.
+  const openPendingChange = useCallback((drafts, record) => {
+    if (!drafts?.length) return;
+    setPendingChange({ draftId: drafts[0].id, record });
+  }, []);
+
+  // "Taslaklar" panelindeki "İncele"den: kaydı yüklü listede arar
+  const openPendingFromDraft = useCallback((draft) => {
+    const record = transactions.find((item) => item.id === draft.targetId);
+    if (!record) {
+      showError(t("drafts.pending.targetGoneMessage"));
+      return;
+    }
+    setPendingChange({ draftId: draft.id, record });
+  }, [transactions]);
+
+  // "Uygula": taslaktaki değerlerle normal güncelleme ucu. Gövde düzenleme modalıyla aynı yerden gelir.
+  const applyPendingChange = useCallback(async (payload) => {
+    const record = pendingChange?.record;
+    if (!record) return { success: false };
+    const formData = transactionPayloadToFormData(payload, record);
+    return transactionService.updateTransaction(record.id, buildTransactionUpdatePayload(formData, getCurrentLocale()));
+  }, [pendingChange]);
+
+  const handlePendingApplied = useCallback(() => {
+    refreshPending();
+    loadData();
+  }, [refreshPending, loadData]);
+
   const handleRowClick = (transaction) => {
     setSelectedDetailTransaction(transaction);
     setShowDetailModal(true);
@@ -586,6 +632,7 @@ export default function TransactionsPage() {
                   setDraftToContinue(draft);
                   setShowAddModal(true);
                 }}
+                onReview={openPendingFromDraft}
               />
 
               {canCreate && (
@@ -1023,6 +1070,8 @@ export default function TransactionsPage() {
               canDelete={canDelete}
               isReadOnly={isTableReadOnly}
               onRowClick={handleRowClick}
+              pendingFor={pendingFor}
+              onOpenPendingChange={openPendingChange}
               scrollHeight={tableScrollHeight}
               onScroll={handleTableScroll}
             />
@@ -1042,6 +1091,23 @@ export default function TransactionsPage() {
           }}
           onSuccess={handleAddSuccess}
           currentUser={user}
+        />
+      )}
+
+      {/* Bekleyen taslak değişikliğin karşılaştırması (DRAFTS) */}
+      {pendingChange && (
+        <PendingChangeModal
+          draftId={pendingChange.draftId}
+          module={DRAFT_MODULES.TRANSACTION}
+          record={pendingChange.record}
+          fields={pendingFields}
+          recordToFields={transactionRecordToFields}
+          payloadToFields={transactionPayloadToFields}
+          onApply={applyPendingChange}
+          canApply={!isTableReadOnly}
+          blockedReason={t("payment.restrictionWarning")}
+          onDone={handlePendingApplied}
+          onClose={() => setPendingChange(null)}
         />
       )}
 

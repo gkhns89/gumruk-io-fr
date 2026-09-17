@@ -195,7 +195,23 @@ Pages combine it with role checks — the established pattern is
   The G-Radar preview (credit-bound tracking id) is never part of a draft. Pages list drafts with
   `components/drafts/DraftsControl` (header button + panel, also opened by `DRAFT` notifications via
   `location.state.openDrafts`); work days/hours and the purge time live in `WorkSettingsCard` on
-  `/company-settings`. Edit modals don't offer drafts yet (pending changes are phase 3).
+  `/company-settings`.
+- **Pending changes on an existing record** (`DRAFTS`, phase 3): the three Edit modals pass `targetId` (the
+  record's id) and `baseUpdatedAt` (its `updatedAt` when the modal opened) to `useRecordDraft`, and their
+  snapshot carries a `base` block — the record as the modal found it — so a conflict can name the fields that
+  moved underneath. They never restore a draft into the form; `useExistingPendingDraft` (`src/hooks/usePendingDrafts.js`)
+  finds the user's own open draft for that record so a second save updates it instead of opening a second draft.
+  **Each module owns one file** — `transactionDraftFields.js`, `warehouseDraftFields.js`, `cargoDraftFields.js` next to
+  its modal — holding `create*FormData(record)`, `build*UpdatePayload(formData, …)`, the comparison field list
+  (`key`, `label` — the same `t()` key the form's label uses — and an optional `format`) and the
+  `*RecordToFields` / `*PayloadToFields` pair. The Edit modal and the "Uygula" action both go through them, so the
+  two can never send different bodies; add a new form field in that file, not inline.
+  Lists get their badges from one `GET /drafts/pending` per module (`usePendingDrafts`), never per row;
+  `PendingChangeBadge` sits in the row and opens `PendingChangeModal`, which diffs with
+  `diffDraftFields()` (`src/utils/draftDiff.js` — comparison is on the rendered text, so `1500` and `"1500.00"`
+  match; id-bearing fields are wrapped in `idValue(id, name)` so they compare by id and display by name).
+  `target.stale` from the server means the record changed after the draft: the modal shows the conflicting fields,
+  marks the ones the draft would overwrite and keeps "Uygula" locked until the user ticks the acknowledgement.
 - **Passwords typed for someone else** (add employee, set password, client account): the password
   inputs carry `autoComplete="new-password"` and the e-mail input `type="email"` + `autoComplete="off"`.
   Without them the browser treats the form as a sign-in and fills in the admin's own saved password,

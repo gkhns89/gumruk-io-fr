@@ -18,7 +18,16 @@ import DeleteCargoConfirmModal from './DeleteCargoConfirmModal';
 import GRadarDetailsDrawer from './GRadarDetailsDrawer';
 import AutoRefreshControl from '../transactions/AutoRefreshControl';
 import DraftsControl from '../drafts/DraftsControl';
+import PendingChangeModal from '../drafts/PendingChangeModal';
+import { usePendingDrafts } from '../../hooks/usePendingDrafts';
 import { DRAFT_MODULES } from '../../api/draftService';
+import {
+  cargoDraftFields,
+  cargoRecordToFields,
+  cargoPayloadToFields,
+  cargoPayloadToFormData,
+  buildCargoUpdatePayload,
+} from './cargoDraftFields';
 import { t } from '../../locales';
 
 // "Bilgileri Getir" artık yapılamıyor (sunucunun 403 kodları)
@@ -42,6 +51,8 @@ export default function CargoTrackingPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   // Taslaktan devam edilirken yeni kayıt modalına verilen taslak (DRAFTS)
   const [draftToContinue, setDraftToContinue] = useState(null);
+  // Bekleyen değişiklik (taslak aşama 3): { draftId, record }
+  const [pendingChange, setPendingChange] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -344,6 +355,44 @@ export default function CargoTrackingPage() {
     setShowDeleteModal(true);
   };
 
+  // ===== Bekleyen değişiklikler (taslak aşama 3) =====
+  const { pendingFor, refresh: refreshPending } = usePendingDrafts(DRAFT_MODULES.CARGO, user);
+  const pendingFields = useMemo(() => cargoDraftFields(), []);
+
+  // Satırdaki rozetten: aynı kayıtta birden çok taslak olabilir; en son güncellenen açılır.
+  const openPendingChange = useCallback((drafts, record) => {
+    if (!drafts?.length) return;
+    setPendingChange({ draftId: drafts[0].id, record });
+  }, []);
+
+  // "Taslaklar" panelindeki "İncele"den
+  const openPendingFromDraft = useCallback((draft) => {
+    const record = cargo.find((item) => item.id === draft.targetId);
+    if (!record) {
+      showError(t('drafts.pending.targetGoneMessage'));
+      return;
+    }
+    setPendingChange({ draftId: draft.id, record });
+  }, [cargo]);
+
+  // "Uygula": gövde düzenleme modalıyla aynı yerden gelir (cargoDraftFields.js). Araç tipi ve müşteri yalnızca
+  // yöneticinin düzenleyebildiği alanlar; yetkisi olmayanın taslağı bunları göndermez.
+  const applyPendingChange = useCallback(async (payload) => {
+    const record = pendingChange?.record;
+    if (!record) return { success: false };
+    const canEditAdminFields = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole) && !isTableReadOnly;
+    const formData = cargoPayloadToFormData(payload, record);
+    return cargoService.updateCargo(record.id, buildCargoUpdatePayload(formData, {
+      canEditVehicleType: canEditAdminFields,
+      canEditClientCompany: canEditAdminFields,
+    }));
+  }, [pendingChange, user, isTableReadOnly]);
+
+  const handlePendingApplied = useCallback(() => {
+    refreshPending();
+    loadData();
+  }, [refreshPending, loadData]);
+
   const handleModalSuccess = () => {
     loadData();
     setShowAddModal(false);
@@ -508,6 +557,7 @@ export default function CargoTrackingPage() {
                   setDraftToContinue(draft);
                   setShowAddModal(true);
                 }}
+                onReview={openPendingFromDraft}
               />
 
               {/* Add Button */}
@@ -673,6 +723,8 @@ export default function CargoTrackingPage() {
             onGRadarDetails={handleGRadarDetails}
             fetchingGRadar={fetchingGRadar}
             enablingGRadar={enablingGRadar}
+            pendingFor={pendingFor}
+            onOpenPendingChange={openPendingChange}
           />
         </div>
         </div>
@@ -794,6 +846,23 @@ export default function CargoTrackingPage() {
             setSelectedCargo(null);
           }}
           onEdit={isTableReadOnly ? undefined : handleEditFromDetail}
+        />
+      )}
+
+      {/* Bekleyen taslak değişikliğin karşılaştırması (DRAFTS) */}
+      {pendingChange && (
+        <PendingChangeModal
+          draftId={pendingChange.draftId}
+          module={DRAFT_MODULES.CARGO}
+          record={pendingChange.record}
+          fields={pendingFields}
+          recordToFields={cargoRecordToFields}
+          payloadToFields={cargoPayloadToFields}
+          onApply={applyPendingChange}
+          canApply={!isTableReadOnly}
+          blockedReason={t('payment.restrictionWarning')}
+          onDone={handlePendingApplied}
+          onClose={() => setPendingChange(null)}
         />
       )}
 

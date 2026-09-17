@@ -1,5 +1,6 @@
 import { CARGO_STATUS, VEHICLE_TYPES, getCargoStatus, getDocumentDeliveryType } from '../../utils/constants';
 import { useEdgeScroll } from '../../hooks/useEdgeScroll';
+import PendingChangeBadge from '../drafts/PendingChangeBadge';
 import { getCostBreakdown, calculateTotalCosts } from '../../utils/costsUtils';
 import { gRadarStatusInfo } from '../../utils/gRadarLabels';
 import { t, getCurrentLocale } from '../../locales';
@@ -31,6 +32,8 @@ export default function CargoTrackingTable({
   onGRadarDetails,
   fetchingGRadar = {},
   enablingGRadar = {},
+  pendingFor = null,
+  onOpenPendingChange = null,
 }) {
   const { containerRef: edgeScrollRef, scrollDirection } = useEdgeScroll({
     edgeZoneWidth: 25,
@@ -256,9 +259,16 @@ export default function CargoTrackingTable({
                   {/* İlk hücre: durum renk şeridi burada */}
                   {visibleColumns.includes("status") && (
                     <td className={`px-6 py-4 whitespace-nowrap ${getFirstCellBorderClass(cargoItem)}`}>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo?.badgeClass}`}>
-                        {statusInfo?.displayName?.toLocaleUpperCase(locale)}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo?.badgeClass}`}>
+                          {statusInfo?.displayName?.toLocaleUpperCase(locale)}
+                        </span>
+                        {/* Bekleyen taslak değişiklik (DRAFTS); durum sütunu her zaman görünür */}
+                        <PendingChangeBadge
+                          drafts={pendingFor?.(cargoItem.id)}
+                          onClick={(drafts) => onOpenPendingChange?.(drafts, cargoItem)}
+                        />
+                      </div>
                     </td>
                   )}
                   {visibleColumns.includes("vehicleType") && (
