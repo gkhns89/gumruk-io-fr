@@ -56,25 +56,5 @@ export function usePendingDrafts(module, currentUser) {
   return { pendingByTarget, pendingFor, refresh };
 }
 
-/**
- * Düzenleme modalı açılırken: bu kayıtta kullanıcının zaten açık bir taslağı varsa onu bulur, böylece "Taslak olarak
- * kaydet" ikinci bir taslak açmaz, var olanı günceller. Yalnızca taslaklar açıkken tek bir istek yapar.
- *
- * @param {boolean}  enabled  `useRecordDraft`'ın `draftsEnabled` değeri
- * @param {string}   module   DRAFT_MODULES değeri
- * @param {number}   targetId Düzenlenen kaydın id'si
- * @param {Function} onFound  Bulunursa `{ id, mine: true }` ile çağrılır (setState)
- */
-export function useExistingPendingDraft(enabled, module, targetId, onFound) {
-  useEffect(() => {
-    if (!enabled || targetId == null) return undefined;
-    let active = true;
-    (async () => {
-      const result = await draftService.listPendingDrafts(module);
-      if (!active || !result.success) return;
-      const own = result.data.find((row) => row.targetId === targetId && row.mine !== false);
-      if (own) onFound({ id: own.id, mine: true });
-    })();
-    return () => { active = false; };
-  }, [enabled, module, targetId, onFound]);
-}
+// Düzenleme modalı açılırken kullanıcının kendi bekleyen taslağını bulup forma yükleyen kanca artık ayrı dosyada:
+// hooks/useEditDraftPrefill.js (taslak aşama 4).

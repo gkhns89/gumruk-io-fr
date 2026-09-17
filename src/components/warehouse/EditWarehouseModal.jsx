@@ -12,11 +12,20 @@ import { useDropdownKeyboard } from "../../hooks/useDropdownKeyboard";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import AgreementInfoPanel from "../agreements/AgreementInfoPanel";
 import { useRecordDraft } from "../../hooks/useRecordDraft";
-import { useExistingPendingDraft } from "../../hooks/usePendingDrafts";
+import { useEditDraftPrefill } from "../../hooks/useEditDraftPrefill";
 import { DRAFT_MODULES } from "../../api/draftService";
-import { buildDraftLabel } from "../../utils/drafts";
+import { buildDraftLabel, draftText, isConcurrentUpdate } from "../../utils/drafts";
 import SaveDraftButton from "../drafts/SaveDraftButton";
-import { createWarehouseFormData, buildWarehouseUpdatePayload, getRepName } from "./warehouseDraftFields";
+import EditDraftBanner from "../drafts/EditDraftBanner";
+import {
+  createWarehouseFormData,
+  buildWarehouseUpdatePayload,
+  getRepName,
+  warehousePayloadToFormData,
+  warehouseDraftFields,
+  warehouseRecordToFields,
+  warehousePayloadToFields,
+} from "./warehouseDraftFields";
 import { t } from "../../locales";
 
 const today = new Date().toISOString().split("T")[0];
@@ -206,6 +215,12 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
   const clearErr = (f) => setFieldErrors((p) => ({ ...p, [f]: null }));
 
+  // Taslak forma yüklendiyse açılıştaki listeler (müşteri, temsilci) kaydın değerlerini geri yazmasın.
+  const draftAppliedRef = useRef(false);
+  // Açılış yüklemeleri geç bittiğinde formun o anki hâline bakabilsin diye
+  const formDataRef = useRef(formData);
+  useEffect(() => { formDataRef.current = formData; });
+
   /* ── Keyboard hooks ── */
   const brokerKb  = useDropdownKeyboard(showBrokerDd,  filteredBrokers,  (b) => selectBroker(b),  () => setShowBrokerDd(false),  "edit-wh-broker-dd");
   const clientKb  = useDropdownKeyboard(showClientDd,  filteredClients,  (c) => selectClient(c),  () => setShowClientDd(false),  "edit-wh-client-dd");
@@ -295,15 +310,21 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
             }
           });
           setClientAgreements(agMap);
-          /* Fix: initialize clientSearch and clientCompanyId from loaded list */
-          const clientIdTarget = declaration.clientCompany?.id || declaration.clientCompanyId;
-          const currentClient = r.data.find((c) => c.id === Number(clientIdTarget));
-          if (currentClient) {
-            setClientSearch(currentClient.name);
-            setFormData((p) => ({ ...p, clientCompanyId: currentClient.id }));
-            setSelectedClientAgreement(agMap[currentClient.id] || null);
-          } else if (declaration.clientCompany?.id) {
-            setSelectedClientAgreement(agMap[declaration.clientCompany.id] || null);
+          /* Fix: initialize clientSearch and clientCompanyId from loaded list.
+             Taslak yüklendiyse formdaki müşteri taslağınkidir; kaydınkine geri dönülmez, yalnızca vekalet
+             bilgisi formdaki müşteriye göre tazelenir. */
+          if (draftAppliedRef.current) {
+            setSelectedClientAgreement(agMap[formDataRef.current.clientCompanyId] || null);
+          } else {
+            const clientIdTarget = declaration.clientCompany?.id || declaration.clientCompanyId;
+            const currentClient = r.data.find((c) => c.id === Number(clientIdTarget));
+            if (currentClient) {
+              setClientSearch(currentClient.name);
+              setFormData((p) => ({ ...p, clientCompanyId: currentClient.id }));
+              setSelectedClientAgreement(agMap[currentClient.id] || null);
+            } else if (declaration.clientCompany?.id) {
+              setSelectedClientAgreement(agMap[declaration.clientCompany.id] || null);
+            }
           }
         }
         setLoadingClients(false);
@@ -313,9 +334,9 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
         if (r?.success) {
           setRepresentatives(r.data);
           setFilteredReps(r.data.slice(0, 100));
-          /* Fix: initialize repSearch from loaded employees list */
+          /* Fix: initialize repSearch from loaded employees list (taslak yüklendiyse dokunulmaz) */
           const currentRep = r.data.find((emp) => emp.id === declaration.representative?.id);
-          if (currentRep) {
+          if (currentRep && !draftAppliedRef.current) {
             setRepSearch(getRepName(currentRep));
             setFormData((p) => ({ ...p, representativeId: currentRep.id }));
           }
@@ -461,6 +482,10 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
         discardDraft();
         showSuccess(result.message || t("warehouse.form.updateSuccess"));
         onSuccess();
+      } else if (isConcurrentUpdate(result)) {
+        // Kayıt tam bu sırada değişti: taslak durur, bant uyarıya döner, kullanıcı karşılaştırıp yeniden kaydeder.
+        draftPrefill.reportConflict();
+        showError(t("drafts.pending.concurrentUpdate"));
       } else {
         showError(result.error);
       }
@@ -520,7 +545,48 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
       label: buildDraftLabel([formData.fileNo, formData.clientCompanyId ? clientSearch : ""], DRAFT_MODULES.WAREHOUSE),
     }),
   });
-  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.WAREHOUSE, declaration.id, setExistingDraft);
+
+  // Taslağın form görüntüsü: aynı alanlar kaydederken de kullanılıyor, böylece yüklenen ile kaydedilen ayrışamaz.
+  const applyDraftPayload = (payload) => {
+    draftAppliedRef.current = true;
+    const draftForm = warehousePayloadToFormData(payload, declaration);
+    setFormData(draftForm);
+    setBrokerSearch(draftText(payload, "brokerSearch", declaration.brokerCompany?.name || ""));
+    setClientSearch(draftText(payload, "clientSearch", declaration.clientCompany?.name || ""));
+    setCustomsSearch(draftText(payload, "customsSearch", declaration.customs?.customsShortName || ""));
+    setRepSearch(draftText(payload, "repSearch", getRepName(declaration.representative)));
+    setSenderSearch(draftText(payload, "senderSearch", declaration.senderName || ""));
+    setWhSearch(draftText(payload, "whSearch", declaration.warehouse || ""));
+    setCarrierSearch(draftText(payload, "carrierSearch", declaration.carrierName || ""));
+    setSelectedClientAgreement(clientAgreements[draftForm.clientCompanyId] || null);
+    setFieldErrors({});
+  };
+
+  // "Orijinali yükle" ve "Taslağı sil": form kaydın açılıştaki hâline döner.
+  const resetFormToRecord = () => {
+    draftAppliedRef.current = false;
+    setFormData(baseFormData);
+    setBrokerSearch(declaration.brokerCompany?.name || "");
+    setClientSearch(declaration.clientCompany?.name || "");
+    setCustomsSearch(declaration.customs?.customsShortName || "");
+    setRepSearch(getRepName(declaration.representative));
+    setSenderSearch(declaration.senderName || "");
+    setWhSearch(declaration.warehouse || "");
+    setCarrierSearch(declaration.carrierName || "");
+    setSelectedClientAgreement(clientAgreements[baseFormData.clientCompanyId] || null);
+    setFieldErrors({});
+  };
+
+  const draftPrefill = useEditDraftPrefill({
+    enabled: draftsEnabled,
+    module: DRAFT_MODULES.WAREHOUSE,
+    targetId: declaration.id,
+    onDraftFound: setExistingDraft,
+    applyPayload: applyDraftPayload,
+    resetToRecord: resetFormToRecord,
+    discardDraft,
+  });
+  const draftCompareFields = useMemo(() => warehouseDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -534,7 +600,8 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") { requestClose(); return; }
+      // Üstte taslak karşılaştırması açıksa ESC onundur
+      if (e.key === "Escape") { if (!draftPrefill.compareOpen) requestClose(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         if (!loading) handleSubmitRef.current();
@@ -542,7 +609,7 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [loading, requestClose]);
+  }, [loading, requestClose, draftPrefill.compareOpen]);
 
   /* ── Render ── */
   const statusIsKapandi = declaration.status === "KAPANDI";
@@ -582,6 +649,18 @@ export default function EditWarehouseModal({ declaration, onClose, onSuccess }) 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+          {/* Kendi bekleyen taslağınız formda (DRAFTS) */}
+          {draftPrefill.active && (
+            <EditDraftBanner
+              prefill={draftPrefill}
+              module={DRAFT_MODULES.WAREHOUSE}
+              record={declaration}
+              fields={draftCompareFields}
+              recordToFields={warehouseRecordToFields}
+              payloadToFields={warehousePayloadToFields}
+            />
+          )}
 
           {/* Firma & Alıcı */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700">

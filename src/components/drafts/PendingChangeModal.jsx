@@ -25,14 +25,16 @@ import { t } from '../../locales';
  * @param {Array}    props.fields          Alan tanımları ({ key, label, format }), bkz. utils/draftDiff.js
  * @param {Function} props.recordToFields  (record) => karşılaştırma alanları
  * @param {Function} props.payloadToFields (payloadLike, record) => karşılaştırma alanları
- * @param {Function} props.onApply         async (draftPayload, draft) => { success, error } — normal güncelleme ucu
+ * @param {Function} [props.onApply]       async (draftPayload, draft) => { success, error } — normal güncelleme ucu
  * @param {boolean}  props.canApply        Kullanıcının bu kaydı düzenleme yetkisi var mı (ödeme kısıtı dahil)
  * @param {string}   [props.blockedReason] canApply false ise düğmenin başlığı
- * @param {Function} props.onDone          Taslak uygulandı ya da silindi: liste tazelensin
+ * @param {boolean}  [props.readOnly]      Yalnızca karşılaştırma: düzenleme modalının taslak bandından açılır.
+ *   Uygulama formu kaydetmektir, silme bandın kendi düğmesindedir; burada ikisi de gösterilmez.
+ * @param {Function} [props.onDone]        Taslak uygulandı ya da silindi: liste tazelensin
  * @param {Function} props.onClose
  */
 export default function PendingChangeModal({ draftId, module, record, fields, recordToFields, payloadToFields,
-  onApply, canApply = true, blockedReason, onDone, onClose }) {
+  onApply, canApply = true, blockedReason, readOnly = false, onDone, onClose }) {
   const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,7 +58,7 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
       if (result.success) setDraft(result.data);
       // Taslak bu arada silinmiş, süresi dolmuş ya da bayrak kapatılmış: pencere kapanır, liste tazelenir
       else if (isDraftNotFound(result) || isFeatureDisabled(result)) {
-        callbacks.current.onDone();
+        callbacks.current.onDone?.();
         callbacks.current.onClose();
         return;
       } else setError(result.error);
@@ -105,7 +107,7 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
     || (stale && !conflictAcknowledged);
 
   const handleApply = useCallback(async () => {
-    if (applyBlocked || busy) return;
+    if (readOnly || applyBlocked || busy) return;
     const ok = await confirmDialog({
       title: t('drafts.pending.applyTitle'),
       message: stale ? t('drafts.pending.applyStaleMessage') : t('drafts.pending.applyMessage'),
@@ -125,7 +127,7 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
         const refreshed = await draftService.getDraft(draftId);
         if (refreshed.success) setDraft(refreshed.data);
         showError(t('drafts.pending.concurrentUpdate'));
-        onDone();
+        onDone?.();
       } else {
         showError(result?.error || t('drafts.pending.applyError'));
       }
@@ -135,9 +137,9 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
     await draftService.deleteDraft(draftId);
     setBusy('');
     showSuccess(t('drafts.pending.applied'));
-    onDone();
+    onDone?.();
     onClose();
-  }, [applyBlocked, busy, stale, changes, onApply, draft, draftId, onDone, onClose]);
+  }, [readOnly, applyBlocked, busy, stale, changes, onApply, draft, draftId, onDone, onClose]);
 
   const handleDelete = useCallback(async () => {
     if (busy) return;
@@ -157,7 +159,7 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
       return;
     }
     if (!result.data?.alreadyGone) showSuccess(t('drafts.panel.deleted'));
-    onDone();
+    onDone?.();
     onClose();
   }, [busy, draft, draftId, onDone, onClose]);
 
@@ -273,15 +275,17 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
                       {t('drafts.pending.conflictUnknownFields')}
                     </p>
                   )}
-                  <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm font-medium text-red-900 dark:text-red-200">
-                    <input
-                      type="checkbox"
-                      checked={conflictAcknowledged}
-                      onChange={(e) => setConflictAcknowledged(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-red-400 text-red-600 focus:ring-red-500"
-                    />
-                    {t('drafts.pending.conflictAcknowledge')}
-                  </label>
+                  {!readOnly && (
+                    <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm font-medium text-red-900 dark:text-red-200">
+                      <input
+                        type="checkbox"
+                        checked={conflictAcknowledged}
+                        onChange={(e) => setConflictAcknowledged(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-red-400 text-red-600 focus:ring-red-500"
+                      />
+                      {t('drafts.pending.conflictAcknowledge')}
+                    </label>
+                  )}
                 </div>
               )}
 
@@ -321,19 +325,24 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
         {/* Alt çubuk */}
         {!loading && !error && (
           <div className="flex flex-col-reverse gap-2 border-t border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={!!busy}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
-            >
-              {busy === 'delete' ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
-              ) : (
-                <span className="material-symbols-outlined text-base">delete</span>
-              )}
-              {t('drafts.panel.delete')}
-            </button>
+            {readOnly ? (
+              // Düzenleme modalının bandından açıldı: uygulamak formu kaydetmek, silmek de bandın kendi düğmesi.
+              <p className="text-xs italic text-text-secondary">{t('drafts.editBanner.compareHint')}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={!!busy}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                {busy === 'delete' ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
+                ) : (
+                  <span className="material-symbols-outlined text-base">delete</span>
+                )}
+                {t('drafts.panel.delete')}
+              </button>
+            )}
 
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
               <button
@@ -344,20 +353,22 @@ export default function PendingChangeModal({ draftId, module, record, fields, re
               >
                 {t('common.close')}
               </button>
-              <button
-                type="button"
-                onClick={handleApply}
-                disabled={applyBlocked || !!busy}
-                title={canApply ? undefined : blockedReason}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === 'apply' ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
-                ) : (
-                  <span className="material-symbols-outlined text-base">{canApply ? 'check' : 'lock'}</span>
-                )}
-                {t('drafts.pending.apply')}
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={applyBlocked || !!busy}
+                  title={canApply ? undefined : blockedReason}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === 'apply' ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
+                  ) : (
+                    <span className="material-symbols-outlined text-base">{canApply ? 'check' : 'lock'}</span>
+                  )}
+                  {t('drafts.pending.apply')}
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -84,7 +84,13 @@ export const warehouseService = {
       if (error.response?.status === 403) {
         return { success: false, error: t('api.warehouse.updateForbidden') };
       }
-      return { success: false, error: getApiErrorMessage(error, t('api.warehouse.updateError')) };
+      // `status`/`code` çağıranların çakışmayı (409 CONCURRENT_UPDATE) ayırt etmesi için taşınır.
+      return {
+        success: false,
+        error: getApiErrorMessage(error, t('api.warehouse.updateError')),
+        status: error.response?.status,
+        code: error.response?.data?.code,
+      };
     }
   },
 

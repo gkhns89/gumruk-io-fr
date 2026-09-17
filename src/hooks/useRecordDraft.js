@@ -36,7 +36,8 @@ export function useRecordDraft({ module, currentUser, initialDraft, targetId = n
   const isPilot = enabled && isPilotFeature(FEATURE_FLAGS.DRAFTS);
 
   // Başkasının taslağına asla PUT gönderilmez; liste zaten yalnızca kendi taslağında "Devam et" gösterir.
-  const draftIdRef = useRef(initialDraft && initialDraft.mine !== false ? initialDraft.id ?? null : null);
+  const ownDraftId = (draft) => (draft && draft.mine !== false ? draft.id ?? null : null);
+  const draftIdRef = useRef(ownDraftId(initialDraft));
   const getSnapshotRef = useRef(getSnapshot);
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
@@ -44,6 +45,14 @@ export function useRecordDraft({ module, currentUser, initialDraft, targetId = n
   useEffect(() => {
     getSnapshotRef.current = getSnapshot;
   });
+
+  // Düzenleme modallarında taslak sonradan bulunuyor (useEditDraftPrefill → setState). `useRef` yalnızca ilk
+  // render'da değer aldığı için sonradan gelen taslağı buraya bu etki taşır; yoksa "Taslak olarak kaydet" aynı
+  // kayda ikinci bir taslak açardı. Bu arada kendi taslağımızı oluşturduysak (id dolu) dokunulmaz.
+  useEffect(() => {
+    const id = ownDraftId(initialDraft);
+    if (id != null && draftIdRef.current == null) draftIdRef.current = id;
+  }, [initialDraft]);
 
   const saveDraft = useCallback(async () => {
     if (!enabled || savingRef.current) return false;
@@ -77,12 +86,17 @@ export function useRecordDraft({ module, currentUser, initialDraft, targetId = n
     }
   }, [enabled, module, targetId, baseUpdatedAt]);
 
-  // Kayıt oluşturulduktan sonra taslağı kaldırır. Beklenmez: silinemezse günlük temizlik zaten siler.
+  /**
+   * Kayıt oluşturulduktan/güncellendikten sonra taslağı kaldırır ve kimliğini unutur. Kayıt yolunda beklenmez:
+   * silinemezse günlük temizlik zaten siler. Taslak bandının "Taslağı sil"i ise sonucu bekler, bu yüzden servis
+   * sözü döndürülür.
+   * @returns {Promise<{ success: boolean, data?: object, error?: string }>}
+   */
   const discardDraft = useCallback(() => {
     const id = draftIdRef.current;
-    if (!id) return;
+    if (!id) return Promise.resolve({ success: true, data: { alreadyGone: true } });
     draftIdRef.current = null;
-    draftService.deleteDraft(id);
+    return draftService.deleteDraft(id);
   }, []);
 
   return {

@@ -282,9 +282,12 @@ export const transactionService = {
         };
       }
 
+      // `status`/`code` çağıranların çakışmayı (409 CONCURRENT_UPDATE) ayırt etmesi için taşınır.
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.transaction.updateError')),
+        status: error.response?.status,
+        code: error.response?.data?.code,
       };
     }
   },

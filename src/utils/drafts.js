@@ -97,6 +97,13 @@ export const mergeDraftFields = (defaults, saved) => {
   }));
 };
 
+/**
+ * Güncelleme ucu "kayıt bu sırada değişti" mi dedi? (409 `CONCURRENT_UPDATE`)
+ * Düzenleme modalları bu durumda taslağı silmez: kullanıcı karşılaştırıp yeniden kaydeder.
+ */
+export const isConcurrentUpdate = (result) => !!result && result.success === false
+  && (result.status === 409 || result.code === 'CONCURRENT_UPDATE');
+
 /** Taslaktaki metin alanı (arama terimi, not); metin değilse boş */
 export const draftText = (payload, key, fallback = '') =>
   (payload && typeof payload[key] === 'string' ? payload[key] : fallback);

@@ -729,6 +729,24 @@ export const tr = {
       targetGoneTitle: "Kayıt silinmiş",
       targetGoneMessage: "Bu taslağın ait olduğu kayıt artık yok. Taslak uygulanamaz, silebilirsiniz.",
     },
+
+    // Düzenleme modalının üstündeki bant: form kendi bekleyen taslağınızla açıldı
+    editBanner: {
+      loaded: "Bekleyen taslak değişiklikleriniz yüklendi · {{time}}",
+      hint: "Formda kaydın değil, taslağınızın değerleri var. Kaydederseniz taslak uygulanır ve silinir.",
+      originalLoaded: "Kaydın orijinal değerleri yüklendi",
+      originalHint: "Taslağınız duruyor; istediğinizde geri yükleyebilir ya da silebilirsiniz.",
+      loadOriginal: "Orijinali yükle",
+      loadDraft: "Taslağı yükle",
+      compare: "Karşılaştır",
+      compareHint: "Bu pencere yalnızca karşılaştırma içindir; uygulamak için formu kaydedin.",
+      delete: "Taslağı sil",
+      deleteTitle: "Taslağı sil",
+      deleteMessage: "Bekleyen taslak değişikliğiniz silinecek ve form kaydın şimdiki hâline dönecek. Bu işlem geri alınamaz.",
+      staleMessage: "Kaydı başka biri {{time}} tarihinde güncelledi. Kaydederseniz aşağıdaki değerlerin üzerine yazarsınız.",
+      staleUnknownFields: "Hangi alanların değiştiği bilinmiyor; kaydetmeden önce karşılaştırın.",
+      staleSaveHint: "Kaydetmek serbest — ancak önce \"Karşılaştır\" ile neyin değiştiğine bakın.",
+    },
   },
 
   // İşlem takip ekranları

@@ -14,11 +14,19 @@ import { toUpperCase } from '../../utils/textUtils';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useRecordDraft } from '../../hooks/useRecordDraft';
-import { useExistingPendingDraft } from '../../hooks/usePendingDrafts';
+import { useEditDraftPrefill } from '../../hooks/useEditDraftPrefill';
 import { DRAFT_MODULES } from '../../api/draftService';
-import { buildDraftLabel } from '../../utils/drafts';
+import { buildDraftLabel, draftText, isConcurrentUpdate } from '../../utils/drafts';
 import SaveDraftButton from '../drafts/SaveDraftButton';
-import { createCargoFormData, buildCargoUpdatePayload } from './cargoDraftFields';
+import EditDraftBanner from '../drafts/EditDraftBanner';
+import {
+  createCargoFormData,
+  buildCargoUpdatePayload,
+  cargoPayloadToFormData,
+  cargoDraftFields,
+  cargoRecordToFields,
+  cargoPayloadToFields,
+} from './cargoDraftFields';
 
 export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
@@ -456,6 +464,10 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
         discardDraft();
         showSuccess(t('cargoTracking.form.updateSuccess'));
         onSuccess();
+      } else if (isConcurrentUpdate(result)) {
+        // Kayıt tam bu sırada değişti: taslak durur, bant uyarıya döner, kullanıcı karşılaştırıp yeniden kaydeder.
+        draftPrefill.reportConflict();
+        showError(t('drafts.pending.concurrentUpdate'));
       } else {
         handleApiResponse(result, null, (err) => showError(err), 'cargo update');
       }
@@ -506,7 +518,36 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
       ], DRAFT_MODULES.CARGO),
     }),
   });
-  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.CARGO, cargo.id, setExistingDraft);
+
+  // Taslağın form görüntüsü. G-Radar önizlemesi ve takip kimliği taslağa hiç girmediği için (aşama 2 kararı)
+  // burada da geri yüklenmez: `createCargoFormData` bu alanları taşımaz, `mergeDraftFields` yalnızca bilinen
+  // anahtarları alır.
+  const applyDraftPayload = (payload) => {
+    setFormData(cargoPayloadToFormData(payload, cargo));
+    setClientSearchTerm(draftText(payload, 'clientSearchTerm', cargo.clientCompany?.name || ''));
+    setSenderSearchTerm(draftText(payload, 'senderSearchTerm', cargo.senderCompany || ''));
+    setCarrierSearchTerm(draftText(payload, 'carrierSearchTerm', cargo.carrierName || ''));
+  };
+
+  // "Orijinali yükle" ve "Taslağı sil": form kaydın açılıştaki hâline döner.
+  const resetFormToRecord = () => {
+    setFormData(baseFormData);
+    setClientSearchTerm(cargo.clientCompany?.name || '');
+    setSenderSearchTerm(cargo.senderCompany || '');
+    setCarrierSearchTerm(cargo.carrierName || '');
+    setSelectedClientInfo(cargo.clientCompany || null);
+  };
+
+  const draftPrefill = useEditDraftPrefill({
+    enabled: draftsEnabled && !isReadOnly,
+    module: DRAFT_MODULES.CARGO,
+    targetId: cargo.id,
+    onDraftFound: setExistingDraft,
+    applyPayload: applyDraftPayload,
+    resetToRecord: resetFormToRecord,
+    discardDraft,
+  });
+  const draftCompareFields = useMemo(() => cargoDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -548,6 +589,19 @@ export default function EditCargoModal({ cargo, onClose, onSuccess, isReadOnly, 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-background-dark transition-colors duration-300">
+          {/* Kendi bekleyen taslağınız formda (DRAFTS) */}
+          {draftPrefill.active && (
+            <EditDraftBanner
+              prefill={draftPrefill}
+              module={DRAFT_MODULES.CARGO}
+              record={cargo}
+              fields={draftCompareFields}
+              recordToFields={cargoRecordToFields}
+              payloadToFields={cargoPayloadToFields}
+              className="mb-4"
+            />
+          )}
+
           {/* G-Radar request status banner */}
           <GRadarRequestBanner
             latest={latestRequest}

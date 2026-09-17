@@ -13,10 +13,18 @@ import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useRecordDraft } from '../../hooks/useRecordDraft';
 import { DRAFT_MODULES } from '../../api/draftService';
-import { buildDraftLabel } from '../../utils/drafts';
+import { buildDraftLabel, draftText, isConcurrentUpdate } from '../../utils/drafts';
 import SaveDraftButton from '../drafts/SaveDraftButton';
-import { useExistingPendingDraft } from '../../hooks/usePendingDrafts';
-import { createTransactionFormData, buildTransactionUpdatePayload } from './transactionDraftFields';
+import EditDraftBanner from '../drafts/EditDraftBanner';
+import { useEditDraftPrefill } from '../../hooks/useEditDraftPrefill';
+import {
+  createTransactionFormData,
+  buildTransactionUpdatePayload,
+  transactionPayloadToFormData,
+  transactionDraftFields,
+  transactionRecordToFields,
+  transactionPayloadToFields,
+} from './transactionDraftFields';
 
 // Yalnızca zorunluluk kontrolünün yazdığı alan hataları. Kaydette yeniden hesaplanır; önceki kayıt denemesinden kalan
 // hâli taşınmaz (alan "yeni ekle" gibi hatayı temizlemeyen bir yoldan doldurulmuş olabilir).
@@ -1063,6 +1071,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         discardDraft();
         showSuccess(t("transactions.form.updateSuccess"));
         onSuccess();
+      } else if (isConcurrentUpdate(result)) {
+        // Kayıt tam bu sırada değişti: taslak durur, bant uyarıya döner, kullanıcı karşılaştırıp yeniden kaydeder.
+        draftPrefill.reportConflict();
+        setError(t("drafts.pending.concurrentUpdate"));
+        showError(t("drafts.pending.concurrentUpdate"));
       } else {
         handleApiResponse(result, null, setError, "İşlem güncelleme");
       }
@@ -1144,7 +1157,64 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       ], DRAFT_MODULES.TRANSACTION),
     }),
   });
-  useExistingPendingDraft(draftsEnabled, DRAFT_MODULES.TRANSACTION, transaction.id, setExistingDraft);
+
+  // Taslağın form görüntüsü: aynı alanlar kaydederken de kullanılıyor, böylece yüklenen ile kaydedilen ayrışamaz.
+  const applyDraftPayload = (payload) => {
+    const draftForm = transactionPayloadToFormData(payload, transaction);
+    // Broker taslakta değiştiyse "broker değişti → müşteriyi temizle" etkisi taslağın müşterisini silmesin:
+    // önceki broker'ı taslağınki sayıp müşteri listesini elle yükleriz.
+    const brokerChanged = String(previousBrokerIdRef.current || "") !== String(draftForm.brokerCompanyId || "");
+    previousBrokerIdRef.current = draftForm.brokerCompanyId;
+    if (brokerChanged && isSuperAdmin && draftForm.brokerCompanyId) loadClientCompanies(draftForm.brokerCompanyId);
+    setFormData(draftForm);
+    setBrokerSearchTerm(draftText(payload, "brokerSearchTerm", transaction.brokerCompany?.name || ""));
+    setClientSearchTerm(draftText(payload, "clientSearchTerm", transaction.clientCompany?.name || ""));
+    setCustomsSearchTerm(draftText(payload, "customsSearchTerm", transaction.customs?.customsShortName || ""));
+    setSelectedCustomsId(draftForm.customsId || null);
+    setSenderSearchTerm(draftText(payload, "senderSearchTerm", transaction.senderName || ""));
+    setWarehouseSearchTerm(draftText(payload, "warehouseSearchTerm", transaction.customsWarehouse || ""));
+    // Sayı alanının görüntü metni seçili dilde yeniden biçimlenir; ayrıştırılamamış giriş taslaktaki gibi kalır.
+    const display = (value, key) => (value !== "" && value != null
+      ? formatNumber(value, 2)
+      : draftText(payload, key));
+    setDisplayWeight(display(draftForm.weight, "displayWeight"));
+    setDisplayTax(display(draftForm.tax, "displayTax"));
+    setDisplayGuaranteeAmount(display(draftForm.guaranteeAmount, "displayGuaranteeAmount"));
+    setFieldErrors({});
+    setError("");
+  };
+
+  // "Orijinali yükle" ve "Taslağı sil": form kaydın açılıştaki hâline döner.
+  const resetFormToRecord = () => {
+    previousBrokerIdRef.current = baseFormData.brokerCompanyId;
+    setFormData(baseFormData);
+    setBrokerSearchTerm(transaction.brokerCompany?.name || "");
+    setClientSearchTerm(transaction.clientCompany?.name || "");
+    setCustomsSearchTerm(transaction.customs?.customsShortName || "");
+    setSelectedCustomsId(transaction.customs?.id || null);
+    setSenderSearchTerm(transaction.senderName || "");
+    setWarehouseSearchTerm(transaction.customsWarehouse || "");
+    // Modal açılırkenki görüntünün aynısı (vergi ve teminatta 4 ondalığa kadar)
+    const openingNumber = (value, max) => (value
+      ? value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: max })
+      : "");
+    setDisplayWeight(openingNumber(transaction.weight, 2));
+    setDisplayTax(openingNumber(transaction.tax, 4));
+    setDisplayGuaranteeAmount(openingNumber(transaction.guaranteeAmount, 4));
+    setFieldErrors({});
+    setError("");
+  };
+
+  const draftPrefill = useEditDraftPrefill({
+    enabled: draftsEnabled && !isReadOnly,
+    module: DRAFT_MODULES.TRANSACTION,
+    targetId: transaction.id,
+    onDraftFound: setExistingDraft,
+    applyPayload: applyDraftPayload,
+    resetToRecord: resetFormToRecord,
+    discardDraft,
+  });
+  const draftCompareFields = useMemo(() => transactionDraftFields(), []);
 
   const { requestClose, isDirty } = useUnsavedChangesGuard({
     values: unsavedValues,
@@ -1160,9 +1230,9 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   // Keyboard shortcuts: ESC to close (through the guard), CTRL+S to save
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // ESC to close modal
+      // ESC to close modal — üstte taslak karşılaştırması açıksa ESC onundur
       if (e.key === 'Escape') {
-        requestClose();
+        if (!draftPrefill.compareOpen) requestClose();
         return;
       }
 
@@ -1179,7 +1249,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [loading, isReadOnly, requestClose]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, isReadOnly, requestClose, draftPrefill.compareOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
@@ -1211,6 +1281,19 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+            {/* Kendi bekleyen taslağınız formda (DRAFTS) */}
+            {draftPrefill.active && (
+              <EditDraftBanner
+                prefill={draftPrefill}
+                module={DRAFT_MODULES.TRANSACTION}
+                record={transaction}
+                fields={draftCompareFields}
+                recordToFields={transactionRecordToFields}
+                payloadToFields={transactionPayloadToFields}
+                className="mb-6"
+              />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
               {/* Firma Bilgileri - Admin için düzenlenebilir, diğerleri için read-only */}

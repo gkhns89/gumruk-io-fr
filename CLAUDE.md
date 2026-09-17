@@ -199,8 +199,7 @@ Pages combine it with role checks — the established pattern is
 - **Pending changes on an existing record** (`DRAFTS`, phase 3): the three Edit modals pass `targetId` (the
   record's id) and `baseUpdatedAt` (its `updatedAt` when the modal opened) to `useRecordDraft`, and their
   snapshot carries a `base` block — the record as the modal found it — so a conflict can name the fields that
-  moved underneath. They never restore a draft into the form; `useExistingPendingDraft` (`src/hooks/usePendingDrafts.js`)
-  finds the user's own open draft for that record so a second save updates it instead of opening a second draft.
+  moved underneath.
   **Each module owns one file** — `transactionDraftFields.js`, `warehouseDraftFields.js`, `cargoDraftFields.js` next to
   its modal — holding `create*FormData(record)`, `build*UpdatePayload(formData, …)`, the comparison field list
   (`key`, `label` — the same `t()` key the form's label uses — and an optional `format`) and the
@@ -212,6 +211,19 @@ Pages combine it with role checks — the established pattern is
   match; id-bearing fields are wrapped in `idValue(id, name)` so they compare by id and display by name).
   `target.stale` from the server means the record changed after the draft: the modal shows the conflicting fields,
   marks the ones the draft would overwrite and keeps "Uygula" locked until the user ticks the acknowledgement.
+- **The Edit modal opens on your own draft** (`DRAFTS`, phase 4): `useEditDraftPrefill` (`src/hooks/`) finds the
+  user's **own** pending draft for that record (`mine !== false` — someone else's never prefills), loads the payload
+  into the form with the module's `*PayloadToFormData` and hands the draft id to `useRecordDraft` so saving a draft
+  again updates the same one. Each Edit modal supplies two imperative functions: `applyDraftPayload(payload)` (form
+  state, search texts, selected ids, display numbers re-formatted in the current locale — dropdowns are never
+  opened) and `resetFormToRecord()`. `EditDraftBanner` sits at the top of the form: calm by default with "Orijinali
+  yükle" / "Karşılaştır" / "Taslağı sil"; when `target.stale` it turns red, names the fields the other user changed
+  and pushes "Karşılaştır" forward — saving stays allowed, it is the user's deliberate overwrite. "Karşılaştır"
+  reuses `PendingChangeModal` with `readOnly` (no apply/delete there: saving the form is the apply). A successful
+  update calls `discardDraft()`, which deletes the draft and drops the badge; a 409 `CONCURRENT_UPDATE`
+  (`isConcurrentUpdate()` in `utils/drafts.js`, on the `status`/`code` the update services now pass through) keeps
+  the draft and flips the banner to the warning. The row badge and "İncele" stay as they were, and they remain the
+  only way a BROKER_ADMIN reviews someone else's draft.
 - **Passwords typed for someone else** (add employee, set password, client account): the password
   inputs carry `autoComplete="new-password"` and the e-mail input `type="email"` + `autoComplete="off"`.
   Without them the browser treats the form as a sign-in and fills in the admin's own saved password,

@@ -161,9 +161,12 @@ export const cargoService = {
       };
     } catch (error) {
       logError('CargoService - updateCargo', error);
+      // `status`/`code` çağıranların çakışmayı (409 CONCURRENT_UPDATE) ayırt etmesi için taşınır.
       return {
         success: false,
         error: getApiErrorMessage(error, t('api.cargo.updateError')),
+        status: error.response?.status,
+        code: error.response?.data?.code,
       };
     }
   },

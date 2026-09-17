@@ -729,6 +729,24 @@ export const en = {
       targetGoneTitle: "The record was deleted",
       targetGoneMessage: "The record this draft belongs to is gone. The draft can't be applied; you can delete it.",
     },
+
+    // The banner at the top of an edit modal: the form opened with your own pending draft
+    editBanner: {
+      loaded: "Your pending draft changes are loaded · {{time}}",
+      hint: "The form holds your draft, not the stored record. Saving applies the draft and deletes it.",
+      originalLoaded: "The record's original values are loaded",
+      originalHint: "Your draft is still there; you can load it again or delete it whenever you like.",
+      loadOriginal: "Load the original",
+      loadDraft: "Load the draft",
+      compare: "Compare",
+      compareHint: "This window is for comparison only; save the form to apply the draft.",
+      delete: "Delete the draft",
+      deleteTitle: "Delete the draft",
+      deleteMessage: "Your pending draft change will be deleted and the form will return to the record as it is now. This can't be undone.",
+      staleMessage: "Someone else updated the record on {{time}}. Saving will overwrite the values below.",
+      staleUnknownFields: "It isn't known which fields changed; compare before you save.",
+      staleSaveHint: "You may still save — but look at what changed with \"Compare\" first.",
+    },
   },
 
   // Transaction tracking screens
