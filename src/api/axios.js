@@ -1,5 +1,6 @@
 import axios from "axios";
 import { t } from "../locales/runtime";
+import { isPublicPath, redirectToLogin } from "../utils/sessionRedirect";
 
 let bffUrl = "";
 
@@ -61,6 +62,8 @@ const axiosInstance = axios.create({
 // Logout flag - birden fazla 401'de sadece bir kere logout olsun
 let isLoggingOut = false;
 let isRedirecting = false;
+// Bu sayfa en az bir isteği oturumla gönderdi mi: anahtar sonradan kaybolduysa (ör. başka sekmede çıkış) oturum bitmiştir
+let hadSession = false;
 
 // Request interceptor - Token ekleme ve kontrol
 axiosInstance.interceptors.request.use(
@@ -88,6 +91,10 @@ axiosInstance.interceptors.request.use(
     if (!isPublicEndpoint && !token) {
       // Token yok ve protected endpoint - isteği iptal et
       console.warn("⚠️ Token bulunamadı, API isteği iptal edildi:", config.url);
+      // Oturumla açılmış sayfada anahtar kaybolduysa her ekran sessizce hata vermesin: bir kez uyar, girişe gönder
+      if (hadSession && !isPublicPath()) {
+        redirectToLogin(t("api.auth.signedOutElsewhere"));
+      }
       return Promise.reject({
         config,
         message: "No authentication token",
@@ -97,6 +104,7 @@ axiosInstance.interceptors.request.use(
     }
 
     if (token) {
+      hadSession = true;
       config.headers.Authorization = `Bearer ${token}`;
     }
 

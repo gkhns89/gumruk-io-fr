@@ -2075,6 +2075,7 @@ export const tr = {
       sessionInvalidated: "Başka bir cihazdan giriş yapıldı. Oturumunuz sonlandırıldı.",
       sessionExpired: "Oturumunuz süresi doldu. Lütfen tekrar giriş yapın.",
       sessionTimedOut: "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
+      signedOutElsewhere: "Oturumunuz başka bir sekmede ya da pencerede kapatıldı. Lütfen tekrar giriş yapın.",
     },
     agreement: {
       checkError: "Anlaşma kontrolü yapılamadı",

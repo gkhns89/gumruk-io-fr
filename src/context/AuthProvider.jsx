@@ -3,6 +3,7 @@ import { AuthContext } from './authContext';
 import { authService } from '../api/authService';
 import { userService } from '../api/userService';
 import { tokenManager } from '../utils/tokenManager';
+import { isPublicPath, redirectToLogin } from '../utils/sessionRedirect';
 import { logError } from '../utils/errorUtils';
 import { showWarning } from '../utils/toastUtils';
 import { fetchAuthedImageDataUrl, saveLoginProfile } from '../utils/imageUtils';
@@ -116,6 +117,35 @@ export default function AuthProvider({ children }) {
       }
     };
   }, [startTokenCheck, handleTokenExpired]);
+
+  // Başka sekmede çıkış ya da yeniden giriş: localStorage sekmeler arasında ortak, bu sekme eski oturumla kalıp her
+  // ekranda hata vermesin. storage olayı yalnızca değişikliği yapmayan sekmelerde tetiklenir.
+  useEffect(() => {
+    const onStorage = (event) => {
+      // key null: localStorage.clear()
+      if (event.key !== 'token' && event.key !== null) return;
+
+      if (!tokenManager.getToken()) {
+        if (tokenCheckIntervalRef.current) {
+          clearInterval(tokenCheckIntervalRef.current);
+        }
+        setUser(null);
+        setIsAuthenticated(false);
+        if (!isPublicPath()) {
+          redirectToLogin(t('api.auth.signedOutElsewhere'));
+        }
+        return;
+      }
+
+      if (event.key === 'token' && event.oldValue !== event.newValue) {
+        // Başka sekmede yeniden giriş (belki başka hesapla): kullanıcı ve yetkiler yeni oturumdan okunsun
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const login = async (email, password, rememberMe = false) => {
     const result = await authService.login(email, password, rememberMe);
