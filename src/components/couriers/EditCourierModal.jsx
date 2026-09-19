@@ -13,12 +13,13 @@ import { t, getCurrentLocale } from '../../locales';
 import NewFeatureBadge from '../common/NewFeatureBadge';
 import BatchAddScheduleModal from './BatchAddScheduleModal';
 import InHouseDispatchFields from './InHouseDispatchFields';
+import CourierVehiclesTab from './CourierVehiclesTab';
 
 // Durak adı: yeni kayıtlar stopName taşır; eski yanıtlarda yalnızca customs vardır.
 const stopNameOf = (schedule) => schedule.stopName || schedule.customs?.customsShortName || '';
 
 export default function EditCourierModal({ onClose, courier, onSuccess, brokerCompanyId }) {
-  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'schedules'
+  const [activeTab, setActiveTab] = useState('info'); // 'info' | 'schedules' | 'vehicles'
   const [showBatchModal, setShowBatchModal] = useState(false);
 
   // Müşteri firması durağı — FEATURE_FLAGS.COURIER_CLIENT_STOPS (backend de ayrıca kontrol ediyor)
@@ -34,6 +35,11 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
   const isInHouse = isInHouseCourier(courier);
   const courierTypeOption = getCourierType(isInHouse ? 'IN_HOUSE' : 'EXTERNAL');
   const showTypeBadge = isInHouse || clientStopsEnabled;
+
+  // Araçlar sekmesi yalnızca firma içi kayıtta ve canlı takip bayrağı açıkken (backend de kontrol ediyor)
+  const liveTrackingEnabled = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
+  const showVehiclesTab = isInHouse && liveTrackingEnabled;
+  const liveTrackingPilot = isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
 
   // Courier Info Form
   const [formData, setFormData] = useState({
@@ -341,6 +347,22 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
+          {showVehiclesTab && (
+            <button
+              onClick={() => setActiveTab('vehicles')}
+              className={`flex items-center gap-1.5 px-4 py-3 font-medium text-sm transition-colors relative ${
+                activeTab === 'vehicles'
+                  ? 'text-primary'
+                  : 'text-text-secondary hover:text-text-main'
+              }`}
+            >
+              {t('couriers.vehicles.tab')}
+              {liveTrackingPilot && <NewFeatureBadge />}
+              {activeTab === 'vehicles' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Modal Body */}
@@ -464,6 +486,8 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
                 />
               </div>
             </form>
+          ) : activeTab === 'vehicles' ? (
+            <CourierVehiclesTab courierId={courier.id} brokerCompanyId={brokerCompanyId} />
           ) : (
             <div className="space-y-6">
               {/* Add New Schedule Form */}
