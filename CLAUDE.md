@@ -324,6 +324,29 @@ mitigation shipped is `lang="tr" translate="no"` + `<meta name="google" content=
 in `index.html`. Don't remove those. `docs/icon-translation-immunity-plan.md` describes the
 unshipped codepoint-based fix (~840 usages across 86 files).
 
+### Courier live tracking (phase 1)
+
+Everything here is behind `FEATURE_FLAGS.COURIER_LIVE_TRACKING`; the backend checks the flag too, so the
+UI only decides what to reveal. Phase 1 covers vehicles, client delivery points and the shipment's choice
+of both — **no map, no live position, no approach notifications yet.**
+
+Three services, split the way the backend is: `courierVehicleService.js` (a courier record's vehicles),
+`companyLocationService.js` (a client's delivery points), `vehicleTrackingService.js` (the provider
+connection and the plate-matching list). Where the UI lives:
+
+- `components/couriers/CourierVehiclesTab.jsx` — a third tab in `EditCourierModal`, shown only for an
+  in-house courier record. Vehicles are deactivated, never deleted.
+- `components/couriers/ClientLocationsSection.jsx` — at the bottom of `ViewClientModal`.
+- `components/courierShipments/ShipmentFormModal.jsx` — the vehicle picker (in-house couriers only) and the
+  destination picker, both optional. Changing the courier or the client clears the matching choice, but a
+  first render must not: the pickers keep the value the record came with until the user really changes it.
+- `components/settings/CourierTrackingCard.jsx` — the token (write-only; the API answers `tokenSet`), the
+  on/off state, a connection test and the two approach thresholds. The thresholds are stored in the company
+  work settings, so saving them sends the current work settings back unchanged alongside.
+
+When the provider runs in stub mode (`liveMode: false`, the default until a real Mobiliz token exists) the
+vehicle list and positions are samples — the card and the vehicles tab both say so, and should keep saying so.
+
 ### G-Radar (cargo tracking)
 
 The live sea/air tracking integration, formerly branded ShipsGo — the name was scrubbed
