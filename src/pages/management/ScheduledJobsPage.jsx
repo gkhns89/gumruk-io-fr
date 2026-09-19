@@ -42,13 +42,23 @@ const OUTCOME_CLASS = {
 
 const NEVER_RAN_CLASS = 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
 
-/** Bilinmeyen bir iş adı yanlış etiketlenmesin: teknik adı olduğu gibi gösterilir. */
+/**
+ * Bilinmeyen bir iş adı yanlış etiketlenmesin: teknik adına düşer (yeni eklenmiş, sözlüğe yazılmamış iş).
+ * Bu durumda bile sağlayıcı adı ekrana çıkmaz — sınıf adlarındaki ShipsGo dış adıyla değiştirilir.
+ */
 const jobLabel = (jobName) => {
   const key = JOB_LABEL_KEYS[jobName];
-  return key ? t(`scheduledJobs.jobs.${key}`) : jobName;
+  return key ? t(`scheduledJobs.jobs.${key}`) : String(jobName || '').replace(/ShipsGo/g, 'GRadar');
 };
 
-const formatDateTime = (value) => (value ? new Date(value).toLocaleString(getCurrentLocale()) : '—');
+// Sunucu UTC LocalDateTime gönderiyor ("2026-09-19T06:15:00"), yani dilim eki yok: eklemezsek tarayıcı bunu
+// yerel saat sanar ve tüm zamanlar 3 saat kayar.
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const hasZone = /(Z|[+-]\d{2}:?\d{2})$/.test(value);
+  const date = new Date(hasZone ? value : `${value}Z`);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(getCurrentLocale());
+};
 
 /** Aralığı okunur hâle getirir: 180 sn → "3 dk", 86400 → "1 gün". */
 const formatInterval = (seconds) => {
@@ -102,9 +112,13 @@ function JobName({ job }) {
   return (
     <div className="min-w-0">
       <p className="font-medium text-text-main">{jobLabel(job.jobName)}</p>
-      <p className="text-xs font-mono text-text-secondary truncate" title={job.schedule || job.jobName}>
-        {job.jobName}
-      </p>
+      {/* Teknik ad ekrana yazılmaz: sağlayıcı adı (ShipsGo) sınıf adlarında geçiyor ve hiçbir görünen
+          yüzeyde olmamalı. Yerine planın kendisi gösterilir; bilinmeyen işin adını jobLabel zaten yazar. */}
+      {job.schedule && (
+        <p className="text-xs font-mono text-text-secondary truncate" title={job.schedule}>
+          {job.schedule}
+        </p>
+      )}
       {interval && <p className="text-xs text-text-secondary mt-0.5">{t('scheduledJobs.interval')}: {interval}</p>}
     </div>
   );
