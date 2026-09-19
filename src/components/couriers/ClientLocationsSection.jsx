@@ -28,6 +28,7 @@ export default function ClientLocationsSection({ clientId, canManage = false }) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
@@ -45,6 +46,10 @@ export default function ClientLocationsSection({ clientId, canManage = false }) 
   useEffect(() => { loadLocations(); }, [loadLocations]);
 
   const setField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
+
+  // Pasif noktalar varsayılan olarak gizlenir; gönderi formunda da zaten seçilemiyorlar
+  const inactiveCount = locations.filter((location) => !location.active).length;
+  const visibleLocations = showInactive ? locations : locations.filter((location) => location.active);
 
   const closeForm = () => {
     setShowForm(false);
@@ -228,13 +233,25 @@ export default function ClientLocationsSection({ clientId, canManage = false }) 
         </form>
       )}
 
+      {inactiveCount > 0 && (
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
+          />
+          {t('clients.locations.showInactive', { count: inactiveCount })}
+        </label>
+      )}
+
       {loading ? (
         <p className="text-sm text-text-secondary">{t('common.loading')}</p>
-      ) : locations.length === 0 ? (
+      ) : visibleLocations.length === 0 ? (
         <p className="text-sm text-text-secondary">{t('clients.locations.empty')}</p>
       ) : (
         <ul className="space-y-2">
-          {locations.map((location) => (
+          {visibleLocations.map((location) => (
             <li
               key={location.id}
               className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3 ${
