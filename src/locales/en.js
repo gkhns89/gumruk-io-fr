@@ -592,6 +592,14 @@ export const en = {
     passwordPlaceholder: "Enter your password",
     rememberMe: "Remember Me",
     forgotPassword: "Forgot Password?",
+    // Self-servis sıfırlama yok: ürün e-posta göndermiyor, şifreyi yönetici panelden belirliyor.
+    forgotPasswordTitle: "We do not send password reset e-mails",
+    forgotPasswordStaff:
+      "Your company's Gümrük.io administrator can set a new password from the panel. Ask them: the moment it is set your open sessions end and you sign in with the new password.",
+    forgotPasswordClient:
+      "If you are a client user, ask the administrator at the customs brokerage you work with.",
+    forgotPasswordAdmin: "If you are the company administrator, write to us:",
+    forgotPasswordClose: "Close",
     submitting: "Signing in...",
     submit: "Sign In",
     noAccount: "Don't have an account?",
