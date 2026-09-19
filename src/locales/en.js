@@ -322,6 +322,8 @@ export const en = {
     addonDebit: { label: "Add-on Charge", short: "Add-on" },
     periodDebit: { label: "Period Charge", short: "Period" },
     gRadarCreditPurchase: { label: "G-Radar Credits", short: "G-Radar" },
+    // Shown instead of a raw constant when a type is not in the list
+    unknown: { label: "Other movement", short: "Other" },
   },
 
   // Currencies

@@ -7,7 +7,7 @@ import { configService } from '../../api/configService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
 import { showSuccess, showError } from '../../utils/toastUtils';
-import { getBalanceTransactionType } from '../../utils/constants';
+import { getBalanceTransactionType, getBalanceTransactionLabel } from '../../utils/constants';
 import { t, getCurrentLocale } from '../../locales';
 
 const STATUS_BADGE = {
@@ -818,9 +818,9 @@ export default function PaymentSubmitPage() {
                           {balanceHistory.map(tx => {
                             const txType = getBalanceTransactionType(tx.transactionType);
                             const isCredit = txType?.isCredit ?? false;
-                            // Tanınmayan tür gelirse ham değeri göster — yanlış
-                            // bir etiketle göstermektense okunmamış görünsün.
-                            const typeLabel = txType?.label ?? tx.transactionType;
+                            // Ham sabit hiçbir zaman ekrana yazılmaz; tanınmayan
+                            // tür genel bir etiketle gösterilir.
+                            const typeLabel = getBalanceTransactionLabel(tx.transactionType);
                             const amountColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                             return (
                               <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -828,7 +828,7 @@ export default function PaymentSubmitPage() {
                                   {new Date(tx.createdAt).toLocaleString(getCurrentLocale(), { dateStyle: 'short', timeStyle: 'short' })}
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className={`font-medium text-xs ${amountColor}`}>{typeLabel}</span>
+                                  <span className={`font-medium text-xs ${amountColor}`} title={tx.transactionType}>{typeLabel}</span>
                                 </td>
                                 <td className="px-4 py-3 text-text-secondary text-xs max-w-xs truncate">{tx.description ?? '—'}</td>
                                 <td className={`px-4 py-3 text-right font-semibold ${amountColor}`}>

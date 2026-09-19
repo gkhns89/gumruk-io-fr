@@ -15,7 +15,7 @@ import {
   isValidGRadarPriceInput,
   parseGRadarPriceInput,
 } from '../../utils/gRadarPlanPrice';
-import { getBalanceTransactionType } from '../../utils/constants';
+import { getBalanceTransactionType, getBalanceTransactionLabel } from '../../utils/constants';
 import { t, getCurrentLocale } from '../../locales';
 import { useAuth } from '../../hooks/useAuth';
 import CreateBrokerCompanyModal from '../../components/management/CreateBrokerCompanyModal';
@@ -1013,14 +1013,14 @@ export default function BrokerSubscriptionsPage() {
                                     {balanceHistory[broker.brokerId].map(tx => {
                                       const txType = getBalanceTransactionType(tx.transactionType);
                                       const isCredit = txType?.isCredit ?? false;
-                                      // Dar sütun — kısa etiket. Tanınmayan tür
-                                      // gelirse ham değer gösterilir.
-                                      const typeLabel = txType?.shortLabel ?? tx.transactionType;
+                                      // Dar sütun — kısa etiket. Ham sabit
+                                      // ekrana yazılmaz, genel etiket gösterilir.
+                                      const typeLabel = getBalanceTransactionLabel(tx.transactionType, { short: true });
                                       const typeColor = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                                       return (
                                         <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                           <td className="px-3 py-2 text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString(getCurrentLocale(), { dateStyle: 'short', timeStyle: 'short' })}</td>
-                                          <td className="px-3 py-2"><span className={`font-medium ${typeColor}`}>{typeLabel}</span></td>
+                                          <td className="px-3 py-2"><span className={`font-medium ${typeColor}`} title={tx.transactionType}>{typeLabel}</span></td>
                                           <td className="px-3 py-2 text-text-secondary max-w-xs truncate">{tx.description ?? '—'}</td>
                                           <td className="px-3 py-2 text-text-secondary">{tx.createdBy}</td>
                                           <td className={`px-3 py-2 text-right font-semibold ${typeColor}`}>

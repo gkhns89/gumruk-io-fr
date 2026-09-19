@@ -332,8 +332,8 @@ export const getDocumentDeliveryType = (value) => {
  * başındaki + işaretini bu belirliyor.
  *
  * Not: G-Radar kredisi satın alma, backend'de enum sabiti olarak hâlâ
- * SHIPSGO_CREDIT_PURCHASE; dışarıya @JsonProperty ile GRADAR_CREDIT_PURCHASE
- * adıyla çıkıyor. Buradaki `value` dış addır.
+ * SHIPSGO_CREDIT_PURCHASE; dışarıya BalanceTransactionType.externalName() ile
+ * GRADAR_CREDIT_PURCHASE adıyla çıkıyor. Buradaki `value` dış addır.
  */
 const balanceType = (value, labelKey, isCredit) => ({
   value,
@@ -353,8 +353,9 @@ export const BALANCE_TRANSACTION_TYPES = [
 /**
  * Bakiye hareketi türünü değere göre bul.
  *
- * Tanınmayan bir tür gelirse null döner — çağıran tarafın ham değeri
- * göstermesi, onu var olan bir türmüş gibi etiketlemesinden iyidir.
+ * Tanınmayan bir tür gelirse null döner — çağıran tarafın etiketi
+ * `getBalanceTransactionLabel()` ile üretmesi beklenir; onu var olan bir
+ * türmüş gibi etiketlemek yanlış bilgi olur.
  * (Eskiden burada iç içe ternary'nin son dalı catch-all'du ve listede olmayan
  * her tür "Dönem Ödemesi" diye etiketleniyordu.)
  *
@@ -363,6 +364,23 @@ export const BALANCE_TRANSACTION_TYPES = [
  */
 export const getBalanceTransactionType = (value) => {
   return BALANCE_TRANSACTION_TYPES.find((type) => type.value === value) || null;
+};
+
+/**
+ * Bakiye hareketi türünün ekranda gösterilecek etiketi.
+ *
+ * Ham sabit (ADDON_DEBIT, GRADAR_CREDIT_PURCHASE...) asla ekrana yazılmaz:
+ * tanınmayan tür genel bir etiketle ("Diğer hareket") gösterilir, açıklama
+ * sütunu zaten ne olduğunu anlatır. Ham değer yalnızca title'da kalır.
+ *
+ * @param {string} value - Transaction type değeri
+ * @param {{ short?: boolean }} [options] - Dar sütunlar için kısa etiket
+ * @returns {string} Gösterilecek etiket
+ */
+export const getBalanceTransactionLabel = (value, { short = false } = {}) => {
+  const type = getBalanceTransactionType(value);
+  if (!type) return t(short ? 'balanceTransaction.unknown.short' : 'balanceTransaction.unknown.label');
+  return short ? type.shortLabel : type.label;
 };
 
 /**

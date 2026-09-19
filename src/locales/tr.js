@@ -322,6 +322,8 @@ export const tr = {
     addonDebit: { label: "Ek Ödeme", short: "Ek Ödeme" },
     periodDebit: { label: "Dönem Ödemesi", short: "Dönem" },
     gRadarCreditPurchase: { label: "G-Radar Kredisi", short: "G-Radar" },
+    // Listede olmayan bir tür gelirse: ham sabit yerine bu gösterilir
+    unknown: { label: "Diğer hareket", short: "Diğer" },
   },
 
   // Para birimleri
