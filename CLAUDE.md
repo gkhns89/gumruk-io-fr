@@ -101,6 +101,14 @@ all reads/writes plus client-side JWT decoding and expiry checks (30 s clock-ske
 `AuthProvider` re-checks validity on a 30-minute interval and force-logs-out on expiry.
 Token lifetime is a backend/env concern — the Settings page only displays it.
 
+**There is no self-service password reset, and no `/forgot-password` route to add one to.** The
+product sends no e-mail at all, so a reset link has nothing to travel on; the backend's half-built
+flow was deleted on 19.09.2026. A forgotten password is fixed by an administrator through
+`userService.setUserPassword` — `SetPasswordModal` on the employees page, `ClientAccountModal` on
+the clients page — which closes every session the target has open. The login
+page's "Şifremi Unuttum?" is a disclosure that says so, not a link — don't turn it back into one
+without a mail transport on the server first.
+
 ### API layer (`src/api/`)
 
 One `*Service.js` module per domain, all built on the shared `axiosInstance` from
@@ -152,6 +160,15 @@ Roles: `SUPER_ADMIN`, `BROKER_ADMIN`, `BROKER_USER`, `CLIENT_USER` (on `user.glo
 `src/components/layout/menuConfig.js` is the **single source of truth for the management
 menu** — `Sidebar` (desktop) and `MobileMenu` both read it, with `roles` plus an optional
 `condition(user)` predicate. Add menu entries there, not in either menu component.
+
+`/management/scheduled-jobs` (`ScheduledJobsPage`, SUPER_ADMIN) is the read-only view of the
+backend's scheduled jobs: last outcome, last run, last clean run, next expected run, record
+counts, consecutive failures and the last error summary, with troubled jobs sorted first. It
+renders `GET /api/admin/scheduled-jobs` and has no actions — there is deliberately no "run
+now". The job's technical name (`Class.method`) is never shown as a label: the page maps it to
+`scheduledJobs.jobs.*`, mirroring `ScheduledJobLabels` on the server, and falls back to the raw
+name for a job it does not know. The `stale` flag is computed server-side with the same rule as
+the SUPER_ADMIN alert, so page and notification can never disagree.
 
 Payment restriction is a second, orthogonal gate. `PaymentRestrictionProvider` polls
 `/payment-restriction/status` every 5 minutes (skipped for `SUPER_ADMIN` and `CLIENT_USER`) and
@@ -306,6 +323,29 @@ which browser translation extensions will happily translate into broken text. Th
 mitigation shipped is `lang="tr" translate="no"` + `<meta name="google" content="notranslate">`
 in `index.html`. Don't remove those. `docs/icon-translation-immunity-plan.md` describes the
 unshipped codepoint-based fix (~840 usages across 86 files).
+
+### Courier live tracking (phase 1)
+
+Everything here is behind `FEATURE_FLAGS.COURIER_LIVE_TRACKING`; the backend checks the flag too, so the
+UI only decides what to reveal. Phase 1 covers vehicles, client delivery points and the shipment's choice
+of both — **no map, no live position, no approach notifications yet.**
+
+Three services, split the way the backend is: `courierVehicleService.js` (a courier record's vehicles),
+`companyLocationService.js` (a client's delivery points), `vehicleTrackingService.js` (the provider
+connection and the plate-matching list). Where the UI lives:
+
+- `components/couriers/CourierVehiclesTab.jsx` — a third tab in `EditCourierModal`, shown only for an
+  in-house courier record. Vehicles are deactivated, never deleted.
+- `components/couriers/ClientLocationsSection.jsx` — at the bottom of `ViewClientModal`.
+- `components/courierShipments/ShipmentFormModal.jsx` — the vehicle picker (in-house couriers only) and the
+  destination picker, both optional. Changing the courier or the client clears the matching choice, but a
+  first render must not: the pickers keep the value the record came with until the user really changes it.
+- `components/settings/CourierTrackingCard.jsx` — the token (write-only; the API answers `tokenSet`), the
+  on/off state, a connection test and the two approach thresholds. The thresholds are stored in the company
+  work settings, so saving them sends the current work settings back unchanged alongside.
+
+When the provider runs in stub mode (`liveMode: false`, the default until a real Mobiliz token exists) the
+vehicle list and positions are samples — the card and the vehicles tab both say so, and should keep saying so.
 
 ### G-Radar (cargo tracking)
 
