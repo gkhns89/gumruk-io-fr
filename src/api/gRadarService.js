@@ -2,26 +2,15 @@ import axiosInstance from './axios';
 import { logError, getApiErrorMessage } from '../utils/errorUtils';
 import { t } from '../locales';
 
-// Üretimdeki backend'in (ShipsGoCargoController) 400 ile döndürdüğü sabit metnin
-// değişmeyen başı.
-const SHIPMENT_NOT_FOUND_TEXT_PREFIX = 'G-Radar bu yükün takip kaydını bulamıyor';
-
 /**
  * Refresh hatasının "yükün G-Radar takip kaydı yok" anlamına gelip gelmediğini söyler.
- * - Staging backend: HTTP 404 ya da `code === 'GRADAR_SHIPMENT_NOT_FOUND'`.
- * - Üretim backend: HTTP 400 + sabit Türkçe metin.
- *   GEÇİCİ KÖPRÜ: metin eşleşmesi yalnızca üretimdeki eski backend için; staging
- *   backend'i (404 + code) üretime çıkınca bu dal silinebilir.
+ * Backend bu durumu HTTP 404 + `code === 'GRADAR_SHIPMENT_NOT_FOUND'` ile bildirir
+ * (GlobalExceptionHandler). Metin eşleşmesi yoktur: mesaj isteğin diline göre değişir.
  */
 const isShipmentNotFoundError = (error) => {
   const status = error?.response?.status;
   const data = error?.response?.data;
-  if (status === 404 || data?.code === 'GRADAR_SHIPMENT_NOT_FOUND') return true;
-  if (status === 400) {
-    const text = [data?.message, data?.error].find((v) => typeof v === 'string') || '';
-    return text.startsWith(SHIPMENT_NOT_FOUND_TEXT_PREFIX);
-  }
-  return false;
+  return status === 404 || data?.code === 'GRADAR_SHIPMENT_NOT_FOUND';
 };
 
 /**
