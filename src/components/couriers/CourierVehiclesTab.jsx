@@ -3,6 +3,7 @@ import { courierVehicleService } from '../../api/courierVehicleService';
 import { vehicleTrackingService, isTrackingNotConfigured } from '../../api/vehicleTrackingService';
 import { COURIER_VEHICLE_TYPES, getCourierVehicleType } from '../../utils/constants';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { normalizePlate } from '../../utils/turkishPlate';
 import { showError, showInfo, showSuccess } from '../../utils/toastUtils';
 import { t } from '../../locales';
 
@@ -39,6 +40,7 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [showInactive, setShowInactive] = useState(false);
   const [providerVehicles, setProviderVehicles] = useState([]);
   const [providerAvailable, setProviderAvailable] = useState(false);
   const [liveMode, setLiveMode] = useState(true);
@@ -79,6 +81,11 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
 
   const setField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
 
+  // Pasif araçlar varsayılan olarak gizlenir; listede birikmelerinin bir anlamı yok (kullanıcı kararı)
+  const inactiveCount = vehicles.filter((vehicle) => !vehicle.active).length;
+  const visibleVehicles = showInactive ? vehicles : vehicles.filter((vehicle) => vehicle.active);
+  const platePreview = normalizePlate(form.plate);
+
   const startEdit = (vehicle) => {
     setEditingId(vehicle.id);
     setForm(formFromVehicle(vehicle));
@@ -91,12 +98,13 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.plate.trim()) {
-      showError(t('couriers.vehicles.plateRequired'));
+    const plate = normalizePlate(form.plate);
+    if (!plate.ok) {
+      showError(t(`couriers.vehicles.plateError.${plate.reason}`));
       return;
     }
     const payload = {
-      plate: form.plate.trim(),
+      plate: plate.plate,
       vehicleType: form.vehicleType,
       driverName: form.driverName.trim() || null,
       driverPhone: form.driverPhone.trim() || null,
@@ -187,11 +195,27 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
                 id="vehicle-plate"
                 type="text"
                 value={form.plate}
-                onChange={(e) => setField('plate', e.target.value.toLocaleUpperCase('tr-TR'))}
+                // Türkçe yerel ayarla büyütmek "i" harfini "İ" yapar ve plakayı bozar; plaka İngiliz alfabesindendir
+                onChange={(e) => setField('plate', e.target.value.toUpperCase())}
                 maxLength={20}
                 placeholder={t('couriers.vehicles.platePlaceholder')}
                 className={INPUT_CLASS}
               />
+              {/* Nasıl kaydedileceğini yazarken göster: kullanıcı biçimi tahmin etmek zorunda kalmasın */}
+              {!form.plate.trim() && (
+                <p className="mt-1 text-xs text-text-secondary">{t('couriers.vehicles.plateHint')}</p>
+              )}
+              {form.plate.trim() && (
+                platePreview.ok ? (
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {t('couriers.vehicles.plateWillBeSaved', { plate: platePreview.plate })}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    {t(`couriers.vehicles.plateError.${platePreview.reason}`)}
+                  </p>
+                )
+              )}
             </div>
             <div>
               <label htmlFor="vehicle-type" className={LABEL_CLASS}>{t('couriers.vehicles.type')}</label>
@@ -275,13 +299,25 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
         </form>
       )}
 
+      {inactiveCount > 0 && (
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
+          />
+          {t('couriers.vehicles.showInactive', { count: inactiveCount })}
+        </label>
+      )}
+
       {loading ? (
         <p className="text-sm text-text-secondary">{t('common.loading')}</p>
-      ) : vehicles.length === 0 ? (
+      ) : visibleVehicles.length === 0 ? (
         <p className="text-sm text-text-secondary">{t('couriers.vehicles.empty')}</p>
       ) : (
         <ul className="space-y-2">
-          {vehicles.map((vehicle) => (
+          {visibleVehicles.map((vehicle) => (
             <li
               key={vehicle.id}
               className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3 ${
