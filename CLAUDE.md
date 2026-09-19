@@ -153,6 +153,15 @@ Roles: `SUPER_ADMIN`, `BROKER_ADMIN`, `BROKER_USER`, `CLIENT_USER` (on `user.glo
 menu** — `Sidebar` (desktop) and `MobileMenu` both read it, with `roles` plus an optional
 `condition(user)` predicate. Add menu entries there, not in either menu component.
 
+`/management/scheduled-jobs` (`ScheduledJobsPage`, SUPER_ADMIN) is the read-only view of the
+backend's scheduled jobs: last outcome, last run, last clean run, next expected run, record
+counts, consecutive failures and the last error summary, with troubled jobs sorted first. It
+renders `GET /api/admin/scheduled-jobs` and has no actions — there is deliberately no "run
+now". The job's technical name (`Class.method`) is never shown as a label: the page maps it to
+`scheduledJobs.jobs.*`, mirroring `ScheduledJobLabels` on the server, and falls back to the raw
+name for a job it does not know. The `stale` flag is computed server-side with the same rule as
+the SUPER_ADMIN alert, so page and notification can never disagree.
+
 Payment restriction is a second, orthogonal gate. `PaymentRestrictionProvider` polls
 `/payment-restriction/status` every 5 minutes (skipped for `SUPER_ADMIN` and `CLIENT_USER`) and
 exposes `isWarning` / `isWriteBlocked` / `isFullReadOnly` via `usePaymentRestriction()`.
