@@ -8,8 +8,38 @@ const inputClass = 'w-full px-4 py-2.5 border border-gray-300 dark:border-gray-6
  * Firma içi sevkiyat kaydının araç ve sürücü alanları (Ekle / Düzenle modalları ortak).
  * formData: { vehicleType, vehiclePlate, driverName, contactPhone } — contactPhone sürücü telefonudur.
  * Plakanın büyük harfe çevrilmesi modalın onChange'inde yapılır.
+ *
+ * `vehiclesManagedElsewhere` (canlı takip bayrağı açık, düzenleme modalı): kaydın tek plakası artık Araçlar
+ * sekmesindeki araç listesiyle aynı şeyi anlatır. İki yerde ayrı ayrı tutulursa birbirinden kayarlar, bu yüzden
+ * araç alanları gizlenir ve kullanıcı sekmeye yönlendirilir; telefon kaydın kendi iletişim bilgisi olarak kalır.
  */
-export default function InHouseDispatchFields({ formData, onChange }) {
+export default function InHouseDispatchFields({ formData, onChange, vehiclesManagedElsewhere = false,
+  noticeKey = 'couriers.inHouse.vehiclesInTab' }) {
+  if (vehiclesManagedElsewhere) {
+    return (
+      <>
+        <p className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>directions_car</span>
+          {t(noticeKey)}
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-text-main mb-2">
+            {t('couriers.inHouse.driverPhone')}
+          </label>
+          <input
+            type="tel"
+            name="contactPhone"
+            value={formData.contactPhone}
+            onChange={onChange}
+            placeholder={t('couriers.form.phonePlaceholder')}
+            maxLength={100}
+            className={inputClass}
+          />
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

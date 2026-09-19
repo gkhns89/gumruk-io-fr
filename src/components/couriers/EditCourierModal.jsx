@@ -430,7 +430,11 @@ export default function EditCourierModal({ onClose, courier, onSuccess, brokerCo
               </div>
 
               {isInHouse ? (
-                <InHouseDispatchFields formData={formData} onChange={handleChange} />
+                <InHouseDispatchFields
+                  formData={formData}
+                  onChange={handleChange}
+                  vehiclesManagedElsewhere={showVehiclesTab}
+                />
               ) : (
                 <>
                   {/* Contact Phone */}
