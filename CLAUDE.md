@@ -101,6 +101,14 @@ all reads/writes plus client-side JWT decoding and expiry checks (30 s clock-ske
 `AuthProvider` re-checks validity on a 30-minute interval and force-logs-out on expiry.
 Token lifetime is a backend/env concern — the Settings page only displays it.
 
+**There is no self-service password reset, and no `/forgot-password` route to add one to.** The
+product sends no e-mail at all, so a reset link has nothing to travel on; the backend's half-built
+flow was deleted on 19.09.2026. A forgotten password is fixed by an administrator through
+`userService.setUserPassword` — `SetPasswordModal` on the employees page, `ClientAccountModal` on
+the clients page — which closes every session the target has open. The login
+page's "Şifremi Unuttum?" is a disclosure that says so, not a link — don't turn it back into one
+without a mail transport on the server first.
+
 ### API layer (`src/api/`)
 
 One `*Service.js` module per domain, all built on the shared `axiosInstance` from
