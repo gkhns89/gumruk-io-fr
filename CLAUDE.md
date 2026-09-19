@@ -175,6 +175,11 @@ Pages combine it with role checks — the established pattern is
 - **Confirmations**: `confirmDialog({ title, message, intent })` from
   `src/utils/confirmDialog.js` — an imperative promise-based replacement for
   `window.confirm`. Use it instead of adding another confirm modal + state triple.
+- **Anything that moves money asks first, and never reloads the page.** A checkbox or toggle
+  that spends balance (e.g. "Bakiye kullan" on an add-on) records the intent and opens a
+  `confirmDialog` naming the amount; nothing is charged until the user confirms. After a charge,
+  toast the amount and re-run the page's existing `load()` — `window.location.reload()` throws
+  the toast away before it can be read, and the user is left guessing what happened.
 - **Form modals guard unsaved changes**: add/edit modals (transactions, warehouse, cargo) call
   `useUnsavedChangesGuard({ values, onClose, enabled })` from `src/hooks/` and route the backdrop,
   X, Cancel and their document ESC handler through the returned `requestClose` — never `onClose`
@@ -258,8 +263,11 @@ Pages combine it with role checks — the established pattern is
 - **Domain enums** (statuses, gates, vehicle types, currencies, delivery types, balance
   transaction types) plus their Tailwind class bundles and `getX(value)` lookups all live
   in `src/utils/constants.js`. Add new statuses there, not inline in components. Lookups
-  return `null` for unknown values on purpose — render the raw value rather than
-  mislabelling it.
+  return `null` for unknown values on purpose — never mislabel one as a known value. But
+  **don't fall back to the raw constant on screen either**: a backend leak then shows up
+  verbatim (that is how `SHIPSGO_CREDIT_PURCHASE` appeared in Balance Movements). Give the
+  enum a `getXLabel()` that returns a translated generic label for unknown values, like
+  `getBalanceTransactionLabel()`, and keep the raw value in a `title` attribute.
 
 ### Language and i18n
 
@@ -314,7 +322,9 @@ credits) gets a dialog whose "Buy credits" button opens `/payment/submit?tab=g-r
 modal, so the form survives); everyone else gets an "ask your admin" warning without a link.
 
 Some backend enum constants still say `SHIPSGO_*` internally while serializing as
-`GRADAR_*`; `constants.js` uses the external name.
+`GRADAR_*`; `constants.js` uses the external name. When a screen shows a constant the backend
+sent, check what it renders for a value `constants.js` does not know — printing the raw value is
+how the internal name reached the Balance Movements table.
 
 **"Bilgileri Getir" (1 credit)** is not admin-only: a BROKER_USER whose G-Radar request an admin
 approved may press it too. The server decides; cargo rows (list, detail, drawer details) carry
