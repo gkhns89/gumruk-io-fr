@@ -3,7 +3,7 @@ import { courierVehicleService } from '../../api/courierVehicleService';
 import { vehicleTrackingService, isTrackingNotConfigured } from '../../api/vehicleTrackingService';
 import { COURIER_VEHICLE_TYPES, getCourierVehicleType } from '../../utils/constants';
 import { confirmDialog } from '../../utils/confirmDialog';
-import { showError, showSuccess } from '../../utils/toastUtils';
+import { showError, showInfo, showSuccess } from '../../utils/toastUtils';
 import { t } from '../../locales';
 
 const INPUT_CLASS = 'w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-text-main focus:ring-2 focus:ring-primary';
@@ -129,8 +129,16 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
       showError(result.error);
       return;
     }
-    // Gönderide kullanılmış araç silinmez, pasife alınır; kullanıcı hangisinin olduğunu bilmeli
-    showSuccess(result.data?.deleted ? t('couriers.vehicles.deleted') : t('couriers.vehicles.deactivatedInstead'));
+    // Gönderide kullanılmış araç silinmez, pasife alınır. Kaç gönderi ve hangisi olduğu yazılır: yalnızca
+    // "kullanılıyor" demek, kullanmadığını sanan kişide hata izlenimi bırakıyor.
+    if (result.data?.deleted) {
+      showSuccess(t('couriers.vehicles.deleted'));
+    } else {
+      showInfo(t('couriers.vehicles.deactivatedInstead', {
+        count: result.data?.shipmentCount ?? 0,
+        shipment: result.data?.latestShipmentId ?? '-',
+      }));
+    }
     if (editingId === vehicle.id) cancelEdit();
     loadVehicles();
   };

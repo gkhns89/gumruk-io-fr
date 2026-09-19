@@ -2023,7 +2023,7 @@ export const tr = {
       deleteTitle: "Araç silinsin mi?",
       deleteMessage: "{{plate}} plakalı araç silinecek. Araç daha önce bir gönderide kullanıldıysa silinmez, yalnızca pasife alınır ve geçmiş gönderiler korunur.",
       deleted: "Araç silindi",
-      deactivatedInstead: "Araç bir gönderide kullanıldığı için silinmedi, pasife alındı",
+      deactivatedInstead: "Araç {{count}} gönderide kullanıldığı için silinmedi, pasife alındı (en son: #{{shipment}}). Gönderi geçmişi korunuyor.",
       reactivate: "Yeniden aktif et",
       reactivated: "Araç yeniden aktif edildi",
       stubModeHint: "Araç takibi şu anda taklit modunda: araç listesi ve konumlar örnektir, gerçek cihazlardan gelmez.",
