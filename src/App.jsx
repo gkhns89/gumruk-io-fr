@@ -46,6 +46,7 @@ const AddonCatalogPage = lazy(() => import("./pages/management/AddonCatalogPage"
 const PlanManagementPage = lazy(() => import("./pages/management/PlanManagementPage"));
 const FeedbackTasksPage = lazy(() => import("./pages/management/FeedbackTasksPage"));
 const FeatureFlagsPage = lazy(() => import("./pages/management/FeatureFlagsPage"));
+const ScheduledJobsPage = lazy(() => import("./pages/management/ScheduledJobsPage"));
 
 /**
  * Ekran okuyucu etiketi. Bu ekranlar sözlükler yüklenmeden çizilebilir; runtime `t` o anda anahtarın
@@ -415,6 +416,16 @@ export default function App() {
         element={
           <ProtectedRoute requiredRole="SUPER_ADMIN">
             <FeatureFlagsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ YÖNETİM: Zamanlanmış İşler — arka plan işlerinin son durumu, salt okunur (SUPER_ADMIN) */}
+      <Route
+        path="/management/scheduled-jobs"
+        element={
+          <ProtectedRoute requiredRole="SUPER_ADMIN">
+            <ScheduledJobsPage />
           </ProtectedRoute>
         }
       />
