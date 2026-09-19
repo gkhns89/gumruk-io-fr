@@ -54,7 +54,7 @@ export default function AddonPaymentCard({ addon, balance = 0, onPay, onScrollTo
     setError(null);
 
     try {
-      const result = await onPay(addon.id, true);
+      const result = await onPay(addon, true);
 
       if (result?.status === 'INSUFFICIENT_BALANCE') {
         setError(t('addonPayment.insufficientBalance'));

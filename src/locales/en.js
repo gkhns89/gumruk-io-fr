@@ -2810,7 +2810,7 @@ export const en = {
     copy: "Copy",
     noBankAccounts: "No bank accounts are set up at the moment. Please contact the administrator.",
     addons: "Add-on Payments",
-    addonPaidWithBalance: "The add-on payment was deducted from your balance",
+    addonPaidWithBalanceDetail: "{{amount}} was deducted from your balance for \"{{name}}\".",
     form: {
       selectPlaceholder: "Select...",
       referencePlaceholder: "Bank transfer reference number",
@@ -2879,7 +2879,7 @@ export const en = {
       payFromBalanceHint: "Instant. The amount is deducted from your balance and the credits are available right away.",
       insufficientBalance: "Insufficient balance (short by {{amount}})",
       processing: "Processing...",
-      purchased: "The credits have been added to your account",
+      purchasedWithBalance: "{{credits}} G-Radar credits were added to your account; {{amount}} was deducted from your balance.",
       poolUnavailable: "G-Radar credits cannot be purchased right now. Please contact the administrator. Nothing was deducted from your balance.",
       sendTransfer: "Send Bank Transfer Notification",
       transferHint: "After making the bank transfer, submit your reference number. The credits are added to your account once an administrator approves it.",

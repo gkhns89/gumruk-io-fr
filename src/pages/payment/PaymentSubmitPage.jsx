@@ -254,11 +254,15 @@ export default function PaymentSubmitPage() {
     }, 100);
   }, []);
 
-  const handleMarkAddonPaid = async (addonId, useBalance) => {
-    const result = await paymentService.markAddonAsPaid(addonId, { useBalance });
+  // Kart addon'un kendisini veriyor: toast ne kadarın hangi ek ücret için
+  // düşüldüğünü söyleyebilsin. Başarılıysa yalnızca değişen veri tazelenir.
+  const handleMarkAddonPaid = async (addon, useBalance) => {
+    const result = await paymentService.markAddonAsPaid(addon.id, { useBalance });
     if (result?.status === 'PAID_WITH_BALANCE') {
-      showSuccess(t('paymentPage.addonPaidWithBalance'));
-      load();
+      showSuccess(t('paymentPage.addonPaidWithBalanceDetail', {
+        name: addon.name, amount: fmtMoney(addon.amount),
+      }));
+      await load();
     }
     return result;
   };
@@ -848,6 +852,7 @@ export default function PaymentSubmitPage() {
               {tab === 'g-radar' && user?.globalRole === 'BROKER_ADMIN' && (
                 <GRadarPurchaseTab
                   currentBalanceTry={subscriptionStatus?.balance ?? 0}
+                  onBalanceSpent={load}
                 />
               )}
             </div>
@@ -867,8 +872,12 @@ export default function PaymentSubmitPage() {
  *
  * Master pool failures surface as a clear "destekle iletişime geçin" message —
  * the broker never sees the upstream credit figure.
+ *
+ * `onBalanceSpent` refreshes the page data the purchase changed (subscription
+ * balance, add-on list, balance movements). It replaces a full page reload,
+ * which threw the success toast away before anyone could read it.
  */
-function GRadarPurchaseTab({ currentBalanceTry }) {
+function GRadarPurchaseTab({ currentBalanceTry, onBalanceSpent }) {
   const [credits, setCredits] = React.useState(10);
   const [quote, setQuote] = React.useState(null);
   const [quoteLoading, setQuoteLoading] = React.useState(false);
@@ -883,18 +892,14 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
   // tanımlanmamış" error only after first typing into the credit field.
   const [optedOut, setOptedOut] = React.useState(false);
   const [optInChecked, setOptInChecked] = React.useState(false);
-  React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      const res = await gRadarCreditService.getMyWallet();
-      if (!alive) return;
-      if (res.success) {
-        setOptedOut(res.data?.gRadarEnabled === false);
-      }
-      setOptInChecked(true);
-    })();
-    return () => { alive = false; };
+  const refreshWallet = React.useCallback(async () => {
+    const res = await gRadarCreditService.getMyWallet();
+    if (res.success) {
+      setOptedOut(res.data?.gRadarEnabled === false);
+    }
+    setOptInChecked(true);
   }, []);
+  React.useEffect(() => { refreshWallet(); }, [refreshWallet]);
 
   // Debounce the quote fetch so rapid typing does not spam the backend.
   React.useEffect(() => {
@@ -923,16 +928,22 @@ function GRadarPurchaseTab({ currentBalanceTry }) {
 
   const handlePayFromBalance = async () => {
     if (!quote) return;
+    const chargedTry = quote.totalTry;
     setSubmitting(true);
     const res = await gRadarCreditService.purchaseFromBalance({
       creditAmount: credits, notes,
     });
     setSubmitting(false);
     if (res.success) {
-      showSuccess(res.data?.message || t('paymentPage.gRadar.purchased'));
+      // Ne kadarın nereye gittiğini söyle — eskiden sayfa yenilendiği için
+      // kullanıcı ne olduğunu göremeden toast kayboluyordu.
+      showSuccess(t('paymentPage.gRadar.purchasedWithBalance', {
+        credits, amount: `₺${fmtAmount(chargedTry)}`,
+      }));
       setNotes('');
-      // Reload the surrounding subscription status so the balance figure refreshes.
-      window.location.reload();
+      // Sadece değişen veriyi tazele: abonelik bakiyesi, ek ücretler, bakiye
+      // hareketleri (üst sayfa) ve cüzdan durumu (bu tab).
+      await Promise.all([onBalanceSpent?.(), refreshWallet()]);
     } else if (res.code === 'MASTER_POOL_UNAVAILABLE') {
       showError(t('paymentPage.gRadar.poolUnavailable'));
     } else {

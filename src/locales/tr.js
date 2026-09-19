@@ -2811,7 +2811,7 @@ export const tr = {
     copy: "Kopyala",
     noBankAccounts: "Şu an tanımlı banka hesabı bulunmuyor. Yönetici ile iletişime geçin.",
     addons: "Ek Ödemeler",
-    addonPaidWithBalance: "Ek ödeme bakiyenizden başarıyla düşüldü",
+    addonPaidWithBalanceDetail: "\"{{name}}\" için {{amount}} bakiyenizden düşüldü.",
     form: {
       selectPlaceholder: "Seçiniz...",
       referencePlaceholder: "EFT/Havale referans numarası",
@@ -2880,7 +2880,7 @@ export const tr = {
       payFromBalanceHint: "Anında işlem. Bakiyeden düşülür, krediler hemen kullanıma açılır.",
       insufficientBalance: "Yetersiz bakiye (eksik: {{amount}})",
       processing: "İşleniyor...",
-      purchased: "Krediler hesabınıza eklendi",
+      purchasedWithBalance: "{{credits}} G-Radar kredisi hesabınıza eklendi; {{amount}} bakiyenizden düşüldü.",
       poolUnavailable: "G-Radar kredisi şu anda satın alınamıyor. Lütfen yöneticiyle iletişime geçin. Bakiyenizden hiçbir kesinti yapılmadı.",
       sendTransfer: "Havale Bildirimi Gönder",
       transferHint: "Banka transferi yaptıktan sonra referans numaranızı bildirin. Yönetici onayında krediler hesabınıza eklenir.",
