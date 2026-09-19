@@ -6,7 +6,7 @@ import { gRadarCreditService } from '../../api/gRadarCreditService';
 import { configService } from '../../api/configService';
 import MainLayout from '../../components/layout/MainLayout';
 import AddonPaymentCard from '../../components/payment/AddonPaymentCard';
-import { showSuccess, showError } from '../../utils/toastUtils';
+import { showSuccess, showError, showInfo } from '../../utils/toastUtils';
 import { getBalanceTransactionType, getBalanceTransactionLabel } from '../../utils/constants';
 import { t, getCurrentLocale } from '../../locales';
 
@@ -262,6 +262,11 @@ export default function PaymentSubmitPage() {
       showSuccess(t('paymentPage.addonPaidWithBalanceDetail', {
         name: addon.name, amount: fmtMoney(addon.amount),
       }));
+      await load();
+    } else if (result?.status === 'ALREADY_PAID') {
+      // Gece koşan iş ya da başka bir kullanıcı bu arada ödemiş olabilir:
+      // listeyi tazele ki ödenmiş ek ücret kartı ekranda kalmasın.
+      showInfo(result.message || t('addonPayment.alreadyPaid'));
       await load();
     }
     return result;
