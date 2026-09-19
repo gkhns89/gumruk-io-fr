@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "./common/ThemeToggle";
 import LoginScene from "./LoginScene";
 import { getLoginProfile } from "../utils/imageUtils";
+import { CONTACT } from "../pages/landing/contactInfo";
 import lockupLight from "../assets/brand/lockup-light.png";
 import lockupDark from "../assets/brand/lockup-dark.png";
 import { t } from "../locales";
@@ -13,6 +14,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  // "Şifremi Unuttum?" bir sıfırlama akışı değil, ne yapılacağını anlatan bir açıklama
+  const [showResetHelp, setShowResetHelp] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   // Bu makinede daha önce giriş yapılmışsa, mail girilince lokal profil ön-dolar
@@ -178,10 +181,38 @@ export default function Login() {
                 />
                 <p className="text-text-main text-sm font-normal">{t("login.rememberMe")}</p>
               </label>
-              <a className="text-sm font-medium text-primary hover:underline" href="#">
-                {t("login.forgotPassword")}
-              </a>
+              {/*
+                Self-servis sıfırlama yok ve olmayacak: üründe giden e-posta yok, şifreyi yönetici
+                PUT /api/users/{id}/password ile belirliyor. Eskiden burada href="#" ile hiçbir yere
+                gitmeyen bir bağlantı vardı; bunun yerine ne yapılacağını söylüyoruz.
+              */}
+              <button
+                type="button"
+                onClick={() => setShowResetHelp((open) => !open)}
+                aria-expanded={showResetHelp}
+                aria-controls="login-reset-help"
+                className="text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
+                {showResetHelp ? t("login.forgotPasswordClose") : t("login.forgotPassword")}
+              </button>
             </div>
+
+            {showResetHelp && (
+              <div
+                id="login-reset-help"
+                className="flex flex-col gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-3 transition-colors duration-300"
+              >
+                <p className="text-text-main text-sm font-medium">{t("login.forgotPasswordTitle")}</p>
+                <p className="text-text-secondary text-sm">{t("login.forgotPasswordStaff")}</p>
+                <p className="text-text-secondary text-sm">{t("login.forgotPasswordClient")}</p>
+                <p className="text-text-secondary text-sm">
+                  {t("login.forgotPasswordAdmin")}{" "}
+                  <a href={`mailto:${CONTACT.email}`} className="font-medium text-primary hover:underline">
+                    {CONTACT.email}
+                  </a>
+                </p>
+              </div>
+            )}
 
             {/* Button */}
             <button

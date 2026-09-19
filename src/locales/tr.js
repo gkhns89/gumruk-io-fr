@@ -527,6 +527,14 @@ export const tr = {
     passwordPlaceholder: "Şifrenizi girin",
     rememberMe: "Beni Hatırla",
     forgotPassword: "Şifremi Unuttum?",
+    // Self-servis sıfırlama yok: ürün e-posta göndermiyor, şifreyi yönetici panelden belirliyor.
+    forgotPasswordTitle: "Şifre sıfırlama e-postası göndermiyoruz",
+    forgotPasswordStaff:
+      "Şifrenizi firmanızın Gümrük.io yöneticisi panelden yenileyebilir. Yöneticinize ulaşın: yeni şifre belirlendiği anda açık oturumlarınız kapanır ve yeni şifreyle girersiniz.",
+    forgotPasswordClient:
+      "Müşteri kullanıcısıysanız çalıştığınız gümrük müşavirliğinin yöneticisine başvurun.",
+    forgotPasswordAdmin: "Firma yöneticisi sizseniz bize yazın:",
+    forgotPasswordClose: "Kapat",
     submitting: "Giriş yapılıyor...",
     submit: "Giriş Yap",
     noAccount: "Hesabınız yok mu?",
