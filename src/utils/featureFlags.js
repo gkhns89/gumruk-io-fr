@@ -5,6 +5,9 @@ export const FEATURE_FLAGS = {
   COURIER_CLIENT_STOPS: 'COURIER_CLIENT_STOPS',
   // Yeni kayıt formlarını taslak olarak saklama + firma çalışma saatleri ayarı (bkz. api/draftService.js)
   DRAFTS: 'DRAFTS',
+  // Firma içi kurye araçlarının canlı takibi: araç kayıtları, müşteri teslimat noktaları, araç takip
+  // bağlantısı (bkz. api/courierVehicleService.js, companyLocationService.js, vehicleTrackingService.js)
+  COURIER_LIVE_TRACKING: 'COURIER_LIVE_TRACKING',
 };
 
 // Bayrağa bağlı bir uç 400 `FEATURE_DISABLED` döndürünce (bayrak sayfa açıkken kapatıldı) yayılır.
