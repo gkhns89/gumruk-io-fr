@@ -2020,7 +2020,7 @@ export const en = {
       deleteTitle: "Delete the vehicle?",
       deleteMessage: "Plate {{plate}} will be deleted. If a shipment has already used it, it is kept and only deactivated, so the history stays intact.",
       deleted: "Vehicle deleted",
-      deactivatedInstead: "The vehicle was used by a shipment, so it was deactivated instead of deleted",
+      deactivatedInstead: "The vehicle is used by {{count}} shipment(s), so it was deactivated instead of deleted (latest: #{{shipment}}). The shipment history is kept.",
       reactivate: "Reactivate",
       reactivated: "Vehicle reactivated",
       stubModeHint: "Vehicle tracking is in stub mode: the vehicle list and positions are samples, not real devices.",
