@@ -335,7 +335,10 @@ Three services, split the way the backend is: `courierVehicleService.js` (a cour
 connection and the plate-matching list). Where the UI lives:
 
 - `components/couriers/CourierVehiclesTab.jsx` — a third tab in `EditCourierModal`, shown only for an
-  in-house courier record. Vehicles are deactivated, never deleted.
+  in-house courier record. Delete removes a vehicle no shipment ever used and otherwise only deactivates it;
+  the toast says which happened. Updates are partial, so reactivating sends `{active: true}` alone.
+  While the flag is on, the courier record's own legacy plate/driver fields are hidden in both courier modals —
+  the vehicle list is the single source of truth, and the old fields would drift from it.
 - `components/couriers/ClientLocationsSection.jsx` — at the bottom of `ViewClientModal`.
 - `components/courierShipments/ShipmentFormModal.jsx` — the vehicle picker (in-house couriers only) and the
   destination picker, both optional. Changing the courier or the client clears the matching choice, but a

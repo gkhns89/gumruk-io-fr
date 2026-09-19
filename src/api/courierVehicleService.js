@@ -9,12 +9,15 @@ import { t } from '../locales';
  * Bir firma içi kurye kaydı birden çok araç taşıyabilir; gönderi formunda bunlardan biri seçilir.
  * Dış kurye firmalarında araç yoktur (`courierVehicle.inHouseOnly`).
  *
+ * Güncelleme kısmidir: gönderilmeyen alan olduğu gibi kalır, boş metin alanı temizler. Yani yalnızca
+ * `{ active: true }` göndererek pasif bir aracı geri getirebilirsiniz.
+ *
  * Araç öğesi: { id, courierCompanyId, plate, vehicleType, driverName, driverPhone, active, matched,
  *   provider, providerLabel, matchedAt }. `matched` true ise araç sağlayıcıdaki bir cihazla eşleşmiştir,
  *   yani canlı takip açılabilir; eşleşme `providerVehicleKey` ile kurulur (bkz. vehicleTrackingService).
  *
  * Okuma BROKER_USER'a da açıktır (gönderi formu için); yazma BROKER_ADMIN ve SUPER_ADMIN'de.
- * Silme yoktur: `deactivate` aracı pasife alır, çünkü gönderi geçmişi araca bağlıdır.
+ * Silme koşulludur: araç hiçbir gönderide kullanılmamışsa gerçekten silinir, kullanılmışsa pasife alınır.
  *
  * Servisler hata fırlatmaz: `{ success: true, data }` | `{ success: false, error, code, status }`.
  */
@@ -88,16 +91,17 @@ export const courierVehicleService = {
   },
 
   /**
-   * Aracı pasife alır (silmez); yanıt aracın yeni hâlidir.
+   * Aracı siler; gönderide kullanılmışsa silinmez, pasife alınır.
+   * Yanıt: `{ deleted: boolean, vehicle }` — `deleted` true ise kayıt gitti ve `vehicle` null gelir.
    * @param {number|string} courierId
    * @param {number|string} vehicleId
    */
-  deactivateVehicle: async (courierId, vehicleId) => {
+  deleteVehicle: async (courierId, vehicleId) => {
     try {
       const response = await axiosInstance.delete(`/couriers/${courierId}/vehicles/${vehicleId}`);
       return { success: true, data: response.data };
     } catch (error) {
-      return failure('deactivateVehicle', error, 'api.courierVehicle.deactivateError');
+      return failure('deleteVehicle', error, 'api.courierVehicle.deleteError');
     }
   },
 };

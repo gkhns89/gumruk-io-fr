@@ -117,19 +117,21 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
     loadVehicles();
   };
 
-  const handleDeactivate = async (vehicle) => {
+  const handleDelete = async (vehicle) => {
     const ok = await confirmDialog({
-      title: t('couriers.vehicles.deactivateTitle'),
-      message: t('couriers.vehicles.deactivateMessage', { plate: vehicle.plate }),
-      intent: 'warning',
+      title: t('couriers.vehicles.deleteTitle'),
+      message: t('couriers.vehicles.deleteMessage', { plate: vehicle.plate }),
+      intent: 'danger',
     });
     if (!ok) return;
-    const result = await courierVehicleService.deactivateVehicle(courierId, vehicle.id);
+    const result = await courierVehicleService.deleteVehicle(courierId, vehicle.id);
     if (!result.success) {
       showError(result.error);
       return;
     }
-    showSuccess(t('couriers.vehicles.deactivated'));
+    // Gönderide kullanılmış araç silinmez, pasife alınır; kullanıcı hangisinin olduğunu bilmeli
+    showSuccess(result.data?.deleted ? t('couriers.vehicles.deleted') : t('couriers.vehicles.deactivatedInstead'));
+    if (editingId === vehicle.id) cancelEdit();
     loadVehicles();
   };
 
@@ -326,17 +328,9 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
                       <span className="material-symbols-outlined text-text-secondary" style={{ fontSize: '18px' }}>link_off</span>
                     </button>
                   )}
-                  {vehicle.active ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDeactivate(vehicle)}
-                      aria-label={t('couriers.vehicles.deactivate')}
-                      title={t('couriers.vehicles.deactivate')}
-                      className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-red-500" style={{ fontSize: '18px' }}>block</span>
-                    </button>
-                  ) : (
+                  {/* Pasif araçta da silme durur: kullanılmamış bir aracı pasife aldıktan sonra tamamen
+                      kaldırabilmek gerekiyor (kullanıcı bildirimi). */}
+                  {!vehicle.active && (
                     <button
                       type="button"
                       onClick={() => handleReactivate(vehicle)}
@@ -347,6 +341,15 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
                       <span className="material-symbols-outlined text-green-600" style={{ fontSize: '18px' }}>undo</span>
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(vehicle)}
+                    aria-label={t('couriers.vehicles.delete')}
+                    title={t('couriers.vehicles.delete')}
+                    className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-red-500" style={{ fontSize: '18px' }}>delete</span>
+                  </button>
                 </div>
               )}
             </li>
