@@ -9,6 +9,7 @@ import {
   computeBounds,
   bearingToDestination,
 } from '../../utils/gRadarRoute';
+import { mapStyleUrl } from '../../utils/mapStyle';
 import { t } from '../../locales';
 
 /**
@@ -52,10 +53,8 @@ export default function CargoMap({
   useEffect(() => {
     if (!containerRef.current || !parsed) return undefined;
 
-    const apiKey = import.meta.env.VITE_MAPTILER_API_KEY;
-    const styleUrl = apiKey
-      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`
-      : 'https://tiles.openfreemap.org/styles/liberty';
+    // Stil seçimi kurye canlı takip haritasıyla ortak (bkz. utils/mapStyle.js); davranış aynı.
+    const styleUrl = mapStyleUrl();
 
     // Araç işaretçisi React ile çiziliyor ama MapLibre marker'ı imperatif, o
     // yüzden açtığımız root'ları kapatmak bize kalıyor. Liste bilerek EFEKTE

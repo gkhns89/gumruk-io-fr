@@ -2310,10 +2310,47 @@ export const en = {
       completedAt: "Delivered at",
       completedAtPickup: "Picked up at",
       cancelledAt: "Cancelled at",
+      vehicle: "Vehicle",
+      destination: "Destination",
       // {{user}} is the creating user, {{date}} the date and time
       created: "Created by {{user}} · {{date}}",
       history: "Shipment history",
       noHistory: "No entries yet",
+    },
+  },
+
+  // Courier live tracking (COURIER_LIVE_TRACKING, todo 19 phase 2) — the map section in the
+  // shipment detail. The same texts serve the broker and the client view; speed and the driver's
+  // phone never reach the client from the server anyway.
+  courierTracking: {
+    title: "Live tracking",
+    watchLive: "Watch live",
+    waitingForPosition: "Waiting for the first position from the vehicle",
+    endedNoPosition: "The shipment is closed, live tracking has ended",
+    distanceKm: "~{{value}} km",
+    distanceM: "~{{value}} m",
+    // TRACKING_STATUSES
+    status: {
+      WAITING: "Waiting for a position",
+      LIVE: "Live",
+      STALE: "Position is out of date",
+      UNAVAILABLE: "Position unavailable",
+      ENDED: "Tracking ended",
+    },
+    // The age of the last reading is stated honestly: the device may only report once a minute
+    line: {
+      secondsAgo: "Position received {{value}} s ago",
+      minutesAgo: "Position received {{value}} min ago",
+      at: "Last position at {{time}}",
+      waiting: "No vehicle position yet",
+      unavailable: "The live position cannot be read right now",
+      ended: "Tracking has ended",
+    },
+    map: {
+      destination: "Destination",
+      backToVehicle: "Back to the vehicle",
+      loadError: "The map could not be opened",
+      sourceError: "Map tiles could not be loaded",
     },
   },
 
@@ -2568,6 +2605,7 @@ export const en = {
       updateError: "Could not update the shipment",
       statusError: "Could not update the shipment status",
       summaryError: "Could not load the shipment summary",
+      trackingError: "Could not load the live position",
     },
     // customsService — reading the list and the SUPER_ADMIN list refresh
     customs: {
