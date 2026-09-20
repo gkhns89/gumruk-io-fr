@@ -35,8 +35,9 @@ function SectionTitle({ children }) {
  */
 export default function ClientShipmentsCard() {
   const navigate = useNavigate();
-  const { isPilotFeature } = useFeatureFlags();
+  const { isPilotFeature, hasFeature } = useFeatureFlags();
   const isPilot = isPilotFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
+  const liveTrackable = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -113,6 +114,15 @@ export default function ClientShipmentsCard() {
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">{inTransitHeadline(shipment)}</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400 truncate">{detailLine(shipment)}</span>
+                    {/* Canlı takip bayrağı açık ve araç sağlayıcıyla eşleşmişse "Canlı izle": satır
+                        zaten detayı açıyor, harita da orada. Kartta harita çizilmiyor — mobilde
+                        dashboard'u ağırlaştırır ve `maplibre-gl` giriş yolundan indirilirdi. */}
+                    {liveTrackable && shipment.vehicle?.matched && (
+                      <span className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                        <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>my_location</span>
+                        {t('courierTracking.watchLive')}
+                      </span>
+                    )}
                   </span>
                 </button>
               ))}

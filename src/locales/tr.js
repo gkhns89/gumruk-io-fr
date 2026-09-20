@@ -2313,10 +2313,47 @@ export const tr = {
       completedAt: "Teslim zamanı",
       completedAtPickup: "Teslim alma zamanı",
       cancelledAt: "İptal zamanı",
+      vehicle: "Araç",
+      destination: "Varış noktası",
       // {{user}} oluşturan kullanıcı, {{date}} tarih-saat
       created: "Oluşturan: {{user}} · {{date}}",
       history: "Gönderi geçmişi",
       noHistory: "Henüz kayıt yok",
+    },
+  },
+
+  // Kurye canlı takibi (COURIER_LIVE_TRACKING, todo 19 faz 2) — gönderi detayındaki harita bölümü.
+  // Aynı metinler hem gümrük firması hem müşteri görünümünde kullanılır; hız ve sürücü telefonu
+  // müşteriye sunucudan zaten gelmez.
+  courierTracking: {
+    title: "Canlı Takip",
+    watchLive: "Canlı izle",
+    waitingForPosition: "Araçtan ilk konum bekleniyor",
+    endedNoPosition: "Gönderi kapandı, canlı takip sona erdi",
+    distanceKm: "~{{value}} km",
+    distanceM: "~{{value}} m",
+    // TRACKING_STATUSES
+    status: {
+      WAITING: "Konum bekleniyor",
+      LIVE: "Canlı",
+      STALE: "Konum eskidi",
+      UNAVAILABLE: "Konum alınamıyor",
+      ENDED: "Takip bitti",
+    },
+    // Son okumanın yaşı dürüstçe yazılır: cihaz dakikada bir veri gönderiyor olabilir
+    line: {
+      secondsAgo: "Konum {{value}} sn önce alındı",
+      minutesAgo: "Konum {{value}} dk önce alındı",
+      at: "Son konum saat {{time}}",
+      waiting: "Araç konumu henüz gelmedi",
+      unavailable: "Canlı konum şu an alınamıyor",
+      ended: "Takip sona erdi",
+    },
+    map: {
+      destination: "Varış",
+      backToVehicle: "Araca dön",
+      loadError: "Harita açılamadı",
+      sourceError: "Harita döşemeleri yüklenemedi",
     },
   },
 
@@ -2569,6 +2606,7 @@ export const tr = {
       updateError: "Gönderi güncellenemedi",
       statusError: "Gönderi durumu güncellenemedi",
       summaryError: "Gönderi özeti alınamadı",
+      trackingError: "Canlı konum alınamadı",
     },
     // customsService — liste okuma ve SUPER_ADMIN liste güncellemesi
     customs: {

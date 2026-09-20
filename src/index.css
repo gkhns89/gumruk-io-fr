@@ -321,6 +321,131 @@ html {
   }
 }
 
+/* === Kurye canlı takip işaretçisi (todo 19, faz 2) ===========================
+
+   G-Radar işaretçisinden (.gradar-marker) BİLEREK ayrı: orada gemi yandan çizili
+   ve döndürülmüyor, burada araç kuş bakışı bir daire ve yön okuyla birlikte
+   gerçek rotaya dönüyor. Ortak olan yalnızca stil seçimi (utils/mapStyle.js).
+
+   Ölçüler birbirine bağlı (G-Radar'daki not burada da geçerli):
+     sahne  = 72px, yani yarı genişliği 36px
+     nokta  = 22px, yani yarıçapı 11px
+     okun tabanı = sahne/2 − ok yüksekliği = 36 − 18 = 18px, yani noktaya değiyor
+       ama üstüne binmiyor.
+   Üçünden birini değiştirirsen diğer ikisini de gözden geçir.
+
+   Dönme ve animasyon AYRI katmanlarda: CSS animasyonundaki `transform` elemanın
+   inline `transform`'unu tamamen ezer (G-Radar'da öğrenildi). Dışta yön, içte
+   nabız. */
+.courier-marker {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* harita sürüklemesini engellemesin */
+}
+
+/* Aracın kendisi: beyaz halkalı koyu mavi daire, içinde araç tipi ikonu.
+   Beyaz halka hem açık hem koyu döşemelerde okunur. */
+.courier-marker__dot {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px #fff, 0 1px 4px rgb(0 0 0 / 0.4);
+}
+
+/* Konum eskimişse (STALE) araç soluk ve gri: "son bilinen yer" olduğu
+   işaretçiden de anlaşılsın, yalnızca metinden değil. */
+.courier-marker--stale .courier-marker__dot {
+  background: #64748b;
+  opacity: 0.75;
+}
+
+/* Canlı okumada dışa doğru genişleyen nabız halkası. Ayrı eleman: daire
+   üzerinde olsaydı kendi ölçeği de büyüyüp ikonu bozardı. */
+.courier-marker__pulse {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  opacity: 0.45;
+  animation: courier-pulse 2.4s ease-out infinite;
+}
+
+/* Gidiş yönü oku. Kapsayıcı pusula açısına döner, ok içeride hep yukarı bakar:
+   dönme merkezi aracın konumu olur ve ok her zaman aracın "önünde" kalır.
+   Renk yeşil: iz çizgisi mavi (#2563eb) ve araç da mavi; ok mavi olsaydı ikisinin
+   üstünde de kaybolurdu. */
+.courier-marker__heading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: #16a34a;
+}
+
+.courier-marker__arrow {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+}
+
+/* Varış pini — iz ve araçla karışmayan kırmızı, ucu koordinata oturuyor
+   (MapLibre tarafında anchor: 'bottom'). */
+.courier-destination-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.courier-destination-pin__label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+.courier-destination-pin__tip {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #ef4444;
+}
+
+@keyframes courier-pulse {
+  0%   { transform: scale(1);   opacity: 0.45; }
+  70%  { transform: scale(2.6); opacity: 0;    }
+  100% { transform: scale(2.6); opacity: 0;    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Nabız tamamen kalkar; ok da sabit durur. Araç yine görünür, yalnızca
+     hareket yok. */
+  .courier-marker__pulse {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* --- Tanıtım ve yasal sayfaların ortak davranışı (.landing-root) --- */
 
 /* Sticky header çapa hedeflerinin üstünü kapatmasın. Bölüm bazlı değil kök seviyede

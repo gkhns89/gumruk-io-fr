@@ -658,6 +658,63 @@ export const SHIPMENT_EVENT_TYPES = [
 ];
 
 /**
+ * Canlı takip oturumu durumları (backend: TrackingStatus, todo 19 faz 2).
+ * NONE burada yok: "takip yok" bir durum değil, haritanın hiç açılmaması demektir.
+ * `live` bayrağı ekranların "yoklamaya devam" kararını verir.
+ */
+export const TRACKING_STATUSES = [
+  {
+    value: 'WAITING',
+    labelKey: 'courierTracking.status.WAITING',
+    get label() { return t(this.labelKey); },
+    icon: 'hourglass_empty',
+    live: true,
+    badgeClass: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300',
+  },
+  {
+    value: 'LIVE',
+    labelKey: 'courierTracking.status.LIVE',
+    get label() { return t(this.labelKey); },
+    icon: 'my_location',
+    live: true,
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300',
+  },
+  {
+    value: 'STALE',
+    labelKey: 'courierTracking.status.STALE',
+    get label() { return t(this.labelKey); },
+    icon: 'update_disabled',
+    live: true,
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300',
+  },
+  {
+    value: 'UNAVAILABLE',
+    labelKey: 'courierTracking.status.UNAVAILABLE',
+    get label() { return t(this.labelKey); },
+    icon: 'cloud_off',
+    live: true,
+    badgeClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+  {
+    value: 'ENDED',
+    labelKey: 'courierTracking.status.ENDED',
+    get label() { return t(this.labelKey); },
+    icon: 'flag',
+    live: false,
+    badgeClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+];
+
+/**
+ * Takip durumunu değere göre bul; bilinmeyen değerde null (ham değer gösterilir)
+ * @param {string} value - WAITING | LIVE | STALE | UNAVAILABLE | ENDED
+ * @returns {Object|null}
+ */
+export const getTrackingStatus = (value) => {
+  return TRACKING_STATUSES.find((status) => status.value === value) || null;
+};
+
+/**
  * Gönderi durumunu değere göre bul
  * @param {string} value - PLANNED | IN_TRANSIT | DELIVERED | CANCELLED
  * @returns {Object|null}
@@ -757,6 +814,7 @@ export default {
   SHIPMENT_DIRECTIONS,
   SHIPMENT_ITEM_TYPES,
   SHIPMENT_EVENT_TYPES,
+  TRACKING_STATUSES,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
@@ -776,4 +834,5 @@ export default {
   getShipmentDirection,
   getShipmentItemType,
   getShipmentEventType,
+  getTrackingStatus,
 };

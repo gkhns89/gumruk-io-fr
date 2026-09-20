@@ -15,6 +15,23 @@ import { t } from '../locales';
 const shipmentsOf = (data) => (Array.isArray(data?.shipments) ? data.shipments : []);
 const shipmentOf = (data) => data?.shipment ?? data ?? null;
 
+/**
+ * Takip yanıtı. Sunucu takip olmayan gönderide `status: 'NONE'` döner; burada alanların varlığı da
+ * garanti altına alınır ki ekranlar `trail.length` gibi kontrolleri koşulsuz yapabilsin.
+ */
+const trackingOf = (data) => ({
+  status: data?.status || 'NONE',
+  position: data?.position || null,
+  trail: Array.isArray(data?.trail) ? data.trail : [],
+  destination: data?.destination || null,
+  distanceMeters: typeof data?.distanceMeters === 'number' ? data.distanceMeters : null,
+  vehicle: data?.vehicle || null,
+  startedAt: data?.startedAt || null,
+  endedAt: data?.endedAt || null,
+  lastPolledAt: data?.lastPolledAt || null,
+  pollIntervalSeconds: typeof data?.pollIntervalSeconds === 'number' ? data.pollIntervalSeconds : 0,
+});
+
 // Boş filtreleri query string'e koyma
 const cleanParams = (params = {}) => Object.fromEntries(
   Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -97,6 +114,30 @@ export const courierShipmentService = {
     }
   },
 
+  /**
+   * Gönderinin canlı takibi — gümrük firması görünümü (COURIER_LIVE_TRACKING bayrağı arkasında).
+   * Yalnızca sunucunun kendi tablolarını okur; sağlayıcıya hiç gidilmez.
+   *
+   * @param {number} id
+   * @returns data: {
+   *   status: 'NONE'|'WAITING'|'LIVE'|'STALE'|'UNAVAILABLE'|'ENDED',
+   *   position?: { lat, lng, heading, speedKph, ignition, gpsAt },
+   *   trail: [[lng, lat], ...] (GeoJSON sırası),
+   *   destination?: { label, lat, lng },
+   *   distanceMeters?, vehicle?: { plate, vehicleType, driverName, driverPhone },
+   *   startedAt?, endedAt?, lastPolledAt?, pollIntervalSeconds
+   * }
+   * Takip yoksa `status: 'NONE'` gelir — hata değil, "bu gönderide harita yok" demektir.
+   */
+  getTracking: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/courier-shipments/${id}/tracking`);
+      return { success: true, data: trackingOf(response.data) };
+    } catch (error) {
+      return failure('getTracking', error, 'api.courierShipments.trackingError');
+    }
+  },
+
   // ==================== MÜŞTERİ (CLIENT_USER) ====================
 
   /**
@@ -122,6 +163,21 @@ export const courierShipmentService = {
       return { success: true, data: shipmentOf(response.data) };
     } catch (error) {
       return failure('getMyShipment', error, 'api.courierShipments.loadError');
+    }
+  },
+
+  /**
+   * Müşterinin gönderisinin canlı takibi — anlık konum ve son 15 dakikalık iz.
+   * Hız, kontak ve sürücü telefonu bu yanıtta hiç gelmez; kapanmış gönderide konum da gelmez.
+   * @param {number} id
+   * @returns data: `getTracking` ile aynı biçim
+   */
+  getMyTracking: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/courier-shipments/my/${id}/tracking`);
+      return { success: true, data: trackingOf(response.data) };
+    } catch (error) {
+      return failure('getMyTracking', error, 'api.courierShipments.trackingError');
     }
   },
 

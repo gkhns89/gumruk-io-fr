@@ -324,11 +324,11 @@ mitigation shipped is `lang="tr" translate="no"` + `<meta name="google" content=
 in `index.html`. Don't remove those. `docs/icon-translation-immunity-plan.md` describes the
 unshipped codepoint-based fix (~840 usages across 86 files).
 
-### Courier live tracking (phase 1)
+### Courier live tracking (phases 1–2)
 
 Everything here is behind `FEATURE_FLAGS.COURIER_LIVE_TRACKING`; the backend checks the flag too, so the
 UI only decides what to reveal. Phase 1 covers vehicles, client delivery points and the shipment's choice
-of both — **no map, no live position, no approach notifications yet.**
+of both; phase 2 adds the live map. **The approach notifications (3 km / 500 m) are phase 3.**
 
 Three services, split the way the backend is: `courierVehicleService.js` (a courier record's vehicles),
 `companyLocationService.js` (a client's delivery points), `vehicleTrackingService.js` (the provider
@@ -349,6 +349,27 @@ connection and the plate-matching list). Where the UI lives:
 
 When the provider runs in stub mode (`liveMode: false`, the default until a real Mobiliz token exists) the
 vehicle list and positions are samples — the card and the vehicles tab both say so, and should keep saying so.
+
+**Phase 2 — the live map.** One place, one component: `components/courierTracking/CourierTrackingSection.jsx`
+sits inside `ShipmentDetailModal`, which both `CourierShipmentsPage` (broker) and `MyShipmentsPage` /
+the dashboard card (client) already open. There is deliberately **no separate tracking page** — the client
+tracks shipments from that modal today, and a second route would be a second thing to keep in step.
+
+- `useShipmentTracking(shipmentId, audience, enabled)` polls `getTracking` / `getMyTracking` at the interval
+  **the server sends** (`pollIntervalSeconds`), stops on `document.hidden` and reads once on the way back,
+  and stops for good when the status is `ENDED`/`NONE` (`TRACKING_STATUSES[].live` in `constants.js` decides).
+  A failed read is silent: the previous position stays on screen and the next tick retries.
+- `status: 'NONE'` means "this shipment has no live tracking" (no matched vehicle, no destination coordinates,
+  flag off). The section then renders **nothing** — not an error, not an empty map.
+- `LiveCourierMap.jsx` is **`lazy()`-imported from the section**, which is what keeps `maplibre-gl` out of the
+  shipment pages' chunks (and out of the entry chunk). Never import it statically. It shares the style choice
+  with `CargoMap` through `utils/mapStyle.js` (MapTiler when `VITE_MAPTILER_API_KEY` is set, OpenFreeMap
+  otherwise) and nothing else — the courier marker is its own thing (`CourierVehicleMarker.jsx` plus the
+  `.courier-marker*` block in `index.css`, whose comment says which three measurements move together).
+  The opening view fits vehicle + destination; after that the camera is never forced (a map that jumps under
+  your finger is the worst kind), and a "Back to the vehicle" button brings it back.
+- What the client sees is decided by the **server**, not here: no speed, no ignition, no driver phone, and only
+  the last 15 minutes of trail. Don't add fields to the client call hoping they arrive.
 
 ### G-Radar (cargo tracking)
 
