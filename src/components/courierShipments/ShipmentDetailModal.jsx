@@ -10,6 +10,9 @@ import {
   isInHouseCourier,
 } from '../../utils/constants';
 import { companyLabel, courierIconOf, formatFullDateTime, formatRelativeDateTime, toDate } from './shipmentUtils';
+import CourierTrackingSection from '../courierTracking/CourierTrackingSection';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
 import { t } from '../../locales';
 
 // createdBy bir metin ya da kullanıcı nesnesi olabilir
@@ -115,6 +118,13 @@ export default function ShipmentDetailModal({ shipment, loading = false, error =
   const isClient = audience === 'client';
   const isPickup = shipment?.direction === 'PICKUP';
   const counterpart = isClient ? shipment?.brokerCompany : shipment?.clientCompany;
+  const { hasFeature } = useFeatureFlags();
+  // Canlı takip yalnızca bayrak açıkken sorulur. Oturum ancak araç seçilmiş ve gönderi yola çıkmış
+  // bir kayıtta olabilir, o yüzden diğerlerinde uç hiç çağrılmaz — çoğu gönderi böyle. Kalanında
+  // takip yoksa sunucu `status: NONE` döner ve bölüm yine hiç çizilmez (koordinatsız varış,
+  // eşleşmemiş araç: ikisi de normal).
+  const trackingEnabled = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)
+    && !!shipment?.id && !!shipment?.vehicle && shipment.status !== 'PLANNED';
 
   return (
     <div
@@ -188,7 +198,23 @@ export default function ShipmentDetailModal({ shipment, loading = false, error =
                   {shipment.receivedBy}
                 </Field>
                 <Field label={t('courierShipments.detail.cancelledAt')}>{formatFullDateTime(shipment.cancelledAt)}</Field>
+                {/* Canlı takip (faz 2) bu ikisine dayanıyor; görünür olmaları "neden harita yok"
+                    sorusunu ekranda yanıtlıyor. Sağlayıcı kimliği burada da yok. */}
+                <Field label={t('courierShipments.detail.vehicle')}>
+                  {shipment.vehicle ? [shipment.vehicle.plate, shipment.vehicle.driverName].filter(Boolean).join(' · ') : null}
+                </Field>
+                <Field label={t('courierShipments.detail.destination')}>
+                  {shipment.destination ? [shipment.destination.label, shipment.destination.address].filter(Boolean).join(' · ') : null}
+                </Field>
               </dl>
+
+              {/* Canlı takip — haritanın yeri burası; gönderi listesinden açılan aynı modal hem
+                  gümrük firması hem müşteri için çalışıyor, ayrı bir sayfa gerekmiyor. */}
+              <CourierTrackingSection
+                shipmentId={shipment.id}
+                audience={audience}
+                enabled={trackingEnabled}
+              />
 
               <section>
                 <h3 className="text-sm font-semibold text-text-main mb-2">{t('courierShipments.detail.courier')}</h3>
