@@ -8,7 +8,11 @@ import { t, getCurrentLocale } from '../../locales';
  * Zamanlanmış işlerin son durumu (SUPER_ADMIN, salt okunur). Veri `GET /api/admin/scheduled-jobs`:
  * kaydı olan işler + zamanlayıcının bildiği ama hiç çalışmamış işler. "Şimdi çalıştır" yok.
  *
- * Sorunlu işler (gecikmiş / hatalı / açık uyarı) en üstte listelenir.
+ * Sorunlu işler (gecikmiş / hatalı / aynı kayıt art arda hata veriyor / açık uyarı) en üstte listelenir.
+ *
+ * Durumların hepsini sunucu hesaplar (`stale`, `repeatedItemFailure`, `failureThreshold`), çünkü aynı kurallar
+ * SUPER_ADMIN bildirimlerini de üretiyor: sayfa ile bildirim ayrı hesaplarsa birbirini tutmaz. "Ardışık hata"
+ * sütunu eşiği de gösterir ("1 / 1"), çünkü eşik sabit değil, işin çalışma sıklığından geliyor.
  */
 
 // İşin teknik adı (Sınıf.metot) kullanıcıya gösterilmez; backend'deki ScheduledJobLabels'ın eşi.
@@ -17,6 +21,8 @@ const JOB_LABEL_KEYS = {
   'AgreementLifecycleScheduler.autoSuspendExpiredAgreements': 'agreementSuspension',
   'AgreementLifecycleScheduler.notifyUpcomingExpirations': 'agreementExpiryReminders',
   'ClickUpSyncScheduler.syncClickUpStatuses': 'clickUpSync',
+  'CourierTrackingScheduler.pollOpenSessions': 'courierTrackingPoll',
+  'CourierTrackingScheduler.purgeExpiredPositions': 'courierPositionPurge',
   'CustomsNewsService.fetchAndSaveNews': 'customsNews',
   'CustomsRefreshService.scheduledRefresh': 'customsOfficeRefresh',
   'DraftScheduler.purgeExpiredDrafts': 'draftPurge',
@@ -69,16 +75,21 @@ const formatInterval = (seconds) => {
   return t('scheduledJobs.intervalSeconds', { count: seconds });
 };
 
-const isTroubled = (job) => job.stale || job.alertOpen || job.lastOutcome === 'FAILED' || job.lastOutcome === 'PARTIAL';
+const isTroubled = (job) =>
+  job.stale || job.alertOpen || job.repeatedItemFailure || job.lastOutcome === 'FAILED' || job.lastOutcome === 'PARTIAL';
 
-/** Sorunlular üstte: gecikmiş > hatalı > kısmi > açık uyarı > sorunsuz; sonra ada göre. */
+/** Sorunlular üstte: gecikmiş > hatalı > aynı kayıt hata veriyor > kısmi > açık uyarı > sorunsuz; sonra ada göre. */
 const severity = (job) => {
   if (job.stale) return 0;
   if (job.lastOutcome === 'FAILED') return 1;
-  if (job.lastOutcome === 'PARTIAL') return 2;
-  if (job.alertOpen) return 3;
-  return 4;
+  if (job.repeatedItemFailure) return 2;
+  if (job.lastOutcome === 'PARTIAL') return 3;
+  if (job.alertOpen) return 4;
+  return 5;
 };
+
+/** Sunucunun bulduğu, art arda hata veren kayıtlar; uyarı metniyle aynı listeden gelir. */
+const repeatedItemsText = (job) => (job.repeatedFailingItems || []).join(', ');
 
 function StatusBadges({ job }) {
   const outcome = job.lastOutcome;
@@ -93,6 +104,14 @@ function StatusBadges({ job }) {
           title={t('scheduledJobs.staleHelp')}
         >
           {t('scheduledJobs.stale')}
+        </span>
+      )}
+      {job.repeatedItemFailure && (
+        <span
+          className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+          title={t('scheduledJobs.repeatedItemHelp', { count: job.repeatedItemRuns, items: repeatedItemsText(job) })}
+        >
+          {t('scheduledJobs.repeatedItem')}
         </span>
       )}
       {job.alertOpen && (
@@ -242,15 +261,25 @@ export default function ScheduledJobsPage() {
                         <td className="px-4 py-3 text-text-secondary whitespace-nowrap">{formatDateTime(job.nextExpectedRunAt)}</td>
                         <td className="px-4 py-3"><Counts job={job} /></td>
                         <td className="px-4 py-3 text-center">
-                          <span className={job.consecutiveFailures > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-text-secondary'}>
+                          {/* Eşik sunucudan gelir ve işin sıklığına göre değişir: "1 / 1" seyrek bir işi anlatır */}
+                          <span
+                            className={job.consecutiveFailures > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-text-secondary'}
+                            title={job.failureThreshold ? t('scheduledJobs.thresholdHelp', { count: job.failureThreshold }) : undefined}
+                          >
                             {job.consecutiveFailures}
+                            {job.failureThreshold ? <span className="text-text-secondary font-normal"> / {job.failureThreshold}</span> : null}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-text-secondary max-w-sm">
                           {job.errorSummary ? (
                             <span className="line-clamp-3" title={job.errorSummary}>{job.errorSummary}</span>
                           ) : (
-                            '—'
+                            !job.repeatedItemFailure && '—'
+                          )}
+                          {job.repeatedItemFailure && (
+                            <p className="mt-1 text-xs text-red-700 dark:text-red-400 break-words">
+                              {t('scheduledJobs.repeatedItems')}: {repeatedItemsText(job)} ({job.repeatedItemRuns})
+                            </p>
                           )}
                         </td>
                       </tr>
@@ -280,7 +309,10 @@ export default function ScheduledJobsPage() {
                       <dt className="text-text-secondary">{t('scheduledJobs.columns.nextRun')}</dt>
                       <dd className="text-text-main text-right">{formatDateTime(job.nextExpectedRunAt)}</dd>
                       <dt className="text-text-secondary">{t('scheduledJobs.columns.consecutiveFailures')}</dt>
-                      <dd className="text-text-main text-right">{job.consecutiveFailures}</dd>
+                      <dd className="text-text-main text-right">
+                        {job.consecutiveFailures}
+                        {job.failureThreshold ? ` / ${job.failureThreshold}` : ''}
+                      </dd>
                       {job.lastFinishedAt && (
                         <>
                           <dt className="text-text-secondary">{t('scheduledJobs.columns.counts')}</dt>
@@ -292,6 +324,11 @@ export default function ScheduledJobsPage() {
                     </dl>
                     {job.errorSummary && (
                       <p className="mt-2 text-xs text-red-700 dark:text-red-400 break-words">{job.errorSummary}</p>
+                    )}
+                    {job.repeatedItemFailure && (
+                      <p className="mt-2 text-xs text-red-700 dark:text-red-400 break-words">
+                        {t('scheduledJobs.repeatedItems')}: {repeatedItemsText(job)} ({job.repeatedItemRuns})
+                      </p>
                     )}
                   </div>
                 ))}
