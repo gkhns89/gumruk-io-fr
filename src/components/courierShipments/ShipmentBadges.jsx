@@ -51,12 +51,15 @@ export function ShipmentItemTypeLabel({ itemType }) {
 }
 
 // Kurye: firma içi kayıtta araç ikonu (mor) ve plaka
-export function ShipmentCourierLabel({ courier }) {
+export function ShipmentCourierLabel({ courier, vehicle = null }) {
   if (!courier) {
     return <span className="italic">{t('courierShipments.noCourier')}</span>;
   }
   const inHouse = isInHouseCourier(courier);
-  const vehicleLabel = inHouse ? (getCourierVehicleType(courier.vehicleType)?.label || courier.vehicleType) : null;
+  // Gönderi bir araç taşıyorsa doğru kaynak odur; kurye kaydının kendi alanları yalnızca eski/bayraksız kayıtlar için
+  const plate = vehicle?.plate || (inHouse ? courier.vehiclePlate : null);
+  const vehicleTypeValue = vehicle?.vehicleType || courier.vehicleType;
+  const vehicleLabel = inHouse ? (getCourierVehicleType(vehicleTypeValue)?.label || vehicleTypeValue) : null;
   return (
     <span className="inline-flex items-center gap-1 min-w-0">
       <span
@@ -67,8 +70,8 @@ export function ShipmentCourierLabel({ courier }) {
         {courierIconOf(courier)}
       </span>
       <span className="truncate">{courier.name}</span>
-      {inHouse && courier.vehiclePlate && (
-        <span className="font-mono text-[11px] px-1 rounded bg-gray-100 dark:bg-gray-800 whitespace-nowrap">{courier.vehiclePlate}</span>
+      {inHouse && plate && (
+        <span className="font-mono text-[11px] px-1 rounded bg-gray-100 dark:bg-gray-800 whitespace-nowrap">{plate}</span>
       )}
     </span>
   );
