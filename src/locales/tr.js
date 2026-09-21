@@ -2412,6 +2412,8 @@ export const tr = {
       tokenSetPlaceholder: "Kayıtlı — değiştirmek için yeni token girin",
       tokenHint: "Token yalnızca kaydedilir, hiçbir ekranda geri gösterilmez. Boş bırakırsanız mevcut token korunur.",
       saveAndEnable: "Kaydet ve aç",
+      enableDemo: "Demo modunda aç",
+      tokenOptionalInDemo: "demo modunda isteğe bağlı",
       pause: "Duraklat",
       test: "Bağlantıyı sına",
       testing: "Sınanıyor...",

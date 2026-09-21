@@ -24,7 +24,9 @@ export default function CompanySettingsPage() {
   const hasAccess = isSuperAdmin || isBrokerAdmin;
   const { hasFeature, isPilotFeature } = useFeatureFlags();
   const showWorkSettings = isBrokerAdmin && hasFeature(FEATURE_FLAGS.DRAFTS);
-  const showCourierTracking = isBrokerAdmin && hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
+  // SUPER_ADMIN da görebilsin: kartın uçları brokerCompanyId alıyor, tek eksik buradaki koşuldu.
+  // SA için firma seçilmeden kart anlamsız olurdu (hangi firmanın bağlantısı?), o yüzden seçime bağlı.
+  const courierTrackingAvailable = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
 
   // SUPER_ADMIN: broker listesi + seçim
   const [brokers, setBrokers] = useState([]);
@@ -152,8 +154,11 @@ export default function CompanySettingsPage() {
 
               {showWorkSettings && <WorkSettingsCard isPilot={isPilotFeature(FEATURE_FLAGS.DRAFTS)} />}
 
-              {showCourierTracking && (
-                <CourierTrackingCard isPilot={isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)} />
+              {courierTrackingAvailable && (isBrokerAdmin || targetCompanyId) && (
+                <CourierTrackingCard
+                  isPilot={isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)}
+                  brokerCompanyId={isBrokerAdmin ? null : targetCompanyId}
+                />
               )}
             </div>
           )}

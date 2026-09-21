@@ -21,7 +21,7 @@ const formatMoment = (value) => {
  * Eşikler firmanın çalışma ayarlarında saklanır, bu yüzden kaydederken mevcut çalışma ayarları da geri gönderilir.
  * Sunucu taklit modundaysa bu ayrıca yazılır: liste ve konumlar gerçek cihazlardan gelmiyor demektir.
  */
-export default function CourierTrackingCard({ isPilot = false }) {
+export default function CourierTrackingCard({ isPilot = false, brokerCompanyId = null }) {
   const [integration, setIntegration] = useState(null);
   const [workSettings, setWorkSettings] = useState(null);
   const [token, setToken] = useState('');
@@ -37,8 +37,8 @@ export default function CourierTrackingCard({ isPilot = false }) {
     setLoading(true);
     setLoadError('');
     const [integrationResult, settingsResult] = await Promise.all([
-      vehicleTrackingService.getIntegration(),
-      companyService.getWorkSettings(),
+      vehicleTrackingService.getIntegration(brokerCompanyId),
+      brokerCompanyId ? Promise.resolve({ success: false }) : companyService.getWorkSettings(),
     ]);
     setLoading(false);
     if (!integrationResult.success) {
@@ -51,7 +51,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
       setApproaching(String(settingsResult.data?.approachingMeters ?? 3000));
       setNearby(String(settingsResult.data?.nearbyMeters ?? 500));
     }
-  }, []);
+  }, [brokerCompanyId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -61,7 +61,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
       provider: integration?.provider || 'MOBILIZ',
       active: nextActive,
       ...(token.trim() ? { apiToken: token.trim() } : {}),
-    });
+    }, brokerCompanyId);
     setSavingConnection(false);
     if (!result.success) {
       showError(result.error);
@@ -78,7 +78,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
       provider: integration?.provider || 'MOBILIZ',
       active: false,
       clearToken: true,
-    });
+    }, brokerCompanyId);
     setSavingConnection(false);
     if (!result.success) {
       showError(result.error);
@@ -90,7 +90,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
 
   const testConnection = async () => {
     setTesting(true);
-    const result = await vehicleTrackingService.testIntegration();
+    const result = await vehicleTrackingService.testIntegration(brokerCompanyId);
     setTesting(false);
     if (!result.success) {
       // Meşguliyet kalıcı bir arıza değil, "birazdan tekrar dene" demektir
@@ -134,6 +134,11 @@ export default function CourierTrackingCard({ isPilot = false }) {
     setWorkSettings(result.data);
     showSuccess(t('companySettings.courierTracking.thresholdsSaved'));
   };
+
+  // Taklit modda sunucu token istemiyor (gerçek Mobiliz bağlantısı yokken demo ile ilerlemek için);
+  // düğmeyi token'a bağlamak tam da o yolu kapatıyordu.
+  const stubMode = integration?.liveMode === false;
+  const tokenNeeded = !stubMode && !integration?.tokenSet;
 
   const lastSuccess = formatMoment(integration?.lastSuccessAt);
   const lastError = formatMoment(integration?.lastErrorAt);
@@ -200,6 +205,11 @@ export default function CourierTrackingCard({ isPilot = false }) {
               <div>
                 <label htmlFor="tracking-token" className="mb-1.5 block text-sm font-medium text-text-main">
                   {t('companySettings.courierTracking.token')}
+                  {stubMode && (
+                    <span className="ml-1 font-normal text-text-secondary">
+                      ({t('companySettings.courierTracking.tokenOptionalInDemo')})
+                    </span>
+                  )}
                 </label>
                 <input
                   id="tracking-token"
@@ -219,10 +229,14 @@ export default function CourierTrackingCard({ isPilot = false }) {
                 <button
                   type="button"
                   onClick={() => saveConnection(true)}
-                  disabled={savingConnection || (!token.trim() && !integration?.tokenSet)}
+                  disabled={savingConnection || (tokenNeeded && !token.trim())}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
                 >
-                  {savingConnection ? t('management.saving') : t('companySettings.courierTracking.saveAndEnable')}
+                  {savingConnection
+                  ? t('management.saving')
+                  : stubMode
+                    ? t('companySettings.courierTracking.enableDemo')
+                    : t('companySettings.courierTracking.saveAndEnable')}
                 </button>
                 {integration?.active && (
                   <button
@@ -234,7 +248,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
                     {t('companySettings.courierTracking.pause')}
                   </button>
                 )}
-                {integration?.tokenSet && (
+                {(integration?.tokenSet || stubMode) && (
                   <>
                     <button
                       type="button"
@@ -244,6 +258,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
                     >
                       {testing ? t('companySettings.courierTracking.testing') : t('companySettings.courierTracking.test')}
                     </button>
+                    {integration?.tokenSet && (
                     <button
                       type="button"
                       onClick={clearToken}
@@ -252,6 +267,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
                     >
                       {t('companySettings.courierTracking.clearToken')}
                     </button>
+                    )}
                   </>
                 )}
               </div>
@@ -273,7 +289,9 @@ export default function CourierTrackingCard({ isPilot = false }) {
               )}
             </div>
 
-            {/* Yaklaşma eşikleri */}
+            {/* Yaklaşma eşikleri — firmanın çalışma ayarlarında durur, o yüzden yalnızca o firmanın
+                yöneticisi düzenler; SUPER_ADMIN başka bir firmayı görüntülerken bölüm gizlenir. */}
+            {!brokerCompanyId && (
             <div className="space-y-3 border-t border-gray-100 pt-5 dark:border-gray-700">
               <div>
                 <h3 className="text-sm font-medium text-text-main">{t('companySettings.courierTracking.thresholds')}</h3>
@@ -320,6 +338,7 @@ export default function CourierTrackingCard({ isPilot = false }) {
                 {savingThresholds ? t('management.saving') : t('common.save')}
               </button>
             </div>
+            )}
           </>
         )}
       </div>

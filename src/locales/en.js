@@ -2409,6 +2409,8 @@ export const en = {
       tokenSetPlaceholder: "Saved — enter a new token to replace it",
       tokenHint: "The token is only stored, never shown again. Leave it empty to keep the current one.",
       saveAndEnable: "Save and enable",
+      enableDemo: "Enable in demo mode",
+      tokenOptionalInDemo: "optional in demo mode",
       pause: "Pause",
       test: "Test the connection",
       testing: "Testing...",
