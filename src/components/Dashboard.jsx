@@ -160,10 +160,6 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="p-4 md:p-6 lg:p-8">
-        {/* Kurye şeridi — sayfanın en üstünde, tam genişlikte. Ayrıntılar aşağı açılan pencerede;
-            bu pencere altındaki içeriği itmez, üstüne biner (bkz. CourierStrip). */}
-        <CourierStrip />
-
         {/* Başlık */}
         <AnimatedSection delay={0} shouldAnimate={shouldAnimateHeading}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -185,6 +181,10 @@ export default function Dashboard() {
             />
           </div>
         </AnimatedSection>
+
+        {/* Kurye şeridi — karşılamanın altında, işlem durumlarının üstünde. Ayrıntılar aşağı açılan
+            pencerede; bu pencere altındaki içeriği itmez, üstüne biner (bkz. CourierStrip). */}
+        <CourierStrip />
 
         {/* İstatistik Kartları — tam genişlik (kurye alanı ızgaradan çıkıp şeride taşındı) */}
         <div className="mb-6">
