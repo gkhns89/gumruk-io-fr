@@ -284,6 +284,9 @@ export default function NotificationCenter() {
     } else if (notification.entityType === 'GRADAR_REQUEST') {
       // Talep zili zaten başlıkta: sayfa değiştirmeden güncel listeyi aç ve bildirimin talebini vurgula
       openGRadarRequests(notification.entityId);
+    } else if (notification.entityType === 'VEHICLE_TRACKING') {
+      // Araç takip bağlantısının sağlığı: token yalnızca firma ayarlarındaki karttan düzeltilebilir
+      navigate('/company-settings', { state: { scrollTo: 'courier-tracking' } });
     } else if (notification.entityType === 'FEEDBACK') {
       if (isSuperAdmin) {
         navigate('/management/feedback-tasks');

@@ -345,7 +345,14 @@ connection and the plate-matching list). Where the UI lives:
   first render must not: the pickers keep the value the record came with until the user really changes it.
 - `components/settings/CourierTrackingCard.jsx` — the token (write-only; the API answers `tokenSet`), the
   on/off state, a connection test and the two approach thresholds. The thresholds are stored in the company
-  work settings, so saving them sends the current work settings back unchanged alongside.
+  work settings, so saving them sends the current work settings back unchanged alongside. **An open
+  connection alert is a red banner**, not just the last-error line: the server decides it and sends
+  `connectionDown` (the failure threshold stays on the server so banner and notification cannot drift).
+  `autoDisabledAt` means the provider rejected the token and the server switched the connection off — the
+  status pill says "Kapatıldı (token geçersiz)" and the text says to renew the token, because retrying
+  cannot help. The matching `VEHICLE_TRACKING_CONNECTION_FAILED` / `_AUTH_FAILED` / `_RECOVERED`
+  notifications go to BROKER_ADMINs; `NotificationCenter` routes entityType `VEHICLE_TRACKING` to
+  `/company-settings` with `state.scrollTo: 'courier-tracking'`, which the page scrolls to.
 
 When the provider runs in stub mode (`liveMode: false`, the default until a real Mobiliz token exists) the
 vehicle list and positions are samples — the card and the vehicles tab both say so, and should keep saying so.

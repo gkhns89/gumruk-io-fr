@@ -10,7 +10,11 @@ import { t } from '../locales';
  * `liveMode` false ise sunucu taklit sağlayıcıyla çalışıyordur (gerçek Mobiliz bağlantısı henüz yok):
  * araç listesi ve konumlar örnektir, arayüzde bunu belirtmek gerekir.
  *
- * Bağlantı: { provider, active, tokenSet, lastSuccessAt, lastErrorAt, lastErrorCode, consecutiveFailures, liveMode }.
+ * Bağlantı: { provider, active, tokenSet, lastSuccessAt, lastErrorAt, lastErrorCode, consecutiveFailures,
+ * liveMode, connectionDown, autoDisabledAt, lastAlertAt }.
+ * `connectionDown` sunucunun kararıdır (uyarı eşiği orada durur; tarayıcı eşiği bilmez) ve ayarlar kartındaki
+ * kırmızı "bağlantı çalışmıyor" durumunu açar. `autoDisabledAt` doluysa bağlantıyı sağlayıcı token'ı
+ * reddettiği için sistem kapatmıştır: yeniden denemek değil, yeni token gerekir.
  * Sağlayıcı aracı: { key, plate, label } — `key` sağlayıcı kimliğinin karmasıdır, kimliğin kendisi
  * tarayıcıya hiç gönderilmez; araç eşleştirirken bu anahtar `providerVehicleKey` olarak geri gönderilir.
  *

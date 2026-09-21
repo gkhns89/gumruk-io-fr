@@ -20,6 +20,10 @@ const formatMoment = (value) => {
  * İki bölüm: sağlayıcı bağlantısı (token yalnızca yazılır, yanıtta `tokenSet` döner) ve yaklaşma eşikleri.
  * Eşikler firmanın çalışma ayarlarında saklanır, bu yüzden kaydederken mevcut çalışma ayarları da geri gönderilir.
  * Sunucu taklit modundaysa bu ayrıca yazılır: liste ve konumlar gerçek cihazlardan gelmiyor demektir.
+ *
+ * "Bağlantı çalışmıyor" durumu (`connectionDown`) sunucunun kararıdır — eşik orada, bildirimle aynı yerde
+ * durur ki ekranla bildirim ayrışmasın. `autoDisabledAt` doluysa bağlantıyı sağlayıcı token'ı reddettiği
+ * için sistem kapatmıştır: metin "yeniden dene" değil "token'ı yenile" der.
  */
 export default function CourierTrackingCard({ isPilot = false, brokerCompanyId = null }) {
   const [integration, setIntegration] = useState(null);
@@ -142,6 +146,11 @@ export default function CourierTrackingCard({ isPilot = false, brokerCompanyId =
 
   const lastSuccess = formatMoment(integration?.lastSuccessAt);
   const lastError = formatMoment(integration?.lastErrorAt);
+  // Sunucu "bağlantı çalışmıyor" kararını kendi veriyor (eşik orada duruyor): burada yalnızca gösteriyoruz.
+  // autoDisabledAt doluysa bağlantıyı sağlayıcı token'ı reddettiği için sistem kapatmıştır — tekrar denemek
+  // düzeltmez, yeni token gerekir; o yüzden ayrı bir metin.
+  const autoDisabledAt = formatMoment(integration?.autoDisabledAt);
+  const connectionDown = integration?.connectionDown === true;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-background-dark">
@@ -182,6 +191,31 @@ export default function CourierTrackingCard({ isPilot = false, brokerCompanyId =
               </p>
             )}
 
+            {/* Arıza durumu: bildirim merkezindeki uyarının ekrandaki karşılığı. Bildirimi kaçıran
+                yönetici (ya da uyarı günlük sınıra takılmışsa) durumu yine de burada görür. */}
+            {connectionDown && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300"
+              >
+                <span className="material-symbols-outlined text-[20px]">error</span>
+                <div className="min-w-0 space-y-1">
+                  <p className="font-semibold">{t('companySettings.courierTracking.downTitle')}</p>
+                  <p>
+                    {autoDisabledAt
+                      ? t('companySettings.courierTracking.downAuth')
+                      : t('companySettings.courierTracking.downMessage')}
+                  </p>
+                  {autoDisabledAt && (
+                    <p className="text-xs">
+                      {t('companySettings.courierTracking.downSince', { moment: autoDisabledAt })}
+                    </p>
+                  )}
+                  <p className="text-xs">{t('companySettings.courierTracking.downHint')}</p>
+                </div>
+              </div>
+            )}
+
             {/* Bağlantı */}
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -192,6 +226,12 @@ export default function CourierTrackingCard({ isPilot = false, brokerCompanyId =
                   <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
                     {t('companySettings.courierTracking.statusActive')}
+                  </span>
+                ) : autoDisabledAt ? (
+                  // Kendi duraklatması değil: sağlayıcı token'ı reddettiği için kapatıldı
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>link_off</span>
+                    {t('companySettings.courierTracking.statusDisabledByProvider')}
                   </span>
                 ) : (
                   <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
