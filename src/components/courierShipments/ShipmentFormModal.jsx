@@ -57,10 +57,16 @@ const initialForm = (shipment) => {
   };
 };
 
-const courierOptionLabel = (courier) => {
+/**
+ * Kurye seçeneğinin etiketi. Canlı takip açıkken firma içi kaydın kendi plaka/sürücü alanları artık
+ * düzenlenmiyor (araçlar ayrı listede) — etikete de yazılmaz, yoksa aynı bilgi hem burada hem "Araç"
+ * alanında görünür ve zamanla birbirinden kayar.
+ */
+const courierOptionLabel = (courier, vehiclesElsewhere) => {
   if (!isInHouseCourier(courier)) {
     return courier.shortName ? `${courier.name} (${courier.shortName})` : courier.name;
   }
+  if (vehiclesElsewhere) return courier.name;
   const details = [getCourierVehicleType(courier.vehicleType)?.label, courier.vehiclePlate, courier.driverName]
     .filter(Boolean)
     .join(' · ');
@@ -372,14 +378,14 @@ export default function ShipmentFormModal({
                 {externalCouriers.length > 0 && (
                   <optgroup label={t('courierShipments.form.externalGroup')}>
                     {externalCouriers.map((courier) => (
-                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier)}</option>
+                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier, liveTracking)}</option>
                     ))}
                   </optgroup>
                 )}
                 {inHouseCouriers.length > 0 && (
                   <optgroup label={t('courierShipments.form.inHouseGroup')}>
                     {inHouseCouriers.map((courier) => (
-                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier)}</option>
+                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier, liveTracking)}</option>
                     ))}
                   </optgroup>
                 )}

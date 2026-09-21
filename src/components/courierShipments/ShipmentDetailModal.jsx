@@ -32,13 +32,17 @@ function Field({ label, children, wide = false }) {
   );
 }
 
-function CourierBlock({ courier }) {
+function CourierBlock({ courier, vehicle = null }) {
   if (!courier) {
     return <p className="text-sm italic text-text-secondary">{t('courierShipments.noCourier')}</p>;
   }
   const inHouse = isInHouseCourier(courier);
   const typeOption = getCourierType(inHouse ? 'IN_HOUSE' : 'EXTERNAL');
-  const vehicleLabel = inHouse ? (getCourierVehicleType(courier.vehicleType)?.label || courier.vehicleType) : null;
+  // Gönderinin kendi aracı varsa doğru kaynak odur (bkz. CLAUDE.md, kurye canlı takip)
+  const plate = vehicle?.plate || (inHouse ? courier.vehiclePlate : null);
+  const driverName = vehicle?.driverName || (inHouse ? courier.driverName : null);
+  const vehicleTypeValue = vehicle?.vehicleType || courier.vehicleType;
+  const vehicleLabel = inHouse ? (getCourierVehicleType(vehicleTypeValue)?.label || vehicleTypeValue) : null;
 
   return (
     <div className="flex items-start gap-3">
@@ -55,13 +59,13 @@ function CourierBlock({ courier }) {
           )}
         </div>
         {vehicleLabel && <p className="text-xs text-text-secondary">{vehicleLabel}</p>}
-        {inHouse && courier.vehiclePlate && (
+        {inHouse && plate && (
           <p className="text-xs text-text-secondary">
-            {t('couriers.inHouse.plate')}: <span className="font-mono text-text-main">{courier.vehiclePlate}</span>
+            {t('couriers.inHouse.plate')}: <span className="font-mono text-text-main">{plate}</span>
           </p>
         )}
-        {inHouse && courier.driverName && (
-          <p className="text-xs text-text-secondary">{t('couriers.inHouse.driverName')}: <span className="text-text-main">{courier.driverName}</span></p>
+        {inHouse && driverName && (
+          <p className="text-xs text-text-secondary">{t('couriers.inHouse.driverName')}: <span className="text-text-main">{driverName}</span></p>
         )}
         {courier.contactPhone && (
           <a href={`tel:${courier.contactPhone}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
@@ -219,7 +223,7 @@ export default function ShipmentDetailModal({ shipment, loading = false, error =
               <section>
                 <h3 className="text-sm font-semibold text-text-main mb-2">{t('courierShipments.detail.courier')}</h3>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                  <CourierBlock courier={shipment.courier} />
+                  <CourierBlock courier={shipment.courier} vehicle={shipment.vehicle} />
                 </div>
               </section>
 
