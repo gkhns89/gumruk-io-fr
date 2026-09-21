@@ -2015,6 +2015,7 @@ export const en = {
       driverPhone: "Driver's phone",
       noDriver: "No driver details",
       providerMatch: "Tracking device",
+      connectionNeededForMatch: "To match vehicles with a tracking device, first enable the connection under Company Settings → Courier Live Tracking.",
       providerMatchHint: "A matched vehicle can be tracked live; matching is optional.",
       keepMatch: "-- Keep the current match --",
       noMatch: "-- No match --",
