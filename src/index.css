@@ -446,6 +446,94 @@ html {
   }
 }
 
+/* === Ana ekran kurye şeridi (21.09.2026) ====================================
+
+   Şerit kapalıyken canlıdır: altındaki yolda küçük bir araç soldan sağa,
+   ilerlemeyle orantılı olarak kayar. Oran tek bir sayıdır ve React'ten CSS
+   değişkeni olarak gelir (`--courier-strip-progress`, 0–1); JS başka hiçbir
+   ölçü hesaplamaz.
+
+   Ölçüler birbirine bağlı (harita işaretçisindeki not burada da geçerli):
+     yol yüksekliği = 3px
+     araç kutusu    = 22px, yani yarı genişliği 11px
+     `margin-left`  = −11px, yani araç kendi merkezinden konumlanır
+     ikon boyutu    = 14px, 22px kutunun içine oturur
+   `margin-left`i araç kutusunun yarısı dışında bir değere çekersen araç
+   yüzde 0'da ve yüzde 100'de yolun dışına taşar. Üçünü birlikte değiştir.
+
+   Konumlandırma `left` yüzdesiyle: yolun piksel genişliği CSS'te bilinmiyor,
+   `translateX` için gerekirdi. Kayan tek bir küçük eleman var, saniyede bir
+   güncelleniyor; yüzde geçişi burada yeterli ve okunur. */
+.courier-strip__rail {
+  position: relative;
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: rgb(148 163 184 / 0.35);
+}
+
+.courier-strip__rail-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  width: calc(var(--courier-strip-progress, 0) * 100%);
+  border-radius: 999px;
+  background: #2563eb;
+  transition: width 900ms ease-out;
+}
+
+/* Canlı takipteki gönderi yeşil: geri sayımdan (mavi) bir bakışta ayrılsın —
+   harita işaretçisinde de yön oku yeşil. */
+.courier-strip__rail--live .courier-strip__rail-fill {
+  background: #16a34a;
+}
+
+.courier-strip__vehicle {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--courier-strip-progress, 0) * 100%);
+  margin-left: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 2px #fff, 0 1px 3px rgb(0 0 0 / 0.35);
+  transition: left 900ms ease-out;
+}
+
+.courier-strip__rail--live .courier-strip__vehicle {
+  background: #16a34a;
+}
+
+.courier-strip__vehicle .material-symbols-outlined {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.courier-strip__chevron {
+  transition: transform 200ms ease-in-out;
+}
+
+.courier-strip__chevron--open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Hareket tamamen kalkar; araç yine doğru yerde durur, sadece oraya kayarak
+     gitmez. Durum bilgisi (konum, oran, yön oku) kaybolmaz. */
+  .courier-strip__rail-fill,
+  .courier-strip__vehicle,
+  .courier-strip__chevron {
+    transition: none;
+  }
+}
+
 /* --- Tanıtım ve yasal sayfaların ortak davranışı (.landing-root) --- */
 
 /* Sticky header çapa hedeflerinin üstünü kapatmasın. Bölüm bazlı değil kök seviyede

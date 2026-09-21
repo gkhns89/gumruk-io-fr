@@ -55,7 +55,9 @@ const useCountUp = (end, duration = 1000, delay = 0, shouldStart = true) => {
   return count;
 };
 
-const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, courierExpanded = false }) {
+// Kartlar 21.09.2026'dan beri ana ekranın tam genişliğini kullanıyor: kurye alanı ızgaradan çıkıp
+// en üstteki şeride taşındı, bu yüzden kartların dar ("ortalanmış") varyantı da kaldırıldı.
+const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading }) {
   const navigate = useNavigate();
   const hasPlayedInitialAnimationsRef = useRef(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
@@ -302,76 +304,37 @@ const Stats = memo(function Stats({ stats, warehouseStats, cargoStats, loading, 
         )}
 
         {/* Content */}
-        <div className={`relative z-10 p-4 md:p-5 flex-1 flex flex-col ${courierExpanded ? 'items-center justify-center' : ''}`}>
-          {courierExpanded ? (
-            <>
-              {/* İkon — absolute sağ üst, akıştan çıkar */}
-              <span
-                className={`
-                  absolute top-4 right-4 md:top-5 md:right-5
-                  material-symbols-outlined text-lg md:text-xl ${colors.icon}
-                  transition-all duration-300 ease-out transform
-                  ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
-                `}
-              >
-                {stat.icon}
-              </span>
-
-              {/* Label + Sayı — kartın tam ortasında grup */}
-              <div className="flex flex-col items-center gap-1 text-center">
-                <p className="text-xs font-medium opacity-90 text-text-main leading-normal">
-                  {stat.label}
-                </p>
-                {loading ? (
-                  <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-8 w-12 rounded"></div>
-                ) : (
-                  <p
-                    className={`
-                      tracking-light text-3xl md:text-4xl font-bold leading-none ${colors.text}
-                      transition-all duration-300 transform origin-center
-                      ${isHovered ? 'scale-110' : 'scale-100'}
-                      ${showNumberPulse ? 'animate-number-pulse' : ''}
-                    `}
-                  >
-                    {animatedValue}
-                  </p>
-                )}
-              </div>
-            </>
+        <div className="relative z-10 p-4 md:p-5 flex-1 flex flex-col">
+          {/* Yazı sol, simge sağ üst */}
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
+              {stat.label}
+            </p>
+            <span
+              className={`
+                material-symbols-outlined text-lg md:text-xl ${colors.icon} flex-shrink-0
+                transition-all duration-300 ease-out transform
+                ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
+              `}
+            >
+              {stat.icon}
+            </span>
+          </div>
+          {loading ? (
+            <div className="h-8 md:h-10 flex items-center">
+              <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
+            </div>
           ) : (
-            <>
-              {/* Normal düzen: yazı sol, simge sağ üst */}
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium leading-normal truncate opacity-90 text-text-main">
-                  {stat.label}
-                </p>
-                <span
-                  className={`
-                    material-symbols-outlined text-lg md:text-xl ${colors.icon} flex-shrink-0
-                    transition-all duration-300 ease-out transform
-                    ${isHovered ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}
-                  `}
-                >
-                  {stat.icon}
-                </span>
-              </div>
-              {loading ? (
-                <div className="h-8 md:h-10 flex items-center">
-                  <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-6 md:h-8 w-12 md:w-16 rounded"></div>
-                </div>
-              ) : (
-                <p
-                  className={`
-                    tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
-                    transition-all duration-300 transform origin-left
-                    ${isHovered ? 'scale-110' : 'scale-100'}
-                    ${showNumberPulse ? 'animate-number-pulse' : ''}
-                  `}
-                >
-                  {animatedValue}
-                </p>
-              )}
-            </>
+            <p
+              className={`
+                tracking-light text-2xl md:text-3xl font-bold leading-tight ${colors.text}
+                transition-all duration-300 transform origin-left
+                ${isHovered ? 'scale-110' : 'scale-100'}
+                ${showNumberPulse ? 'animate-number-pulse' : ''}
+              `}
+            >
+              {animatedValue}
+            </p>
           )}
         </div>
 
