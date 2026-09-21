@@ -296,55 +296,9 @@ export const transactionService = {
   // STATUS OPERATIONS
   // ==========================================
   
-  // İşlem durumunu değiştir
-  updateTransactionStatus: async (id, status) => {
-    try {
-      console.log(`📝 İşlem ${id} durumu değiştiriliyor: ${status}`);
-      
-      const response = await axiosInstance.patch(`/transactions/${id}/status`, null, {
-        params: { status }
-      });
-      
-      console.log("✅ İşlem durumu değiştirildi:", response.data);
-      
-      return { 
-        success: true, 
-        data: response.data,
-        message: response.data.message || t('api.transaction.statusChanged')
-      };
-    } catch (error) {
-      logError('TransactionService - updateTransactionStatus', error);
-
-      return {
-        success: false,
-        error: getApiErrorMessage(error, t('api.transaction.statusChangeError')),
-      };
-    }
-  },
-
-  // İşlemi tamamla
-  withdrawTransaction: async (id) => {
-    try {
-      console.log(`✅ İşlem ${id} tamamlanıyor...`);
-      
-      const response = await axiosInstance.patch(`/transactions/${id}/withdraw`);
-      
-      console.log("✅ İşlem tamamlandı:", response.data);
-      
-      return { 
-        success: true, 
-        data: response.data,
-        message: response.data.message || t('api.transaction.withdrawn')
-      };
-    } catch (error) {
-      logError('TransactionService - withdrawTransaction', error);
-
-      return {
-        success: false,
-        error: getApiErrorMessage(error, t('api.transaction.withdrawError')),
-      };
-    }
-  },
+  // Durum elle değiştirilmez, tarihlerden türetilir: kapanma tarihi girilince "Tamamlandı", çekilme tarihi
+  // girilince "Çekildi". Durumu doğrudan yazan updateTransactionStatus / withdrawTransaction kaldırıldı
+  // (sunucudaki uçlarıyla birlikte); hiçbir ekran çağırmıyordu ve doğrulamaları atlıyorlardı.
 
   // İşlemi iptal et
   cancelTransaction: async (id, reason) => {

@@ -8,11 +8,14 @@ import { confirmDialog } from '../../utils/confirmDialog';
 import { draftService } from '../../api/draftService';
 import { DRAFT_MODULE_PATHS } from '../../utils/drafts';
 import { notifyGRadarRequestsChanged, openGRadarRequests } from '../../utils/gRadarRequestEvents';
+import { canReviewChanges, openChangeRequests } from '../../utils/changeRequests';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import { t, getCurrentLocale } from '../../locales';
 
 export default function NotificationCenter() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hasFeature } = useFeatureFlags();
   const isSuperAdmin = user?.globalRole === 'SUPER_ADMIN';
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -281,6 +284,11 @@ export default function NotificationCenter() {
       const located = await draftService.locateDraft(notification.entityId);
       const path = (located.success && DRAFT_MODULE_PATHS[located.data]) || DRAFT_MODULE_PATHS.TRANSACTION;
       navigate(path, { state: { openDrafts: true, draftId: notification.entityId } });
+    } else if (notification.entityType === 'CHANGE_REQUEST') {
+      // Yöneticiye "yeni talep" bildirimi: zil zaten başlıkta, sayfa değiştirmeden aç. Talebi açan kişiye giden
+      // onay/ret bildirimi ise kaydın listesine götürür — onun zili yok, kararı orada görür.
+      if (canReviewChanges(user, hasFeature)) openChangeRequests(notification.entityId);
+      else navigate('/transactions');
     } else if (notification.entityType === 'GRADAR_REQUEST') {
       // Talep zili zaten başlıkta: sayfa değiştirmeden güncel listeyi aç ve bildirimin talebini vurgula
       openGRadarRequests(notification.entityId);

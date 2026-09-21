@@ -8,6 +8,9 @@ export const FEATURE_FLAGS = {
   // Firma içi kurye araçlarının canlı takibi: araç kayıtları, müşteri teslimat noktaları, araç takip
   // bağlantısı (bkz. api/courierVehicleService.js, companyLocationService.js, vehicleTrackingService.js)
   COURIER_LIVE_TRACKING: 'COURIER_LIVE_TRACKING',
+  // Personelin düzenleyemediği kayıtlar için yöneticiye onaya düşen değişiklik talepleri
+  // (bkz. api/changeRequestService.js)
+  CHANGE_REQUESTS: 'CHANGE_REQUESTS',
 };
 
 // Bayrağa bağlı bir uç 400 `FEATURE_DISABLED` döndürünce (bayrak sayfa açıkken kapatıldı) yayılır.
