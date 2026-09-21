@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { useShipmentTracking } from '../../hooks/useShipmentTracking';
-import { getTrackingStatus } from '../../utils/constants';
+import { getCourierApproachStage, getTrackingStatus } from '../../utils/constants';
 import { t, getCurrentLocale } from '../../locales';
 
 /**
@@ -47,12 +47,21 @@ export default function CourierTrackingSection({ shipmentId, audience = 'broker'
   const option = getTrackingStatus(tracking.status);
   const stale = tracking.status === 'STALE';
   const ended = tracking.status === 'ENDED';
+  // Yaklaşma aşaması (faz 3). NONE'da rozet yok: yoldaki her gönderiye "yolda" yazmak gürültü olurdu.
+  // Müşteriye sunucu LEFT yerine ARRIVED gönderir, burada ayrıca kitle kontrolü gerekmez.
+  const stage = getCourierApproachStage(tracking.stage);
 
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h3 className="text-sm font-semibold text-text-main">{t('courierTracking.title')}</h3>
         <div className="flex flex-wrap items-center gap-1.5">
+          {stage && (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${stage.badgeClass}`}>
+              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>{stage.icon}</span>
+              {stage.label}
+            </span>
+          )}
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
             option?.badgeClass || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
           }`}>
@@ -111,14 +120,37 @@ function formatDistance(meters) {
   return t('courierTracking.distanceM', { value: Math.round(meters).toLocaleString(getCurrentLocale()) });
 }
 
+/**
+ * Sunucunun UTC zamanı → Date. Alanlar `LocalDateTime` olduğu için `Z` taşımaz; eklemeden
+ * `new Date(...)` tarayıcının yerel saati sanar ve Türkiye'de saatler üç saat geri görünürdü.
+ * (stripModel.js'teki `timeOf` ile aynı kural.)
+ */
+function toDate(value) {
+  if (!value) return null;
+  const text = typeof value === 'string' && value.includes('T') && !value.endsWith('Z') ? `${value}Z` : value;
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /** "Konum 2 dk önce alındı" / "Canlı konum şu an alınamıyor" / "Takip sona erdi" */
 function statusLine(tracking) {
+  // Ulaşmış gönderide okuma yaşı yazmanın anlamı yok: müşterinin haritası zaten varış anında donmuş,
+  // gümrük firmasının da bilmek istediği şey aracın kaç saniye önce veri gönderdiği değil.
+  if (tracking.stage === 'LEFT') return t('courierTracking.line.leftUndelivered');
+  if (tracking.stage === 'ARRIVED') {
+    const when = toDate(tracking.arrivedAt) || toDate(tracking.position?.gpsAt);
+    if (when) {
+      return t('courierTracking.line.arrivedFrozen', {
+        time: when.toLocaleTimeString(getCurrentLocale(), { hour: '2-digit', minute: '2-digit' }),
+      });
+    }
+  }
   if (tracking.status === 'ENDED') return t('courierTracking.line.ended');
   if (tracking.status === 'UNAVAILABLE') return t('courierTracking.line.unavailable');
   if (!tracking.position?.gpsAt) return t('courierTracking.line.waiting');
 
-  const gpsAt = new Date(tracking.position.gpsAt);
-  if (Number.isNaN(gpsAt.getTime())) return '';
+  const gpsAt = toDate(tracking.position.gpsAt);
+  if (!gpsAt) return '';
   const seconds = Math.max(0, Math.round((Date.now() - gpsAt.getTime()) / 1000));
   if (seconds < 60) return t('courierTracking.line.secondsAgo', { value: seconds });
   const minutes = Math.round(seconds / 60);

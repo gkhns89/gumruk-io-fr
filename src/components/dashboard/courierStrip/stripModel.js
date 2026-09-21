@@ -57,6 +57,9 @@ export const toLiveItem = (row) => ({
   kind: 'live',
   shipmentId: row.shipmentId,
   status: row.status,
+  // Yaklaşma aşaması (faz 3). Müşteriye sunucu LEFT yerine ARRIVED gönderir; şerit ayrıca bir kitle
+  // kontrolü yapmaz.
+  stage: row.stage || null,
   direction: row.direction,
   itemType: row.itemType,
   icon: getCourierVehicleType(row.vehicle?.vehicleType)?.icon || 'local_shipping',

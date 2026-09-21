@@ -2350,6 +2350,13 @@ export const tr = {
       UNAVAILABLE: "Konum alınamıyor",
       ENDED: "Takip bitti",
     },
+    // COURIER_APPROACH_STAGES (faz 3). LEFT yalnızca gümrük firmasının ekranında çıkar.
+    stage: {
+      APPROACHING: "Yaklaşıyor",
+      NEARBY: "Birazdan kapıda",
+      ARRIVED: "Adrese ulaştı",
+      LEFT: "Adresten ayrıldı",
+    },
     // Son okumanın yaşı dürüstçe yazılır: cihaz dakikada bir veri gönderiyor olabilir
     line: {
       secondsAgo: "Konum {{value}} sn önce alındı",
@@ -2358,6 +2365,9 @@ export const tr = {
       waiting: "Araç konumu henüz gelmedi",
       unavailable: "Canlı konum şu an alınamıyor",
       ended: "Takip sona erdi",
+      // Müşterinin haritası varışta donar: "canlı" demek yanıltıcı olurdu.
+      arrivedFrozen: "Kurye saat {{time}} itibarıyla adresinize ulaştı",
+      leftUndelivered: "Araç adresten ayrıldı ama gönderi hâlâ açık",
     },
     map: {
       destination: "Varış",

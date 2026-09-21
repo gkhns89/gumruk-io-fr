@@ -8,7 +8,9 @@ import { getTrackingStatus } from '../utils/constants';
  * Kurallar:
  * - Aralığı sunucu söyler (`pollIntervalSeconds`); istemci kendi kafasına göre sıklaştırmaz.
  *   Sunucu sağlayıcıyı zaten kendi turunda soruyor, daha sık okumak aynı konumu getirir.
- * - Oturum bitince (`ENDED`) ya da hiç yokken (`NONE`) yoklama durur.
+ * - Oturum bitince (`ENDED`), hiç yokken (`NONE`) ya da sunucu aralığı 0 verince yoklama **temelli**
+ *   durur. Sunucu araç adrese ulaştığında müşteriye 0 gönderir (faz 3, karar 1): ekran varış anının
+ *   fotoğrafında donar, tarayıcı bir daha sormaz — sekmeye geri dönülse bile.
  * - Sekme arkadayken (`document.hidden`) yoklama durur, sekmeye dönülünce hemen bir kez okur:
  *   arka planda açık duran bir sekme boşuna istek üretmesin.
  * - Hata sessizdir: konum geçici olarak alınamıyorsa ekranda eski konum ve "şu an alınamıyor"
@@ -48,6 +50,9 @@ export function useShipmentTracking(shipmentId, audience = 'broker', enabled = t
     }
 
     let cancelled = false;
+    // Yoklama bir kez kapandıysa bir daha açılmaz; sekmeye dönmek donmuş bir görünümü yeniden
+    // sormaya başlatmamalı.
+    let stopped = false;
     const clearTimer = () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -57,19 +62,23 @@ export function useShipmentTracking(shipmentId, audience = 'broker', enabled = t
 
     const tick = async () => {
       clearTimer();
-      if (cancelled || document.hidden) return;
+      if (cancelled || stopped || document.hidden) return;
       const data = await read();
       if (cancelled) return;
-      // Sunucu kapanmış oturumda 0 gönderir; bilinmeyen durumda da yoklamayı sürdürmeyiz.
+      // Sunucu kapanmış oturumda ve varışta 0 gönderir; bilinmeyen durumda da yoklamayı sürdürmeyiz.
       const option = getTrackingStatus(data?.status);
       const seconds = data?.pollIntervalSeconds ?? 0;
+      if (data && (!option?.live || seconds <= 0)) {
+        stopped = true;
+        return;
+      }
       if (option?.live && seconds > 0) {
         timerRef.current = setTimeout(tick, seconds * 1000);
       }
     };
 
     const onVisibility = () => {
-      if (!document.hidden) tick();
+      if (!document.hidden && !stopped) tick();
     };
 
     setLoading(true);

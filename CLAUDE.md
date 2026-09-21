@@ -324,11 +324,11 @@ mitigation shipped is `lang="tr" translate="no"` + `<meta name="google" content=
 in `index.html`. Don't remove those. `docs/icon-translation-immunity-plan.md` describes the
 unshipped codepoint-based fix (~840 usages across 86 files).
 
-### Courier live tracking (phases 1–2)
+### Courier live tracking (phases 1–3)
 
 Everything here is behind `FEATURE_FLAGS.COURIER_LIVE_TRACKING`; the backend checks the flag too, so the
 UI only decides what to reveal. Phase 1 covers vehicles, client delivery points and the shipment's choice
-of both; phase 2 adds the live map. **The approach notifications (3 km / 500 m) are phase 3.**
+of both; phase 2 adds the live map; phase 3 the approach stages.
 
 Three services, split the way the backend is: `courierVehicleService.js` (a courier record's vehicles),
 `companyLocationService.js` (a client's delivery points), `vehicleTrackingService.js` (the provider
@@ -370,6 +370,22 @@ tracks shipments from that modal today, and a second route would be a second thi
   your finger is the worst kind), and a "Back to the vehicle" button brings it back.
 - What the client sees is decided by the **server**, not here: no speed, no ignition, no driver phone, and only
   the last 15 minutes of trail. Don't add fields to the client call hoping they arrive.
+
+**Phase 3 — the approach stages.** The tracking responses (detail and the dashboard strip's summary) carry
+`stage`: `NONE | APPROACHING | NEARBY | ARRIVED | LEFT`, rendered from `COURIER_APPROACH_STAGES` /
+`getCourierApproachStage()` in `constants.js`. `NONE` returns `null` **on purpose** — no badge, because
+"on the way" is what the tracking status already says.
+
+- **`LEFT` never reaches a client**: the server sends them `ARRIVED` instead. No screen needs an audience
+  check for it.
+- **The freeze is the server's too.** After arrival the client call answers with the arrival position, the
+  trail cut at arrival and `pollIntervalSeconds: 0`; `useShipmentTracking` now latches **stopped** when the
+  server sends 0 or a non-live status, so coming back to the tab does not restart polling on a frozen view.
+- Where the stage shows: the badge in `CourierTrackingSection` (next to the tracking status) and its status
+  line, which switches to "arrived at HH:mm" / "left but the shipment is open" instead of the reading age.
+  In the strip, `StripBand` and `StripDrawer` show the **stage instead of** the tracking status when there is
+  one — one badge, not two. The strip's rotation is untouched: it still triggers on `lastGpsAt` moving, which
+  a frozen client row simply stops doing.
 
 ### G-Radar (cargo tracking)
 
