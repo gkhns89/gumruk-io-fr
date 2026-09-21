@@ -7,6 +7,24 @@ import { mapStyleUrl } from '../../utils/mapStyle';
 import { t } from '../../locales';
 
 /**
+ * İşaretçinin oku için yön. Cihaz yön bildirmediğinde (duran araç, eski cihaz) ok hiç çizilmezdi;
+ * bunun yerine varış noktasına bakan açı kullanılır — müşteri en azından "nereye gidiyor" görür.
+ * Cihazın bildirdiği yön varsa o esastır: gerçek rota her zaman hedefe doğru düz gitmez.
+ */
+const headingFor = (heading, vehiclePoint, destinationPoint) => {
+  if (typeof heading === 'number' && Number.isFinite(heading)) return heading;
+  if (!vehiclePoint || !destinationPoint) return null;
+  const [fromLng, fromLat] = vehiclePoint;
+  const [toLng, toLat] = destinationPoint;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const deltaLng = toRad(toLng - fromLng);
+  const y = Math.sin(deltaLng) * Math.cos(toRad(toLat));
+  const x = Math.cos(toRad(fromLat)) * Math.sin(toRad(toLat))
+    - Math.sin(toRad(fromLat)) * Math.cos(toRad(toLat)) * Math.cos(deltaLng);
+  return Math.round(((Math.atan2(y, x) * 180) / Math.PI + 360) % 360);
+};
+
+/**
  * Kurye canlı takip haritası (todo 19, faz 2) — MapLibre GL, G-Radar'daki `CargoMap` ile aynı
  * stil kaynağı (MapTiler anahtarı varsa MapTiler, yoksa OpenFreeMap; bkz. `utils/mapStyle.js`).
  *
@@ -147,7 +165,11 @@ export default function LiveCourierMap({
         vehicleMarkerRef.current.setLngLat(vehicle);
       }
       markerRootRef.current?.render(
-        <CourierVehicleMarker vehicleType={vehicleType} heading={heading} stale={stale} />,
+        <CourierVehicleMarker
+          vehicleType={vehicleType}
+          heading={headingFor(heading, vehicle, destinationRef.current)}
+          stale={stale}
+        />,
       );
     };
 
