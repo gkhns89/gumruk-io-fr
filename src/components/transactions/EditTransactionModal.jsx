@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { transactionService } from "../../api/transactionService";
 import { companyService } from "../../api/companyService";
 import { customsService } from "../../api/customsService";
-import { GATE_OPTIONS } from "../../utils/constants";
+import { GATE_OPTIONS, getTransactionStatusLabel } from "../../utils/constants";
 import { toUpperCase } from "../../utils/textUtils";
 import { handleError, handleApiResponse, logError } from "../../utils/errorUtils";
 import { showSuccess, showError } from "../../utils/toastUtils";
@@ -12,12 +12,16 @@ import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
 import { useDropdownKeyboard } from '../../hooks/useDropdownKeyboard';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useRecordDraft } from '../../hooks/useRecordDraft';
-import { DRAFT_MODULES } from '../../api/draftService';
+import { DRAFT_MODULES, DRAFT_SCHEMA_VERSION } from '../../api/draftService';
 import { buildDraftLabel, draftText, isConcurrentUpdate } from '../../utils/drafts';
+import { diffDraftFields } from '../../utils/draftDiff';
 import SaveDraftButton from '../drafts/SaveDraftButton';
 import EditDraftBanner from '../drafts/EditDraftBanner';
 import { useEditDraftPrefill } from '../../hooks/useEditDraftPrefill';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { shouldRequestChange } from '../../utils/changeRequests';
+import { changeRequestService, isPendingRequestExists } from '../../api/changeRequestService';
 import {
   createTransactionFormData,
   buildTransactionUpdatePayload,
@@ -37,6 +41,7 @@ const PRESENCE_ERROR_KEYS = [
 
 export default function EditTransactionModal({ transaction, onClose, onSuccess, isReadOnly, currentUser }) {
   const locale = getCurrentLocale();
+  const { hasFeature } = useFeatureFlags();
 
   // Yetki kontrolü
   const isAdmin = currentUser?.globalRole === "SUPER_ADMIN" || currentUser?.globalRole === "BROKER_ADMIN";
@@ -95,9 +100,19 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   // Kapanmış kayıt: yalnızca yönetici, gerekçe yazarak yeniden açabilir (sunucu da aynı kuralı uyguluyor).
   const isClosedRecord = isWithdrawnStatus || transaction.status === "CANCELLED";
   // Admin kullanıcılar tüm alanları her durumda düzenleyebilir
+  // Personelin düzenleyemediği bir kayıt: muayenede kritik alanlar, kapanmışta hepsi kilitli.
+  const isLockedForStaff = isInspectionStatus || isCompletedStatus || isClosedRecord;
+
+  /**
+   * Talep kipi: BROKER_USER kilitli bir kaydı açtı ve CHANGE_REQUESTS bayrağı açık. Alanlar açılır ama kaydetmez —
+   * doldurduğu form Broker Yöneticisi'ne değişiklik talebi olarak gider. Ödeme kısıtı talebi de kapatır
+   * (talep de bir yazmadır), o yüzden `isReadOnly` hâlâ her şeyi kilitliyor.
+   */
+  const isRequestMode = shouldRequestChange({ transaction, user: currentUser, hasFeature, isReadOnly });
+
   // "İptal Edildi" de kilitli: sunucu onu da kapanmış sayıyordu, arayüz saymıyordu — alanlar açık görünüp kayıt
   // sunucuda reddediliyordu.
-  const isFieldLocked = isAdmin ? false : (isReadOnly || isInspectionStatus || isCompletedStatus || isClosedRecord);
+  const isFieldLocked = isAdmin ? false : (isReadOnly || (isLockedForStaff && !isRequestMode));
 
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
@@ -1002,6 +1017,82 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     return errors;
   };
 
+  /**
+   * Formun geri yüklenebilir görüntüsü. Taslak da değişiklik talebi de bunu taşır — ikisinin biçimi aynı olmak
+   * zorunda, çünkü karşılaştırma ve uygulama tek hesaptan geçiyor (utils/draftDiff.js → buildPendingChange).
+   * `base` formun açıldığı andaki kayıttır: hem taslak hem talep bir **fark**tır, fotoğraf değil.
+   */
+  const buildSnapshotPayload = () => ({
+    formData,
+    brokerSearchTerm,
+    clientSearchTerm,
+    customsSearchTerm,
+    senderSearchTerm,
+    warehouseSearchTerm,
+    displayWeight,
+    displayTax,
+    displayGuaranteeAmount,
+    base: transactionRecordToPayload(transaction),
+  });
+
+  /**
+   * Talep kipinde kaydetme: kayıt güncellenmez, Broker Yöneticisi'ne karar için bir talep gider.
+   * Gönderilen şey formun kendisidir; yönetici onayladığında fark kaydın o günkü hâlinin üstüne yazılır.
+   */
+  const submitChangeRequest = async () => {
+    const payload = buildSnapshotPayload();
+    const changes = diffDraftFields(
+      transactionRecordToFields(transaction),
+      transactionPayloadToFields(payload, transaction),
+      draftCompareFields,
+    );
+    if (changes.length === 0) {
+      showError(t("changeRequests.form.noChanges"));
+      return;
+    }
+
+    // confirmDialog ayrı bir React kökünde çiziliyor: açıklama state'e değil buraya yazılır.
+    const values = { note: "" };
+    const confirmed = await confirmDialog({
+      title: t("changeRequests.form.confirmTitle"),
+      message: t("changeRequests.form.confirmMessage", { fileNo: transaction.fileNo }),
+      details: changes.map((change) => `${change.label}: ${change.currentText} → ${change.draftText}`),
+      intent: "primary",
+      icon: "send",
+      confirmText: t("changeRequests.form.send"),
+      content: <RequestNoteField onChange={(value) => { values.note = value; }} />,
+    });
+    if (!confirmed) return;
+
+    const result = await changeRequestService.createRequest({
+      module: DRAFT_MODULES.TRANSACTION,
+      targetId: transaction.id,
+      label: buildDraftLabel([
+        toUpperCase(formData.fileNo || "", locale),
+        formData.clientCompanyId ? clientSearchTerm : "",
+      ], DRAFT_MODULES.TRANSACTION),
+      payload,
+      schemaVersion: DRAFT_SCHEMA_VERSION,
+      baseUpdatedAt: transaction.updatedAt || null,
+      note: values.note.trim() || null,
+    });
+
+    if (result.success) {
+      // Talep gönderildi: taslak varsa gereksiz, aynı değişikliği iki yerde tutmayalım.
+      discardDraft();
+      showSuccess(t("changeRequests.form.sent"));
+      onSuccess();
+      return;
+    }
+    // Aynı kayda başka bir talep açılmışsa yenisi açılmaz; kullanıcı önce onun sonuçlanmasını bekler.
+    if (isPendingRequestExists(result)) {
+      setError(t("changeRequests.form.alreadyPending"));
+      showError(t("changeRequests.form.alreadyPending"));
+      return;
+    }
+    handleApiResponse(result, null, setError, "Değişiklik talebi");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isReadOnly) return;
@@ -1058,6 +1149,13 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
           setLoading(false);
           return;
         }
+      }
+
+      // Talep kipi: kayıt güncellenmez, form karar için yöneticiye gider. Yeniden açma ve kapanma onayı
+      // buradan sonra gelir; ikisi de yöneticinin kararıdır, talebi açanın değil.
+      if (isRequestMode) {
+        await submitChangeRequest();
+        return;
       }
 
       // Kapanmış bir işlemi yeniden açmak gerekçe ister; sunucu da istiyor
@@ -1176,20 +1274,10 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
     targetId: transaction.id,
     baseUpdatedAt: transaction.updatedAt || null,
     getSnapshot: () => ({
-      payload: {
-        formData,
-        brokerSearchTerm,
-        clientSearchTerm,
-        customsSearchTerm,
-        senderSearchTerm,
-        warehouseSearchTerm,
-        displayWeight,
-        displayTax,
-        displayGuaranteeAmount,
-        // Taslak alındığı andaki kayıt. Taslağın *farkı* bununla bulunur: uygulanırken yalnızca bu tabana göre
-        // değişmiş alanlar yazılır, geri kalanı kaydın o anki değerinde kalır.
-        base: transactionRecordToPayload(transaction),
-      },
+      // Taslak ile değişiklik talebi aynı payload'ı taşır (bkz. buildSnapshotPayload): içindeki `base`, formun
+      // açıldığı andaki kayıttır ve farkın tabanıdır — uygulanırken yalnızca o tabana göre değişmiş alanlar
+      // yazılır, geri kalanı kaydın o anki değerinde kalır.
+      payload: buildSnapshotPayload(),
       label: buildDraftLabel([
         toUpperCase(formData.fileNo || "", locale),
         formData.clientCompanyId ? clientSearchTerm : "",
@@ -1326,6 +1414,21 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
 
           {/* Body */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+            {/* Talep kipi: alanlar açık ama kaydetmiyor — neden açık olduğunu söylemeden bırakmak yanıltıcı olur */}
+            {isRequestMode && (
+              <div className="mb-6 rounded-xl border border-orange-300 bg-orange-50 p-4 dark:border-orange-700/60 dark:bg-orange-900/20">
+                <p className="flex items-center gap-2 font-semibold text-orange-900 dark:text-orange-200">
+                  <span className="material-symbols-outlined text-lg">rate_review</span>
+                  {t('changeRequests.form.bannerTitle')}
+                </p>
+                <p className="mt-1 text-sm text-orange-900/90 dark:text-orange-200/90">
+                  {t('changeRequests.form.bannerMessage', {
+                    status: getTransactionStatusLabel(transaction.status),
+                  })}
+                </p>
+              </div>
+            )}
+
             {/* Kendi bekleyen taslağınız formda (DRAFTS) */}
             {draftPrefill.active && (
               <EditDraftBanner
@@ -3017,8 +3120,11 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
                 disabled={loading}
                 className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="material-symbols-outlined">save</span>
-                {loading ? t('common.loading') : t('common.update')}
+                {/* Talep kipinde bu düğme kaydetmez: formu karar için yöneticiye gönderir. */}
+                <span className="material-symbols-outlined">{isRequestMode ? 'send' : 'save'}</span>
+                {loading
+                  ? t('common.loading')
+                  : (isRequestMode ? t('changeRequests.form.send') : t('common.update'))}
               </button>
             )}
         </div>
@@ -3043,6 +3149,31 @@ function ReopenReasonField({ onChange }) {
         maxLength={500}
         autoFocus
         placeholder={t("transactions.reopen.reasonPlaceholder")}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-sm resize-none"
+      />
+    </div>
+  );
+}
+
+/**
+ * Değişiklik talebinin açıklaması: yönetici neden istendiğini bilmeden karar veremez. confirmDialog ayrı bir
+ * React kökünde çizildiği için değer state'e değil `onChange(value)` ile çağırana gider.
+ */
+function RequestNoteField({ onChange }) {
+  return (
+    <div className="text-left">
+      <label htmlFor="change-request-note" className="block text-sm font-medium text-text-main mb-1">
+        {t("changeRequests.form.noteLabel")}
+        {" "}
+        <span className="text-xs font-normal text-text-secondary">({t("common.optional")})</span>
+      </label>
+      <textarea
+        id="change-request-note"
+        rows={3}
+        maxLength={500}
+        autoFocus
+        placeholder={t("changeRequests.form.notePlaceholder")}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-sm resize-none"
       />

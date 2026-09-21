@@ -9,6 +9,7 @@ import NewsSlider from "./NewsSlider";
 import CurrencyTicker from "../common/CurrencyTicker";
 import NotificationCenter from "./NotificationCenter";
 import GRadarRequestsBell from "../gradar/GRadarRequestsBell";
+import ChangeRequestsBell from "../changeRequests/ChangeRequestsBell";
 import AnnouncementsDrawer from "../dashboard/Announcements";
 import ThemeToggle from "../common/ThemeToggle";
 import { logError } from "../../utils/errorUtils";
@@ -312,6 +313,9 @@ export default function Header() {
 
           {/* G-Radar enable requests (BROKER_ADMIN / SUPER_ADMIN only) */}
           <GRadarRequestsBell />
+
+          {/* Bekleyen değişiklik talepleri (yalnızca BROKER_ADMIN — karar verebilen kişi) */}
+          <ChangeRequestsBell />
 
           {/* Feedback Butonu - SUPER_ADMIN görmez */}
           {clickUpActive && !isSuperAdmin && (

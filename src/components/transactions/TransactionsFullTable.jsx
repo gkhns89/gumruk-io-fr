@@ -1,6 +1,7 @@
 import { useState } from "react";
 import EditTransactionModal from "./EditTransactionModal";
 import PendingChangeBadge from '../drafts/PendingChangeBadge';
+import ChangeRequestBadge from '../changeRequests/ChangeRequestBadge';
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import { useEdgeScroll } from "../../hooks/useEdgeScroll";
 import { warehouseOriginLabel } from "../../utils/warehouseOrigin";
@@ -66,6 +67,8 @@ export default function TransactionsFullTable({
   onRowClick,
   pendingFor = null,
   onOpenPendingChange = null,
+  requestFor = null,
+  onOpenChangeRequest = null,
   scrollHeight = null,
   onScroll = null,
 }) {
@@ -269,6 +272,11 @@ export default function TransactionsFullTable({
                         <PendingChangeBadge
                           drafts={pendingFor?.(transaction.id)}
                           onClick={(drafts) => onOpenPendingChange?.(drafts, transaction)}
+                        />
+                        {/* Karar bekleyen değişiklik talebi (CHANGE_REQUESTS) */}
+                        <ChangeRequestBadge
+                          request={requestFor?.(transaction.id)}
+                          onClick={(request) => onOpenChangeRequest?.(request, transaction)}
                         />
                       </div>
                     </td>

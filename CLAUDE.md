@@ -261,6 +261,39 @@ Pages combine it with role checks — the established pattern is
   (`isConcurrentUpdate()` in `utils/drafts.js`, on the `status`/`code` the update services now pass through) keeps
   the draft and flips the banner to the warning. The row badge and "İncele" stay as they were, and they remain the
   only way a BROKER_ADMIN reviews someone else's draft.
+- **Change requests** (`CHANGE_REQUESTS` flag, transactions only so far): a draft is something you apply yourself;
+  a change request is something **someone else decides**. It exists for the records a BROKER_USER cannot edit —
+  `INSPECTION`, `CP_COMPLETED`, `WITHDRAWN`, `CANCELLED` (`isTransactionLocked()` in `utils/changeRequests.js`).
+  There, instead of locking the fields, `EditTransactionModal` opens in **request mode**
+  (`shouldRequestChange()`): the form is editable, a banner says why, and the footer button sends rather than
+  saves. Payment restriction still locks everything (`isReadOnly`), because a request is a write too.
+  **The payload is the drafts' payload** — `{ formData, ...searchTerms, base }`, built by the modal's one
+  `buildSnapshotPayload()` that the draft snapshot also uses — so a request is a **delta** and the comparison
+  runs through the same `buildPendingChange()`. Never let those two shapes drift; the whole reuse rests on it.
+  Storage is its own `change_requests` table rather than a draft row, because a draft expires at the company's
+  daily purge time and a decision must not: the decision itself (`reviewedBy`, `reviewedAt`, `reviewReason`) is
+  the record. One PENDING request per record; only BROKER_USER files one (an admin edits directly and gets
+  `CHANGE_REQUEST_ADMIN_DIRECT`), only BROKER_ADMIN decides.
+  **Approval is the apply.** `POST /change-requests/{id}/approve` takes **the body to write**, not the request's
+  payload: the client computes it (record as it is now + the delta) exactly as the drafts' "Uygula" does, and the
+  server pushes it through `updateTransaction` — so date ordering, delay reasons and the closed-record rule all
+  apply — then marks the request APPROVED in the same transaction. Rejection needs a reason.
+  UI: `ChangeRequestsBell` in the header (BROKER_ADMIN only) lists what awaits a decision and **navigates** to the
+  module's page instead of deciding in place — the comparison needs the record as the list loaded it, and a
+  second fetch would be a second source of truth. `ChangeRequestBadge` sits in the row next to
+  `PendingChangeBadge` (orange vs amber: "someone wants a decision" is not "someone started editing") and opens
+  `ChangeRequestModal`.
+- **Transaction status is derived, never written.** `withdrawalDate` → `WITHDRAWN`, else `lineClosureDate` →
+  `CP_COMPLETED`, else declaration number + registration date → `REGISTERED`, else `PENDING`. The endpoints that
+  wrote it directly (`PATCH /transactions/{id}/status`, `/withdraw`) were removed: they skipped every validation
+  and were open to BROKER_USER. To move a transaction, change its dates. Clearing a date walks the status back,
+  which is the supported way to undo a file closed by a mistyped date — the edit form no longer requires a date to
+  stay just because the record's status implies it; it only requires a closure date beside a withdrawal date.
+  A `WITHDRAWN`/`CANCELLED` record is editable **only** by BROKER_ADMIN / SUPER_ADMIN and **only** with
+  `reopenReason` in the update body (400 `TRANSACTION_REOPEN_REASON_REQUIRED` without it); the reason and the
+  status before/after land in the audit log as `REOPEN_TRANSACTION`. Entering a date that will close a file opens
+  a confirmation naming the file and client, because the mistake this guards against is a date typed one row above
+  the intended one.
 - **Passwords typed for someone else** (add employee, set password, client account): the password
   inputs carry `autoComplete="new-password"` and the e-mail input `type="email"` + `autoComplete="off"`.
   Without them the browser treats the form as a sign-in and fills in the admin's own saved password,

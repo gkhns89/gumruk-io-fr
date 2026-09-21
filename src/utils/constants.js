@@ -427,6 +427,26 @@ export const getGateBadgeClasses = (gateValue) => {
 };
 
 /**
+ * İşlem durumunu değere göre bul
+ * @param {string} value - PENDING | REGISTERED | INSPECTION | CP_COMPLETED | WITHDRAWN | CANCELLED
+ * @returns {Object|null} Durum objesi; bilinmeyen değerde null
+ */
+export const getTransactionStatus = (value) => {
+  return TRANSACTION_STATUS.find((status) => status.value === value) || null;
+};
+
+/**
+ * İşlem durumunun ekranda görünen adı. Bilinmeyen değerde ham sabit yazılmaz (sunucudan sızan bir iç ad
+ * kullanıcıya olduğu gibi görünürdü); genel bir etiket döner, ham değer çağıranın `title`'ında kalabilir.
+ * @param {string} value - Durum değeri
+ * @returns {string} Gösterilecek etiket
+ */
+export const getTransactionStatusLabel = (value) => {
+  const status = getTransactionStatus(value);
+  return status ? t(status.labelKey) : t('status.unknown');
+};
+
+/**
  * Cargo status'ü değere göre bul
  * @param {string} value - Status değeri
  * @returns {Object|null} Status objesi
