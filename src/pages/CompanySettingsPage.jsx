@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { companyService } from '../api/companyService';
@@ -35,6 +36,18 @@ export default function CompanySettingsPage() {
 
   // Logo değişince AuthedImage'i tekrar yüklemeye zorla
   const [logoBust, setLogoBust] = useState(0);
+
+  // "Araç takip bağlantısı çalışmıyor" bildiriminden gelindiğinde kartı görünür kıl. Sayfanın kendi
+  // kaydırma kabı var (#main-scroll-area değil), o yüzden scrollIntoView yeterli.
+  const { state: navState } = useLocation();
+  const courierTrackingRef = useRef(null);
+  useEffect(() => {
+    if (navState?.scrollTo !== 'courier-tracking') return undefined;
+    const timer = setTimeout(() => {
+      courierTrackingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [navState]);
 
   const loadBrokers = useCallback(async () => {
     setBrokersLoading(true);
@@ -155,10 +168,12 @@ export default function CompanySettingsPage() {
               {showWorkSettings && <WorkSettingsCard isPilot={isPilotFeature(FEATURE_FLAGS.DRAFTS)} />}
 
               {courierTrackingAvailable && (isBrokerAdmin || targetCompanyId) && (
-                <CourierTrackingCard
-                  isPilot={isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)}
-                  brokerCompanyId={isBrokerAdmin ? null : targetCompanyId}
-                />
+                <div id="courier-tracking" ref={courierTrackingRef} className="scroll-mt-4">
+                  <CourierTrackingCard
+                    isPilot={isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)}
+                    brokerCompanyId={isBrokerAdmin ? null : targetCompanyId}
+                  />
+                </div>
               )}
             </div>
           )}
