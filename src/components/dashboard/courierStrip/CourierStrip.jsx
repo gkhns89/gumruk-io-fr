@@ -151,7 +151,7 @@ export default function CourierStrip() {
   ) : null;
 
   return (
-    <div ref={containerRef} className="relative mb-4" onBlur={onFocusOut}>
+    <div ref={containerRef} className="relative mb-6" onBlur={onFocusOut}>
       <button
         ref={buttonRef}
         type="button"
