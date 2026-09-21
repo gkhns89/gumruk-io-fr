@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { useShipmentTracking } from '../../../hooks/useShipmentTracking';
 import {
+  getCourierApproachStage,
   getCourierType,
   getCourierVehicleType,
   getShipmentItemType,
@@ -97,7 +98,8 @@ export default function StripDrawer({
               <SectionTitle>{t('dashboard.courierStrip.sections.live')}</SectionTitle>
               <div className="space-y-1.5">
                 {liveItems.map((item) => {
-                  const status = getTrackingStatus(item.status);
+                  // Şerit bandıyla aynı kural: aşama varsa rozet onu gösterir, yoksa takip durumunu.
+                  const status = getCourierApproachStage(item.stage) || getTrackingStatus(item.status);
                   const active = item.shipmentId === selectedId;
                   return (
                     <button

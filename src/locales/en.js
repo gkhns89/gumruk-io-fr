@@ -2347,6 +2347,13 @@ export const en = {
       UNAVAILABLE: "Position unavailable",
       ENDED: "Tracking ended",
     },
+    // COURIER_APPROACH_STAGES (phase 3). LEFT only ever appears on the brokerage's screen.
+    stage: {
+      APPROACHING: "Approaching",
+      NEARBY: "Almost there",
+      ARRIVED: "Arrived",
+      LEFT: "Left the address",
+    },
     // The age of the last reading is stated honestly: the device may only report once a minute
     line: {
       secondsAgo: "Position received {{value}} s ago",
@@ -2355,6 +2362,9 @@ export const en = {
       waiting: "No vehicle position yet",
       unavailable: "The live position cannot be read right now",
       ended: "Tracking has ended",
+      // The client's map freezes on arrival: calling it "live" would be misleading.
+      arrivedFrozen: "The courier arrived at your address at {{time}}",
+      leftUndelivered: "The vehicle left the address but the shipment is still open",
     },
     map: {
       destination: "Destination",

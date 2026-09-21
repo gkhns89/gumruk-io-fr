@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getTrackingStatus } from '../../../utils/constants';
+import { getCourierApproachStage, getTrackingStatus } from '../../../utils/constants';
 import { t } from '../../../locales';
 import { countdownText, formatDistance, progressOf } from './stripModel';
 
@@ -51,7 +51,12 @@ export default function StripBand({ item, isSpotlight = false, loading = false, 
   const live = item.kind === 'live';
   const progress = progressOf(item, now);
   const countdown = live ? null : countdownText(item.departsAt, now);
-  const status = live ? getTrackingStatus(item.status) : null;
+  // Aşama varsa rozet **onu** gösterir, takip durumunu değil: "Adrese ulaştı" satırın en önemli
+  // bilgisiyken yanında "Canlı" yazmak yer kaplar ve satırı ikinci bir rozetle şişirirdi. Aşama
+  // yoksa (yolda) eski davranış: takip durumu.
+  const stage = live ? getCourierApproachStage(item.stage) : null;
+  const status = live && !stage ? getTrackingStatus(item.status) : null;
+  const badge = stage || status;
 
   return (
     <span className="block w-full">
@@ -88,10 +93,10 @@ export default function StripBand({ item, isSpotlight = false, loading = false, 
             </span>
           )}
 
-          {live && status && (
-            <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${status.badgeClass}`}>
-              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>{status.icon}</span>
-              {status.label}
+          {badge && (
+            <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge.badgeClass}`}>
+              <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>{badge.icon}</span>
+              {badge.label}
             </span>
           )}
 

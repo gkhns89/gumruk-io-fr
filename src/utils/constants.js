@@ -706,6 +706,55 @@ export const TRACKING_STATUSES = [
 ];
 
 /**
+ * Yaklaşma aşamaları (backend: CourierApproachStage, todo 19 faz 3).
+ *
+ * NONE burada yok: "henüz yaklaşmadı" bir rozet değil, rozetin hiç çizilmemesi demektir — yoldaki her
+ * gönderiye "yolda" yazmak gürültü olurdu, zaten takip durumu bunu söylüyor.
+ *
+ * LEFT yalnızca gümrük firmasına gelir; müşteriye sunucu ARRIVED gönderir (müşterinin ekranı varışta
+ * donar). Yani bu diziyi kullanan ekranların ayrıca bir kitle kontrolü yapmasına gerek yok.
+ */
+export const COURIER_APPROACH_STAGES = [
+  {
+    value: 'APPROACHING',
+    labelKey: 'courierTracking.stage.APPROACHING',
+    get label() { return t(this.labelKey); },
+    icon: 'near_me',
+    badgeClass: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300',
+  },
+  {
+    value: 'NEARBY',
+    labelKey: 'courierTracking.stage.NEARBY',
+    get label() { return t(this.labelKey); },
+    icon: 'pin_drop',
+    badgeClass: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300',
+  },
+  {
+    value: 'ARRIVED',
+    labelKey: 'courierTracking.stage.ARRIVED',
+    get label() { return t(this.labelKey); },
+    icon: 'where_to_vote',
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300',
+  },
+  {
+    value: 'LEFT',
+    labelKey: 'courierTracking.stage.LEFT',
+    get label() { return t(this.labelKey); },
+    icon: 'logout',
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300',
+  },
+];
+
+/**
+ * Yaklaşma aşamasını değere göre bul; NONE ve bilinmeyen değerde null (rozet çizilmez)
+ * @param {string} value - APPROACHING | NEARBY | ARRIVED | LEFT
+ * @returns {Object|null}
+ */
+export const getCourierApproachStage = (value) => {
+  return COURIER_APPROACH_STAGES.find((stage) => stage.value === value) || null;
+};
+
+/**
  * Takip durumunu değere göre bul; bilinmeyen değerde null (ham değer gösterilir)
  * @param {string} value - WAITING | LIVE | STALE | UNAVAILABLE | ENDED
  * @returns {Object|null}
