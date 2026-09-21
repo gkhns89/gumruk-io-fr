@@ -64,8 +64,12 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
     let cancelled = false;
     vehicleTrackingService.getIntegration(brokerCompanyId).then((integration) => {
       if (cancelled || !integration.success) return;
-      setLiveMode(integration.data?.liveMode !== false);
-      if (!integration.data?.active || !integration.data?.tokenSet) return;
+      const live = integration.data?.liveMode !== false;
+      setLiveMode(live);
+      // Taklit modda token yoktur (gerçek bağlantı kurulmadan demo ile ilermek için): eşleştirme
+      // listesini token'a bağlamak, tam da demo yolunu kapatıyordu. Canlı modda token şart.
+      if (!integration.data?.active) return;
+      if (live && !integration.data?.tokenSet) return;
       vehicleTrackingService.listProviderVehicles(brokerCompanyId).then((result) => {
         if (cancelled) return;
         if (result.success) {
@@ -253,6 +257,14 @@ export default function CourierVehiclesTab({ courierId, brokerCompanyId = null, 
               />
             </div>
           </div>
+
+          {/* Bağlantı açık değilse eşleştirme listesi gelmez; kullanıcı nedenini ekranda görsün */}
+          {canManage && !providerAvailable && (
+            <p className="flex items-start gap-2 text-xs text-text-secondary">
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>info</span>
+              {t('couriers.vehicles.connectionNeededForMatch')}
+            </p>
+          )}
 
           {providerAvailable && (
             <div>

@@ -2018,6 +2018,7 @@ export const tr = {
       driverPhone: "Sürücü Telefonu",
       noDriver: "Sürücü bilgisi girilmemiş",
       providerMatch: "Takip Cihazı",
+      connectionNeededForMatch: "Araçları takip cihazıyla eşleştirmek için önce Firma Ayarları → Kurye Canlı Takibi bölümünden bağlantıyı açın.",
       providerMatchHint: "Eşleştirilen araçta canlı takip açılabilir; eşleştirme zorunlu değildir.",
       keepMatch: "-- Mevcut eşleşmeyi koru --",
       noMatch: "-- Eşleştirme yok --",
