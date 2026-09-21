@@ -17,6 +17,7 @@ import { buildDraftLabel, draftText, isConcurrentUpdate } from '../../utils/draf
 import SaveDraftButton from '../drafts/SaveDraftButton';
 import EditDraftBanner from '../drafts/EditDraftBanner';
 import { useEditDraftPrefill } from '../../hooks/useEditDraftPrefill';
+import { confirmDialog } from '../../utils/confirmDialog';
 import {
   createTransactionFormData,
   buildTransactionUpdatePayload,
@@ -91,8 +92,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
   const isInspectionStatus = transaction.status === "INSPECTION";
   const isCompletedStatus = transaction.status === "CP_COMPLETED";
   const isWithdrawnStatus = transaction.status === "WITHDRAWN";
+  // Kapanmış kayıt: yalnızca yönetici, gerekçe yazarak yeniden açabilir (sunucu da aynı kuralı uyguluyor).
+  const isClosedRecord = isWithdrawnStatus || transaction.status === "CANCELLED";
   // Admin kullanıcılar tüm alanları her durumda düzenleyebilir
-  const isFieldLocked = isAdmin ? false : (isReadOnly || isInspectionStatus || isCompletedStatus || isWithdrawnStatus);
+  // "İptal Edildi" de kilitli: sunucu onu da kapanmış sayıyordu, arayüz saymıyordu — alanlar açık görünüp kayıt
+  // sunucuda reddediliyordu.
+  const isFieldLocked = isAdmin ? false : (isReadOnly || isInspectionStatus || isCompletedStatus || isClosedRecord);
 
   // Gecikme tespit state'i
   const [delays, setDelays] = useState({
@@ -986,19 +991,12 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
       errors.declarationNumber = t("transactions.validation.declarationNumberLength");
     }
 
-    // CP_COMPLETED durumunda kapanma tarihi zorunlu
-    if (transaction.status === "CP_COMPLETED" && !formData.lineClosureDate) {
-      errors.lineClosureDate = t("transactions.validation.closureDateRequiredCompleted");
-    }
-
-    // WITHDRAWN durumunda hem kapanma hem çekilme tarihi zorunlu
-    if (transaction.status === "WITHDRAWN") {
-      if (!formData.lineClosureDate) {
-        errors.lineClosureDate = t("transactions.validation.closureDateRequiredWithdrawn");
-      }
-      if (!formData.withdrawalDate) {
-        errors.withdrawalDate = t("transactions.validation.withdrawalDateRequiredWithdrawn");
-      }
+    // Çekilme tarihi varsa kapanma tarihi de olmalı — sunucudaki kuralın aynısı.
+    // Kural eskiden kaydın durumuna bağlıydı ("CP_COMPLETED ise kapanma tarihi zorunlu"): bu, yanlışlıkla girilmiş
+    // bir kapanma/çekilme tarihini silmenin önünü tıkıyordu, yani yanlış kapanan dosya bir daha açılamıyordu.
+    // Alanlara zaten yalnızca yönetici dokunabiliyor (isFieldLocked), tarihleri temizlemek durumu geri yürütür.
+    if (formData.withdrawalDate && !formData.lineClosureDate) {
+      errors.lineClosureDate = t("transactions.validation.closureDateRequiredWithdrawn");
     }
 
     return errors;
@@ -1062,15 +1060,59 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
         }
       }
 
+      // Kapanmış bir işlemi yeniden açmak gerekçe ister; sunucu da istiyor
+      // (400 TRANSACTION_REOPEN_REASON_REQUIRED). Gerekçe kaydın üstünde durmaz, audit log'a düşer.
+      let reopenReason = null;
+      if (isClosedRecord) {
+        // confirmDialog ayrı bir React kökünde çiziliyor: gerekçe state'e değil buraya yazılır.
+        const values = { reason: "" };
+        const confirmed = await confirmDialog({
+          title: t("transactions.reopen.title"),
+          message: t("transactions.reopen.message", { fileNo: transaction.fileNo }),
+          details: [t("transactions.reopen.audited")],
+          intent: "warning",
+          icon: "lock_open",
+          confirmText: t("transactions.reopen.confirm"),
+          content: <ReopenReasonField onChange={(value) => { values.reason = value; }} />,
+        });
+        if (!confirmed) return;
+        reopenReason = values.reason.trim();
+        if (!reopenReason) {
+          showError(t("transactions.reopen.reasonRequired"));
+          return;
+        }
+      } else {
+        // Bir dosyayı kapatacak tarih ilk kez giriliyor: hangi dosyanın kapanacağını adıyla sor. Bu pencere,
+        // bir üst satırın dosyasına yanlışlıkla girilen tarihi yakalamak için var.
+        const addsWithdrawal = !transaction.withdrawalDate && !!formData.withdrawalDate;
+        const addsClosure = !transaction.lineClosureDate && !!formData.lineClosureDate;
+        if (addsWithdrawal || addsClosure) {
+          const confirmed = await confirmDialog({
+            title: t("transactions.closeConfirm.title"),
+            message: t(addsWithdrawal
+              ? "transactions.closeConfirm.messageWithdrawal"
+              : "transactions.closeConfirm.messageClosure", {
+              fileNo: transaction.fileNo,
+              client: transaction.clientCompany?.name || "—",
+            }),
+            intent: "warning",
+            icon: "event_busy",
+            confirmText: t("transactions.closeConfirm.confirm"),
+          });
+          if (!confirmed) return;
+        }
+      }
+
       // Gövde bekleyen değişikliğin "Uygula"sıyla aynı yerden gelir (transactionDraftFields.js)
       const cleanedData = buildTransactionUpdatePayload(formData, locale);
+      if (reopenReason) cleanedData.reopenReason = reopenReason;
 
       const result = await transactionService.updateTransaction(transaction.id, cleanedData);
 
       if (result.success) {
         // Bu kayda ait kendi taslağımız varsa değişiklik uygulandı, taslak gereksiz
         discardDraft();
-        showSuccess(t("transactions.form.updateSuccess"));
+        showSuccess(t(reopenReason ? "transactions.reopen.success" : "transactions.form.updateSuccess"));
         onSuccess();
       } else if (isConcurrentUpdate(result)) {
         // Kayıt tam bu sırada değişti: taslak durur, bant uyarıya döner, kullanıcı karşılaştırıp yeniden kaydeder.
@@ -2981,6 +3023,29 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess, 
             )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Kapanmış bir işlemi yeniden açma gerekçesi. confirmDialog ayrı bir React kökünde çizildiği için değer
+ * state'e değil `onChange(value)` ile çağırana gider. Zorunlu: gerekçesiz yeniden açma sunucuda da reddedilir.
+ */
+function ReopenReasonField({ onChange }) {
+  return (
+    <div className="text-left">
+      <label htmlFor="transaction-reopen-reason" className="block text-sm font-medium text-text-main mb-1">
+        {t("transactions.reopen.reasonLabel")}
+      </label>
+      <textarea
+        id="transaction-reopen-reason"
+        rows={3}
+        maxLength={500}
+        autoFocus
+        placeholder={t("transactions.reopen.reasonPlaceholder")}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-sm resize-none"
+      />
     </div>
   );
 }
