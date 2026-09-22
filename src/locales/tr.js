@@ -471,6 +471,13 @@ export const tr = {
     staleHelp: "İş, kendi çalışma aralığına göre çok uzun süredir sorunsuz tamamlanmadı. SUPER_ADMIN'e günde bir uyarı gönderilir.",
     alertOpen: "Uyarı açık",
     alertOpenHelp: "Uyarı gönderildi, iş henüz sorunsuz çalışmadı.",
+    repeatedItem: "Aynı kayıt hata veriyor",
+    repeatedItemHelp:
+      "Aynı kayıt art arda {{count}} çalışmada hata verdi (kayıt: {{items}}). İşin geri kalanı çalıştığı için çalışma \"Kısmen\" görünüyor; SUPER_ADMIN'e günde bir uyarı gönderilir.",
+    repeatedItems: "Art arda hata veren kayıtlar",
+    threshold: "Uyarı eşiği",
+    thresholdHelp:
+      "Bu iş art arda {{count}} hatadan sonra uyarı gönderir. Eşik işin çalışma sıklığından hesaplanır: seyrek çalışan işler ilk hatada uyarır.",
     interval: "Aralık",
     intervalDays: "{{count}} gün",
     intervalHours: "{{count}} saat",
@@ -502,6 +509,8 @@ export const tr = {
       agreementSuspension: "Süresi dolan vekaletlerin askıya alınması",
       agreementExpiryReminders: "Vekalet süre dolum hatırlatmaları",
       clickUpSync: "ClickUp talep senkronizasyonu",
+      courierTrackingPoll: "Kurye canlı konum turu",
+      courierPositionPurge: "Kurye konum izi temizliği",
       customsNews: "Gümrük haberleri",
       customsOfficeRefresh: "Gümrük idareleri listesi yenileme",
       draftPurge: "Süresi dolan taslakların silinmesi",

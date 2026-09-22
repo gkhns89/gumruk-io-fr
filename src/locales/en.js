@@ -471,6 +471,13 @@ export const en = {
     staleHelp: "The job has not completed without problems for much longer than its own interval. SUPER_ADMIN is warned once a day.",
     alertOpen: "Alert open",
     alertOpenHelp: "An alert was sent and the job has not run cleanly since.",
+    repeatedItem: "Same record keeps failing",
+    repeatedItemHelp:
+      "The same record has failed in {{count}} runs in a row (record: {{items}}). The rest of the job works, so the run only looks \"Partial\"; SUPER_ADMIN is warned once a day.",
+    repeatedItems: "Records failing run after run",
+    threshold: "Alert threshold",
+    thresholdHelp:
+      "This job alerts after {{count}} failures in a row. The threshold comes from how often the job runs: a job that runs rarely alerts on its first failure.",
     interval: "Interval",
     intervalDays: "{{count}} d",
     intervalHours: "{{count}} h",
@@ -502,6 +509,8 @@ export const en = {
       agreementSuspension: "Suspension of expired agreements",
       agreementExpiryReminders: "Agreement expiry reminders",
       clickUpSync: "ClickUp request sync",
+      courierTrackingPoll: "Courier live position tour",
+      courierPositionPurge: "Courier position trail cleanup",
       customsNews: "Customs news",
       customsOfficeRefresh: "Customs office list refresh",
       draftPurge: "Expired draft deletion",
