@@ -157,7 +157,7 @@ export default function CargoVehicleMarker({
           // beliriyor, boşaltıldığında yalnızca dış hat kalıyor. İki kopya
           // gerekiyor çünkü biri dolgu diğeri kontur.
           <svg
-            viewBox="0 0 104 32"
+            viewBox="0 0 100 92"
             className="gradar-marker__art gradar-marker__art--air"
             aria-hidden="true"
           >
