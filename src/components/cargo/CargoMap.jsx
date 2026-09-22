@@ -9,7 +9,7 @@ import {
   computeBounds,
   bearingToDestination,
 } from '../../utils/gRadarRoute';
-import { mapStyleUrl } from '../../utils/mapStyle';
+import { useMapStyle } from '../../hooks/useMapStyle';
 import { t } from '../../locales';
 
 /**
@@ -42,6 +42,7 @@ export default function CargoMap({
   // Görünüm düğmesinin, efekt yeniden çalışmadan geometriye erişmesi için.
   const geometryRef = useRef(null);
   const [error, setError] = useState(null);
+  const styleUrl = useMapStyle();
   const [view, setView] = useState('vehicle');
 
   const parsed = parseGeoJson(geoJson);
@@ -51,10 +52,9 @@ export default function CargoMap({
   geometryRef.current = parsed;
 
   useEffect(() => {
-    if (!containerRef.current || !parsed) return undefined;
-
-    // Stil seçimi kurye canlı takip haritasıyla ortak (bkz. utils/mapStyle.js); davranış aynı.
-    const styleUrl = mapStyleUrl();
+    // Stil seçimi kurye canlı takip haritasıyla ortak (bkz. utils/mapStyle.js): MapTiler yanıt vermezse
+    // OpenFreeMap'e düşülür. Yoklama bitene kadar styleUrl null, harita kurulmaz.
+    if (!containerRef.current || !parsed || !styleUrl) return undefined;
 
     // Araç işaretçisi React ile çiziliyor ama MapLibre marker'ı imperatif, o
     // yüzden açtığımız root'ları kapatmak bize kalıyor. Liste bilerek EFEKTE
@@ -159,7 +159,7 @@ export default function CargoMap({
     // We deliberately depend on the stringified geojson; parsed is rebuilt
     // every render which would otherwise trigger an infinite remount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoJson, vehicleType, status]);
+  }, [geoJson, vehicleType, status, styleUrl]);
 
   /** Araca yakın görünüm ile rotanın tamamı arasında gidip gelir. */
   const toggleView = () => {
