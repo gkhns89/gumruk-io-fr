@@ -1,5 +1,5 @@
 import React from "react";
-import { ContainerShip, Plane } from "../../../components/common/VehicleArt";
+import { ContainerShip, PlaneSide } from "../../../components/common/VehicleArt";
 
 /**
  * Tanıtım sayfasının dekoratif liman sahnesi.
@@ -473,8 +473,12 @@ function Scene({ compact = false }) {
           (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
           yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
       <g className="landing-plane">
-        {/* Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor. */}
-        <Plane />
+        {/* Sahnenin geri kalanı gibi YANDAN: gemi, tren ve vinçler yandan çizili, tepeden bir
+            uçak yabancı duruyordu. Haritadaki işaretçi kuş bakışı kalır (bkz. VehicleArt).
+            Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor. */}
+        <g transform="scale(0.62)">
+          <PlaneSide />
+        </g>
       </g>
 
       {/* --- Deniz --- */}

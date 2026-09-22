@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import CourierVehicleMarker from './CourierVehicleMarker';
-import { mapStyleUrl } from '../../utils/mapStyle';
+import { useMapStyle } from '../../hooks/useMapStyle';
 import { t } from '../../locales';
 
 /**
@@ -62,6 +62,8 @@ export default function LiveCourierMap({
   const vehicleMarkerRef = useRef(null);
   const markerRootRef = useRef(null);
   const [error, setError] = useState(null);
+  // Stil yoklaması bitene kadar null; MapTiler yanıt vermezse OpenFreeMap gelir (bkz. utils/mapStyle.js)
+  const styleUrl = useMapStyle();
 
   // Varış noktası gönderi boyunca değişmez. Efekt bağımlılıkları dizi değil SAYI olmalı: her
   // render'da yeni bir dizi üretilir ve efekt boşuna yeniden çalışırdı.
@@ -74,13 +76,13 @@ export default function LiveCourierMap({
 
   // --- Haritanın kurulumu: yalnızca bir kez (ve varış noktası değişirse) ---
   useEffect(() => {
-    if (!containerRef.current) return undefined;
+    if (!containerRef.current || !styleUrl) return undefined;
 
     let map;
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: mapStyleUrl(),
+        style: styleUrl,
         center: vehicle || destinationPoint || DEFAULT_CENTER,
         zoom: VEHICLE_ZOOM,
         attributionControl: { compact: true },
@@ -141,7 +143,7 @@ export default function LiveCourierMap({
     };
     // Varış noktası gönderi boyunca değişmez; araç ve iz aşağıdaki efektte güncellenir.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destLng, destLat]);
+  }, [destLng, destLat, styleUrl]);
 
   // --- Her yeni okumada: iz, araç işaretçisi ---
   useEffect(() => {

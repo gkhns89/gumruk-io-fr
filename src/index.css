@@ -157,7 +157,9 @@ html {
 /* Gemi 80px → yarı genişliği 40px. Ok tabanının tam bu mesafede durması
    gerekiyor (aşağıya bak), o yüzden bu iki değer birlikte değiştirilmeli. */
 .gradar-marker__art--sea { width: 80px; }
-.gradar-marker__art--air { width: 58px; }
+/* Uçak kutusu neredeyse kare (100×92), gemi ise yassı (190×70) — bu yüzden uçak daha dar
+   bir genişlikle gemiyle aynı görsel kütleye ulaşıyor. Kutu oranı değişirse bu da değişmeli. */
+.gradar-marker__art--air { width: 50px; }
 
 /* Yönelme katmanı: dönüş ve aynalama burada, animasyon içerideki çizimde.
    İkisi aynı elemanda olamaz — CSS animasyonu inline transform'u eziyor. */
