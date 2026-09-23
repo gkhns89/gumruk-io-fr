@@ -603,14 +603,15 @@ html:has(.landing-root) {
   to   { transform: translateX(var(--drive-to)); }
 }
 
-/* Kamyonet — tırla aynı yönde ama daha yavaş, aynı anda ekranda olmasınlar diye */
-@keyframes landing-drive-slow {
-  from { transform: translateX(var(--drive-slow-from)); }
-  to   { transform: translateX(var(--drive-slow-to)); }
+/* Kamyonet — tırla aynı yönde ama daha hızlı; gerçekte de kamyonet yüklü tırdan hızlıdır.
+   Eski adı "drive-slow" idi, hızlar gerçekçileşince yanıltıcı kaldı. */
+@keyframes landing-drive-van {
+  from { transform: translateX(var(--drive-van-from)); }
+  to   { transform: translateX(var(--drive-van-to)); }
 }
 
 /* Rıhtım treni — sağdan girer, SAĞDAKİ istiften yüklenir, sola gider, SOLDAKİ istife
-   boşaltır, sahneden çıkar. Gemininkiyle aynı mantık ama kendi süresinde (96 sn):
+   boşaltır, sahneden çıkar. Gemininkiyle aynı mantık ama kendi süresinde (85 sn):
    tren sahnedeki en ağır kara aracı, gemiyle senkron olmasına gerek yok.
    Her yol parçası hızlanma → sabit seyir → yavaşlama diye üçe bölünmüş; tek bir
    cubic-bezier bunu veremiyor (bkz. landing-berth'teki aynı not). */
@@ -619,11 +620,11 @@ html:has(.landing-root) {
     transform: translateX(var(--rail-in));
     animation-timing-function: linear;
   }
-  17% {
+  16% {
     transform: translateX(calc(var(--rail-load) + var(--rail-ramp)));
     animation-timing-function: cubic-bezier(0, 0, 0.5, 1); /* yavaşlayarak yanaşır */
   }
-  23% {
+  22% {
     transform: translateX(var(--rail-load)); /* sağdaki istifte duruş — yükleme */
   }
   35% {
@@ -634,11 +635,11 @@ html:has(.landing-root) {
     transform: translateX(calc(var(--rail-load) - var(--rail-ramp)));
     animation-timing-function: linear;
   }
-  56% {
+  55% {
     transform: translateX(calc(var(--rail-unload) + var(--rail-ramp)));
     animation-timing-function: cubic-bezier(0, 0, 0.5, 1);
   }
-  62% {
+  61% {
     transform: translateX(var(--rail-unload)); /* soldaki istifte duruş — boşaltma */
   }
   74% {
@@ -660,8 +661,11 @@ html:has(.landing-root) {
   --sail-from: -260px;      --sail-to: 1620px;
   --sail-back-from: 1500px; --sail-back-to: -240px;
   --drive-from: -160px;     --drive-to: 1560px;
-  --drive-slow-from: -220px;--drive-slow-to: 1540px;
-  --fly-from: -140px;       --fly-to: 1560px;
+  --drive-van-from: -220px; --drive-van-to: 1540px;
+  /* Uçak sahne genişliğinden çok daha uzun bir yol kat ediyor: ekranda gerçekçi
+     biçimde hızlı geçsin ama sürekli görünmesin diye turun büyük kısmını sahne
+     dışında geçirir. */
+  --fly-from: -1400px;      --fly-to: 3600px;
   --rail-in: 1500px; --rail-load: 894px; --rail-unload: 244px;
   --rail-out: -400px; --rail-ramp: 90px;
 }
@@ -670,13 +674,13 @@ html:has(.landing-root) {
   --sail-from: -210px;      --sail-to: 760px;
   --sail-back-from: 700px;  --sail-back-to: -200px;
   --drive-from: -120px;     --drive-to: 700px;
-  --drive-slow-from: -170px;--drive-slow-to: 690px;
-  --fly-from: -110px;       --fly-to: 690px;
+  --drive-van-from: -170px; --drive-van-to: 690px;
+  --fly-from: -900px;       --fly-to: 1620px;
   --rail-in: 620px; --rail-load: 258px; --rail-unload: 3px;
   --rail-out: -280px; --rail-ramp: 55px;
 }
 
-/* Duruş pencereleri: yükleme %23-35, boşaltma %62-74.
+/* Duruş pencereleri: yükleme %22-35, boşaltma %61-74.
    Transfer 7 kutuya yayıldığı için en erken parça pencereden ~3,8 puan önce başlıyor;
    aşağıdaki yüzdeler bu paya göre seçildi (bkz. PortScene `yardStagger`). */
 @keyframes landing-rail-cargo {
@@ -699,9 +703,11 @@ html:has(.landing-root) {
   99%, 100% { opacity: 0; }
 }
 
+/* y aralığı x mesafesiyle birlikte uzatıldı: uçak yolun yalnızca üçte birinde
+   ekranda olduğu için, görünen kısımdaki alçalma eskisiyle aynı kalsın diye. */
 @keyframes landing-fly {
-  from { transform: translate(var(--fly-from), 26px); }
-  to   { transform: translate(var(--fly-to), -22px); }
+  from { transform: translate(var(--fly-from), 60px); }
+  to   { transform: translate(var(--fly-to), -80px); }
 }
 
 @keyframes landing-bob {
@@ -845,16 +851,43 @@ html:has(.landing-root) {
    var() geçersiz kalıp transform'u tamamen düşürmesin diye duruyor. */
 .landing-bob-amp    { --bob-amp: 1; animation: landing-bob-amp 84s linear infinite; }
 .landing-voyage    { animation: landing-voyage-fade 24s linear infinite; }
-.landing-ship      { animation: landing-sail 46s linear infinite; }
-.landing-ship-back { animation: landing-sail-back 62s linear infinite; }
-.landing-truck     { animation: landing-drive 26s linear infinite; }
-.landing-van       { animation: landing-drive-slow 39s linear infinite; }
+/* --- Taşıt hızları ---
+   Süreler tek tek seçilmiyor; hepsi gerçek seyir hızlarının oranına göre türetildi.
+   Ölçü birimi viewBox birimi/saniye ve çıpa konteyner gemisi:
+
+     gemi (~40 km/sa)      22 br/sn   × 1,00   ← en yavaş, sahnenin sakin öğesi
+     uzaktaki gemi         15 br/sn   × 0,68   (aynı hız, perspektifle yavaş görünür)
+     tren (~70 km/sa)      38 br/sn   × 1,73
+     tır  (~85 km/sa)      46 br/sn   × 2,09
+     kamyonet (~100 km/sa) 55 br/sn   × 2,50
+     uçak (~850 km/sa)    170 br/sn   × 7,70   ← tek ödün, aşağıya bakınız
+
+   Uçağın gerçek oranı 21 kat; o hızda ekranı 2 saniyede geçip sürekli yanıp sönen
+   bir nesneye dönüşüyordu. 7,7 kata sıkıştırıldı: hâlâ açık ara en hızlısı ama
+   izlenebilir. Diğer oranlar gerçek değerlerinde.
+
+   Süre = mesafe ÷ hız. Mesafe değişirse süre de değişmeli, yoksa oran bozulur. */
+.landing-ship      { animation: landing-sail 86s linear infinite; }
+.landing-ship-back { animation: landing-sail-back 116s linear infinite; }
+.landing-truck     { animation: landing-drive 37s linear infinite; }
+.landing-van       { animation: landing-drive-van 32s linear infinite; }
 /* Dördü de aynı süreyi paylaşmalı — kayarsa vagon yükü trenin duruşundan kopar. */
-.landing-train      { animation: landing-railyard 96s linear infinite; }
-.landing-rail-cargo { animation: landing-rail-cargo 96s linear infinite; }
-.landing-rail-src   { animation: landing-rail-src 96s linear infinite; }
-.landing-rail-dst   { animation: landing-rail-dst 96s linear infinite; }
-.landing-plane     { animation: landing-fly 32s linear infinite; }
+.landing-train      { animation: landing-railyard 85s linear infinite; }
+.landing-rail-cargo { animation: landing-rail-cargo 85s linear infinite; }
+.landing-rail-src   { animation: landing-rail-src 85s linear infinite; }
+.landing-rail-dst   { animation: landing-rail-dst 85s linear infinite; }
+.landing-plane     { animation: landing-fly 29s linear infinite; }
+
+/* Dar sahnede iki istif birbirine yakın, dolayısıyla trenin duraklar arası yolu kısa.
+   Aynı yüzdelerle seyir hızı gemiye göre ×1,1'e düşüyordu (geniş sahnede ×1,8). Süreyi
+   kısaltmak oranı ×1,6'ya çıkarıyor; yüzdeler değişmediği için yükleme koreografisi
+   senkronda kalır. Dördü birlikte değişmeli — biri kayarsa vagon yükü duruştan kopar. */
+.landing-scene-compact .landing-train,
+.landing-scene-compact .landing-rail-cargo,
+.landing-scene-compact .landing-rail-src,
+.landing-scene-compact .landing-rail-dst {
+  animation-duration: 56s;
+}
 .landing-bob       { animation: landing-bob 4.5s ease-in-out infinite; }
 .landing-wave      { animation: landing-wave 9s linear infinite; }
 
