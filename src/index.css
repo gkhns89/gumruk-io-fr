@@ -666,6 +666,8 @@ html:has(.landing-root) {
      biçimde hızlı geçsin ama sürekli görünmesin diye turun büyük kısmını sahne
      dışında geçirir. */
   --fly-from: -1400px;      --fly-to: 3600px;
+  --fly2-from: 3400px;      --fly2-to: -2600px;
+  --fly3-from: -1500px;     --fly3-to: 3000px;
   --rail-in: 1500px; --rail-load: 894px; --rail-unload: 244px;
   --rail-out: -400px; --rail-ramp: 90px;
 }
@@ -676,6 +678,8 @@ html:has(.landing-root) {
   --drive-from: -120px;     --drive-to: 700px;
   --drive-van-from: -170px; --drive-van-to: 690px;
   --fly-from: -900px;       --fly-to: 1620px;
+  --fly2-from: 1500px;      --fly2-to: -1600px;
+  --fly3-from: -800px;      --fly3-to: 1500px;
   --rail-in: 620px; --rail-load: 258px; --rail-unload: 3px;
   --rail-out: -280px; --rail-ramp: 55px;
 }
@@ -703,11 +707,29 @@ html:has(.landing-root) {
   99%, 100% { opacity: 0; }
 }
 
-/* y aralığı x mesafesiyle birlikte uzatıldı: uçak yolun yalnızca üçte birinde
-   ekranda olduğu için, görünen kısımdaki alçalma eskisiyle aynı kalsın diye. */
+/* --- Uçak rotaları ---
+   Üç rota, üç ayrı keyframe. Hepsinin y aralığı x mesafesiyle birlikte uzun tutuldu:
+   uçak yolun ancak dörtte biriyle üçte biri arasında ekranda, dolayısıyla görünen
+   parçadaki yükselme/alçalma bu aralığın küçük bir dilimi. Uçlardaki değerler kadraj
+   dışında kalır, ekranda görünen bant y≈0..80 aralığına düşer — rıhtım hattının (124)
+   üstünde, kadrajın içinde. Mesafe değişirse y de ölçeklenmeli. */
+
+/* Soldan sağa, hafifçe tırmanarak */
 @keyframes landing-fly {
-  from { transform: translate(var(--fly-from), 60px); }
-  to   { transform: translate(var(--fly-to), -80px); }
+  from { transform: translate(var(--fly-from), 70px); }
+  to   { transform: translate(var(--fly-to), -30px); }
+}
+
+/* Sağdan sola, alçalarak — çizim iç grupta aynalı (bkz. PortScene) */
+@keyframes landing-fly-back {
+  from { transform: translate(var(--fly2-from), -62px); }
+  to   { transform: translate(var(--fly2-to), 158px); }
+}
+
+/* Sol üstten girip alçalarak sağa */
+@keyframes landing-fly-high {
+  from { transform: translate(var(--fly3-from), -82px); }
+  to   { transform: translate(var(--fly3-to), 158px); }
 }
 
 @keyframes landing-bob {
@@ -876,7 +898,11 @@ html:has(.landing-root) {
 .landing-rail-cargo { animation: landing-rail-cargo 85s linear infinite; }
 .landing-rail-src   { animation: landing-rail-src 85s linear infinite; }
 .landing-rail-dst   { animation: landing-rail-dst 85s linear infinite; }
+/* Üç uçak aynı hızda (~160 br/sn) ama farklı mesafe ve sürede; negatif gecikme
+   fazlarını ayırıyor, yoksa üçü birden aynı anda sahneye girerdi. */
 .landing-plane     { animation: landing-fly 29s linear infinite; }
+.landing-plane-2   { animation: landing-fly-back 38s linear infinite; animation-delay: -17s; }
+.landing-plane-3   { animation: landing-fly-high 28s linear infinite; animation-delay: -9s; }
 
 /* Dar sahnede iki istif birbirine yakın, dolayısıyla trenin duraklar arası yolu kısa.
    Aynı yüzdelerle seyir hızı gemiye göre ×1,1'e düşüyordu (geniş sahnede ×1,8). Süreyi
@@ -909,6 +935,8 @@ html:has(.landing-root) {
   .landing-rail-src,
   .landing-rail-dst,
   .landing-plane,
+  .landing-plane-2,
+  .landing-plane-3,
   .landing-bob,
   .landing-wave {
     animation: none;

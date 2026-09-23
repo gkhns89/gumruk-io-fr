@@ -472,10 +472,31 @@ function Scene({ compact = false }) {
           Vinç bomları sahnenin en üstüne kadar uzanıyor; uçak daha önce çizilseydi
           (ve öyleydi) onların arkasında kalıp kırpılmış gibi görünüyordu. Rıhtım
           yapılarından SONRA çiziliyor ki önlerinden geçsin. */}
+      {/* Üç ayrı rota: soldan sağa tırmanan, sağdan sola alçalan, sol üstten alçalarak geçen.
+          Hepsi aynı çizimi kullanır; yön, yükseklik, süre ve faz `index.css`'te.
+          Her uçak turunun ancak dörtte biriyle üçte biri arasında ekranda — gökyüzünde
+          ortalama bir uçak oluyor, bazen iki, bazen hiç.
+
+          Sahnenin geri kalanı gibi YANDAN: gemi, tren ve vinçler yandan çizili, tepeden bir
+          uçak yabancı duruyordu. Haritadaki işaretçi kuş bakışı kalır (bkz. VehicleArt).
+          Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor. */}
       <g className="landing-plane">
-        {/* Sahnenin geri kalanı gibi YANDAN: gemi, tren ve vinçler yandan çizili, tepeden bir
-            uçak yabancı duruyordu. Haritadaki işaretçi kuş bakışı kalır (bkz. VehicleArt).
-            Tam opak: saydam bırakılırsa arkasındaki vinç içinden görünüyor. */}
+        <g transform="scale(0.62)">
+          <PlaneSide />
+        </g>
+      </g>
+
+      {/* Sağdan sola — burun sola bakmalı. Aynalama İÇ grupta: dıştaki gruba CSS animasyonu
+          transform yazıyor ve oradaki bir transform attribute'unu tamamen ezerdi.
+          translate(98) çizimi yerinde çeviriyor (yerel kutu x 2..96). */}
+      <g className="landing-plane-2">
+        <g transform="scale(0.62) translate(98 0) scale(-1 1)">
+          <PlaneSide />
+        </g>
+      </g>
+
+      {/* Sol üstten alçalarak sağa */}
+      <g className="landing-plane-3">
         <g transform="scale(0.62)">
           <PlaneSide />
         </g>
