@@ -2,11 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import MainLayout from "./layout/MainLayout";
 import Stats from "./dashboard/Stats";
 import RecentActivityTable from "./dashboard/RecentActivityTable";
-import CourierTrackingCard from "./dashboard/CourierTrackingCard";
-import ClientShipmentsCard from "./dashboard/ClientShipmentsCard";
+import CourierStrip from "./dashboard/courierStrip/CourierStrip";
 import { useAuth } from "../hooks/useAuth";
-import { useFeatureFlags } from "../hooks/useFeatureFlags";
-import { FEATURE_FLAGS } from "../utils/featureFlags";
 import AuthedImage from "./common/AuthedImage";
 import { transactionService } from "../api/transactionService";
 import { cargoService } from "../api/cargoService";
@@ -55,9 +52,6 @@ const AnimatedSection = ({ children, delay = 0, shouldAnimate = false, className
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { hasFeature } = useFeatureFlags();
-  // Müşteri kullanıcısı kurye kartı yerine kendi gönderilerini görür (COURIER_CLIENT_STOPS)
-  const showClientShipments = user?.globalRole === "CLIENT_USER" && hasFeature(FEATURE_FLAGS.COURIER_CLIENT_STOPS);
   const [stats, setStats] = useState(null);
   const [warehouseStats, setWarehouseStats] = useState(null);
   const [cargoStats, setCargoStats] = useState(null);
@@ -72,18 +66,6 @@ export default function Dashboard() {
   const [shouldAnimateHeading, setShouldAnimateHeading] = useState(false);
   const [shouldAnimateSections, setShouldAnimateSections] = useState(false);
 
-  // Kurye kartı compact ↔ expanded geçişi (sadece desktop'ta)
-  const [courierExpanded, setCourierExpanded] = useState(false);
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const update = () => setIsLargeScreen(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
   useEffect(() => {
     fetchTransactions();
     fetchCargo();
@@ -97,7 +79,7 @@ export default function Dashboard() {
     }
   }, [loading, stats]);
 
-  // Kurye + tablo — antrepo/yoldakiler kartlarından sonra (kademeli kaskad)
+  // Tablo — antrepo/yoldakiler kartlarından sonra (kademeli kaskad)
   useEffect(() => {
     if (!loading && stats && !hasAnimatedSectionsRef.current) {
       hasAnimatedSectionsRef.current = true;
@@ -200,29 +182,16 @@ export default function Dashboard() {
           </div>
         </AnimatedSection>
 
-        {/* İstatistik Kartları + Kurye Takip Kartı */}
-        <div
-          className="grid grid-cols-1 gap-4 mb-6 items-stretch"
-          style={isLargeScreen ? {
-            gridTemplateColumns: courierExpanded ? '1fr 1fr' : '3fr 1fr',
-            transition: 'grid-template-columns 400ms ease-in-out',
-          } : {}}
-        >
-          <Stats stats={stats} warehouseStats={warehouseStats} cargoStats={cargoStats} loading={loading} courierExpanded={courierExpanded} />
-          <AnimatedSection delay={0} shouldAnimate={shouldAnimateSections} className="h-full">
-            {showClientShipments ? (
-              <ClientShipmentsCard />
-            ) : (
-              <CourierTrackingCard
-                expanded={courierExpanded}
-                onToggleExpand={() => setCourierExpanded(v => !v)}
-                isLargeScreen={isLargeScreen}
-              />
-            )}
-          </AnimatedSection>
+        {/* Kurye şeridi — karşılamanın altında, işlem durumlarının üstünde. Ayrıntılar aşağı açılan
+            pencerede; bu pencere altındaki içeriği itmez, üstüne biner (bkz. CourierStrip). */}
+        <CourierStrip />
+
+        {/* İstatistik Kartları — tam genişlik (kurye alanı ızgaradan çıkıp şeride taşındı) */}
+        <div className="mb-6">
+          <Stats stats={stats} warehouseStats={warehouseStats} cargoStats={cargoStats} loading={loading} />
         </div>
 
-        {/* Son İşlemler + Son Yükler Tablosu — Tam Genişlik (kurye bölümünden sonra) */}
+        {/* Son İşlemler + Son Yükler Tablosu — tam genişlik */}
         <AnimatedSection delay={600} shouldAnimate={shouldAnimateSections}>
           <RecentActivityTable
             transactions={recentItems}

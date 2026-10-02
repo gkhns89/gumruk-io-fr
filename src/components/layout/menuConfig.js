@@ -65,6 +65,7 @@ export const MANAGEMENT_ITEMS = [
   menuItem("workspace_premium", "nav.plans", "/management/plans", { roles: ['SUPER_ADMIN'] }),
   menuItem("task_alt", "nav.feedbackTasks", "/management/feedback-tasks", { roles: ['SUPER_ADMIN'] }),
   menuItem("flag", "nav.featureFlags", "/management/feature-flags", { roles: ['SUPER_ADMIN'] }),
+  menuItem("schedule", "nav.scheduledJobs", "/management/scheduled-jobs", { roles: ['SUPER_ADMIN'] }),
 ];
 
 // Kullanıcının rol + koşullarına göre görünür yönetim öğeleri. `condition(user, { hasFeature })`.

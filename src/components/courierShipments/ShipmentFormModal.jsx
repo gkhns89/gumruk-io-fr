@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { courierShipmentService } from '../../api/courierShipmentService';
+import { courierVehicleService } from '../../api/courierVehicleService';
+import { companyLocationService } from '../../api/companyLocationService';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import {
   SHIPMENT_DIRECTIONS,
@@ -32,6 +36,8 @@ const initialForm = (shipment) => {
       date: defaults.date,
       time: defaults.time,
       internalNotes: '',
+      vehicleId: '',
+      destinationLocationId: '',
     };
   }
   const planned = toDate(shipment.plannedAt);
@@ -44,17 +50,35 @@ const initialForm = (shipment) => {
     date: planned ? toDateInputValue(planned) : defaults.date,
     time: planned ? toTimeInputValue(planned) : defaults.time,
     internalNotes: shipment.internalNotes || '',
+    vehicleId: shipment.vehicle?.id != null ? String(shipment.vehicle.id) : '',
+    destinationLocationId: shipment.destination?.locationId != null
+      ? String(shipment.destination.locationId)
+      : '',
   };
 };
 
-const courierOptionLabel = (courier) => {
+/**
+ * Kurye seçeneğinin etiketi. Canlı takip açıkken firma içi kaydın kendi plaka/sürücü alanları artık
+ * düzenlenmiyor (araçlar ayrı listede) — etikete de yazılmaz, yoksa aynı bilgi hem burada hem "Araç"
+ * alanında görünür ve zamanla birbirinden kayar.
+ */
+const courierOptionLabel = (courier, vehiclesElsewhere) => {
   if (!isInHouseCourier(courier)) {
     return courier.shortName ? `${courier.name} (${courier.shortName})` : courier.name;
   }
+  if (vehiclesElsewhere) return courier.name;
   const details = [getCourierVehicleType(courier.vehicleType)?.label, courier.vehiclePlate, courier.driverName]
     .filter(Boolean)
     .join(' · ');
   return details ? `${courier.name} — ${details}` : courier.name;
+};
+
+// Araç seçeneği: plaka · tür · sürücü. Sağlayıcıyla eşleşmemiş araçta canlı takip açılamaz, bu da yazılır.
+const vehicleOptionLabel = (vehicle) => {
+  const details = [getCourierVehicleType(vehicle.vehicleType)?.label, vehicle.driverName].filter(Boolean).join(' · ');
+  const base = details ? `${vehicle.plate} · ${details}` : vehicle.plate;
+  if (vehicle.active === false) return `${base} — ${t('courierShipments.form.vehicleInactive')}`;
+  return vehicle.matched ? base : `${base} — ${t('courierShipments.form.vehicleUnmatched')}`;
 };
 
 function ChoiceButtons({ options, value, onChange, columns }) {
@@ -101,6 +125,13 @@ export default function ShipmentFormModal({
   const isEdit = Boolean(shipment);
   const [form, setForm] = useState(() => initialForm(shipment));
   const [saving, setSaving] = useState(false);
+  const { hasFeature } = useFeatureFlags();
+  const liveTracking = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
+  // Canlı takip alanları: araç listesi seçilen firma içi kuryeye, nokta listesi müşteriye bağlıdır
+  const [vehicles, setVehicles] = useState([]);
+  const [vehiclesLoading, setVehiclesLoading] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   const setField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
   const handleInput = (e) => setField(e.target.name, e.target.value);
@@ -116,6 +147,78 @@ export default function ShipmentFormModal({
 
   const plannedAt = plannedInputsToIso(form.date, form.time);
   const isPast = plannedAt && new Date(plannedAt).getTime() < Date.now();
+
+  // Araç yalnızca firma içi kuryede vardır; dış kurye seçilirse alan da seçim de düşer
+  const selectedCourier = courierOptions.find((courier) => String(courier.id) === String(form.courierCompanyId));
+  const vehiclePickerVisible = liveTracking && Boolean(selectedCourier) && isInHouseCourier(selectedCourier);
+  const clientId = isEdit ? shipment?.clientCompany?.id : form.clientCompanyId;
+
+  useEffect(() => {
+    if (!vehiclePickerVisible) {
+      setVehicles([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setVehiclesLoading(true);
+    courierVehicleService.listVehicles(form.courierCompanyId).then((result) => {
+      if (cancelled) return;
+      setVehiclesLoading(false);
+      setVehicles(result.success ? result.data : []);
+    });
+    return () => { cancelled = true; };
+  }, [vehiclePickerVisible, form.courierCompanyId]);
+
+  useEffect(() => {
+    if (!liveTracking || !clientId) {
+      setLocations([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setLocationsLoading(true);
+    companyLocationService.listLocations(clientId, true).then((result) => {
+      if (cancelled) return;
+      setLocationsLoading(false);
+      setLocations(result.success ? result.data : []);
+    });
+    return () => { cancelled = true; };
+  }, [liveTracking, clientId]);
+
+  // Kullanıcı kuryeyi ya da müşteriyi değiştirince eski seçim geçersiz kalır; sunucu da reddederdi.
+  // Kurye listesi yüklenmeden de bu çalıştığı için düzenlemede gelen seçim korunur: yalnızca gerçek değişimde sıfırlanır.
+  const previousCourierId = useRef(form.courierCompanyId);
+  useEffect(() => {
+    if (previousCourierId.current === form.courierCompanyId) return;
+    previousCourierId.current = form.courierCompanyId;
+    setField('vehicleId', '');
+  }, [form.courierCompanyId]);
+
+  const previousClientId = useRef(form.clientCompanyId);
+  useEffect(() => {
+    if (previousClientId.current === form.clientCompanyId) return;
+    previousClientId.current = form.clientCompanyId;
+    setField('destinationLocationId', '');
+  }, [form.clientCompanyId]);
+
+  // Düzenlemede pasife alınmış araç / nokta listede yoktur; seçili kalsın diye seçenek olarak eklenir
+  const vehicleOptions = [...vehicles];
+  if (shipment?.vehicle && !vehicleOptions.some((vehicle) => vehicle.id === shipment.vehicle.id)) {
+    vehicleOptions.push({ ...shipment.vehicle, active: false });
+  }
+  const locationOptions = [...locations];
+  if (shipment?.destination?.locationId
+      && !locationOptions.some((location) => location.id === shipment.destination.locationId)) {
+    locationOptions.push({
+      id: shipment.destination.locationId,
+      label: shipment.destination.label,
+      address: shipment.destination.address,
+      latitude: shipment.destination.latitude,
+      longitude: shipment.destination.longitude,
+      active: false,
+    });
+  }
+  const selectedLocation = locationOptions.find(
+    (location) => String(location.id) === String(form.destinationLocationId),
+  );
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -140,6 +243,13 @@ export default function ShipmentFormModal({
       description: form.description.trim() || null,
       plannedAt,
       internalNotes: form.internalNotes.trim() || null,
+      // Bayrak kapalıyken alanlar hiç gönderilmez; sunucu da bayrağı kontrol ediyor
+      ...(liveTracking
+        ? {
+            vehicleId: form.vehicleId ? Number(form.vehicleId) : null,
+            destinationLocationId: form.destinationLocationId ? Number(form.destinationLocationId) : null,
+          }
+        : {}),
     };
 
     setSaving(true);
@@ -268,14 +378,14 @@ export default function ShipmentFormModal({
                 {externalCouriers.length > 0 && (
                   <optgroup label={t('courierShipments.form.externalGroup')}>
                     {externalCouriers.map((courier) => (
-                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier)}</option>
+                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier, liveTracking)}</option>
                     ))}
                   </optgroup>
                 )}
                 {inHouseCouriers.length > 0 && (
                   <optgroup label={t('courierShipments.form.inHouseGroup')}>
                     {inHouseCouriers.map((courier) => (
-                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier)}</option>
+                      <option key={courier.id} value={courier.id}>{courierOptionLabel(courier, liveTracking)}</option>
                     ))}
                   </optgroup>
                 )}
@@ -286,6 +396,69 @@ export default function ShipmentFormModal({
                 </p>
               )}
             </div>
+
+            {/* Canlı takip (COURIER_LIVE_TRACKING): araç firma içi kuryede, varış noktası müşterinin kayıtlı noktalarından */}
+            {vehiclePickerVisible && (
+              <div>
+                <label htmlFor="shipment-vehicle" className={LABEL_CLASS}>
+                  {t('courierShipments.form.vehicle')}
+                </label>
+                <select
+                  id="shipment-vehicle"
+                  name="vehicleId"
+                  value={form.vehicleId}
+                  onChange={handleInput}
+                  disabled={vehiclesLoading}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">
+                    {vehiclesLoading ? t('common.loading') : t('courierShipments.form.selectVehicle')}
+                  </option>
+                  {vehicleOptions.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id} disabled={vehicle.active === false}>
+                      {vehicleOptionLabel(vehicle)}
+                    </option>
+                  ))}
+                </select>
+                {!vehiclesLoading && vehicleOptions.length === 0 && (
+                  <p className="text-xs text-text-secondary mt-1">{t('courierShipments.form.noVehicles')}</p>
+                )}
+              </div>
+            )}
+
+            {liveTracking && Boolean(clientId) && (
+              <div>
+                <label htmlFor="shipment-destination" className={LABEL_CLASS}>
+                  {t('courierShipments.form.destination')}
+                </label>
+                <select
+                  id="shipment-destination"
+                  name="destinationLocationId"
+                  value={form.destinationLocationId}
+                  onChange={handleInput}
+                  disabled={locationsLoading}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">
+                    {locationsLoading ? t('common.loading') : t('courierShipments.form.selectDestination')}
+                  </option>
+                  {locationOptions.map((location) => (
+                    <option key={location.id} value={location.id} disabled={location.active === false}>
+                      {location.address ? `${location.label} — ${location.address}` : location.label}
+                    </option>
+                  ))}
+                </select>
+                {!locationsLoading && locationOptions.length === 0 && (
+                  <p className="text-xs text-text-secondary mt-1">{t('courierShipments.form.noLocations')}</p>
+                )}
+                {selectedLocation && selectedLocation.latitude == null && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
+                    {t('courierShipments.form.destinationNoCoordinates')}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Tarih + saat (tarayıcının saat diliminde) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

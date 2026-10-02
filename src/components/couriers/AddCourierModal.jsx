@@ -4,6 +4,8 @@ import { toUpperCase, COURIER_UPPERCASE_FIELDS } from '../../utils/textUtils';
 import { showSuccess, showError } from '../../utils/toastUtils';
 import { getApiErrorMessage } from '../../utils/errorUtils';
 import { t } from '../../locales';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import InHouseDispatchFields from './InHouseDispatchFields';
 
 const EMPTY_FORM = {
@@ -24,6 +26,9 @@ const EMPTY_FORM = {
  */
 export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = null, courierType = 'EXTERNAL' }) {
   const isInHouse = courierType === 'IN_HOUSE';
+  // Canlı takip açıkken araçlar kayıt oluştuktan sonra Araçlar sekmesinden eklenir; burada plaka sorulmaz
+  const { hasFeature } = useFeatureFlags();
+  const liveTrackingEnabled = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const [loading, setLoading] = useState(false);
@@ -160,7 +165,12 @@ export default function AddCourierModal({ onClose, onSuccess, brokerCompanyId = 
             </div>
 
             {isInHouse ? (
-              <InHouseDispatchFields formData={formData} onChange={handleChange} />
+              <InHouseDispatchFields
+                formData={formData}
+                onChange={handleChange}
+                vehiclesManagedElsewhere={liveTrackingEnabled}
+                noticeKey="couriers.inHouse.vehiclesAfterSave"
+              />
             ) : (
               <>
                 {/* Short Name */}

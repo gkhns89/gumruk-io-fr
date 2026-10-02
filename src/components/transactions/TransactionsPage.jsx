@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { usePaymentRestriction } from "../../hooks/usePaymentRestriction";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { transactionService } from "../../api/transactionService";
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
 import { showError } from '../../utils/toastUtils';
@@ -13,7 +13,11 @@ import TransactionDetailModal from "../common/TransactionDetailModal";
 import AutoRefreshControl from "./AutoRefreshControl";
 import DraftsControl from "../drafts/DraftsControl";
 import PendingChangeModal from "../drafts/PendingChangeModal";
+import ChangeRequestModal from "../changeRequests/ChangeRequestModal";
 import { usePendingDrafts } from "../../hooks/usePendingDrafts";
+import { usePendingChangeRequests } from "../../hooks/usePendingChangeRequests";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
+import { canReviewChanges } from "../../utils/changeRequests";
 import { DRAFT_MODULES } from "../../api/draftService";
 import {
   transactionDraftFields,
@@ -64,6 +68,8 @@ export default function TransactionsPage() {
   const [draftToContinue, setDraftToContinue] = useState(null);
   // Bekleyen değişiklik (taslak aşama 3): { draftId, record }
   const [pendingChange, setPendingChange] = useState(null);
+  // İncelenen değişiklik talebi (CHANGE_REQUESTS): { requestId, recordId }
+  const [changeRequest, setChangeRequest] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -97,6 +103,10 @@ export default function TransactionsPage() {
     setClosedWindowDays(days);
     localStorage.setItem(CLOSED_WINDOW_STORAGE_KEY, String(days));
   };
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { hasFeature } = useFeatureFlags();
 
   const canCreate = ['SUPER_ADMIN', 'BROKER_ADMIN', 'BROKER_USER'].includes(user?.globalRole);
   const canDelete = ['SUPER_ADMIN', 'BROKER_ADMIN'].includes(user?.globalRole);
@@ -462,6 +472,44 @@ export default function TransactionsPage() {
     refreshPending();
     loadData();
   }, [refreshPending, loadData]);
+
+  // ===== Değişiklik talepleri (CHANGE_REQUESTS) =====
+  const { requestFor, refresh: refreshRequests } = usePendingChangeRequests(DRAFT_MODULES.TRANSACTION, user);
+  const canReviewRequests = canReviewChanges(user, hasFeature);
+
+  // Satırdaki rozetten ya da zilin "İncele"sinden açılır. Taslak karşılaştırmasıyla aynı sebeple kaydı burada
+  // tutuyoruz: talebin farkı kaydın **şimdiki** hâlinin üstüne yazılacak, o hâl de listenin yüklediği satır.
+  const openChangeRequest = useCallback((request, record) => {
+    if (!request) return;
+    setChangeRequest({ requestId: request.id, recordId: record?.id ?? request.targetId });
+  }, []);
+
+  const changeRequestRecord = useMemo(() => (changeRequest
+    ? transactions.find((item) => item.id === changeRequest.recordId) || null
+    : null), [changeRequest, transactions]);
+
+  // Zilden gelindi: liste yüklendikten sonra karşılaştırmayı aç. Kayıt listede olmasa da (süzgeç dışı, başka
+  // sayfa) pencere açılır; farkı gösteremez ama yönetici orada reddedebilir ve neden gösteremediğini söyler.
+  useEffect(() => {
+    const requestId = location.state?.changeRequestId;
+    if (!requestId || loading) return;
+    setChangeRequest({ requestId, recordId: location.state?.targetId ?? null });
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, location.pathname, loading, navigate]);
+
+  // Onay gövdesi: talebin farkı kaydın şimdiki hâlinin üstüne yazılmış hâli. Düzenleme modalının gönderdiği
+  // gövdeyle aynı yerden üretilir, böylece onayın yazdığı ile elle kaydetmenin yazdığı ayrışamaz.
+  const buildRequestUpdateBody = useCallback((payload) => {
+    // Kayıt yüklü değilken onay zaten kapalı (pencere onu söylüyor); yine de boş gövde göndermeyelim.
+    if (!changeRequestRecord) return null;
+    return buildTransactionUpdatePayload(
+      transactionPayloadToFormData(payload, changeRequestRecord), getCurrentLocale());
+  }, [changeRequestRecord]);
+
+  const handleRequestDecided = useCallback(() => {
+    refreshRequests();
+    loadData();
+  }, [refreshRequests, loadData]);
 
   const handleRowClick = (transaction) => {
     setSelectedDetailTransaction(transaction);
@@ -1080,6 +1128,8 @@ export default function TransactionsPage() {
               onRowClick={handleRowClick}
               pendingFor={pendingFor}
               onOpenPendingChange={openPendingChange}
+              requestFor={requestFor}
+              onOpenChangeRequest={openChangeRequest}
               scrollHeight={tableScrollHeight}
               onScroll={handleTableScroll}
             />
@@ -1120,14 +1170,34 @@ export default function TransactionsPage() {
         />
       )}
 
+      {/* Değişiklik talebinin karşılaştırması ve kararı (CHANGE_REQUESTS).
+          Kayıt listede olmasa da açılır: pencere sebebini söyler, onay kapalı kalır ama reddetme çalışır. */}
+      {changeRequest && (
+        <ChangeRequestModal
+          requestId={changeRequest.requestId}
+          record={changeRequestRecord}
+          fields={pendingFields}
+          recordToFields={transactionRecordToFields}
+          payloadToFields={transactionPayloadToFields}
+          recordToPayload={transactionRecordToPayload}
+          buildUpdateBody={buildRequestUpdateBody}
+          canReview={canReviewRequests && !isTableReadOnly}
+          canCancel={!isTableReadOnly}
+          blockedReason={t("payment.restrictionWarning")}
+          onDone={handleRequestDecided}
+          onClose={() => setChangeRequest(null)}
+        />
+      )}
+
       {showEditModal && selectedTransaction && (
         <EditTransactionModal
           transaction={selectedTransaction}
           onClose={() => {
             setShowEditModal(false);
             setSelectedTransaction(null);
-            // Modalda taslak kaydedilmiş olabilir: rozet olayı kaçarsa bile liste tazelensin
+            // Modalda taslak kaydedilmiş ya da talep gönderilmiş olabilir: rozet olayı kaçarsa bile tazelensin
             refreshPending();
+            refreshRequests();
           }}
           onSuccess={handleEditSuccess}
           isReadOnly={isTableReadOnly}

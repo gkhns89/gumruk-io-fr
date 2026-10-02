@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { companyService } from '../../api/companyService';
 import SectorSelect from './SectorSelect';
 import AgreementInfoPanel from '../agreements/AgreementInfoPanel';
+import ClientLocationsSection from '../couriers/ClientLocationsSection';
+import { FEATURE_FLAGS } from '../../utils/featureFlags';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import { toUpperCase } from '../../utils/textUtils';
 import { t, getCurrentLocale } from '../../locales';
 import { handleError, handleApiResponse } from '../../utils/errorUtils';
@@ -30,6 +33,9 @@ export default function ViewClientModal({
   const locale = getCurrentLocale();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Teslimat noktaları — FEATURE_FLAGS.COURIER_LIVE_TRACKING (backend de ayrıca kontrol ediyor)
+  const { hasFeature } = useFeatureFlags();
+  const locationsEnabled = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
 
   const [formData, setFormData] = useState({
     name: client?.name || '',
@@ -363,6 +369,13 @@ export default function ViewClientModal({
               )}
             </div>
           </div>
+
+          {/* Teslimat noktaları (canlı takip bayrağı açıkken) */}
+          {locationsEnabled && (
+            <div className="mt-8">
+              <ClientLocationsSection clientId={client.id} canManage={canEdit} />
+            </div>
+          )}
         </div>
 
         {/* Footer */}

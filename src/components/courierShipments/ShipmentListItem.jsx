@@ -41,7 +41,7 @@ export default function ShipmentListItem({ shipment, audience = 'broker', onOpen
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-text-secondary">
               <ShipmentDirectionLabel direction={shipment.direction} audience={audience} />
               <ShipmentItemTypeLabel itemType={shipment.itemType} />
-              <ShipmentCourierLabel courier={shipment.courier} />
+              <ShipmentCourierLabel courier={shipment.courier} vehicle={shipment.vehicle} />
             </div>
             {shipment.description && (
               <p className="text-xs text-text-secondary mt-1 truncate">{shipment.description}</p>

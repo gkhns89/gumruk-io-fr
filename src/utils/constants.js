@@ -427,6 +427,26 @@ export const getGateBadgeClasses = (gateValue) => {
 };
 
 /**
+ * İşlem durumunu değere göre bul
+ * @param {string} value - PENDING | REGISTERED | INSPECTION | CP_COMPLETED | WITHDRAWN | CANCELLED
+ * @returns {Object|null} Durum objesi; bilinmeyen değerde null
+ */
+export const getTransactionStatus = (value) => {
+  return TRANSACTION_STATUS.find((status) => status.value === value) || null;
+};
+
+/**
+ * İşlem durumunun ekranda görünen adı. Bilinmeyen değerde ham sabit yazılmaz (sunucudan sızan bir iç ad
+ * kullanıcıya olduğu gibi görünürdü); genel bir etiket döner, ham değer çağıranın `title`'ında kalabilir.
+ * @param {string} value - Durum değeri
+ * @returns {string} Gösterilecek etiket
+ */
+export const getTransactionStatusLabel = (value) => {
+  const status = getTransactionStatus(value);
+  return status ? t(status.labelKey) : t('status.unknown');
+};
+
+/**
  * Cargo status'ü değere göre bul
  * @param {string} value - Status değeri
  * @returns {Object|null} Status objesi
@@ -658,6 +678,112 @@ export const SHIPMENT_EVENT_TYPES = [
 ];
 
 /**
+ * Canlı takip oturumu durumları (backend: TrackingStatus, todo 19 faz 2).
+ * NONE burada yok: "takip yok" bir durum değil, haritanın hiç açılmaması demektir.
+ * `live` bayrağı ekranların "yoklamaya devam" kararını verir.
+ */
+export const TRACKING_STATUSES = [
+  {
+    value: 'WAITING',
+    labelKey: 'courierTracking.status.WAITING',
+    get label() { return t(this.labelKey); },
+    icon: 'hourglass_empty',
+    live: true,
+    badgeClass: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300',
+  },
+  {
+    value: 'LIVE',
+    labelKey: 'courierTracking.status.LIVE',
+    get label() { return t(this.labelKey); },
+    icon: 'my_location',
+    live: true,
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300',
+  },
+  {
+    value: 'STALE',
+    labelKey: 'courierTracking.status.STALE',
+    get label() { return t(this.labelKey); },
+    icon: 'update_disabled',
+    live: true,
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300',
+  },
+  {
+    value: 'UNAVAILABLE',
+    labelKey: 'courierTracking.status.UNAVAILABLE',
+    get label() { return t(this.labelKey); },
+    icon: 'cloud_off',
+    live: true,
+    badgeClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+  {
+    value: 'ENDED',
+    labelKey: 'courierTracking.status.ENDED',
+    get label() { return t(this.labelKey); },
+    icon: 'flag',
+    live: false,
+    badgeClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+];
+
+/**
+ * Yaklaşma aşamaları (backend: CourierApproachStage, todo 19 faz 3).
+ *
+ * NONE burada yok: "henüz yaklaşmadı" bir rozet değil, rozetin hiç çizilmemesi demektir — yoldaki her
+ * gönderiye "yolda" yazmak gürültü olurdu, zaten takip durumu bunu söylüyor.
+ *
+ * LEFT yalnızca gümrük firmasına gelir; müşteriye sunucu ARRIVED gönderir (müşterinin ekranı varışta
+ * donar). Yani bu diziyi kullanan ekranların ayrıca bir kitle kontrolü yapmasına gerek yok.
+ */
+export const COURIER_APPROACH_STAGES = [
+  {
+    value: 'APPROACHING',
+    labelKey: 'courierTracking.stage.APPROACHING',
+    get label() { return t(this.labelKey); },
+    icon: 'near_me',
+    badgeClass: 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300',
+  },
+  {
+    value: 'NEARBY',
+    labelKey: 'courierTracking.stage.NEARBY',
+    get label() { return t(this.labelKey); },
+    icon: 'pin_drop',
+    badgeClass: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300',
+  },
+  {
+    value: 'ARRIVED',
+    labelKey: 'courierTracking.stage.ARRIVED',
+    get label() { return t(this.labelKey); },
+    icon: 'where_to_vote',
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300',
+  },
+  {
+    value: 'LEFT',
+    labelKey: 'courierTracking.stage.LEFT',
+    get label() { return t(this.labelKey); },
+    icon: 'logout',
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300',
+  },
+];
+
+/**
+ * Yaklaşma aşamasını değere göre bul; NONE ve bilinmeyen değerde null (rozet çizilmez)
+ * @param {string} value - APPROACHING | NEARBY | ARRIVED | LEFT
+ * @returns {Object|null}
+ */
+export const getCourierApproachStage = (value) => {
+  return COURIER_APPROACH_STAGES.find((stage) => stage.value === value) || null;
+};
+
+/**
+ * Takip durumunu değere göre bul; bilinmeyen değerde null (ham değer gösterilir)
+ * @param {string} value - WAITING | LIVE | STALE | UNAVAILABLE | ENDED
+ * @returns {Object|null}
+ */
+export const getTrackingStatus = (value) => {
+  return TRACKING_STATUSES.find((status) => status.value === value) || null;
+};
+
+/**
  * Gönderi durumunu değere göre bul
  * @param {string} value - PLANNED | IN_TRANSIT | DELIVERED | CANCELLED
  * @returns {Object|null}
@@ -757,6 +883,7 @@ export default {
   SHIPMENT_DIRECTIONS,
   SHIPMENT_ITEM_TYPES,
   SHIPMENT_EVENT_TYPES,
+  TRACKING_STATUSES,
   getGateOption,
   getGateRowClasses,
   getGateBadgeClasses,
@@ -776,4 +903,5 @@ export default {
   getShipmentDirection,
   getShipmentItemType,
   getShipmentEventType,
+  getTrackingStatus,
 };

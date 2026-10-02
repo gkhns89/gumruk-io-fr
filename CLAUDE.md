@@ -101,6 +101,14 @@ all reads/writes plus client-side JWT decoding and expiry checks (30 s clock-ske
 `AuthProvider` re-checks validity on a 30-minute interval and force-logs-out on expiry.
 Token lifetime is a backend/env concern — the Settings page only displays it.
 
+**There is no self-service password reset, and no `/forgot-password` route to add one to.** The
+product sends no e-mail at all, so a reset link has nothing to travel on; the backend's half-built
+flow was deleted on 19.09.2026. A forgotten password is fixed by an administrator through
+`userService.setUserPassword` — `SetPasswordModal` on the employees page, `ClientAccountModal` on
+the clients page — which closes every session the target has open. The login
+page's "Şifremi Unuttum?" is a disclosure that says so, not a link — don't turn it back into one
+without a mail transport on the server first.
+
 ### API layer (`src/api/`)
 
 One `*Service.js` module per domain, all built on the shared `axiosInstance` from
@@ -152,6 +160,15 @@ Roles: `SUPER_ADMIN`, `BROKER_ADMIN`, `BROKER_USER`, `CLIENT_USER` (on `user.glo
 `src/components/layout/menuConfig.js` is the **single source of truth for the management
 menu** — `Sidebar` (desktop) and `MobileMenu` both read it, with `roles` plus an optional
 `condition(user)` predicate. Add menu entries there, not in either menu component.
+
+`/management/scheduled-jobs` (`ScheduledJobsPage`, SUPER_ADMIN) is the read-only view of the
+backend's scheduled jobs: last outcome, last run, last clean run, next expected run, record
+counts, consecutive failures and the last error summary, with troubled jobs sorted first. It
+renders `GET /api/admin/scheduled-jobs` and has no actions — there is deliberately no "run
+now". The job's technical name (`Class.method`) is never shown as a label: the page maps it to
+`scheduledJobs.jobs.*`, mirroring `ScheduledJobLabels` on the server, and falls back to the raw
+name for a job it does not know. The `stale` flag is computed server-side with the same rule as
+the SUPER_ADMIN alert, so page and notification can never disagree.
 
 Payment restriction is a second, orthogonal gate. `PaymentRestrictionProvider` polls
 `/payment-restriction/status` every 5 minutes (skipped for `SUPER_ADMIN` and `CLIENT_USER`) and
@@ -244,6 +261,39 @@ Pages combine it with role checks — the established pattern is
   (`isConcurrentUpdate()` in `utils/drafts.js`, on the `status`/`code` the update services now pass through) keeps
   the draft and flips the banner to the warning. The row badge and "İncele" stay as they were, and they remain the
   only way a BROKER_ADMIN reviews someone else's draft.
+- **Change requests** (`CHANGE_REQUESTS` flag, transactions only so far): a draft is something you apply yourself;
+  a change request is something **someone else decides**. It exists for the records a BROKER_USER cannot edit —
+  `INSPECTION`, `CP_COMPLETED`, `WITHDRAWN`, `CANCELLED` (`isTransactionLocked()` in `utils/changeRequests.js`).
+  There, instead of locking the fields, `EditTransactionModal` opens in **request mode**
+  (`shouldRequestChange()`): the form is editable, a banner says why, and the footer button sends rather than
+  saves. Payment restriction still locks everything (`isReadOnly`), because a request is a write too.
+  **The payload is the drafts' payload** — `{ formData, ...searchTerms, base }`, built by the modal's one
+  `buildSnapshotPayload()` that the draft snapshot also uses — so a request is a **delta** and the comparison
+  runs through the same `buildPendingChange()`. Never let those two shapes drift; the whole reuse rests on it.
+  Storage is its own `change_requests` table rather than a draft row, because a draft expires at the company's
+  daily purge time and a decision must not: the decision itself (`reviewedBy`, `reviewedAt`, `reviewReason`) is
+  the record. One PENDING request per record; only BROKER_USER files one (an admin edits directly and gets
+  `CHANGE_REQUEST_ADMIN_DIRECT`), only BROKER_ADMIN decides.
+  **Approval is the apply.** `POST /change-requests/{id}/approve` takes **the body to write**, not the request's
+  payload: the client computes it (record as it is now + the delta) exactly as the drafts' "Uygula" does, and the
+  server pushes it through `updateTransaction` — so date ordering, delay reasons and the closed-record rule all
+  apply — then marks the request APPROVED in the same transaction. Rejection needs a reason.
+  UI: `ChangeRequestsBell` in the header (BROKER_ADMIN only) lists what awaits a decision and **navigates** to the
+  module's page instead of deciding in place — the comparison needs the record as the list loaded it, and a
+  second fetch would be a second source of truth. `ChangeRequestBadge` sits in the row next to
+  `PendingChangeBadge` (orange vs amber: "someone wants a decision" is not "someone started editing") and opens
+  `ChangeRequestModal`.
+- **Transaction status is derived, never written.** `withdrawalDate` → `WITHDRAWN`, else `lineClosureDate` →
+  `CP_COMPLETED`, else declaration number + registration date → `REGISTERED`, else `PENDING`. The endpoints that
+  wrote it directly (`PATCH /transactions/{id}/status`, `/withdraw`) were removed: they skipped every validation
+  and were open to BROKER_USER. To move a transaction, change its dates. Clearing a date walks the status back,
+  which is the supported way to undo a file closed by a mistyped date — the edit form no longer requires a date to
+  stay just because the record's status implies it; it only requires a closure date beside a withdrawal date.
+  A `WITHDRAWN`/`CANCELLED` record is editable **only** by BROKER_ADMIN / SUPER_ADMIN and **only** with
+  `reopenReason` in the update body (400 `TRANSACTION_REOPEN_REASON_REQUIRED` without it); the reason and the
+  status before/after land in the audit log as `REOPEN_TRANSACTION`. Entering a date that will close a file opens
+  a confirmation naming the file and client, because the mistake this guards against is a date typed one row above
+  the intended one.
 - **Passwords typed for someone else** (add employee, set password, client account): the password
   inputs carry `autoComplete="new-password"` and the e-mail input `type="email"` + `autoComplete="off"`.
   Without them the browser treats the form as a sign-in and fills in the admin's own saved password,
@@ -306,6 +356,76 @@ which browser translation extensions will happily translate into broken text. Th
 mitigation shipped is `lang="tr" translate="no"` + `<meta name="google" content="notranslate">`
 in `index.html`. Don't remove those. `docs/icon-translation-immunity-plan.md` describes the
 unshipped codepoint-based fix (~840 usages across 86 files).
+
+### Courier live tracking (phases 1–3)
+
+Everything here is behind `FEATURE_FLAGS.COURIER_LIVE_TRACKING`; the backend checks the flag too, so the
+UI only decides what to reveal. Phase 1 covers vehicles, client delivery points and the shipment's choice
+of both; phase 2 adds the live map; phase 3 the approach stages.
+
+Three services, split the way the backend is: `courierVehicleService.js` (a courier record's vehicles),
+`companyLocationService.js` (a client's delivery points), `vehicleTrackingService.js` (the provider
+connection and the plate-matching list). Where the UI lives:
+
+- `components/couriers/CourierVehiclesTab.jsx` — a third tab in `EditCourierModal`, shown only for an
+  in-house courier record. Delete removes a vehicle no shipment ever used and otherwise only deactivates it;
+  the toast says which happened. Updates are partial, so reactivating sends `{active: true}` alone.
+  While the flag is on, the courier record's own legacy plate/driver fields are hidden in both courier modals —
+  the vehicle list is the single source of truth, and the old fields would drift from it.
+- `components/couriers/ClientLocationsSection.jsx` — at the bottom of `ViewClientModal`.
+- `components/courierShipments/ShipmentFormModal.jsx` — the vehicle picker (in-house couriers only) and the
+  destination picker, both optional. Changing the courier or the client clears the matching choice, but a
+  first render must not: the pickers keep the value the record came with until the user really changes it.
+- `components/settings/CourierTrackingCard.jsx` — the token (write-only; the API answers `tokenSet`), the
+  on/off state, a connection test and the two approach thresholds. The thresholds are stored in the company
+  work settings, so saving them sends the current work settings back unchanged alongside. **An open
+  connection alert is a red banner**, not just the last-error line: the server decides it and sends
+  `connectionDown` (the failure threshold stays on the server so banner and notification cannot drift).
+  `autoDisabledAt` means the provider rejected the token and the server switched the connection off — the
+  status pill says "Kapatıldı (token geçersiz)" and the text says to renew the token, because retrying
+  cannot help. The matching `VEHICLE_TRACKING_CONNECTION_FAILED` / `_AUTH_FAILED` / `_RECOVERED`
+  notifications go to BROKER_ADMINs; `NotificationCenter` routes entityType `VEHICLE_TRACKING` to
+  `/company-settings` with `state.scrollTo: 'courier-tracking'`, which the page scrolls to.
+
+When the provider runs in stub mode (`liveMode: false`, the default until a real Mobiliz token exists) the
+vehicle list and positions are samples — the card and the vehicles tab both say so, and should keep saying so.
+
+**Phase 2 — the live map.** One place, one component: `components/courierTracking/CourierTrackingSection.jsx`
+sits inside `ShipmentDetailModal`, which both `CourierShipmentsPage` (broker) and `MyShipmentsPage` /
+the dashboard card (client) already open. There is deliberately **no separate tracking page** — the client
+tracks shipments from that modal today, and a second route would be a second thing to keep in step.
+
+- `useShipmentTracking(shipmentId, audience, enabled)` polls `getTracking` / `getMyTracking` at the interval
+  **the server sends** (`pollIntervalSeconds`), stops on `document.hidden` and reads once on the way back,
+  and stops for good when the status is `ENDED`/`NONE` (`TRACKING_STATUSES[].live` in `constants.js` decides).
+  A failed read is silent: the previous position stays on screen and the next tick retries.
+- `status: 'NONE'` means "this shipment has no live tracking" (no matched vehicle, no destination coordinates,
+  flag off). The section then renders **nothing** — not an error, not an empty map.
+- `LiveCourierMap.jsx` is **`lazy()`-imported from the section**, which is what keeps `maplibre-gl` out of the
+  shipment pages' chunks (and out of the entry chunk). Never import it statically. It shares the style choice
+  with `CargoMap` through `utils/mapStyle.js` (MapTiler when `VITE_MAPTILER_API_KEY` is set, OpenFreeMap
+  otherwise) and nothing else — the courier marker is its own thing (`CourierVehicleMarker.jsx` plus the
+  `.courier-marker*` block in `index.css`, whose comment says which three measurements move together).
+  The opening view fits vehicle + destination; after that the camera is never forced (a map that jumps under
+  your finger is the worst kind), and a "Back to the vehicle" button brings it back.
+- What the client sees is decided by the **server**, not here: no speed, no ignition, no driver phone, and only
+  the last 15 minutes of trail. Don't add fields to the client call hoping they arrive.
+
+**Phase 3 — the approach stages.** The tracking responses (detail and the dashboard strip's summary) carry
+`stage`: `NONE | APPROACHING | NEARBY | ARRIVED | LEFT`, rendered from `COURIER_APPROACH_STAGES` /
+`getCourierApproachStage()` in `constants.js`. `NONE` returns `null` **on purpose** — no badge, because
+"on the way" is what the tracking status already says.
+
+- **`LEFT` never reaches a client**: the server sends them `ARRIVED` instead. No screen needs an audience
+  check for it.
+- **The freeze is the server's too.** After arrival the client call answers with the arrival position, the
+  trail cut at arrival and `pollIntervalSeconds: 0`; `useShipmentTracking` now latches **stopped** when the
+  server sends 0 or a non-live status, so coming back to the tab does not restart polling on a frozen view.
+- Where the stage shows: the badge in `CourierTrackingSection` (next to the tracking status) and its status
+  line, which switches to "arrived at HH:mm" / "left but the shipment is open" instead of the reading age.
+  In the strip, `StripBand` and `StripDrawer` show the **stage instead of** the tracking status when there is
+  one — one badge, not two. The strip's rotation is untouched: it still triggers on `lastGpsAt` moving, which
+  a frozen client row simply stops doing.
 
 ### G-Radar (cargo tracking)
 

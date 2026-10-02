@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { companyService } from '../api/companyService';
 import ImageUploadField from '../components/common/ImageUploadField';
 import WorkSettingsCard from '../components/settings/WorkSettingsCard';
+import CourierTrackingCard from '../components/settings/CourierTrackingCard';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import { FEATURE_FLAGS } from '../utils/featureFlags';
 import { t } from '../locales';
@@ -14,6 +16,7 @@ import { t } from '../locales';
  *  - BROKER_ADMIN: yalnızca kendi gümrük firmasının logosunu değiştirir.
  * (Müşteri firmalarının logoları "Müşteri Firmaları" sayfasından yönetilir.)
  * DRAFTS bayrağı açıkken BROKER_ADMIN kendi firmasının çalışma saatlerini ve taslak silme saatini de düzenler.
+ * COURIER_LIVE_TRACKING açıkken araç takip bağlantısı ve kurye yaklaşma eşikleri de buradan yönetilir.
  */
 export default function CompanySettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -22,6 +25,9 @@ export default function CompanySettingsPage() {
   const hasAccess = isSuperAdmin || isBrokerAdmin;
   const { hasFeature, isPilotFeature } = useFeatureFlags();
   const showWorkSettings = isBrokerAdmin && hasFeature(FEATURE_FLAGS.DRAFTS);
+  // SUPER_ADMIN da görebilsin: kartın uçları brokerCompanyId alıyor, tek eksik buradaki koşuldu.
+  // SA için firma seçilmeden kart anlamsız olurdu (hangi firmanın bağlantısı?), o yüzden seçime bağlı.
+  const courierTrackingAvailable = hasFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING);
 
   // SUPER_ADMIN: broker listesi + seçim
   const [brokers, setBrokers] = useState([]);
@@ -30,6 +36,18 @@ export default function CompanySettingsPage() {
 
   // Logo değişince AuthedImage'i tekrar yüklemeye zorla
   const [logoBust, setLogoBust] = useState(0);
+
+  // "Araç takip bağlantısı çalışmıyor" bildiriminden gelindiğinde kartı görünür kıl. Sayfanın kendi
+  // kaydırma kabı var (#main-scroll-area değil), o yüzden scrollIntoView yeterli.
+  const { state: navState } = useLocation();
+  const courierTrackingRef = useRef(null);
+  useEffect(() => {
+    if (navState?.scrollTo !== 'courier-tracking') return undefined;
+    const timer = setTimeout(() => {
+      courierTrackingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [navState]);
 
   const loadBrokers = useCallback(async () => {
     setBrokersLoading(true);
@@ -148,6 +166,15 @@ export default function CompanySettingsPage() {
               </div>
 
               {showWorkSettings && <WorkSettingsCard isPilot={isPilotFeature(FEATURE_FLAGS.DRAFTS)} />}
+
+              {courierTrackingAvailable && (isBrokerAdmin || targetCompanyId) && (
+                <div id="courier-tracking" ref={courierTrackingRef} className="scroll-mt-4">
+                  <CourierTrackingCard
+                    isPilot={isPilotFeature(FEATURE_FLAGS.COURIER_LIVE_TRACKING)}
+                    brokerCompanyId={isBrokerAdmin ? null : targetCompanyId}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
