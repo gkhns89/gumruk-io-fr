@@ -418,7 +418,8 @@ function Scene({ compact = false }) {
       className={
         compact
           ? "landing-scene landing-scene-compact h-auto w-full sm:hidden"
-          : "landing-scene hidden h-[190px] w-full sm:block lg:h-[240px]"
+          : // Yükseklik 1440 px üstünde `index.css`'te genişliğe bağlanıyor (üstten kırpılmasın)
+            "landing-scene hidden h-[190px] w-full sm:block lg:h-[240px]"
       }
       // Dar sürümde `meet`: sahnenin tamamı görünmeli, kırpma yok.
       preserveAspectRatio={compact ? "xMidYMax meet" : "xMidYMax slice"}
