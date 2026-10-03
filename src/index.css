@@ -672,6 +672,20 @@ html:has(.landing-root) {
   --rail-out: -400px; --rail-ramp: 90px;
 }
 
+/* Geniş sahne, 1440 px'ten geniş ekranlarda üstten kırpılıyordu.
+   `slice` kutuyu doldurmak için viewBox'ı GENİŞLİK oranıyla ölçekliyor: viewport 1440'ı
+   geçtiğinde ölçek 1'in üzerine çıkıyor, 240 birimlik viewBox'ın yalnızca 240/ölçek kadarı
+   kadraja sığıyor ve `YMax` alta yasladığı için eksik kalan ÜST oluyor — önce vinçler,
+   ardından uçaklar kayboluyor. (1904 px'te ölçek 1,32 → viewBox'ın 181 birimi görünür.)
+   1440×240 oranı genişliğin altıda biri olduğundan, bu eşikten sonra bant da öyle büyümeli.
+   1440 ve altına karışmıyor: oradaki yanlardan kırpma kasıtlı, kenarlar dekoratif.
+   Katmansız kural olduğu için Tailwind'in `lg:h-[240px]` utility'sini geçer. */
+@media (min-width: 1441px) {
+  .landing-scene:not(.landing-scene-compact) {
+    height: calc(100vw / 6);
+  }
+}
+
 .landing-scene-compact {
   --sail-from: -210px;      --sail-to: 760px;
   --sail-back-from: 700px;  --sail-back-to: -200px;
